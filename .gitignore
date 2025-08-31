@@ -39,10 +39,19 @@ coverage/
 *.sublime-workspace
 
 # Misc
-.DS_Store
 Thumbs.db
+
+# Файлы, формируемые realtime
+/_files/
+/_logs/
+/_cache/
+
+# DEV directories
 .tmp/
 temp/
+/__misc/
+**/_tmp/
+**/_sand/
 
 # TypeScript cache
 *.tsbuildinfo
@@ -51,6 +60,17 @@ temp/
 !.env.example
 
 # OS specific files
-Thumbs.db
 .github
-/mcp-atlassian-py/**.*
+
+# Частные исключения
+/config/local.*
+local-*.*
+/t.*
+*.local.*
+*.private.*
+/config/__servers__/
+**/ignor.*
+**/ignore.*
+**/*.ignore/**
+~$*.*
+*.rar
