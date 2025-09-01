@@ -45,7 +45,6 @@
       "Read(./**/_tmp/**)",
       "Read(./**/mock_data/**)",
       "Read(./build/**)",
-      "Read(./node_modules/**)",
       "Read(./pub/**)",
       "Read(./**/*.private.*)",
       "Read(./**/*local.*)",

@@ -2,8 +2,9 @@
  * Centralized error handling system for the MCP Atlassian server
  */
 
-import type { McpError } from '../../types/index.js';
 import { createLogger } from '../utils/logger.js';
+
+import type { McpError } from '../../types/index.js';
 
 const logger = createLogger('errors');
 
@@ -174,7 +175,7 @@ export function createErrorResponse(
   requestId?: string
 ): ErrorResponse {
   const isCustomError = error instanceof McpAtlassianError;
-  
+
   return {
     success: false,
     error: {
@@ -190,9 +191,7 @@ export function createErrorResponse(
 /**
  * Error handler for async functions
  */
-export function asyncErrorHandler<T extends any[], R>(
-  fn: (...args: T) => Promise<R>
-) {
+export function asyncErrorHandler<T extends any[], R>(fn: (...args: T) => Promise<R>) {
   return async (...args: T): Promise<R> => {
     try {
       return await fn(...args);
@@ -200,15 +199,18 @@ export function asyncErrorHandler<T extends any[], R>(
       if (error instanceof McpAtlassianError) {
         throw error;
       }
-      
+
       // Convert unknown errors to ServerError
       const message = error instanceof Error ? error.message : String(error);
       throw new ServerError(message, {
-        originalError: error instanceof Error ? {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        } : error,
+        originalError:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : error,
       });
     }
   };
@@ -217,11 +219,7 @@ export function asyncErrorHandler<T extends any[], R>(
 /**
  * Error boundary decorator for class methods
  */
-export function errorBoundary(
-  target: any,
-  propertyKey: string,
-  descriptor: PropertyDescriptor
-) {
+export function errorBoundary(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
 
   descriptor.value = async function (...args: any[]) {
@@ -229,20 +227,23 @@ export function errorBoundary(
       return await originalMethod.apply(this, args);
     } catch (error) {
       logger.error(`Error in ${target.constructor.name}.${propertyKey}:`, error);
-      
+
       if (error instanceof McpAtlassianError) {
         throw error;
       }
-      
+
       // Convert unknown errors
       const message = error instanceof Error ? error.message : String(error);
       throw new ServerError(message, {
         method: `${target.constructor.name}.${propertyKey}`,
-        originalError: error instanceof Error ? {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        } : error,
+        originalError:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : error,
       });
     }
   };
@@ -286,11 +287,11 @@ export function handleAxiosError(error: any): never {
     const message = data?.errorMessages?.[0] || data?.message || error.message;
     const details = {
       status,
-      data: data,
+      data,
       url: error.config?.url,
       method: error.config?.method?.toUpperCase(),
     };
-    
+
     throw createErrorFromStatus(status, message, details);
   } else if (error.request) {
     // Request made but no response received
@@ -318,27 +319,34 @@ export async function withErrorHandling<T>(
     return await operation();
   } catch (error) {
     // Log the error with context
-    logger.error('Operation failed', error instanceof Error ? error : new Error(String(error)), context);
-    
+    logger.error(
+      'Operation failed',
+      error instanceof Error ? error : new Error(String(error)),
+      context
+    );
+
     // Re-throw if it's already a custom error
     if (error instanceof McpAtlassianError) {
       throw error;
     }
-    
+
     // Handle Axios errors
     if (error && typeof error === 'object' && 'response' in error) {
       handleAxiosError(error);
     }
-    
+
     // Convert unknown errors
     const message = error instanceof Error ? error.message : String(error);
     throw new ServerError(message, {
       context,
-      originalError: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      } : error,
+      originalError:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
     });
   }
 }

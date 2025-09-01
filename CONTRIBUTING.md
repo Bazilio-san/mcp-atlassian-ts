@@ -56,7 +56,6 @@ npm run format
 **Key Requirements**:
 - Use TypeScript strict mode
 - Follow ESLint rules
-- Use Prettier for formatting
 - Maintain type safety
 - Write comprehensive JSDoc comments
 

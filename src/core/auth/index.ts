@@ -3,9 +3,11 @@
  */
 
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
-import { createLogger } from '../utils/logger.js';
+
 import { AuthenticationError, NetworkError } from '../errors/index.js';
+import { createLogger } from '../utils/logger.js';
+
+import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
 
 const logger = createLogger('auth');
 
@@ -37,14 +39,14 @@ export class AuthenticationManager {
 
     // Add request interceptor for authentication
     client.interceptors.request.use(
-      (requestConfig) => this.addAuthenticationHeaders(requestConfig),
-      (error) => Promise.reject(error)
+      requestConfig => this.addAuthenticationHeaders(requestConfig),
+      error => Promise.reject(error)
     );
 
     // Add response interceptor for error handling
     client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
+      response => response,
+      async error => {
         // Handle 401 errors by attempting token refresh if using OAuth
         if (error.response?.status === 401 && this.authConfig.type === 'oauth2') {
           try {
@@ -73,9 +75,9 @@ export class AuthenticationManager {
 
     switch (this.authConfig.type) {
       case 'basic':
-        const basicAuth = Buffer.from(
-          `${this.authConfig.email}:${this.authConfig.token}`
-        ).toString('base64');
+        const basicAuth = Buffer.from(`${this.authConfig.email}:${this.authConfig.token}`).toString(
+          'base64'
+        );
         config.headers.Authorization = `Basic ${basicAuth}`;
         break;
 
@@ -103,19 +105,23 @@ export class AuthenticationManager {
     }
 
     try {
-      const response = await axios.post('https://auth.atlassian.com/oauth/token', {
-        grant_type: 'refresh_token',
-        client_id: this.authConfig.clientId,
-        client_secret: this.authConfig.clientSecret,
-        refresh_token: this.authConfig.refreshToken,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        'https://auth.atlassian.com/oauth/token',
+        {
+          grant_type: 'refresh_token',
+          client_id: this.authConfig.clientId,
+          client_secret: this.authConfig.clientSecret,
+          refresh_token: this.authConfig.refreshToken,
         },
-      });
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const { access_token, refresh_token } = response.data;
-      
+
       // Update the auth config with new tokens
       this.authConfig.accessToken = access_token;
       if (refresh_token) {
@@ -135,7 +141,7 @@ export class AuthenticationManager {
   async testAuthentication(baseUrl: string): Promise<boolean> {
     try {
       logger.info('Testing authentication...');
-      
+
       // Test with a simple API call
       const response = await this.httpClient.get('/rest/api/2/myself', {
         baseURL: baseUrl,
@@ -168,7 +174,7 @@ export class AuthenticationManager {
    */
   getAuthInfo() {
     const { type } = this.authConfig;
-    
+
     switch (type) {
       case 'basic':
         return {
@@ -215,13 +221,16 @@ export class OAuthFlowManager {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.redirectUri = redirectUri;
-    this.scopes = scopes.length > 0 ? scopes : [
-      'read:jira-work',
-      'write:jira-work',
-      'read:confluence-content.summary',
-      'write:confluence-content',
-      'read:confluence-space.summary',
-    ];
+    this.scopes =
+      scopes.length > 0
+        ? scopes
+        : [
+            'read:jira-work',
+            'write:jira-work',
+            'read:confluence-content.summary',
+            'write:confluence-content',
+            'read:confluence-space.summary',
+          ];
   }
 
   /**
@@ -250,22 +259,26 @@ export class OAuthFlowManager {
     expiresIn: number;
   }> {
     try {
-      const response = await axios.post('https://auth.atlassian.com/oauth/token', {
-        grant_type: 'authorization_code',
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-        code,
-        redirect_uri: this.redirectUri,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        'https://auth.atlassian.com/oauth/token',
+        {
+          grant_type: 'authorization_code',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          code,
+          redirect_uri: this.redirectUri,
         },
-      });
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const { access_token, refresh_token, expires_in } = response.data;
-      
+
       logger.info('OAuth token exchange successful');
-      
+
       return {
         accessToken: access_token,
         refreshToken: refresh_token,
@@ -280,19 +293,24 @@ export class OAuthFlowManager {
   /**
    * Get accessible resources (cloud instances) for the user
    */
-  async getAccessibleResources(accessToken: string): Promise<Array<{
-    id: string;
-    url: string;
-    name: string;
-    scopes: string[];
-  }>> {
+  async getAccessibleResources(accessToken: string): Promise<
+    Array<{
+      id: string;
+      url: string;
+      name: string;
+      scopes: string[];
+    }>
+  > {
     try {
-      const response = await axios.get('https://api.atlassian.com/oauth/token/accessible-resources', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        'https://api.atlassian.com/oauth/token/accessible-resources',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+        }
+      );
 
       return response.data.map((resource: any) => ({
         id: resource.id,
@@ -343,7 +361,9 @@ export function validateAuthConfig(authConfig: AuthConfig): void {
       break;
     case 'oauth2':
       if (!authConfig.clientId || !authConfig.clientSecret || !authConfig.accessToken) {
-        throw new AuthenticationError('OAuth2 auth requires clientId, clientSecret, and accessToken');
+        throw new AuthenticationError(
+          'OAuth2 auth requires clientId, clientSecret, and accessToken'
+        );
       }
       break;
     default:

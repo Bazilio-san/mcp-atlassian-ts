@@ -2,11 +2,13 @@
  * Confluence MCP tools implementation
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { AtlassianConfig } from '../../types/index.js';
-import { ConfluenceClient } from './client.js';
-import { createLogger } from '../../core/utils/logger.js';
 import { withErrorHandling, ValidationError, ToolExecutionError } from '../../core/errors/index.js';
+import { createLogger } from '../../core/utils/logger.js';
+
+import { ConfluenceClient } from './client.js';
+
+import type { AtlassianConfig } from '../../types/index.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('confluence-tools');
 
@@ -552,7 +554,7 @@ export class ConfluenceToolsManager {
           return this.updatePage(args);
         case 'confluence_delete_page':
           return this.deletePage(args);
-        
+
         // Space operations
         case 'confluence_get_spaces':
           return this.getSpaces(args);
@@ -560,17 +562,17 @@ export class ConfluenceToolsManager {
           return this.getSpace(args);
         case 'confluence_get_space_content':
           return this.getSpaceContent(args);
-        
+
         // Comments
         case 'confluence_add_comment':
           return this.addComment(args);
         case 'confluence_get_comments':
           return this.getComments(args);
-        
+
         // User management
         case 'confluence_search_user':
           return this.searchUsers(args);
-        
+
         // Label management
         case 'confluence_add_label':
           return this.addLabel(args);
@@ -578,15 +580,15 @@ export class ConfluenceToolsManager {
           return this.getLabels(args);
         case 'confluence_get_pages_by_label':
           return this.getPagesByLabel(args);
-        
+
         // Page hierarchy
         case 'confluence_get_page_children':
           return this.getPageChildren(args);
-        
+
         // History
         case 'confluence_get_page_history':
           return this.getPageHistory(args);
-        
+
         default:
           throw new ToolExecutionError(toolName, `Unknown Confluence tool: ${toolName}`);
       }
@@ -604,7 +606,7 @@ export class ConfluenceToolsManager {
 
   private async searchContent(args: any) {
     const { cql, start = 0, limit = 50, excerpt = 'highlight', expand = [] } = args;
-    
+
     const searchResult = await this.client.searchContent({
       cql,
       start,
@@ -612,93 +614,119 @@ export class ConfluenceToolsManager {
       excerpt,
       expand,
     });
-    
+
     if (searchResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `No content found for CQL: ${cql}`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `No content found for CQL: ${cql}`,
+          },
+        ],
       };
     }
-    
-    const resultsList = searchResult.results.map(result => {
-      const content = result.content;
-      return `• **${result.title}** (${content.type})\n` +
-             `  Space: ${result.space?.name || 'Unknown'}\n` +
-             `  URL: ${result.url}\n` +
-             (result.excerpt ? `  Excerpt: ${result.excerpt}\n` : '');
-    }).join('\n');
-    
+
+    const resultsList = searchResult.results
+      .map(result => {
+        const content = result.content;
+        return (
+          `• **${result.title}** (${content.type})\n` +
+          `  Space: ${result.space?.name || 'Unknown'}\n` +
+          `  URL: ${result.url}\n${result.excerpt ? `  Excerpt: ${result.excerpt}\n` : ''}`
+        );
+      })
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Search Results**\n\n` +
-              `**CQL:** ${cql}\n` +
-              `**Found:** ${searchResult.totalSize} results (showing ${searchResult.results.length})\n\n` +
-              `${resultsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Search Results**\n\n` +
+            `**CQL:** ${cql}\n` +
+            `**Found:** ${searchResult.totalSize} results (showing ${searchResult.results.length})\n\n` +
+            `${resultsList}`,
+        },
+      ],
     };
   }
 
   private async getPage(args: any) {
     const { pageId, expand = ['body.storage', 'version', 'space'], version } = args;
-    
+
     const page = await this.client.getContent(pageId, { expand, version });
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Page: ${page.title}**\n\n` +
-              `**ID:** ${page.id}\n` +
-              `**Space:** ${page.space.name} (${page.space.key})\n` +
-              `**Type:** ${page.type}\n` +
-              `**Status:** ${page.status}\n` +
-              `**Version:** ${page.version.number} (${new Date(page.version.when).toLocaleString()})\n` +
-              `**Created:** ${new Date(page.history.createdDate).toLocaleString()}\n` +
-              `**Creator:** ${page.history.createdBy.displayName}\n` +
-              (page.history.lastUpdated ? `**Last Updated:** ${new Date(page.history.lastUpdated.when).toLocaleString()} by ${page.history.lastUpdated.by.displayName}\n` : '') +
-              (page.body?.storage ? `\n**Content:**\n${this.formatContent(page.body.storage.value)}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Page: ${page.title}**\n\n` +
+            `**ID:** ${page.id}\n` +
+            `**Space:** ${page.space.name} (${page.space.key})\n` +
+            `**Type:** ${page.type}\n` +
+            `**Status:** ${page.status}\n` +
+            `**Version:** ${page.version.number} (${new Date(page.version.when).toLocaleString()})\n` +
+            `**Created:** ${new Date(page.history.createdDate).toLocaleString()}\n` +
+            `**Creator:** ${page.history.createdBy.displayName}\n${
+              page.history.lastUpdated
+                ? `**Last Updated:** ${new Date(page.history.lastUpdated.when).toLocaleString()} by ${page.history.lastUpdated.by.displayName}\n`
+                : ''
+            }${
+              page.body?.storage
+                ? `\n**Content:**\n${this.formatContent(page.body.storage.value)}\n`
+                : ''
+            }\n**Direct Link:** ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`,
+        },
+      ],
     };
   }
 
   private async getPageByTitle(args: any) {
     const { spaceKey, title, expand = ['body.storage', 'version', 'space'] } = args;
-    
+
     const pages = await this.client.getContentBySpaceAndTitle(spaceKey, title, { expand });
-    
+
     if (pages.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `No pages found with title "${title}" in space ${spaceKey}`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `No pages found with title "${title}" in space ${spaceKey}`,
+          },
+        ],
       };
     }
-    
+
     // Return the first page (most common case)
     const page = pages[0];
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Page: ${page.title}**\n\n` +
-              `**ID:** ${page.id}\n` +
-              `**Space:** ${page.space.name} (${page.space.key})\n` +
-              `**Type:** ${page.type}\n` +
-              `**Version:** ${page.version.number}\n` +
-              (pages.length > 1 ? `**Note:** ${pages.length} pages found with this title, showing the first one.\n` : '') +
-              (page.body?.storage ? `\n**Content:**\n${this.formatContent(page.body.storage.value)}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Page: ${page.title}**\n\n` +
+            `**ID:** ${page.id}\n` +
+            `**Space:** ${page.space.name} (${page.space.key})\n` +
+            `**Type:** ${page.type}\n` +
+            `**Version:** ${page.version.number}\n${
+              pages.length > 1
+                ? `**Note:** ${pages.length} pages found with this title, showing the first one.\n`
+                : ''
+            }${
+              page.body?.storage
+                ? `\n**Content:**\n${this.formatContent(page.body.storage.value)}\n`
+                : ''
+            }\n**Direct Link:** ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`,
+        },
+      ],
     };
   }
 
   private async createPage(args: any) {
     const { spaceKey, title, body, parentId, type = 'page', labels = [] } = args;
-    
+
     // Build the page input
     const pageInput: any = {
       type,
@@ -711,13 +739,13 @@ export class ConfluenceToolsManager {
         },
       },
     };
-    
+
     if (parentId) {
       pageInput.ancestors = [{ id: parentId }];
     }
-    
+
     const createdPage = await this.client.createContent(pageInput);
-    
+
     // Add labels if provided
     if (labels.length > 0) {
       for (const labelName of labels) {
@@ -728,34 +756,37 @@ export class ConfluenceToolsManager {
         }
       }
     }
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Page Created Successfully**\n\n` +
-              `**Title:** ${title}\n` +
-              `**ID:** ${createdPage.id}\n` +
-              `**Space:** ${spaceKey}\n` +
-              `**Type:** ${type}\n` +
-              (labels.length > 0 ? `**Labels:** ${labels.join(', ')}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/wiki/spaces/${spaceKey}/pages/${createdPage.id}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Page Created Successfully**\n\n` +
+            `**Title:** ${title}\n` +
+            `**ID:** ${createdPage.id}\n` +
+            `**Space:** ${spaceKey}\n` +
+            `**Type:** ${type}\n${
+              labels.length > 0 ? `**Labels:** ${labels.join(', ')}\n` : ''
+            }\n**Direct Link:** ${this.config.url}/wiki/spaces/${spaceKey}/pages/${createdPage.id}`,
+        },
+      ],
     };
   }
 
   private async updatePage(args: any) {
-    const { 
-      pageId, 
-      title, 
-      body, 
-      versionComment = 'Updated via MCP', 
+    const {
+      pageId,
+      title,
+      body,
+      versionComment = 'Updated via MCP',
       minorEdit = false,
-      labels 
+      labels,
     } = args;
-    
+
     // Get current page to increment version
     const currentPage = await this.client.getContent(pageId, { expand: ['version', 'space'] });
-    
+
     // Build the update input
     const updateInput: any = {
       version: {
@@ -766,7 +797,7 @@ export class ConfluenceToolsManager {
       type: currentPage.type,
       title: title || currentPage.title,
     };
-    
+
     if (body) {
       updateInput.body = {
         storage: {
@@ -775,9 +806,9 @@ export class ConfluenceToolsManager {
         },
       };
     }
-    
+
     const updatedPage = await this.client.updateContent(pageId, updateInput);
-    
+
     // Update labels if provided
     if (labels) {
       // Remove existing labels and add new ones
@@ -790,107 +821,128 @@ export class ConfluenceToolsManager {
         }
       }
     }
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Page Updated Successfully**\n\n` +
-              `**Title:** ${updatedPage.title}\n` +
-              `**ID:** ${pageId}\n` +
-              `**Version:** ${updatedPage.version.number}\n` +
-              `**Comment:** ${versionComment}\n` +
-              `\n**Direct Link:** ${this.config.url}/wiki/spaces/${updatedPage.space.key}/pages/${pageId}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Page Updated Successfully**\n\n` +
+            `**Title:** ${updatedPage.title}\n` +
+            `**ID:** ${pageId}\n` +
+            `**Version:** ${updatedPage.version.number}\n` +
+            `**Comment:** ${versionComment}\n` +
+            `\n**Direct Link:** ${this.config.url}/wiki/spaces/${updatedPage.space.key}/pages/${pageId}`,
+        },
+      ],
     };
   }
 
   private async getSpaces(args: any) {
     const { type, status = 'current', expand = [], limit = 50 } = args;
-    
+
     const spacesResult = await this.client.getSpaces({ type, status, expand, limit });
-    
+
     if (spacesResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `No Confluence spaces found`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `No Confluence spaces found`,
+          },
+        ],
       };
     }
-    
-    const spacesList = spacesResult.results.map(space => 
-      `• **${space.name}** (${space.key}) - ${space.type}`
-    ).join('\n');
-    
+
+    const spacesList = spacesResult.results
+      .map(space => `• **${space.name}** (${space.key}) - ${space.type}`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Spaces (${spacesResult.results.length} found)**\n\n${spacesList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text: `**Confluence Spaces (${spacesResult.results.length} found)**\n\n${spacesList}`,
+        },
+      ],
     };
   }
 
   private async getSpace(args: any) {
     const { spaceKey, expand = ['description', 'homepage'] } = args;
-    
+
     const space = await this.client.getSpace(spaceKey, { expand });
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Space: ${space.name}**\n\n` +
-              `**Key:** ${space.key}\n` +
-              `**Type:** ${space.type}\n` +
-              `**Status:** ${space.status}\n` +
-              (space.description ? `**Description:** ${this.formatContent(space.description.plain.value)}\n` : '') +
-              (space.homepage ? `**Homepage:** ${space.homepage.title}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/wiki/spaces/${space.key}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Space: ${space.name}**\n\n` +
+            `**Key:** ${space.key}\n` +
+            `**Type:** ${space.type}\n` +
+            `**Status:** ${space.status}\n${
+              space.description
+                ? `**Description:** ${this.formatContent(space.description.plain.value)}\n`
+                : ''
+            }${
+              space.homepage ? `**Homepage:** ${space.homepage.title}\n` : ''
+            }\n**Direct Link:** ${this.config.url}/wiki/spaces/${space.key}`,
+        },
+      ],
     };
   }
 
   private async getSpaceContent(args: any) {
-    const { 
-      spaceKey, 
-      type = 'page', 
-      status = 'current', 
-      expand = ['version', 'space'], 
-      limit = 50 
+    const {
+      spaceKey,
+      type = 'page',
+      status = 'current',
+      expand = ['version', 'space'],
+      limit = 50,
     } = args;
-    
+
     const contentResult = await this.client.getSpaceContent(spaceKey, {
       type,
       status,
       expand,
       limit,
     });
-    
+
     if (contentResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `No ${type} content found in space ${spaceKey}`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `No ${type} content found in space ${spaceKey}`,
+          },
+        ],
       };
     }
-    
-    const contentList = contentResult.results.map(content => 
-      `• **${content.title}** (v${content.version.number}) - ${new Date(content.version.when).toLocaleDateString()}`
-    ).join('\n');
-    
+
+    const contentList = contentResult.results
+      .map(
+        content =>
+          `• **${content.title}** (v${content.version.number}) - ${new Date(content.version.when).toLocaleDateString()}`
+      )
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**${type === 'page' ? 'Pages' : 'Blog Posts'} in Space ${spaceKey}**\n\n` +
-              `**Found:** ${contentResult.size} items (showing ${contentResult.results.length})\n\n` +
-              `${contentList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**${type === 'page' ? 'Pages' : 'Blog Posts'} in Space ${spaceKey}**\n\n` +
+            `**Found:** ${contentResult.size} items (showing ${contentResult.results.length})\n\n` +
+            `${contentList}`,
+        },
+      ],
     };
   }
 
   private async addComment(args: any) {
     const { pageId, body, parentCommentId } = args;
-    
+
     const commentInput: any = {
       type: 'comment',
       container: { id: pageId },
@@ -901,23 +953,26 @@ export class ConfluenceToolsManager {
         },
       },
     };
-    
+
     if (parentCommentId) {
       commentInput.ancestors = [{ id: parentCommentId }];
     }
-    
+
     const comment = await this.client.addComment(commentInput);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Comment Added Successfully**\n\n` +
-              `**Page ID:** ${pageId}\n` +
-              `**Comment ID:** ${comment.id}\n` +
-              `**Author:** ${comment.history.createdBy.displayName}\n` +
-              `**Created:** ${new Date(comment.history.createdDate).toLocaleString()}\n` +
-              `**Comment:** ${body}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Comment Added Successfully**\n\n` +
+            `**Page ID:** ${pageId}\n` +
+            `**Comment ID:** ${comment.id}\n` +
+            `**Author:** ${comment.history.createdBy.displayName}\n` +
+            `**Created:** ${new Date(comment.history.createdDate).toLocaleString()}\n` +
+            `**Comment:** ${body}`,
+        },
+      ],
     };
   }
 
@@ -925,216 +980,267 @@ export class ConfluenceToolsManager {
 
   private async searchUsers(args: any) {
     const { query, limit = 50 } = args;
-    
+
     const users = await this.client.searchUsers(query, limit);
-    
+
     if (users.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `No users found matching "${query}"`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `No users found matching "${query}"`,
+          },
+        ],
       };
     }
-    
-    const usersList = users.map(user => 
-      `• **${user.displayName}** (${user.username})\n` +
-      `  Email: ${user.email || 'Not available'}\n` +
-      `  Active: ${user.active ? 'Yes' : 'No'}`
-    ).join('\n\n');
-    
+
+    const usersList = users
+      .map(
+        user =>
+          `• **${user.displayName}** (${user.username})\n` +
+          `  Email: ${user.email || 'Not available'}\n` +
+          `  Active: ${user.active ? 'Yes' : 'No'}`
+      )
+      .join('\n\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Users matching "${query}"**\n\n` +
-              `**Found:** ${users.length} users\n\n` +
-              `${usersList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Users matching "${query}"**\n\n` +
+            `**Found:** ${users.length} users\n\n` +
+            `${usersList}`,
+        },
+      ],
     };
   }
 
   private async addLabel(args: any) {
     const { pageId, label, prefix = 'global' } = args;
-    
+
     await this.client.addLabel(pageId, { prefix, name: label });
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Label Added Successfully**\n\n` +
-              `**Page ID:** ${pageId}\n` +
-              `**Label:** ${label}\n` +
-              `**Prefix:** ${prefix}\n` +
-              `\n**Direct Link:** ${this.config.url}/wiki/spaces/${pageId}/pages`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Label Added Successfully**\n\n` +
+            `**Page ID:** ${pageId}\n` +
+            `**Label:** ${label}\n` +
+            `**Prefix:** ${prefix}\n` +
+            `\n**Direct Link:** ${this.config.url}/wiki/spaces/${pageId}/pages`,
+        },
+      ],
     };
   }
 
   private async getLabels(args: any) {
     const { pageId, prefix, limit = 50 } = args;
-    
+
     const labelsResult = await this.client.getLabels(pageId, { prefix, limit });
-    
+
     if (labelsResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No labels found for page ${pageId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No labels found for page ${pageId}**`,
+          },
+        ],
       };
     }
-    
-    const labelsList = labelsResult.results.map((label: any) => 
-      `• **${label.name}** (${label.prefix})`
-    ).join('\n');
-    
+
+    const labelsList = labelsResult.results
+      .map((label: any) => `• **${label.name}** (${label.prefix})`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Labels for Page ${pageId}**\n\n` +
-              `**Total:** ${labelsResult.size} labels\n\n` +
-              `${labelsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Labels for Page ${pageId}**\n\n` +
+            `**Total:** ${labelsResult.size} labels\n\n` +
+            `${labelsList}`,
+        },
+      ],
     };
   }
 
   private async getPagesByLabel(args: any) {
     const { label, spaceKey, expand = ['version', 'space'], limit = 50 } = args;
-    
+
     const pagesResult = await this.client.getPagesByLabel(label, { spaceKey, expand, limit });
-    
+
     if (pagesResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No pages found with label "${label}"${spaceKey ? ` in space ${spaceKey}` : ''}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No pages found with label "${label}"${spaceKey ? ` in space ${spaceKey}` : ''}**`,
+          },
+        ],
       };
     }
-    
-    const pagesList = pagesResult.results.map((page: any) => 
-      `• **${page.title}** (${page.space.name})\n` +
-      `  Version: ${page.version.number} - ${new Date(page.version.when).toLocaleDateString()}\n` +
-      `  URL: ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`
-    ).join('\n\n');
-    
+
+    const pagesList = pagesResult.results
+      .map(
+        (page: any) =>
+          `• **${page.title}** (${page.space.name})\n` +
+          `  Version: ${page.version.number} - ${new Date(page.version.when).toLocaleDateString()}\n` +
+          `  URL: ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`
+      )
+      .join('\n\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Pages with Label "${label}"**\n\n` +
-              `**Found:** ${pagesResult.totalSize} pages (showing ${pagesResult.results.length})\n\n` +
-              `${pagesList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Pages with Label "${label}"**\n\n` +
+            `**Found:** ${pagesResult.totalSize} pages (showing ${pagesResult.results.length})\n\n` +
+            `${pagesList}`,
+        },
+      ],
     };
   }
 
   private async getPageChildren(args: any) {
     const { pageId, expand = ['version', 'space'], limit = 50 } = args;
-    
+
     const childrenResult = await this.client.getPageChildren(pageId, { expand, limit });
-    
+
     if (childrenResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No child pages found for page ${pageId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No child pages found for page ${pageId}**`,
+          },
+        ],
       };
     }
-    
-    const childrenList = childrenResult.results.map((child: any) => 
-      `• **${child.title}**\n` +
-      `  Version: ${child.version.number}\n` +
-      `  URL: ${this.config.url}/wiki/spaces/${child.space.key}/pages/${child.id}`
-    ).join('\n\n');
-    
+
+    const childrenList = childrenResult.results
+      .map(
+        (child: any) =>
+          `• **${child.title}**\n` +
+          `  Version: ${child.version.number}\n` +
+          `  URL: ${this.config.url}/wiki/spaces/${child.space.key}/pages/${child.id}`
+      )
+      .join('\n\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Child Pages of ${pageId}**\n\n` +
-              `**Total:** ${childrenResult.size} pages\n\n` +
-              `${childrenList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Child Pages of ${pageId}**\n\n` +
+            `**Total:** ${childrenResult.size} pages\n\n` +
+            `${childrenList}`,
+        },
+      ],
     };
   }
 
   private async getComments(args: any) {
     const { pageId, location, expand = ['body.view', 'history.lastUpdated'], limit = 50 } = args;
-    
+
     const commentsResult = await this.client.getComments(pageId, { location, expand, limit });
-    
+
     if (commentsResult.results.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No comments found for page ${pageId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No comments found for page ${pageId}**`,
+          },
+        ],
       };
     }
-    
-    const commentsList = commentsResult.results.map((comment: any) => 
-      `• **${comment.history.createdBy.displayName}** - ${new Date(comment.history.createdDate).toLocaleDateString()}\n` +
-      `  ${this.formatContent(comment.body?.view?.value || comment.body?.storage?.value || 'No content')}`
-    ).join('\n\n');
-    
+
+    const commentsList = commentsResult.results
+      .map(
+        (comment: any) =>
+          `• **${comment.history.createdBy.displayName}** - ${new Date(comment.history.createdDate).toLocaleDateString()}\n` +
+          `  ${this.formatContent(comment.body?.view?.value || comment.body?.storage?.value || 'No content')}`
+      )
+      .join('\n\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Comments for Page ${pageId}**\n\n` +
-              `**Total:** ${commentsResult.size} comments\n\n` +
-              `${commentsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Comments for Page ${pageId}**\n\n` +
+            `**Total:** ${commentsResult.size} comments\n\n` +
+            `${commentsList}`,
+        },
+      ],
     };
   }
 
   private async deletePage(args: any) {
     const { pageId, permanent = false } = args;
-    
+
     await this.client.deleteContent(pageId, permanent ? 'deleted' : 'trashed');
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Confluence Page ${permanent ? 'Deleted' : 'Moved to Trash'} Successfully**\n\n` +
-              `**Page ID:** ${pageId}\n` +
-              `**Action:** ${permanent ? 'Permanent deletion' : 'Moved to trash'}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Confluence Page ${permanent ? 'Deleted' : 'Moved to Trash'} Successfully**\n\n` +
+            `**Page ID:** ${pageId}\n` +
+            `**Action:** ${permanent ? 'Permanent deletion' : 'Moved to trash'}`,
+        },
+      ],
     };
   }
 
   private async getPageHistory(args: any) {
-    const { pageId, expand = ['lastUpdated', 'previousVersion', 'contributors'], limit = 25 } = args;
-    
+    const {
+      pageId,
+      expand = ['lastUpdated', 'previousVersion', 'contributors'],
+      limit = 25,
+    } = args;
+
     const historyResult = await this.client.getContentHistory(pageId, { expand, limit });
-    
+
     if (!historyResult.lastUpdated && !historyResult.previousVersion) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No version history available for page ${pageId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No version history available for page ${pageId}**`,
+          },
+        ],
       };
     }
-    
+
     let historyText = `**Version History for Page ${pageId}**\n\n`;
-    
+
     if (historyResult.lastUpdated) {
       const lastUpdate = historyResult.lastUpdated;
-      historyText += `**Last Updated:**\n` +
-                     `• **When:** ${new Date(lastUpdate.when).toLocaleString()}\n` +
-                     `• **By:** ${lastUpdate.by.displayName}\n` +
-                     `• **Message:** ${lastUpdate.message || 'No message'}\n\n`;
+      historyText +=
+        `**Last Updated:**\n` +
+        `• **When:** ${new Date(lastUpdate.when).toLocaleString()}\n` +
+        `• **By:** ${lastUpdate.by.displayName}\n` +
+        `• **Message:** ${lastUpdate.message || 'No message'}\n\n`;
     }
-    
+
     if (historyResult.previousVersion) {
       const prevVersion = historyResult.previousVersion;
-      historyText += `**Previous Version:**\n` +
-                     `• **Version:** ${prevVersion.number}\n` +
-                     `• **When:** ${new Date(prevVersion.when).toLocaleString()}\n` +
-                     `• **By:** ${prevVersion.by.displayName}\n\n`;
+      historyText +=
+        `**Previous Version:**\n` +
+        `• **Version:** ${prevVersion.number}\n` +
+        `• **When:** ${new Date(prevVersion.when).toLocaleString()}\n` +
+        `• **By:** ${prevVersion.by.displayName}\n\n`;
     }
-    
-    if (historyResult.contributors && historyResult.contributors.publishers) {
+
+    if (historyResult.contributors?.publishers) {
       const contributors = historyResult.contributors.publishers.users;
       if (contributors.length > 0) {
         historyText += `**Contributors:**\n`;
@@ -1143,12 +1249,14 @@ export class ConfluenceToolsManager {
         });
       }
     }
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: historyText
-      }],
+      content: [
+        {
+          type: 'text',
+          text: historyText,
+        },
+      ],
     };
   }
 
@@ -1157,14 +1265,14 @@ export class ConfluenceToolsManager {
   private formatContent(content: string): string {
     // Basic formatting for storage format content
     if (!content) return '';
-    
+
     // Remove common Confluence storage format tags for better readability
     return content
       .replace(/<[^>]*>/g, '') // Remove HTML tags
       .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-      .replace(/&amp;/g, '&')  // Replace escaped ampersands
-      .replace(/&lt;/g, '<')   // Replace escaped less-than
-      .replace(/&gt;/g, '>')   // Replace escaped greater-than
+      .replace(/&amp;/g, '&') // Replace escaped ampersands
+      .replace(/&lt;/g, '<') // Replace escaped less-than
+      .replace(/&gt;/g, '>') // Replace escaped greater-than
       .trim();
   }
 
@@ -1173,7 +1281,7 @@ export class ConfluenceToolsManager {
     if (body.includes('<') && body.includes('>')) {
       return body;
     }
-    
+
     // Convert plain text to basic storage format
     return `<p>${body.replace(/\n/g, '</p><p>')}</p>`;
   }

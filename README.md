@@ -411,7 +411,6 @@ npm run typecheck
 | `npm run build:clean` | Clean build (remove dist first) |
 | `npm run lint` | Run ESLint |
 | `npm run lint:fix` | Run ESLint with auto-fix |
-| `npm run format` | Format code with Prettier |
 | `npm run test` | Run test suite |
 | `npm run test:coverage` | Run tests with coverage |
 | `npm run typecheck` | TypeScript type checking |

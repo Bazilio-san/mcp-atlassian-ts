@@ -4,8 +4,10 @@
 
 import { config } from 'dotenv';
 import { z } from 'zod';
-import type { AtlassianConfig, ServerConfig, AuthConfig } from '../../types/index.js';
+
 import { createLogger } from '../utils/logger.js';
+
+import type { AtlassianConfig, ServerConfig, AuthConfig } from '../../types/index.js';
 
 const logger = createLogger('config');
 
@@ -52,14 +54,18 @@ const AtlassianConfigSchema = z.object({
   url: z.string().url(),
   email: z.string().email().optional(),
   auth: AuthSchema,
-  jira: z.object({
-    maxResults: z.number().int().positive().default(50),
-    defaultProject: z.string().optional(),
-  }).optional(),
-  confluence: z.object({
-    maxResults: z.number().int().positive().default(50),
-    defaultSpace: z.string().optional(),
-  }).optional(),
+  jira: z
+    .object({
+      maxResults: z.number().int().positive().default(50),
+      defaultProject: z.string().optional(),
+    })
+    .optional(),
+  confluence: z
+    .object({
+      maxResults: z.number().int().positive().default(50),
+      defaultSpace: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -101,14 +107,14 @@ export function loadAtlassianConfig(): AtlassianConfig {
 
     // Determine authentication method
     let auth: AuthConfig;
-    
+
     if (process.env.ATLASSIAN_OAUTH_ACCESS_TOKEN) {
       // OAuth 2.0
       auth = {
         type: 'oauth2',
         clientId: process.env.ATLASSIAN_OAUTH_CLIENT_ID!,
         clientSecret: process.env.ATLASSIAN_OAUTH_CLIENT_SECRET!,
-        accessToken: process.env.ATLASSIAN_OAUTH_ACCESS_TOKEN!,
+        accessToken: process.env.ATLASSIAN_OAUTH_ACCESS_TOKEN,
         refreshToken: process.env.ATLASSIAN_OAUTH_REFRESH_TOKEN,
         redirectUri: process.env.ATLASSIAN_OAUTH_REDIRECT_URI,
       };
@@ -126,7 +132,9 @@ export function loadAtlassianConfig(): AtlassianConfig {
         token: process.env.ATLASSIAN_API_TOKEN,
       };
     } else {
-      throw new Error('No valid authentication method found. Please set either ATLASSIAN_PAT, or ATLASSIAN_EMAIL + ATLASSIAN_API_TOKEN, or OAuth credentials.');
+      throw new Error(
+        'No valid authentication method found. Please set either ATLASSIAN_PAT, or ATLASSIAN_EMAIL + ATLASSIAN_API_TOKEN, or OAuth credentials.'
+      );
     }
 
     const config = {
@@ -155,11 +163,11 @@ export function loadAtlassianConfig(): AtlassianConfig {
  */
 export function getEnabledTools(): string[] {
   const enabledTools = process.env.ENABLED_TOOLS?.trim();
-  
+
   if (!enabledTools) {
     return []; // Return empty array to enable all tools
   }
-  
+
   return enabledTools
     .split(',')
     .map(tool => tool.trim())
@@ -171,12 +179,12 @@ export function getEnabledTools(): string[] {
  */
 export function isToolEnabled(toolName: string): boolean {
   const enabledTools = getEnabledTools();
-  
+
   // If no tools are specified, all are enabled
   if (enabledTools.length === 0) {
     return true;
   }
-  
+
   return enabledTools.includes(toolName);
 }
 
@@ -196,26 +204,26 @@ export function getSslConfig() {
 export function validateEnvironment(): void {
   const requiredVars = ['ATLASSIAN_URL'];
   const missingVars: string[] = [];
-  
+
   for (const varName of requiredVars) {
     if (!process.env[varName]) {
       missingVars.push(varName);
     }
   }
-  
+
   if (missingVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
-  
+
   // Validate auth configuration
   const hasBasicAuth = process.env.ATLASSIAN_EMAIL && process.env.ATLASSIAN_API_TOKEN;
   const hasPat = process.env.ATLASSIAN_PAT;
   const hasOAuth = process.env.ATLASSIAN_OAUTH_ACCESS_TOKEN;
-  
+
   if (!hasBasicAuth && !hasPat && !hasOAuth) {
     throw new Error('No valid authentication method configured');
   }
-  
+
   logger.info('Environment validation passed');
 }
 

@@ -142,7 +142,14 @@ export interface ConfluenceUser {
 
 export interface ConfluenceContentBody {
   value: string;
-  representation: 'storage' | 'view' | 'export_view' | 'styled_view' | 'editor2' | 'anonymous_export_view' | 'atlas_doc_format';
+  representation:
+    | 'storage'
+    | 'view'
+    | 'export_view'
+    | 'styled_view'
+    | 'editor2'
+    | 'anonymous_export_view'
+    | 'atlas_doc_format';
   embeddedContent?: ConfluenceEmbeddedContent[];
 }
 

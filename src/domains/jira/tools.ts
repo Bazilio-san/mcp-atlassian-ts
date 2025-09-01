@@ -2,11 +2,13 @@
  * JIRA MCP tools implementation
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { AtlassianConfig } from '../../types/index.js';
-import { JiraClient } from './client.js';
-import { createLogger } from '../../core/utils/logger.js';
 import { withErrorHandling, ValidationError, ToolExecutionError } from '../../core/errors/index.js';
+import { createLogger } from '../../core/utils/logger.js';
+
+import { JiraClient } from './client.js';
+
+import type { AtlassianConfig } from '../../types/index.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('jira-tools');
 
@@ -978,32 +980,38 @@ export class JiraToolsManager {
 
   private async getIssue(args: any) {
     const { issueKey, expand = [], fields } = args;
-    
+
     const issue = await this.client.getIssue(issueKey, { expand, fields });
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Issue: ${issue.key}**\n\n` +
-              `**Summary:** ${issue.fields.summary}\n` +
-              `**Status:** ${issue.fields.status.name}\n` +
-              `**Assignee:** ${issue.fields.assignee?.displayName || 'Unassigned'}\n` +
-              `**Reporter:** ${issue.fields.reporter.displayName}\n` +
-              `**Created:** ${new Date(issue.fields.created).toLocaleString()}\n` +
-              `**Updated:** ${new Date(issue.fields.updated).toLocaleString()}\n` +
-              `**Priority:** ${issue.fields.priority?.name || 'None'}\n` +
-              `**Issue Type:** ${issue.fields.issuetype.name}\n` +
-              `**Project:** ${issue.fields.project.name} (${issue.fields.project.key})\n` +
-              (issue.fields.labels?.length ? `**Labels:** ${issue.fields.labels.join(', ')}\n` : '') +
-              (issue.fields.description ? `\n**Description:**\n${this.formatDescription(issue.fields.description)}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/browse/${issue.key}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Issue: ${issue.key}**\n\n` +
+            `**Summary:** ${issue.fields.summary}\n` +
+            `**Status:** ${issue.fields.status.name}\n` +
+            `**Assignee:** ${issue.fields.assignee?.displayName || 'Unassigned'}\n` +
+            `**Reporter:** ${issue.fields.reporter.displayName}\n` +
+            `**Created:** ${new Date(issue.fields.created).toLocaleString()}\n` +
+            `**Updated:** ${new Date(issue.fields.updated).toLocaleString()}\n` +
+            `**Priority:** ${issue.fields.priority?.name || 'None'}\n` +
+            `**Issue Type:** ${issue.fields.issuetype.name}\n` +
+            `**Project:** ${issue.fields.project.name} (${issue.fields.project.key})\n${
+              issue.fields.labels?.length ? `**Labels:** ${issue.fields.labels.join(', ')}\n` : ''
+            }${
+              issue.fields.description
+                ? `\n**Description:**\n${this.formatDescription(issue.fields.description)}\n`
+                : ''
+            }\n**Direct Link:** ${this.config.url}/browse/${issue.key}`,
+        },
+      ],
     };
   }
 
   private async searchIssues(args: any) {
     const { jql, startAt = 0, maxResults = 50, fields, expand = [] } = args;
-    
+
     const searchResult = await this.client.searchIssues({
       jql,
       startAt,
@@ -1011,45 +1019,50 @@ export class JiraToolsManager {
       fields,
       expand,
     });
-    
+
     if (searchResult.issues.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `No issues found for JQL: ${jql}`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `No issues found for JQL: ${jql}`,
+          },
+        ],
       };
     }
-    
-    const issuesList = searchResult.issues.map(issue => 
-      `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`
-    ).join('\n');
-    
+
+    const issuesList = searchResult.issues
+      .map(issue => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Search Results**\n\n` +
-              `**JQL:** ${jql}\n` +
-              `**Found:** ${searchResult.total} issues (showing ${searchResult.issues.length})\n\n` +
-              `${issuesList}\n\n` +
-              `**Search URL:** ${this.config.url}/issues/?jql=${encodeURIComponent(jql)}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Search Results**\n\n` +
+            `**JQL:** ${jql}\n` +
+            `**Found:** ${searchResult.total} issues (showing ${searchResult.issues.length})\n\n` +
+            `${issuesList}\n\n` +
+            `**Search URL:** ${this.config.url}/issues/?jql=${encodeURIComponent(jql)}`,
+        },
+      ],
     };
   }
 
   private async createIssue(args: any) {
-    const { 
-      project, 
-      issueType, 
-      summary, 
-      description, 
-      assignee, 
-      priority, 
-      labels = [], 
+    const {
+      project,
+      issueType,
+      summary,
+      description,
+      assignee,
+      priority,
+      labels = [],
       components = [],
-      customFields = {}
+      customFields = {},
     } = args;
-    
+
     // Build the issue input
     const issueInput: any = {
       fields: {
@@ -1059,150 +1072,163 @@ export class JiraToolsManager {
         ...customFields,
       },
     };
-    
+
     if (description) issueInput.fields.description = description;
     if (assignee) issueInput.fields.assignee = { accountId: assignee };
     if (priority) issueInput.fields.priority = { name: priority };
     if (labels.length > 0) issueInput.fields.labels = labels;
-    if (components.length > 0) issueInput.fields.components = components.map((c: string) => ({ name: c }));
-    
+    if (components.length > 0)
+      issueInput.fields.components = components.map((c: string) => ({ name: c }));
+
     const createdIssue = await this.client.createIssue(issueInput);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Issue Created Successfully**\n\n` +
-              `**Key:** ${createdIssue.key}\n` +
-              `**Summary:** ${summary}\n` +
-              `**Project:** ${project}\n` +
-              `**Issue Type:** ${issueType}\n` +
-              `\n**Direct Link:** ${this.config.url}/browse/${createdIssue.key}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Issue Created Successfully**\n\n` +
+            `**Key:** ${createdIssue.key}\n` +
+            `**Summary:** ${summary}\n` +
+            `**Project:** ${project}\n` +
+            `**Issue Type:** ${issueType}\n` +
+            `\n**Direct Link:** ${this.config.url}/browse/${createdIssue.key}`,
+        },
+      ],
     };
   }
 
   private async updateIssue(args: any) {
-    const { 
-      issueKey, 
-      summary, 
-      description, 
-      assignee, 
-      priority, 
-      labels,
-      customFields = {}
-    } = args;
-    
+    const { issueKey, summary, description, assignee, priority, labels, customFields = {} } = args;
+
     const updateData: any = { fields: { ...customFields } };
-    
+
     if (summary) updateData.fields.summary = summary;
     if (description) updateData.fields.description = description;
     if (assignee) updateData.fields.assignee = { accountId: assignee };
     if (priority) updateData.fields.priority = { name: priority };
     if (labels) updateData.fields.labels = labels;
-    
+
     await this.client.updateIssue(issueKey, updateData);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Issue Updated Successfully**\n\n` +
-              `**Key:** ${issueKey}\n` +
-              `Updated fields: ${Object.keys(updateData.fields).join(', ')}\n` +
-              `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Issue Updated Successfully**\n\n` +
+            `**Key:** ${issueKey}\n` +
+            `Updated fields: ${Object.keys(updateData.fields).join(', ')}\n` +
+            `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`,
+        },
+      ],
     };
   }
 
   private async addComment(args: any) {
     const { issueKey, body, visibility } = args;
-    
+
     const commentInput: any = { body };
     if (visibility) commentInput.visibility = visibility;
-    
+
     const comment = await this.client.addComment(issueKey, commentInput);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Comment Added Successfully**\n\n` +
-              `**Issue:** ${issueKey}\n` +
-              `**Author:** ${comment.author.displayName}\n` +
-              `**Created:** ${new Date(comment.created).toLocaleString()}\n` +
-              `**Comment:** ${body}\n` +
-              `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Comment Added Successfully**\n\n` +
+            `**Issue:** ${issueKey}\n` +
+            `**Author:** ${comment.author.displayName}\n` +
+            `**Created:** ${new Date(comment.created).toLocaleString()}\n` +
+            `**Comment:** ${body}\n` +
+            `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`,
+        },
+      ],
     };
   }
 
   private async getTransitions(args: any) {
     const { issueKey } = args;
-    
+
     const transitions = await this.client.getTransitions(issueKey);
-    
+
     if (transitions.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No transitions available for issue ${issueKey}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No transitions available for issue ${issueKey}**`,
+          },
+        ],
       };
     }
-    
-    const transitionsList = transitions.map(t => 
-      `• **${t.name}** (ID: ${t.id}) → ${t.to.name}`
-    ).join('\n');
-    
+
+    const transitionsList = transitions
+      .map(t => `• **${t.name}** (ID: ${t.id}) → ${t.to.name}`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Available Transitions for ${issueKey}**\n\n${transitionsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text: `**Available Transitions for ${issueKey}**\n\n${transitionsList}`,
+        },
+      ],
     };
   }
 
   private async transitionIssue(args: any) {
     const { issueKey, transitionId, comment, fields = {} } = args;
-    
+
     const transitionData: any = { id: transitionId, fields };
     if (comment) transitionData.comment = { body: comment };
-    
+
     await this.client.transitionIssue(issueKey, transitionData);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Issue Transitioned Successfully**\n\n` +
-              `**Issue:** ${issueKey}\n` +
-              `**Transition ID:** ${transitionId}\n` +
-              (comment ? `**Comment:** ${comment}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Issue Transitioned Successfully**\n\n` +
+            `**Issue:** ${issueKey}\n` +
+            `**Transition ID:** ${transitionId}\n${
+              comment ? `**Comment:** ${comment}\n` : ''
+            }\n**Direct Link:** ${this.config.url}/browse/${issueKey}`,
+        },
+      ],
     };
   }
 
   private async getProjects(args: any) {
     const { expand = [], recent } = args;
-    
+
     const projects = await this.client.getProjects({ expand, recent });
-    
+
     if (projects.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No JIRA projects found**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No JIRA projects found**`,
+          },
+        ],
       };
     }
-    
-    const projectsList = projects.map(p => 
-      `• **${p.name}** (${p.key}) - ${p.projectTypeKey}`
-    ).join('\n');
-    
+
+    const projectsList = projects
+      .map(p => `• **${p.name}** (${p.key}) - ${p.projectTypeKey}`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Projects (${projects.length} found)**\n\n${projectsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text: `**JIRA Projects (${projects.length} found)**\n\n${projectsList}`,
+        },
+      ],
     };
   }
 
@@ -1210,41 +1236,48 @@ export class JiraToolsManager {
 
   private async getUserProfile(args: any) {
     const { userIdOrEmail } = args;
-    
+
     const user = await this.client.getUserProfile(userIdOrEmail);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA User Profile**\n\n` +
-              `**Display Name:** ${user.displayName}\n` +
-              `**Account ID:** ${user.accountId}\n` +
-              `**Email:** ${user.emailAddress || 'Not available'}\n` +
-              `**Active:** ${user.active ? 'Yes' : 'No'}\n` +
-              `**Time Zone:** ${user.timeZone || 'Not set'}\n` +
-              (user.avatarUrls ? `**Avatar:** ${user.avatarUrls['48x48']}\n` : '')
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA User Profile**\n\n` +
+            `**Display Name:** ${user.displayName}\n` +
+            `**Account ID:** ${user.accountId}\n` +
+            `**Email:** ${user.emailAddress || 'Not available'}\n` +
+            `**Active:** ${user.active ? 'Yes' : 'No'}\n` +
+            `**Time Zone:** ${user.timeZone || 'Not set'}\n${
+              user.avatarUrls ? `**Avatar:** ${user.avatarUrls['48x48']}\n` : ''
+            }`,
+        },
+      ],
     };
   }
 
   private async deleteIssue(args: any) {
     const { issueKey, deleteSubtasks = false } = args;
-    
+
     await this.client.deleteIssue(issueKey, deleteSubtasks);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Issue Deleted Successfully**\n\n` +
-              `**Key:** ${issueKey}\n` +
-              `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Issue Deleted Successfully**\n\n` +
+            `**Key:** ${issueKey}\n` +
+            `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`,
+        },
+      ],
     };
   }
 
   private async batchCreateIssues(args: any) {
     const { issues } = args;
-    
+
     // Convert to the format expected by the client
     const issueInputs = issues.map((issue: any) => ({
       fields: {
@@ -1259,445 +1292,526 @@ export class JiraToolsManager {
         ...issue.customFields,
       },
     }));
-    
+
     const result = await this.client.batchCreateIssues(issueInputs);
-    
+
     const successCount = result.issues?.length || 0;
     const errorCount = result.errors?.length || 0;
-    
-    let resultText = `**Batch Issue Creation Results**\n\n` +
-                     `**Total Issues:** ${issues.length}\n` +
-                     `**Successfully Created:** ${successCount}\n` +
-                     `**Errors:** ${errorCount}\n\n`;
-    
+
+    let resultText =
+      `**Batch Issue Creation Results**\n\n` +
+      `**Total Issues:** ${issues.length}\n` +
+      `**Successfully Created:** ${successCount}\n` +
+      `**Errors:** ${errorCount}\n\n`;
+
     if (result.issues?.length > 0) {
       resultText += `**Created Issues:**\n`;
       result.issues.forEach((issue: any) => {
         resultText += `• **${issue.key}**: ${issue.summary || 'No summary'}\n`;
       });
     }
-    
+
     if (result.errors?.length > 0) {
       resultText += `\n**Errors:**\n`;
       result.errors.forEach((error: any, index: number) => {
         resultText += `• Issue ${index + 1}: ${error.elementErrors?.errorMessages?.[0] || error.status}\n`;
       });
     }
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: resultText
-      }],
+      content: [
+        {
+          type: 'text',
+          text: resultText,
+        },
+      ],
     };
   }
 
   private async searchFields(args: any) {
     const { query } = args;
-    
+
     const fields = await this.client.searchFields(query);
-    
+
     if (fields.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: query ? `No fields found matching "${query}"` : 'No fields found'
-        }],
+        content: [
+          {
+            type: 'text',
+            text: query ? `No fields found matching "${query}"` : 'No fields found',
+          },
+        ],
       };
     }
-    
-    const fieldsList = fields.map(field => 
-      `• **${field.name}** (${field.key}) - ${field.schema?.type || 'unknown type'}`
-    ).join('\n');
-    
+
+    const fieldsList = fields
+      .map(field => `• **${field.name}** (${field.key}) - ${field.schema?.type || 'unknown type'}`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**JIRA Fields ${query ? `matching "${query}"` : ''}**\n\n` +
-              `**Found:** ${fields.length} fields\n\n${fieldsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Fields ${query ? `matching "${query}"` : ''}**\n\n` +
+            `**Found:** ${fields.length} fields\n\n${fieldsList}`,
+        },
+      ],
     };
   }
 
   private async getProjectVersions(args: any) {
     const { projectKey } = args;
-    
+
     const versions = await this.client.getProjectVersions(projectKey);
-    
+
     if (versions.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No versions found for project ${projectKey}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No versions found for project ${projectKey}**`,
+          },
+        ],
       };
     }
-    
-    const versionsList = versions.map(v => 
-      `• **${v.name}** ${v.released ? '(Released)' : '(Unreleased)'} ${v.archived ? '[Archived]' : ''}`
-    ).join('\n');
-    
+
+    const versionsList = versions
+      .map(
+        v =>
+          `• **${v.name}** ${v.released ? '(Released)' : '(Unreleased)'} ${v.archived ? '[Archived]' : ''}`
+      )
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Project Versions for ${projectKey}**\n\n${versionsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text: `**Project Versions for ${projectKey}**\n\n${versionsList}`,
+        },
+      ],
     };
   }
 
   private async createVersion(args: any) {
     const versionData = args;
-    
+
     const version = await this.client.createVersion(versionData);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Version Created Successfully**\n\n` +
-              `**Name:** ${version.name}\n` +
-              `**ID:** ${version.id}\n` +
-              `**Project:** ${versionData.projectId}\n` +
-              (versionData.description ? `**Description:** ${versionData.description}\n` : '') +
-              (versionData.releaseDate ? `**Release Date:** ${versionData.releaseDate}\n` : '')
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Version Created Successfully**\n\n` +
+            `**Name:** ${version.name}\n` +
+            `**ID:** ${version.id}\n` +
+            `**Project:** ${versionData.projectId}\n${
+              versionData.description ? `**Description:** ${versionData.description}\n` : ''
+            }${versionData.releaseDate ? `**Release Date:** ${versionData.releaseDate}\n` : ''}`,
+        },
+      ],
     };
   }
 
   private async batchCreateVersions(args: any) {
     const { versions } = args;
-    
+
     const results = await this.client.batchCreateVersions(versions);
-    
+
     const successResults = results.filter(r => !r.error);
     const errorResults = results.filter(r => r.error);
-    
-    let resultText = `**Batch Version Creation Results**\n\n` +
-                     `**Total Versions:** ${versions.length}\n` +
-                     `**Successfully Created:** ${successResults.length}\n` +
-                     `**Errors:** ${errorResults.length}\n\n`;
-    
+
+    let resultText =
+      `**Batch Version Creation Results**\n\n` +
+      `**Total Versions:** ${versions.length}\n` +
+      `**Successfully Created:** ${successResults.length}\n` +
+      `**Errors:** ${errorResults.length}\n\n`;
+
     if (successResults.length > 0) {
       resultText += `**Created Versions:**\n`;
       successResults.forEach(version => {
         resultText += `• **${version.name}** (ID: ${version.id})\n`;
       });
     }
-    
+
     if (errorResults.length > 0) {
       resultText += `\n**Errors:**\n`;
       errorResults.forEach(error => {
         resultText += `• **${error.version}**: ${error.error}\n`;
       });
     }
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: resultText
-      }],
+      content: [
+        {
+          type: 'text',
+          text: resultText,
+        },
+      ],
     };
   }
 
   private async getLinkTypes(args: any) {
     const linkTypes = await this.client.getLinkTypes();
-    
+
     if (linkTypes.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No issue link types found**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No issue link types found**`,
+          },
+        ],
       };
     }
-    
-    const linkTypesList = linkTypes.map(lt => 
-      `• **${lt.name}**: ${lt.inward} ↔ ${lt.outward}`
-    ).join('\n');
-    
+
+    const linkTypesList = linkTypes
+      .map(lt => `• **${lt.name}**: ${lt.inward} ↔ ${lt.outward}`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Available Issue Link Types**\n\n${linkTypesList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text: `**Available Issue Link Types**\n\n${linkTypesList}`,
+        },
+      ],
     };
   }
 
   private async createIssueLink(args: any) {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
-    
+
     const linkData = {
       type: { name: linkType },
       inwardIssue: { key: inwardIssue },
       outwardIssue: { key: outwardIssue },
       comment: comment ? { body: comment } : undefined,
     };
-    
+
     await this.client.createIssueLink(linkData);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Issue Link Created Successfully**\n\n` +
-              `**Link Type:** ${linkType}\n` +
-              `**From:** ${inwardIssue}\n` +
-              `**To:** ${outwardIssue}\n` +
-              (comment ? `**Comment:** ${comment}\n` : '')
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Issue Link Created Successfully**\n\n` +
+            `**Link Type:** ${linkType}\n` +
+            `**From:** ${inwardIssue}\n` +
+            `**To:** ${outwardIssue}\n${comment ? `**Comment:** ${comment}\n` : ''}`,
+        },
+      ],
     };
   }
 
   private async createRemoteIssueLink(args: any) {
     const { issueKey, url, title, summary, iconUrl } = args;
-    
+
     const linkData: any = { url, title };
     if (summary) linkData.summary = summary;
     if (iconUrl) linkData.icon = { url16x16: iconUrl, title };
-    
+
     const link = await this.client.createRemoteIssueLink(issueKey, linkData);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Remote Issue Link Created Successfully**\n\n` +
-              `**Issue:** ${issueKey}\n` +
-              `**Link Title:** ${title}\n` +
-              `**URL:** ${url}\n` +
-              `**Link ID:** ${link.id}\n` +
-              `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Remote Issue Link Created Successfully**\n\n` +
+            `**Issue:** ${issueKey}\n` +
+            `**Link Title:** ${title}\n` +
+            `**URL:** ${url}\n` +
+            `**Link ID:** ${link.id}\n` +
+            `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`,
+        },
+      ],
     };
   }
 
   private async removeIssueLink(args: any) {
     const { linkId } = args;
-    
+
     await this.client.removeIssueLink(linkId);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Issue Link Removed Successfully**\n\n**Link ID:** ${linkId}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text: `**Issue Link Removed Successfully**\n\n**Link ID:** ${linkId}`,
+        },
+      ],
     };
   }
 
   private async linkToEpic(args: any) {
     const { issueKey, epicKey } = args;
-    
+
     await this.client.linkToEpic(issueKey, epicKey);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Issue Linked to Epic Successfully**\n\n` +
-              `**Issue:** ${issueKey}\n` +
-              `**Epic:** ${epicKey}\n` +
-              `\n**Direct Links:**\n` +
-              `• Issue: ${this.config.url}/browse/${issueKey}\n` +
-              `• Epic: ${this.config.url}/browse/${epicKey}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Issue Linked to Epic Successfully**\n\n` +
+            `**Issue:** ${issueKey}\n` +
+            `**Epic:** ${epicKey}\n` +
+            `\n**Direct Links:**\n` +
+            `• Issue: ${this.config.url}/browse/${issueKey}\n` +
+            `• Epic: ${this.config.url}/browse/${epicKey}`,
+        },
+      ],
     };
   }
 
   private async getWorklog(args: any) {
     const { issueKey, startAt = 0, maxResults = 50 } = args;
-    
+
     const worklogResult = await this.client.getWorklogs(issueKey, { startAt, maxResults });
-    
+
     if (worklogResult.worklogs.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No worklog entries found for ${issueKey}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No worklog entries found for ${issueKey}**`,
+          },
+        ],
       };
     }
-    
-    const worklogList = worklogResult.worklogs.map(w => 
-      `• **${w.author.displayName}**: ${w.timeSpent} on ${new Date(w.started).toLocaleDateString()}\n` +
-      (w.comment ? `  Comment: ${w.comment}\n` : '')
-    ).join('\n');
-    
+
+    const worklogList = worklogResult.worklogs
+      .map(
+        w =>
+          `• **${w.author.displayName}**: ${w.timeSpent} on ${new Date(w.started).toLocaleDateString()}\n${
+            w.comment ? `  Comment: ${w.comment}\n` : ''
+          }`
+      )
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Worklog Entries for ${issueKey}**\n\n` +
-              `**Total:** ${worklogResult.total} entries (showing ${worklogResult.worklogs.length})\n\n` +
-              `${worklogList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Worklog Entries for ${issueKey}**\n\n` +
+            `**Total:** ${worklogResult.total} entries (showing ${worklogResult.worklogs.length})\n\n` +
+            `${worklogList}`,
+        },
+      ],
     };
   }
 
   private async addWorklog(args: any) {
     const { issueKey, timeSpent, comment, started, visibility } = args;
-    
+
     const worklogInput: any = { timeSpent };
     if (comment) worklogInput.comment = comment;
     if (started) worklogInput.started = started;
     if (visibility) worklogInput.visibility = visibility;
-    
+
     const worklog = await this.client.addWorklog(issueKey, worklogInput);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Worklog Added Successfully**\n\n` +
-              `**Issue:** ${issueKey}\n` +
-              `**Time Spent:** ${timeSpent}\n` +
-              `**Author:** ${worklog.author.displayName}\n` +
-              `**Started:** ${new Date(worklog.started).toLocaleString()}\n` +
-              (comment ? `**Comment:** ${comment}\n` : '') +
-              `\n**Direct Link:** ${this.config.url}/browse/${issueKey}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Worklog Added Successfully**\n\n` +
+            `**Issue:** ${issueKey}\n` +
+            `**Time Spent:** ${timeSpent}\n` +
+            `**Author:** ${worklog.author.displayName}\n` +
+            `**Started:** ${new Date(worklog.started).toLocaleString()}\n${
+              comment ? `**Comment:** ${comment}\n` : ''
+            }\n**Direct Link:** ${this.config.url}/browse/${issueKey}`,
+        },
+      ],
     };
   }
 
   private async downloadAttachments(args: any) {
     const { issueKey } = args;
-    
+
     const attachments = await this.client.getAttachments(issueKey);
-    
+
     if (attachments.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No attachments found for ${issueKey}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No attachments found for ${issueKey}**`,
+          },
+        ],
       };
     }
-    
-    const attachmentsList = attachments.map(a => 
-      `• **${a.filename}** (${Math.round(a.size / 1024)}KB) - ${new Date(a.created).toLocaleDateString()}\n` +
-      `  Download: ${a.content}\n` +
-      `  Author: ${a.author.displayName}`
-    ).join('\n\n');
-    
+
+    const attachmentsList = attachments
+      .map(
+        a =>
+          `• **${a.filename}** (${Math.round(a.size / 1024)}KB) - ${new Date(a.created).toLocaleDateString()}\n` +
+          `  Download: ${a.content}\n` +
+          `  Author: ${a.author.displayName}`
+      )
+      .join('\n\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Attachments for ${issueKey}**\n\n` +
-              `**Total:** ${attachments.length} files\n\n` +
-              `${attachmentsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Attachments for ${issueKey}**\n\n` +
+            `**Total:** ${attachments.length} files\n\n` +
+            `${attachmentsList}`,
+        },
+      ],
     };
   }
 
   private async getAgileBoards(args: any) {
     const options = args;
-    
+
     const boardsResult = await this.client.getAgileBoards(options);
-    
+
     if (boardsResult.values.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No agile boards found**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No agile boards found**`,
+          },
+        ],
       };
     }
-    
-    const boardsList = boardsResult.values.map(b => 
-      `• **${b.name}** (ID: ${b.id}) - ${b.type}`
-    ).join('\n');
-    
+
+    const boardsList = boardsResult.values
+      .map(b => `• **${b.name}** (ID: ${b.id}) - ${b.type}`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Agile Boards**\n\n` +
-              `**Total:** ${boardsResult.total} boards (showing ${boardsResult.values.length})\n\n` +
-              `${boardsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Agile Boards**\n\n` +
+            `**Total:** ${boardsResult.total} boards (showing ${boardsResult.values.length})\n\n` +
+            `${boardsList}`,
+        },
+      ],
     };
   }
 
   private async getBoardIssues(args: any) {
     const { boardId, ...options } = args;
-    
+
     const issuesResult = await this.client.getBoardIssues(boardId, options);
-    
+
     if (issuesResult.issues.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No issues found on board ${boardId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No issues found on board ${boardId}**`,
+          },
+        ],
       };
     }
-    
-    const issuesList = issuesResult.issues.map(issue => 
-      `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`
-    ).join('\n');
-    
+
+    const issuesList = issuesResult.issues
+      .map(issue => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Board Issues (Board ID: ${boardId})**\n\n` +
-              `**Total:** ${issuesResult.total} issues (showing ${issuesResult.issues.length})\n\n` +
-              `${issuesList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Board Issues (Board ID: ${boardId})**\n\n` +
+            `**Total:** ${issuesResult.total} issues (showing ${issuesResult.issues.length})\n\n` +
+            `${issuesList}`,
+        },
+      ],
     };
   }
 
   private async getSprintsFromBoard(args: any) {
     const { boardId, ...options } = args;
-    
+
     const sprintsResult = await this.client.getSprintsFromBoard(boardId, options);
-    
+
     if (sprintsResult.values.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No sprints found on board ${boardId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No sprints found on board ${boardId}**`,
+          },
+        ],
       };
     }
-    
-    const sprintsList = sprintsResult.values.map(s => 
-      `• **${s.name}** (ID: ${s.id}) - ${s.state}` + 
-      (s.startDate && s.endDate ? ` (${new Date(s.startDate).toLocaleDateString()} - ${new Date(s.endDate).toLocaleDateString()})` : '')
-    ).join('\n');
-    
+
+    const sprintsList = sprintsResult.values
+      .map(
+        s =>
+          `• **${s.name}** (ID: ${s.id}) - ${s.state}${
+            s.startDate && s.endDate
+              ? ` (${new Date(s.startDate).toLocaleDateString()} - ${new Date(s.endDate).toLocaleDateString()})`
+              : ''
+          }`
+      )
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Sprints on Board ${boardId}**\n\n` +
-              `**Total:** ${sprintsResult.total || sprintsResult.values.length} sprints\n\n` +
-              `${sprintsList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Sprints on Board ${boardId}**\n\n` +
+            `**Total:** ${sprintsResult.total || sprintsResult.values.length} sprints\n\n` +
+            `${sprintsList}`,
+        },
+      ],
     };
   }
 
   private async getSprintIssues(args: any) {
     const { sprintId, ...options } = args;
-    
+
     const issuesResult = await this.client.getSprintIssues(sprintId, options);
-    
+
     if (issuesResult.issues.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No issues found in sprint ${sprintId}**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No issues found in sprint ${sprintId}**`,
+          },
+        ],
       };
     }
-    
-    const issuesList = issuesResult.issues.map(issue => 
-      `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`
-    ).join('\n');
-    
+
+    const issuesList = issuesResult.issues
+      .map(issue => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
+      .join('\n');
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Sprint Issues (Sprint ID: ${sprintId})**\n\n` +
-              `**Total:** ${issuesResult.total} issues (showing ${issuesResult.issues.length})\n\n` +
-              `${issuesList}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Sprint Issues (Sprint ID: ${sprintId})**\n\n` +
+            `**Total:** ${issuesResult.total} issues (showing ${issuesResult.issues.length})\n\n` +
+            `${issuesList}`,
+        },
+      ],
     };
   }
 
   private async createSprint(args: any) {
     const { boardId, name, goal, startDate, endDate } = args;
-    
+
     const sprintData = {
       name,
       originBoardId: boardId,
@@ -1705,85 +1819,94 @@ export class JiraToolsManager {
       startDate,
       endDate,
     };
-    
+
     const sprint = await this.client.createSprint(sprintData);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Sprint Created Successfully**\n\n` +
-              `**Name:** ${sprint.name}\n` +
-              `**ID:** ${sprint.id}\n` +
-              `**Board ID:** ${boardId}\n` +
-              `**State:** ${sprint.state}\n` +
-              (goal ? `**Goal:** ${goal}\n` : '') +
-              (startDate ? `**Start Date:** ${startDate}\n` : '') +
-              (endDate ? `**End Date:** ${endDate}\n` : '')
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Sprint Created Successfully**\n\n` +
+            `**Name:** ${sprint.name}\n` +
+            `**ID:** ${sprint.id}\n` +
+            `**Board ID:** ${boardId}\n` +
+            `**State:** ${sprint.state}\n${goal ? `**Goal:** ${goal}\n` : ''}${
+              startDate ? `**Start Date:** ${startDate}\n` : ''
+            }${endDate ? `**End Date:** ${endDate}\n` : ''}`,
+        },
+      ],
     };
   }
 
   private async updateSprint(args: any) {
     const { sprintId, ...updateData } = args;
-    
+
     const sprint = await this.client.updateSprint(sprintId, updateData);
-    
+
     const updatedFields = Object.keys(updateData).filter(key => updateData[key] !== undefined);
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: `**Sprint Updated Successfully**\n\n` +
-              `**ID:** ${sprintId}\n` +
-              `**Updated Fields:** ${updatedFields.join(', ')}\n` +
-              `**Current State:** ${sprint.state}`
-      }],
+      content: [
+        {
+          type: 'text',
+          text:
+            `**Sprint Updated Successfully**\n\n` +
+            `**ID:** ${sprintId}\n` +
+            `**Updated Fields:** ${updatedFields.join(', ')}\n` +
+            `**Current State:** ${sprint.state}`,
+        },
+      ],
     };
   }
 
   private async batchGetChangelogs(args: any) {
     const { issueKeys } = args;
-    
+
     const changelogs = await this.client.batchGetChangelogs(issueKeys);
-    
+
     if (changelogs.values.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `**No changelogs found for the specified issues**`
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `**No changelogs found for the specified issues**`,
+          },
+        ],
       };
     }
-    
+
     let resultText = `**Changelogs for ${issueKeys.length} Issues**\n\n`;
-    
+
     changelogs.values.forEach((issueChangelog: any) => {
       const issueKey = issueChangelog.key;
       const histories = issueChangelog.changelog?.histories || [];
-      
+
       resultText += `**${issueKey}** (${histories.length} changes)\n`;
-      
+
       if (histories.length > 0) {
         const recentChanges = histories.slice(0, 3); // Show only recent changes
         recentChanges.forEach((history: any) => {
           const author = history.author?.displayName || 'Unknown';
           const date = new Date(history.created).toLocaleDateString();
           resultText += `  • ${date} by ${author}\n`;
-          
+
           history.items?.forEach((item: any) => {
             resultText += `    - ${item.field}: ${item.fromString || 'None'} → ${item.toString || 'None'}\n`;
           });
         });
       }
-      
+
       resultText += '\n';
     });
-    
+
     return {
-      content: [{
-        type: 'text',
-        text: resultText
-      }],
+      content: [
+        {
+          type: 'text',
+          text: resultText,
+        },
+      ],
     };
   }
 
@@ -1793,12 +1916,12 @@ export class JiraToolsManager {
     if (typeof description === 'string') {
       return description;
     }
-    
+
     // Handle ADF (Atlassian Document Format) or other structured content
     if (description && typeof description === 'object') {
       return JSON.stringify(description, null, 2);
     }
-    
+
     return String(description);
   }
 }

@@ -1,21 +1,17 @@
 #!/usr/bin/env node
 /**
  * MCP Atlassian TypeScript Server - Main Entry Point
- * 
+ *
  * A comprehensive TypeScript implementation of the MCP server for
  * Atlassian JIRA and Confluence with modern architecture and features.
  */
 
-import { createLogger } from './core/utils/logger.js';
-import { 
-  getServerConfig, 
-  getAtlassianConfig, 
-  validateEnvironment 
-} from './core/config/index.js';
-import { createMcpServer } from './core/server/index.js';
-import { initializeCache } from './core/cache/index.js';
 import { createAuthenticationManager, validateAuthConfig } from './core/auth/index.js';
+import { initializeCache } from './core/cache/index.js';
+import { getServerConfig, getAtlassianConfig, validateEnvironment } from './core/config/index.js';
 import { ServerError } from './core/errors/index.js';
+import { createMcpServer } from './core/server/index.js';
+import { createLogger } from './core/utils/logger.js';
 
 const logger = createLogger('main');
 
@@ -25,65 +21,64 @@ const logger = createLogger('main');
 async function main() {
   try {
     logger.info('Starting MCP Atlassian TypeScript Server v2.0.0');
-    
+
     // Validate environment configuration
     validateEnvironment();
-    
+
     // Load configuration
     const serverConfig = getServerConfig();
     const atlassianConfig = getAtlassianConfig();
-    
+
     logger.info('Configuration loaded', {
       environment: serverConfig.environment,
       transportType: serverConfig.transportType,
       atlassianUrl: atlassianConfig.url,
       authType: atlassianConfig.auth.type,
     });
-    
+
     // Validate authentication configuration
     validateAuthConfig(atlassianConfig.auth);
-    
+
     // Initialize cache
     initializeCache(serverConfig.cache);
-    logger.info('Cache initialized', { 
+    logger.info('Cache initialized', {
       ttlSeconds: serverConfig.cache.ttlSeconds,
       maxItems: serverConfig.cache.maxItems,
     });
-    
+
     // Test Atlassian connectivity
     const authManager = createAuthenticationManager(atlassianConfig.auth, atlassianConfig.url);
     const isConnected = await authManager.testAuthentication(atlassianConfig.url);
-    
+
     if (!isConnected) {
       throw new ServerError('Failed to authenticate with Atlassian services');
     }
-    
+
     logger.info('Atlassian authentication successful');
-    
+
     // Create and configure MCP server
     const mcpServer = createMcpServer(serverConfig, atlassianConfig);
-    
+
     // Start server based on transport type
     switch (serverConfig.transportType) {
       case 'stdio':
         logger.info('Starting server with STDIO transport');
         await mcpServer.startStdio();
         break;
-        
+
       case 'http':
       case 'sse':
-        logger.info('Starting server with HTTP/SSE transport', { 
-          port: serverConfig.port 
+        logger.info('Starting server with HTTP/SSE transport', {
+          port: serverConfig.port,
         });
         await mcpServer.startHttp();
         break;
-        
+
       default:
         throw new ServerError(`Unsupported transport type: ${serverConfig.transportType}`);
     }
-    
+
     logger.info('MCP Atlassian Server started successfully');
-    
   } catch (error) {
     logger.fatal('Failed to start MCP Atlassian Server', error);
     process.exit(1);
@@ -95,7 +90,7 @@ async function main() {
  */
 function handleCliArguments() {
   const args = process.argv.slice(2);
-  
+
   // Help flag
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
@@ -129,26 +124,26 @@ For more information, visit: https://github.com/example/mcp-atlassian-typescript
 `);
     process.exit(0);
   }
-  
+
   // Version flag
   if (args.includes('--version') || args.includes('-v')) {
     console.log('MCP Atlassian TypeScript Server v2.0.0');
     process.exit(0);
   }
-  
+
   // Override transport type based on CLI args
   if (args.includes('--stdio')) {
     process.env.TRANSPORT_TYPE = 'stdio';
   } else if (args.includes('--http')) {
     process.env.TRANSPORT_TYPE = 'http';
   }
-  
+
   // Override port
   const portIndex = args.indexOf('--port');
   if (portIndex !== -1 && args[portIndex + 1]) {
     process.env.PORT = args[portIndex + 1];
   }
-  
+
   // Override log level for debug
   if (args.includes('--debug')) {
     process.env.LOG_LEVEL = 'debug';
@@ -160,11 +155,11 @@ For more information, visit: https://github.com/example/mcp-atlassian-typescript
  */
 function setupProcessHandlers() {
   // Handle uncaught exceptions
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', error => {
     logger.fatal('Uncaught exception', error);
     process.exit(1);
   });
-  
+
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
     logger.fatal('Unhandled promise rejection', {
@@ -173,13 +168,13 @@ function setupProcessHandlers() {
     });
     process.exit(1);
   });
-  
+
   // Handle SIGINT (Ctrl+C)
   process.on('SIGINT', () => {
     logger.info('Received SIGINT, shutting down gracefully...');
     process.exit(0);
   });
-  
+
   // Handle SIGTERM
   process.on('SIGTERM', () => {
     logger.info('Received SIGTERM, shutting down gracefully...');
@@ -214,9 +209,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   displayBanner();
   handleCliArguments();
   setupProcessHandlers();
-  
+
   // Start the application
-  main().catch((error) => {
+  main().catch(error => {
     console.error('Failed to start application:', error);
     process.exit(1);
   });

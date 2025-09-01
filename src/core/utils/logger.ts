@@ -3,8 +3,10 @@
  */
 
 import pino from 'pino';
-import type { LogContext } from '../../types/index.js';
+
 import { getServerConfig } from '../config/index.js';
+
+import type { LogContext } from '../../types/index.js';
 
 // Sensitive data patterns to mask
 const SENSITIVE_PATTERNS = [
@@ -28,11 +30,13 @@ function maskSensitiveData(data: any): any {
   if (typeof data === 'string') {
     let masked = data;
     SENSITIVE_PATTERNS.forEach(pattern => {
-      masked = masked.replace(pattern, (match) => {
+      masked = masked.replace(pattern, match => {
         if (match.includes('@')) {
           // Email masking: keep first char and domain
-          return match.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, 
-            (_, user, domain) => `${user.charAt(0)}***@${domain}`);
+          return match.replace(
+            /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+            (_, user, domain) => `${user.charAt(0)}***@${domain}`
+          );
         }
         return '[MASKED]';
       });
@@ -48,11 +52,13 @@ function maskSensitiveData(data: any): any {
     const masked: any = {};
     Object.keys(data).forEach(key => {
       const lowerKey = key.toLowerCase();
-      if (lowerKey.includes('token') || 
-          lowerKey.includes('password') || 
-          lowerKey.includes('secret') || 
-          lowerKey.includes('key') ||
-          lowerKey.includes('authorization')) {
+      if (
+        lowerKey.includes('token') ||
+        lowerKey.includes('password') ||
+        lowerKey.includes('secret') ||
+        lowerKey.includes('key') ||
+        lowerKey.includes('authorization')
+      ) {
         masked[key] = '[MASKED]';
       } else {
         masked[key] = maskSensitiveData(data[key]);
@@ -136,7 +142,7 @@ export function createLogger(component: string) {
 
     error: (message: string, error?: Error | LogContext, ...args: any[]) => {
       const logData: any = { message };
-      
+
       if (error instanceof Error) {
         logData.error = {
           name: error.name,
@@ -146,13 +152,13 @@ export function createLogger(component: string) {
       } else if (error) {
         logData.context = error;
       }
-      
+
       componentLogger.error(maskSensitiveData(logData), ...args);
     },
 
     fatal: (message: string, error?: Error | LogContext, ...args: any[]) => {
       const logData: any = { message };
-      
+
       if (error instanceof Error) {
         logData.error = {
           name: error.name,
@@ -162,7 +168,7 @@ export function createLogger(component: string) {
       } else if (error) {
         logData.context = error;
       }
-      
+
       componentLogger.fatal(maskSensitiveData(logData), ...args);
     },
 
@@ -183,7 +189,7 @@ export function createRequestLogger() {
     });
 
     const start = Date.now();
-    
+
     requestLogger.info({
       message: 'Request started',
       method: req.method,
@@ -196,7 +202,7 @@ export function createRequestLogger() {
     const originalSend = res.send;
     res.send = function (body: any) {
       const duration = Date.now() - start;
-      
+
       requestLogger.info({
         message: 'Request completed',
         method: req.method,
@@ -205,7 +211,7 @@ export function createRequestLogger() {
         duration,
         responseSize: Buffer.isBuffer(body) ? body.length : JSON.stringify(body).length,
       });
-      
+
       return originalSend.call(this, body);
     };
 
@@ -222,16 +228,16 @@ export function logUnhandledError(error: Error, context?: LogContext) {
 }
 
 // Set up global error handlers
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logUnhandledError(error, { type: 'uncaughtException' });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logUnhandledError(
-    reason instanceof Error ? reason : new Error(String(reason)),
-    { type: 'unhandledRejection', promise: String(promise) }
-  );
+  logUnhandledError(reason instanceof Error ? reason : new Error(String(reason)), {
+    type: 'unhandledRejection',
+    promise: String(promise),
+  });
 });
 
 export default globalLogger;

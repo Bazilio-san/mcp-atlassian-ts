@@ -3,9 +3,11 @@
  */
 
 import NodeCache from 'node-cache';
-import type { CacheEntry } from '../../types/index.js';
-import { createLogger } from '../utils/logger.js';
+
 import { CacheError } from '../errors/index.js';
+import { createLogger } from '../utils/logger.js';
+
+import type { CacheEntry } from '../../types/index.js';
 
 const logger = createLogger('cache');
 
@@ -22,16 +24,14 @@ export class CacheManager {
     deletes: number;
   };
 
-  constructor(options: {
-    ttlSeconds?: number;
-    maxItems?: number;
-    checkPeriod?: number;
-  } = {}) {
-    const {
-      ttlSeconds = 300,
-      maxItems = 1000,
-      checkPeriod = 120
-    } = options;
+  constructor(
+    options: {
+      ttlSeconds?: number;
+      maxItems?: number;
+      checkPeriod?: number;
+    } = {}
+  ) {
+    const { ttlSeconds = 300, maxItems = 1000, checkPeriod = 120 } = options;
 
     this.defaultTtl = ttlSeconds;
     this.cache = new NodeCache({
@@ -86,7 +86,7 @@ export class CacheManager {
   get<T>(key: string): T | undefined {
     try {
       const value = this.cache.get<T>(key);
-      
+
       if (value !== undefined) {
         this.stats.hits++;
         logger.debug('Cache hit', { key });
@@ -110,14 +110,14 @@ export class CacheManager {
     try {
       const ttl = ttlSeconds || this.defaultTtl;
       const success = this.cache.set(key, value, ttl);
-      
+
       if (success) {
         this.stats.sets++;
         logger.debug('Cache set successful', { key, ttl });
       } else {
         logger.warn('Cache set failed', { key, ttl });
       }
-      
+
       return success;
     } catch (error) {
       logger.error('Cache set error', error, { key });
@@ -158,14 +158,14 @@ export class CacheManager {
   mget<T>(keys: string[]): Record<string, T> {
     try {
       const result: Record<string, T> = {};
-      
+
       for (const key of keys) {
         const value = this.get<T>(key);
         if (value !== undefined) {
           result[key] = value;
         }
       }
-      
+
       return result;
     } catch (error) {
       logger.error('Cache mget error', error, { keys });
@@ -179,14 +179,14 @@ export class CacheManager {
   mset<T>(obj: Array<{ key: string; val: T; ttl?: number }>): boolean {
     try {
       let allSuccess = true;
-      
+
       for (const item of obj) {
         const success = this.set(item.key, item.val, item.ttl);
         if (!success) {
           allSuccess = false;
         }
       }
-      
+
       return allSuccess;
     } catch (error) {
       logger.error('Cache mset error', error);
@@ -197,11 +197,7 @@ export class CacheManager {
   /**
    * Get or set pattern - execute function if key doesn't exist
    */
-  async getOrSet<T>(
-    key: string,
-    factory: () => Promise<T>,
-    ttlSeconds?: number
-  ): Promise<T> {
+  async getOrSet<T>(key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T> {
     try {
       // Try to get from cache first
       const cached = this.get<T>(key);
@@ -212,10 +208,10 @@ export class CacheManager {
       // Execute factory function
       logger.debug('Cache miss - executing factory function', { key });
       const value = await factory();
-      
+
       // Store result in cache
       this.set(key, value, ttlSeconds);
-      
+
       return value;
     } catch (error) {
       logger.error('Cache getOrSet error', error, { key });
@@ -228,7 +224,7 @@ export class CacheManager {
    */
   getStats() {
     const cacheStats = this.cache.getStats();
-    
+
     return {
       ...this.stats,
       keys: cacheStats.keys,
@@ -282,11 +278,11 @@ export class CacheManager {
     try {
       const keys = this.cache.keys();
       const entries: Array<{ key: string; value: T; ttl: number }> = [];
-      
+
       for (const key of keys) {
         const value = this.cache.get<T>(key);
         const ttl = this.cache.getTtl(key);
-        
+
         if (value !== undefined) {
           entries.push({
             key,
@@ -295,7 +291,7 @@ export class CacheManager {
           });
         }
       }
-      
+
       return entries;
     } catch (error) {
       logger.error('Cache getEntries error', error);
@@ -362,17 +358,17 @@ export function generateCacheKey(
   params?: Record<string, any>
 ): string {
   const baseKey = `${service}:${endpoint}`;
-  
+
   if (!params || Object.keys(params).length === 0) {
     return baseKey;
   }
-  
+
   // Sort parameters for consistent keys
   const sortedParams = Object.keys(params)
     .sort()
     .map(key => `${key}=${JSON.stringify(params[key])}`)
     .join('&');
-  
+
   return `${baseKey}:${Buffer.from(sortedParams).toString('base64')}`;
 }
 
@@ -406,7 +402,7 @@ export function initializeCache(options: {
   if (globalCache) {
     globalCache.close();
   }
-  
+
   globalCache = new CacheManager(options);
   return globalCache;
 }

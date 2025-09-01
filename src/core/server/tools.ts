@@ -2,16 +2,17 @@
  * Tool registry and management system
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { AtlassianConfig } from '../../types/index.js';
-import { createLogger } from '../utils/logger.js';
-import { ToolExecutionError, ValidationError } from '../errors/index.js';
+import { ConfluenceToolsManager } from '../../domains/confluence/tools.js';
+import { JiraToolsManager } from '../../domains/jira/tools.js';
 import { getCache } from '../cache/index.js';
 import { isToolEnabled } from '../config/index.js';
+import { ToolExecutionError, ValidationError } from '../errors/index.js';
+import { createLogger } from '../utils/logger.js';
+
+import type { AtlassianConfig } from '../../types/index.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 // Import tool implementations
-import { JiraToolsManager } from '../../domains/jira/tools.js';
-import { ConfluenceToolsManager } from '../../domains/confluence/tools.js';
 
 const logger = createLogger('tools');
 
@@ -62,7 +63,7 @@ export class ToolRegistry {
       // Register utility tools
       this.registerUtilityTools();
 
-      logger.info('Tools initialized', { 
+      logger.info('Tools initialized', {
         total: this.toolsMap.size,
         jira: jiraTools.filter(t => isToolEnabled(t.name)).length,
         confluence: confluenceTools.filter(t => isToolEnabled(t.name)).length,
@@ -86,7 +87,8 @@ export class ToolRegistry {
         properties: {
           pattern: {
             type: 'string',
-            description: 'Optional pattern to match keys for selective clearing (supports wildcards)',
+            description:
+              'Optional pattern to match keys for selective clearing (supports wildcards)',
           },
         },
         additionalProperties: false,
@@ -157,11 +159,11 @@ export class ToolRegistry {
       }
     } catch (error) {
       logger.error(`Tool execution failed: ${name}`, error);
-      
+
       if (error instanceof ValidationError || error instanceof ToolExecutionError) {
         throw error;
       }
-      
+
       throw new ToolExecutionError(name, error instanceof Error ? error.message : String(error));
     }
   }
@@ -178,50 +180,58 @@ export class ToolRegistry {
         if (pattern) {
           // Selective clearing based on pattern
           const keys = cache.keys();
-          const matchingKeys = keys.filter(key => 
-            pattern.includes('*') 
+          const matchingKeys = keys.filter(key =>
+            pattern.includes('*')
               ? new RegExp(pattern.replace(/\*/g, '.*')).test(key)
               : key.includes(pattern)
           );
-          
+
           for (const key of matchingKeys) {
             cache.del(key);
           }
-          
+
           return {
-            content: [{
-              type: 'text',
-              text: `Cleared ${matchingKeys.length} cache entries matching pattern '${pattern}'`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Cleared ${matchingKeys.length} cache entries matching pattern '${pattern}'`,
+              },
+            ],
           };
         } else {
           // Clear all cache
           cache.flush();
           return {
-            content: [{
-              type: 'text',
-              text: 'Cache cleared successfully',
-            }],
+            content: [
+              {
+                type: 'text',
+                text: 'Cache cleared successfully',
+              },
+            ],
           };
         }
 
       case 'cache_stats':
         const stats = cache.getStats();
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(stats, null, 2),
-          }],
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(stats, null, 2),
+            },
+          ],
         };
 
       case 'health_check':
-        const detailed = args.detailed as boolean || false;
+        const detailed = (args.detailed as boolean) || false;
         const healthInfo = await this.performHealthCheck(detailed);
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(healthInfo, null, 2),
-          }],
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(healthInfo, null, 2),
+            },
+          ],
         };
 
       default:
@@ -297,7 +307,7 @@ export class ToolRegistry {
       if (propSchema && typeof propSchema === 'object' && 'type' in propSchema) {
         const expectedType = propSchema.type;
         const actualType = Array.isArray(value) ? 'array' : typeof value;
-        
+
         if (expectedType !== actualType && value !== null && value !== undefined) {
           throw new ValidationError(
             `Invalid type for parameter ${key}: expected ${expectedType}, got ${actualType}`
@@ -330,7 +340,7 @@ export class ToolRegistry {
     utility: string[];
   } {
     const tools = Array.from(this.toolsMap.keys());
-    
+
     return {
       jira: tools.filter(name => name.startsWith('jira_')),
       confluence: tools.filter(name => name.startsWith('confluence_')),
