@@ -208,19 +208,6 @@ export class ConfluenceClient {
     });
   }
 
-  /**
-   * Delete content
-   */
-  async deleteContent(contentId: string): Promise<void> {
-    return withErrorHandling(async () => {
-      logger.info('Deleting Confluence content', { contentId });
-
-      await this.httpClient.delete(`/wiki/rest/api/content/${contentId}`);
-
-      // Clear cache for this content
-      this.invalidateContentCache(contentId);
-    });
-  }
 
   // === Space Management ===
 
@@ -381,21 +368,6 @@ export class ConfluenceClient {
 
   // === Labels ===
 
-  /**
-   * Get labels for content
-   */
-  async getLabels(contentId: string): Promise<ConfluenceLabel[]> {
-    return withErrorHandling(async () => {
-      const cacheKey = generateCacheKey('confluence', 'labels', { contentId });
-
-      return this.cache.getOrSet(cacheKey, async () => {
-        logger.info('Fetching Confluence labels', { contentId });
-
-        const response = await this.httpClient.get(`/wiki/rest/api/content/${contentId}/label`);
-        return response.data.results;
-      });
-    });
-  }
 
   /**
    * Add label to content
@@ -487,21 +459,6 @@ export class ConfluenceClient {
     });
   }
 
-  /**
-   * Add label to content
-   */
-  async addLabel(contentId: string, label: { prefix: string; name: string }): Promise<any> {
-    return withErrorHandling(async () => {
-      logger.info('Adding Confluence label', { contentId, label: label.name });
-
-      const response = await this.httpClient.post(`/wiki/rest/api/content/${contentId}/label`, [
-        label,
-      ]);
-
-      this.invalidateContentCache(contentId);
-      return response.data;
-    });
-  }
 
   /**
    * Get labels for content
@@ -559,38 +516,6 @@ export class ConfluenceClient {
     });
   }
 
-  /**
-   * Get comments for content
-   */
-  async getComments(
-    contentId: string,
-    options: {
-      expand?: string[];
-      start?: number;
-      limit?: number;
-      location?: 'inline' | 'footer';
-    } = {}
-  ): Promise<any> {
-    return withErrorHandling(async () => {
-      const cacheKey = generateCacheKey('confluence', 'comments', { contentId, ...options });
-
-      return this.cache.getOrSet(cacheKey, async () => {
-        logger.info('Fetching Confluence comments', { contentId });
-
-        const params: any = { ...options };
-        if (options.expand?.length) params.expand = options.expand.join(',');
-
-        const response = await this.httpClient.get(
-          `/wiki/rest/api/content/${contentId}/child/comment`,
-          {
-            params,
-          }
-        );
-
-        return response.data;
-      });
-    });
-  }
 
   /**
    * Delete content
@@ -680,20 +605,6 @@ export class ConfluenceClient {
     });
   }
 
-  /**
-   * Remove label from content
-   */
-  async removeLabel(contentId: string, labelName: string): Promise<void> {
-    return withErrorHandling(async () => {
-      logger.info('Removing Confluence label', { contentId, labelName });
-
-      await this.httpClient.delete(`/wiki/rest/api/content/${contentId}/label`, {
-        params: { name: labelName },
-      });
-
-      this.invalidateContentCache(contentId);
-    });
-  }
 
   // === Utility Methods ===
 

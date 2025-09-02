@@ -97,7 +97,10 @@ function createPinoLogger() {
       logMethod(inputArgs, method) {
         // Mask sensitive data in all log arguments
         const maskedArgs = inputArgs.map(arg => maskSensitiveData(arg));
-        return method.apply(this, maskedArgs);
+        if (maskedArgs.length === 0) {
+          return method.apply(this, [''] as [string, ...any[]]);
+        }
+        return method.apply(this, maskedArgs as [string, ...any[]]);
       },
     },
   };
@@ -240,4 +243,4 @@ process.on('unhandledRejection', (reason, promise) => {
   });
 });
 
-export default globalLogger;
+export { globalLogger as logger };

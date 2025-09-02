@@ -2,7 +2,7 @@
  * JIRA MCP tools implementation
  */
 
-import { withErrorHandling, ValidationError, ToolExecutionError } from '../../core/errors/index.js';
+import { withErrorHandling, ToolExecutionError } from '../../core/errors/index.js';
 import { createLogger } from '../../core/utils/logger.js';
 
 import { JiraClient } from './client.js';
@@ -925,7 +925,7 @@ export class JiraToolsManager {
 
         // Issue links
         case 'jira_get_link_types':
-          return this.getLinkTypes(args);
+          return this.getLinkTypes();
         case 'jira_create_issue_link':
           return this.createIssueLink(args);
         case 'jira_create_remote_issue_link':
@@ -1452,7 +1452,7 @@ export class JiraToolsManager {
     };
   }
 
-  private async getLinkTypes(args: any) {
+  private async getLinkTypes() {
     const linkTypes = await this.client.getLinkTypes();
 
     if (linkTypes.length === 0) {
@@ -1483,12 +1483,15 @@ export class JiraToolsManager {
   private async createIssueLink(args: any) {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
 
-    const linkData = {
+    const linkData: any = {
       type: { name: linkType },
       inwardIssue: { key: inwardIssue },
       outwardIssue: { key: outwardIssue },
-      comment: comment ? { body: comment } : undefined,
     };
+    
+    if (comment) {
+      linkData.comment = { body: comment };
+    }
 
     await this.client.createIssueLink(linkData);
 
@@ -1687,7 +1690,7 @@ export class JiraToolsManager {
     }
 
     const boardsList = boardsResult.values
-      .map(b => `• **${b.name}** (ID: ${b.id}) - ${b.type}`)
+      .map((b: any) => `• **${b.name}** (ID: ${b.id}) - ${b.type}`)
       .join('\n');
 
     return {
@@ -1720,7 +1723,7 @@ export class JiraToolsManager {
     }
 
     const issuesList = issuesResult.issues
-      .map(issue => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
+      .map((issue: any) => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
       .join('\n');
 
     return {
@@ -1754,7 +1757,7 @@ export class JiraToolsManager {
 
     const sprintsList = sprintsResult.values
       .map(
-        s =>
+        (s: any) =>
           `• **${s.name}** (ID: ${s.id}) - ${s.state}${
             s.startDate && s.endDate
               ? ` (${new Date(s.startDate).toLocaleDateString()} - ${new Date(s.endDate).toLocaleDateString()})`
@@ -1793,7 +1796,7 @@ export class JiraToolsManager {
     }
 
     const issuesList = issuesResult.issues
-      .map(issue => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
+      .map((issue: any) => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
       .join('\n');
 
     return {

@@ -25,7 +25,9 @@ export class McpAtlassianError extends Error implements McpError {
     super(message);
     this.name = this.constructor.name;
     this.code = code;
-    this.details = details;
+    if (details !== undefined) {
+      this.details = details;
+    }
     this.statusCode = statusCode;
 
     // Maintain proper stack trace for V8 engines
@@ -35,12 +37,20 @@ export class McpAtlassianError extends Error implements McpError {
   }
 
   toJSON(): McpError {
-    return {
+    const result: McpError = {
       code: this.code,
       message: this.message,
-      details: this.details,
-      stack: this.stack,
     };
+    
+    if (this.details !== undefined) {
+      result.details = this.details;
+    }
+    
+    if (this.stack !== undefined) {
+      result.stack = this.stack;
+    }
+    
+    return result;
   }
 }
 
@@ -176,16 +186,24 @@ export function createErrorResponse(
 ): ErrorResponse {
   const isCustomError = error instanceof McpAtlassianError;
 
-  return {
-    success: false,
+  const errorResponse = {
+    success: false as const,
     error: {
       code: isCustomError ? error.code : 'INTERNAL_ERROR',
       message: error.message,
-      details: isCustomError ? error.details : undefined,
-      requestId,
       timestamp: new Date().toISOString(),
-    },
+    } as any,
   };
+  
+  if (isCustomError && error.details !== undefined) {
+    errorResponse.error.details = error.details;
+  }
+  
+  if (requestId !== undefined) {
+    errorResponse.error.requestId = requestId;
+  }
+  
+  return errorResponse;
 }
 
 /**
@@ -226,7 +244,7 @@ export function errorBoundary(target: any, propertyKey: string, descriptor: Prop
     try {
       return await originalMethod.apply(this, args);
     } catch (error) {
-      logger.error(`Error in ${target.constructor.name}.${propertyKey}:`, error);
+      logger.error(`Error in ${target.constructor.name}.${propertyKey}:`, error instanceof Error ? error : undefined);
 
       if (error instanceof McpAtlassianError) {
         throw error;

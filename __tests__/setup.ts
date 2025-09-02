@@ -25,7 +25,7 @@ global.console = {
 };
 
 // Mock process.exit to prevent tests from exiting
-const mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: number) => {
+const mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined): never => {
   throw new Error(`Process.exit called with code: ${code}`);
 });
 

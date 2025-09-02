@@ -80,7 +80,7 @@ async function main() {
 
     logger.info('MCP Atlassian Server started successfully');
   } catch (error) {
-    logger.fatal('Failed to start MCP Atlassian Server', error);
+    logger.fatal('Failed to start MCP Atlassian Server', error instanceof Error ? error : new Error(String(error)));
     process.exit(1);
   }
 }

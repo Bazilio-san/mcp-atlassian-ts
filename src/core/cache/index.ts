@@ -7,7 +7,6 @@ import NodeCache from 'node-cache';
 import { CacheError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
-import type { CacheEntry } from '../../types/index.js';
 
 const logger = createLogger('cache');
 
@@ -97,7 +96,7 @@ export class CacheManager {
         return undefined;
       }
     } catch (error) {
-      logger.error('Cache get error', error, { key });
+      logger.error('Cache get error', error instanceof Error ? error : new Error(String(error)), { key });
       this.stats.misses++;
       return undefined;
     }
@@ -120,7 +119,7 @@ export class CacheManager {
 
       return success;
     } catch (error) {
-      logger.error('Cache set error', error, { key });
+      logger.error('Cache set error', error instanceof Error ? error : new Error(String(error)), { key });
       return false;
     }
   }
@@ -135,7 +134,7 @@ export class CacheManager {
       logger.debug('Cache delete', { key, deleted });
       return deleted;
     } catch (error) {
-      logger.error('Cache delete error', error, { key });
+      logger.error('Cache delete error', error instanceof Error ? error : new Error(String(error)), { key });
       return 0;
     }
   }
@@ -147,7 +146,7 @@ export class CacheManager {
     try {
       return this.cache.has(key);
     } catch (error) {
-      logger.error('Cache has error', error, { key });
+      logger.error('Cache has error', error instanceof Error ? error : new Error(String(error)), { key });
       return false;
     }
   }
@@ -168,7 +167,7 @@ export class CacheManager {
 
       return result;
     } catch (error) {
-      logger.error('Cache mget error', error, { keys });
+      logger.error('Cache mget error', error instanceof Error ? error : new Error(String(error)), { keys });
       return {};
     }
   }
@@ -189,7 +188,7 @@ export class CacheManager {
 
       return allSuccess;
     } catch (error) {
-      logger.error('Cache mset error', error);
+      logger.error('Cache mset error', error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -214,7 +213,7 @@ export class CacheManager {
 
       return value;
     } catch (error) {
-      logger.error('Cache getOrSet error', error, { key });
+      logger.error('Cache getOrSet error', error instanceof Error ? error : new Error(String(error)), { key });
       throw new CacheError(`Failed to get or set cache value for key: ${key}`);
     }
   }
@@ -241,7 +240,7 @@ export class CacheManager {
     try {
       return this.cache.keys();
     } catch (error) {
-      logger.error('Cache keys error', error);
+      logger.error('Cache keys error', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -255,7 +254,7 @@ export class CacheManager {
       this.resetStats();
       logger.info('Cache flushed');
     } catch (error) {
-      logger.error('Cache flush error', error);
+      logger.error('Cache flush error', error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -294,7 +293,7 @@ export class CacheManager {
 
       return entries;
     } catch (error) {
-      logger.error('Cache getEntries error', error);
+      logger.error('Cache getEntries error', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -306,7 +305,7 @@ export class CacheManager {
     try {
       return this.cache.ttl(key, ttlSeconds);
     } catch (error) {
-      logger.error('Cache setTtl error', error, { key, ttlSeconds });
+      logger.error('Cache setTtl error', error instanceof Error ? error : new Error(String(error)), { key, ttlSeconds });
       return false;
     }
   }
@@ -319,7 +318,7 @@ export class CacheManager {
       const ttl = this.cache.getTtl(key);
       return ttl ? Math.floor((ttl - Date.now()) / 1000) : 0;
     } catch (error) {
-      logger.error('Cache getTtl error', error, { key });
+      logger.error('Cache getTtl error', error instanceof Error ? error : new Error(String(error)), { key });
       return 0;
     }
   }
@@ -332,7 +331,7 @@ export class CacheManager {
       // NodeCache handles this automatically, but we can force it
       logger.debug('Manual cache cleanup triggered');
     } catch (error) {
-      logger.error('Cache cleanup error', error);
+      logger.error('Cache cleanup error', error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -344,7 +343,7 @@ export class CacheManager {
       this.cache.close();
       logger.info('Cache manager closed');
     } catch (error) {
-      logger.error('Cache close error', error);
+      logger.error('Cache close error', error instanceof Error ? error : new Error(String(error)));
     }
   }
 }

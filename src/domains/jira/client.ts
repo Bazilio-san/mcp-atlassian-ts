@@ -73,7 +73,7 @@ export class JiraClient {
             params: { accountId: userIdOrEmail },
           });
           return response.data;
-        } catch (error) {
+        } catch {
           // Fallback to email search
           const searchResponse = await this.httpClient.get('/rest/api/2/user/search', {
             params: { query: userIdOrEmail, maxResults: 1 },
@@ -510,20 +510,6 @@ export class JiraClient {
 
   // === Extended API Methods ===
 
-  /**
-   * Delete an issue
-   */
-  async deleteIssue(issueIdOrKey: string, deleteSubtasks: boolean = false): Promise<void> {
-    return withErrorHandling(async () => {
-      logger.info('Deleting JIRA issue', { issueIdOrKey, deleteSubtasks });
-
-      await this.httpClient.delete(`/rest/api/2/issue/${issueIdOrKey}`, {
-        params: { deleteSubtasks },
-      });
-
-      this.invalidateIssueCache(issueIdOrKey);
-    });
-  }
 
   /**
    * Search for fields (custom fields)
@@ -628,8 +614,9 @@ export class JiraClient {
           const created = await this.createVersion(version);
           results.push(created);
         } catch (error) {
-          logger.warn('Failed to create version', { version: version.name, error });
-          results.push({ error: error.message, version: version.name });
+          const err = error instanceof Error ? error : new Error(String(error));
+          logger.warn('Failed to create version', { version: version.name, error: err });
+          results.push({ error: err.message, version: version.name });
         }
       }
 

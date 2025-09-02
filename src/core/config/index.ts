@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import { createLogger } from '../utils/logger.js';
 
-import type { AtlassianConfig, ServerConfig, AuthConfig } from '../../types/index.js';
+import type { AtlassianConfig, ServerConfig, AuthConfig, OAuth2Auth } from '../../types/index.js';
 
 const logger = createLogger('config');
 
@@ -90,7 +90,7 @@ export function loadServerConfig(): ServerConfig {
 
     return ServerConfigSchema.parse(config);
   } catch (error) {
-    logger.error('Failed to load server configuration:', error);
+    logger.error('Failed to load server configuration:', error instanceof Error ? error : undefined);
     throw new Error('Invalid server configuration');
   }
 }
@@ -110,14 +110,22 @@ export function loadAtlassianConfig(): AtlassianConfig {
 
     if (process.env.ATLASSIAN_OAUTH_ACCESS_TOKEN) {
       // OAuth 2.0
-      auth = {
+      const oauth2Auth: OAuth2Auth = {
         type: 'oauth2',
         clientId: process.env.ATLASSIAN_OAUTH_CLIENT_ID!,
         clientSecret: process.env.ATLASSIAN_OAUTH_CLIENT_SECRET!,
         accessToken: process.env.ATLASSIAN_OAUTH_ACCESS_TOKEN,
-        refreshToken: process.env.ATLASSIAN_OAUTH_REFRESH_TOKEN,
-        redirectUri: process.env.ATLASSIAN_OAUTH_REDIRECT_URI,
       };
+      
+      if (process.env.ATLASSIAN_OAUTH_REFRESH_TOKEN) {
+        oauth2Auth.refreshToken = process.env.ATLASSIAN_OAUTH_REFRESH_TOKEN;
+      }
+      
+      if (process.env.ATLASSIAN_OAUTH_REDIRECT_URI) {
+        oauth2Auth.redirectUri = process.env.ATLASSIAN_OAUTH_REDIRECT_URI;
+      }
+      
+      auth = oauth2Auth;
     } else if (process.env.ATLASSIAN_PAT) {
       // Personal Access Token
       auth = {
@@ -137,23 +145,36 @@ export function loadAtlassianConfig(): AtlassianConfig {
       );
     }
 
-    const config = {
-      url: atlassianUrl,
-      email: process.env.ATLASSIAN_EMAIL,
-      auth,
-      jira: {
-        maxResults: parseInt(process.env.JIRA_MAX_RESULTS || '50', 10),
-        defaultProject: process.env.JIRA_DEFAULT_PROJECT,
-      },
-      confluence: {
-        maxResults: parseInt(process.env.CONFLUENCE_MAX_RESULTS || '50', 10),
-        defaultSpace: process.env.CONFLUENCE_DEFAULT_SPACE,
-      },
-    };
+    const jiraConfig = {
+      maxResults: parseInt(process.env.JIRA_MAX_RESULTS || '50', 10),
+    } as { maxResults: number; defaultProject?: string };
+    
+    if (process.env.JIRA_DEFAULT_PROJECT) {
+      jiraConfig.defaultProject = process.env.JIRA_DEFAULT_PROJECT;
+    }
+    
+    const confluenceConfig = {
+      maxResults: parseInt(process.env.CONFLUENCE_MAX_RESULTS || '50', 10),
+    } as { maxResults: number; defaultSpace?: string };
+    
+    if (process.env.CONFLUENCE_DEFAULT_SPACE) {
+      confluenceConfig.defaultSpace = process.env.CONFLUENCE_DEFAULT_SPACE;
+    }
 
-    return AtlassianConfigSchema.parse(config);
+    const baseConfig: any = {
+      url: atlassianUrl,
+      auth,
+      jira: jiraConfig,
+      confluence: confluenceConfig,
+    };
+    
+    if (process.env.ATLASSIAN_EMAIL) {
+      baseConfig.email = process.env.ATLASSIAN_EMAIL;
+    }
+
+    return AtlassianConfigSchema.parse(baseConfig) as AtlassianConfig;
   } catch (error) {
-    logger.error('Failed to load Atlassian configuration:', error);
+    logger.error('Failed to load Atlassian configuration:', error instanceof Error ? error : undefined);
     throw new Error('Invalid Atlassian configuration');
   }
 }

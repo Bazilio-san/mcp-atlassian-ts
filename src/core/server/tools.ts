@@ -69,7 +69,7 @@ export class ToolRegistry {
         confluence: confluenceTools.filter(t => isToolEnabled(t.name)).length,
       });
     } catch (error) {
-      logger.error('Failed to initialize tools', error);
+      logger.error('Failed to initialize tools', error instanceof Error ? error : new Error(String(error)));
       throw new ToolExecutionError('system', 'Failed to initialize tools');
     }
   }
@@ -158,7 +158,7 @@ export class ToolRegistry {
         return await this.executeUtilityTool(name, args);
       }
     } catch (error) {
-      logger.error(`Tool execution failed: ${name}`, error);
+      logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
 
       if (error instanceof ValidationError || error instanceof ToolExecutionError) {
         throw error;

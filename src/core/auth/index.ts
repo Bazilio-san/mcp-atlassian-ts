@@ -2,9 +2,9 @@
  * Authentication system for Atlassian APIs
  */
 
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders } from 'axios';
 
-import { AuthenticationError, NetworkError } from '../errors/index.js';
+import { AuthenticationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
 import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
@@ -54,7 +54,7 @@ export class AuthenticationManager {
             // Retry the original request
             return client.request(error.config);
           } catch (refreshError) {
-            logger.error('Failed to refresh OAuth token', refreshError);
+            logger.error('Failed to refresh OAuth token', refreshError instanceof Error ? refreshError : new Error(String(refreshError)));
             throw new AuthenticationError('Authentication failed - token refresh failed');
           }
         }
@@ -68,9 +68,9 @@ export class AuthenticationManager {
   /**
    * Add authentication headers based on auth type
    */
-  private addAuthenticationHeaders(config: AxiosRequestConfig): AxiosRequestConfig {
+  private addAuthenticationHeaders(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
     if (!config.headers) {
-      config.headers = {};
+      config.headers = {} as AxiosRequestHeaders;
     }
 
     switch (this.authConfig.type) {
@@ -130,7 +130,7 @@ export class AuthenticationManager {
 
       logger.info('OAuth token refreshed successfully');
     } catch (error) {
-      logger.error('Failed to refresh OAuth token', error);
+      logger.error('Failed to refresh OAuth token', error instanceof Error ? error : new Error(String(error)));
       throw new AuthenticationError('Failed to refresh OAuth token');
     }
   }
@@ -157,7 +157,7 @@ export class AuthenticationManager {
 
       return false;
     } catch (error) {
-      logger.error('Authentication test failed', error);
+      logger.error('Authentication test failed', error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -285,7 +285,7 @@ export class OAuthFlowManager {
         expiresIn: expires_in,
       };
     } catch (error) {
-      logger.error('OAuth token exchange failed', error);
+      logger.error('OAuth token exchange failed', error instanceof Error ? error : new Error(String(error)));
       throw new AuthenticationError('Failed to exchange authorization code for token');
     }
   }
@@ -319,7 +319,7 @@ export class OAuthFlowManager {
         scopes: resource.scopes || [],
       }));
     } catch (error) {
-      logger.error('Failed to get accessible resources', error);
+      logger.error('Failed to get accessible resources', error instanceof Error ? error : new Error(String(error)));
       throw new AuthenticationError('Failed to get accessible resources');
     }
   }

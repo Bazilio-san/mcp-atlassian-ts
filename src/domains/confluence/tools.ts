@@ -2,7 +2,7 @@
  * Confluence MCP tools implementation
  */
 
-import { withErrorHandling, ValidationError, ToolExecutionError } from '../../core/errors/index.js';
+import { withErrorHandling, ToolExecutionError } from '../../core/errors/index.js';
 import { createLogger } from '../../core/utils/logger.js';
 
 import { ConfluenceClient } from './client.js';
@@ -699,7 +699,7 @@ export class ConfluenceToolsManager {
     }
 
     // Return the first page (most common case)
-    const page = pages[0];
+    const page = pages[0]!; // Safe because we check pages.length === 0 above
 
     return {
       content: [
