@@ -4,8 +4,6 @@
 
 import pino from 'pino';
 
-import { getServerConfig } from '../config/index.js';
-
 import type { LogContext } from '../../types/index.js';
 
 // Sensitive data patterns to mask
@@ -74,16 +72,11 @@ function maskSensitiveData(data: any): any {
  * Create a pino logger instance
  */
 function createPinoLogger() {
-  let config;
-  try {
-    config = getServerConfig();
-  } catch {
-    // Fallback configuration if config loading fails
-    config = {
-      logLevel: (process.env.LOG_LEVEL as any) || 'info',
-      environment: (process.env.NODE_ENV as any) || 'development',
-    };
-  }
+  // Use environment variables directly to avoid circular dependency
+  const config = {
+    logLevel: (process.env.LOG_LEVEL as any) || 'info',
+    environment: (process.env.NODE_ENV as any) || 'development',
+  };
 
   const pinoConfig: pino.LoggerOptions = {
     level: config.logLevel,

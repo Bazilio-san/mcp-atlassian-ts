@@ -2,13 +2,13 @@
   "name": "mcp-atlassian-ts",
   "version": "1.0.0",
   "description": "Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "build": "tsc -b ./tsconfig.json",
     "build:clean": "rimraf dist && npm run build",
     "cb": "npm run patch_node_modules && npm run clean && npm run build",

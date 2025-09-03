@@ -12,6 +12,7 @@ import { getServerConfig, getAtlassianConfig, validateEnvironment } from './core
 import { ServerError } from './core/errors/index.js';
 import { createMcpServer } from './core/server/index.js';
 import { createLogger } from './core/utils/logger.js';
+import { pathToFileURL } from 'url';
 
 const logger = createLogger('main');
 
@@ -79,6 +80,22 @@ async function main() {
     }
 
     logger.info('MCP Atlassian Server started successfully');
+
+    // Keep the process alive for HTTP/SSE transport
+    if (serverConfig.transportType === 'http' || serverConfig.transportType === 'sse') {
+      // Keep the process alive
+      const keepAlive = setInterval(() => {
+        // This keeps the event loop alive
+      }, 60000); // Check every minute
+
+      // Clear interval on shutdown
+      process.on('SIGINT', () => {
+        clearInterval(keepAlive);
+      });
+      process.on('SIGTERM', () => {
+        clearInterval(keepAlive);
+      });
+    }
   } catch (error) {
     logger.fatal('Failed to start MCP Atlassian Server', error instanceof Error ? error : new Error(String(error)));
     process.exit(1);
@@ -205,7 +222,10 @@ function displayBanner() {
 }
 
 // Bootstrap the application
-if (import.meta.url === `file://${process.argv[1]}`) {
+const currentFileUrl = import.meta.url;
+const mainFileUrl = process.argv[1] ? pathToFileURL(process.argv[1]).href : '';
+
+if (currentFileUrl === mainFileUrl) {
   displayBanner();
   handleCliArguments();
   setupProcessHandlers();

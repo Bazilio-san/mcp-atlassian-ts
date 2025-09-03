@@ -269,9 +269,56 @@ export class McpAtlassianServer {
           const clientId = req.ip || 'anonymous';
           await this.rateLimiter.consume(clientId);
           
-          // Process MCP request - Note: this might not be the correct method, check MCP SDK docs
-          // For now, we'll handle it as a direct request 
-          res.status(501).json({ error: 'HTTP transport not fully implemented' });
+          // Process MCP request directly (bypass the normal transport layer for testing)
+          const { method, params, id } = req.body;
+          
+          logger.info('HTTP MCP request received', { method, id });
+          
+          let result;
+          
+          switch (method) {
+            case 'tools/list':
+              const tools = await this.toolRegistry.listTools();
+              result = { tools };
+              break;
+              
+            case 'tools/call':
+              const { name, arguments: args } = params;
+              result = await this.toolRegistry.executeTool(name, args || {});
+              break;
+              
+            case 'resources/list':
+              result = {
+                resources: [
+                  {
+                    uri: 'atlassian://config',
+                    name: 'Atlassian Configuration',
+                    description: 'Current Atlassian configuration and connection status',
+                    mimeType: 'application/json',
+                  },
+                  {
+                    uri: 'atlassian://cache/stats',
+                    name: 'Cache Statistics',
+                    description: 'Current cache statistics and performance metrics',
+                    mimeType: 'application/json',
+                  },
+                ],
+              };
+              break;
+              
+            case 'ping':
+              result = { pong: true };
+              break;
+              
+            default:
+              throw new ServerError(`Unknown method: ${method}`);
+          }
+          
+          res.json({
+            jsonrpc: '2.0',
+            id,
+            result,
+          });
         } catch (error) {
           const errorString = error instanceof Error ? error.toString() : String(error);
           if (errorString.includes('Rate limit')) {
@@ -281,9 +328,14 @@ export class McpAtlassianServer {
             ));
           } else {
             logger.error('MCP request failed', error instanceof Error ? error : new Error(String(error)));
-            res.status(500).json(createErrorResponse(
-              error instanceof Error ? error : new ServerError('Unknown error')
-            ));
+            res.json({
+              jsonrpc: '2.0',
+              id: req.body?.id || null,
+              error: {
+                code: -1,
+                message: error instanceof Error ? error.message : String(error)
+              }
+            });
           }
         }
       });

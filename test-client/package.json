@@ -1,0 +1,23 @@
+{
+  "name": "mcp-atlassian-test-client",
+  "version": "1.0.0",
+  "description": "Test client for MCP Atlassian server",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "npm run build && npm run start"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "chalk": "^5.3.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "tsx": "^4.7.1",
+    "typescript": "^5.9.2"
+  }
+}
