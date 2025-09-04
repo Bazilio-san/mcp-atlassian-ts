@@ -2,7 +2,7 @@
  * JIRA MCP tools implementation
  */
 
-import { withErrorHandling, ToolExecutionError } from '../../core/errors/index.js';
+import { withErrorHandling, ToolExecutionError } from '../../core/errors';
 import { createLogger } from '../../core/utils/logger.js';
 
 import { JiraClient } from './client.js';
@@ -1488,7 +1488,7 @@ export class JiraToolsManager {
       inwardIssue: { key: inwardIssue },
       outwardIssue: { key: outwardIssue },
     };
-    
+
     if (comment) {
       linkData.comment = { body: comment };
     }

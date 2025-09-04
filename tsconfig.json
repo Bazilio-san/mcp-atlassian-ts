@@ -25,13 +25,6 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "baseUrl": "./",
-    "paths": {
-      "@core/*": ["src/core/*"],
-      "@domains/*": ["src/domains/*"],
-      "@types/*": ["src/types/*"],
-      "@utils/*": ["src/utils/*"],
-      "@tests/*": ["__tests__/*"]
-    }
   },
   "include": [
     "src/**/*",
