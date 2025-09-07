@@ -35,7 +35,9 @@
       "Edit",
       "MultiEdit",
       "Read",
-      "Write"
+      "Write",
+      "WebSearch",
+      "WebFetch"
     ],
     "deny": [
       "Read(./.env)",
