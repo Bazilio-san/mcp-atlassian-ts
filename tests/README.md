@@ -1,3 +1,17 @@
+# Complete Test Flow
+
+```bash
+# Terminal 1: Start JIRA emulator (Standalone)
+# Runs on port 8080. Contains test data: project TEST, issues TEST-1/TEST-2. No external dependencies
+node tests/jira-emulator.js
+
+# Terminal 2: Start MCP server  
+npm start
+
+# Terminal 3: Run MCP Client Tests (Network-based)
+node tests/mcp-client-tests.js
+```
+
 # JIRA REST API v2 Endpoints Tester
 
 Комплексный модуль для тестирования всех эндпоинтов JIRA REST API v2 на ванильном JavaScript без использования тестовых фреймворков.
@@ -6,7 +20,7 @@
 
 - ✅ **Информационные эндпоинты** - тестирует чтением данных и проверяет наличие ожидаемых свойств
 - ✅ **Изменяющие эндпоинты** - создает тестовые задачи, модифицирует их, проверяет результаты и удаляет
-- ✅ **Полное покрытие** - тестирует все эндпоинты из `__tests__/jira-api-v2.http` + дополнительные из документации
+- ✅ **Полное покрытие** - тестирует все эндпоинты из `tests/jira-api-v2.http` + дополнительные из документации
 - ✅ **Валидация данных** - проверяет структуру ответов и наличие обязательных полей
 - ✅ **Автоматическая очистка** - удаляет созданные тестовые ресурсы
 - ✅ **Подробные отчеты** - генерирует статистику успешности тестов
@@ -36,8 +50,7 @@
 
 ### Автономный запуск
 ```bash
-cd test-client
-node jira-endpoints-tester.js
+node tests/jira-endpoints-tester.js
 ```
 
 ### Программное использование
@@ -192,10 +205,10 @@ const res = {
 Для работы с встроенным JIRA эмулятором:
 ```bash
 # Terminal 1 - запустить эмулятор
-node test-client/src/jira-emulator.js
+node tests/jira-emulator.js
 
 # Terminal 2 - запустить тесты
-node test-client/jira-endpoints-tester.js
+node tests/jira-endpoints-tester.js
 ```
 
 Эмулятор предоставляет тестовые данные:

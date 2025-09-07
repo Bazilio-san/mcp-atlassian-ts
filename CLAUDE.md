@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm test` - Run Jest test suite
 - `npm run test:coverage` - Run tests with coverage report
 - `npm run test:watch` - Run tests in watch mode
-- Test files are located in `__tests__/**/*.test.ts`
+- Test files are located in `tests/**/*.test.ts`
 
 ### Code Quality
 - `npm run lint` - Run ESLint on .js and .ts files
@@ -27,7 +27,7 @@ The project includes comprehensive testing tools:
 
 #### JIRA Emulator (Standalone Testing)
 ```bash
-node test-client/src/jira-emulator.js
+node tests/jira-emulator.js
 ```
 - Runs on port 8080
 - Contains test data: project TEST, issues TEST-1/TEST-2
@@ -36,13 +36,13 @@ node test-client/src/jira-emulator.js
 #### Complete Test Flow
 ```bash
 # Terminal 1: Start JIRA emulator
-node test-client/src/jira-emulator.js
+node tests/jira-emulator.js
 
 # Terminal 2: Start MCP server  
 npm start
 
 # Terminal 3: Run tests
-node test-client/src/index.js test
+node tests/mcp-client-tests.js
 ```
 
 ## Architecture Overview

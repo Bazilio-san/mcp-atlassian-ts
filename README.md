@@ -29,32 +29,7 @@ npm start
 
 ## 🧪 Testing
 
-### JIRA Emulator (Standalone)
-Start JIRA emulator for testing:
-```bash
-node test-client/src/jira-emulator.js
-```
-- Runs on port 8080
-- Contains test data: project TEST, issues TEST-1/TEST-2
-- No external dependencies
-
-### MCP Client Tests (Network-based)
-Test running MCP server:
-```bash
-node test-client/src/index.js test
-```
-
-### Complete Test Flow
-```bash
-# Terminal 1: Start JIRA emulator
-node test-client/src/jira-emulator.js
-
-# Terminal 2: Start MCP server  
-npm start
-
-# Terminal 3: Run tests
-node test-client/src/index.js test
-```
+See: [tests/README.md](tests/README.md)
 
 ## 🧰 Available Tools
 
@@ -175,22 +150,22 @@ ATLASSIAN_PAT=your-personal-access-token
 ### Modular Structure
 ```
 src/
-├── core/              # Core systems (auth, cache, server)
-├── domains/           # Domain-specific code
+├── core/             # Core systems (auth, cache, server)
+├── domains/          # Domain-specific code
 │   ├── jira/         # JIRA tools and client
 │   └── confluence/   # Confluence tools and client  
 ├── types/            # TypeScript definitions
 └── index.ts          # Main entry point
 
-test-client/
-└── src/
-    ├── jira-emulator.js    # Standalone JIRA API emulator
-    └── index.js            # Complete MCP client and test runner
+tests/
+├── jira-emulator.js          # Standalone JIRA API emulator
+├── jira-endpoints-tester.js  # A comprehensive module for testing all Jira Rest API V2
+└── mcp-client-tests.js.js    # Complete MCP client and test runner
 ```
 
 ### Three Components
 
-1. **JIRA Emulator**: `node test-client/src/jira-emulator.js`
+1. **JIRA Emulator**: `node tests/jira-emulator.js`
    - Standalone JIRA API mock server
    - Port 8080, test data included
    - No dependencies
@@ -200,7 +175,7 @@ test-client/
    - HTTP transport on port 3001
    - Production-ready architecture
 
-3. **MCP Client & Test Runner**: `node test-client/src/index.js test`
+3. **MCP Client & Test Runner**: `node tests/mcp-client-tests.js`
    - Complete MCP client with all functionality
    - Integrated test runner for all 47 MCP tools
    - Single consolidated module for testing and validation

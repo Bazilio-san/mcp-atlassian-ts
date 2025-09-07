@@ -71,7 +71,7 @@ EXPOSE 3000
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/src/index.js"]
 
 # Labels for metadata
 LABEL org.opencontainers.image.title="MCP Atlassian TypeScript Server"

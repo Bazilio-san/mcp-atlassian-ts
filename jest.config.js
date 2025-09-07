@@ -7,9 +7,9 @@ export default {
     },
   },
   testEnvironment: 'node',
-  roots: ['<rootDir>/src', '<rootDir>/__tests__'],
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: [
-    '**/__tests__/**/*.test.ts',
+    '**/tests/**/*.test.ts',
     '**/?(*.)+(spec|test).ts',
   ],
   transform: {
@@ -21,7 +21,7 @@ export default {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/index.ts',
-    '!src/**/__tests__/**',
+    '!src/**/tests/**',
     '!src/**/test/**',
   ],
   coverageDirectory: 'coverage',
@@ -39,7 +39,7 @@ export default {
       statements: 70,
     },
   },
-  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 10000,
   verbose: true,
   moduleNameMapping: {
@@ -47,7 +47,7 @@ export default {
     '^@domains/(.*)$': '<rootDir>/src/domains/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^@tests/(.*)$': '<rootDir>/__tests__/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transformIgnorePatterns: [

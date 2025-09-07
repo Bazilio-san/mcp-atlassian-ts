@@ -181,14 +181,14 @@ class MCPTestRunner {
    */
   async runTest(name, testFn) {
     const startTime = Date.now();
-    
+
     try {
       console.log(chalk.blue(`🧪 Running test: ${name}`));
       const data = await testFn();
       const duration = Date.now() - startTime;
-      
+
       console.log(chalk.green(`✅ Test passed: ${name} (${duration}ms)`));
-      
+
       return {
         name,
         success: true,
@@ -198,10 +198,10 @@ class MCPTestRunner {
     } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       console.log(chalk.red(`❌ Test failed: ${name} (${duration}ms)`));
       console.log(chalk.red(`   Error: ${errorMessage}`));
-      
+
       return {
         name,
         success: false,
@@ -220,7 +220,7 @@ class MCPTestRunner {
       if (!isConnected) {
         throw new Error('Cannot connect to MCP server');
       }
-      
+
       const health = await this.client.healthCheck();
       return health;
     });
@@ -234,7 +234,7 @@ class MCPTestRunner {
   async testListTools() {
     const result = await this.runTest('List Available Tools', async () => {
       const response = await this.client.listTools();
-      
+
       if (response.error) {
         throw new Error(`MCP Error: ${response.error.message}`);
       }
@@ -522,18 +522,18 @@ function showHelp() {
 MCP Atlassian Network Test Client
 
 Usage:
-  node src/index.js [command]
+  node tests/mcp-client-tests.js [command]
 
 Commands:
   test        Run MCP client tests against running MCP server (default)
   help        Show this help
 
 Examples:
-  node src/index.js test        # Test MCP server at http://localhost:3001
+  node tests/mcp-client-tests.js        # Test MCP server at http://localhost:3001
 
 Prerequisites:
   1. Start JIRA emulator:
-     node src/jira-emulator.js
+     node tests/jira-emulator.js
   
   2. Start MCP server with:
      ATLASSIAN_URL=http://localhost:8080 TRANSPORT_TYPE=http node src/index.js

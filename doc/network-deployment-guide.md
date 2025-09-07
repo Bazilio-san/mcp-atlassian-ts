@@ -197,7 +197,7 @@ Group=mcp-atlassian
 WorkingDirectory=/opt/mcp-atlassian
 Environment=NODE_ENV=production
 EnvironmentFile=/opt/mcp-atlassian/.env
-ExecStart=/usr/bin/node dist/index.js
+ExecStart=/usr/bin/node dist/src/index.js
 ExecReload=/bin/kill -HUP \$MAINPID
 KillMode=mixed
 KillSignal=SIGINT
