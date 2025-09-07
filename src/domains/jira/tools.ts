@@ -2,12 +2,12 @@
  * JIRA MCP tools implementation
  */
 
-import { withErrorHandling, ToolExecutionError } from '../../core/errors/index.js';
+import { withErrorHandling, ToolExecutionError } from '../../core/errors';
 import { createLogger } from '../../core/utils/logger.js';
 
 import { JiraClient } from './client.js';
 
-import type { AtlassianConfig } from '../../types/index.js';
+import type { AtlassianConfig } from '../../types';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('jira-tools');

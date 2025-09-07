@@ -3,8 +3,8 @@
  */
 
 import pino from 'pino';
-
-import type { LogContext } from '../../types/index.js';
+import type { LogContext } from '../../types';
+import { appConfig } from '../../bootstrap/init-config';
 
 // Sensitive data patterns to mask
 const SENSITIVE_PATTERNS = [
@@ -72,14 +72,8 @@ function maskSensitiveData(data: any): any {
  * Create a pino logger instance
  */
 function createPinoLogger() {
-  // Use environment variables directly to avoid circular dependency
-  const config = {
-    logLevel: (process.env.LOG_LEVEL as any) || 'info',
-    environment: (process.env.NODE_ENV as any) || 'development',
-  };
-
   const pinoConfig: pino.LoggerOptions = {
-    level: config.logLevel,
+    level: appConfig.logger.level || 'info',
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: {
       level(label) {
@@ -99,7 +93,7 @@ function createPinoLogger() {
   };
 
   // Pretty print for development
-  if (config.environment === 'development') {
+  if ((appConfig.server.environment || 'development') === 'development') {
     pinoConfig.transport = {
       target: 'pino-pretty',
       options: {

@@ -4,13 +4,37 @@
 
 import { ConfluenceToolsManager } from '../../domains/confluence/tools.js';
 import { JiraToolsManager } from '../../domains/jira/tools.js';
-import { getCache } from '../cache/index.js';
-import { isToolEnabled } from '../config/index.js';
-import { ToolExecutionError, ValidationError } from '../errors/index.js';
+import { getCache } from '../cache';
+import { ToolExecutionError, ValidationError } from '../errors';
 import { createLogger } from '../utils/logger.js';
 
-import type { AtlassianConfig } from '../../types/index.js';
+import type { AtlassianConfig } from '../../types';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { appConfig } from '../../bootstrap/init-config';
+
+/**
+ * Check if a specific tool is enabled
+ */
+export function isToolEnabled (toolName: string): boolean {
+  let enabledTools: string | string[] = appConfig.features?.enabledTools || '';
+
+  // If enabledTools is a string (from env var), split it
+  if (typeof enabledTools === 'string') {
+    enabledTools = (enabledTools as string)
+      .split(',')
+      .map(tool => tool.trim())
+      .filter(tool => tool.length > 0);
+  } else if (Array.isArray(enabledTools)) {
+    enabledTools = [];
+  }
+
+  // If no tools are specified, all are enabled
+  if (enabledTools.length === 0) {
+    return true;
+  }
+
+  return enabledTools.includes(toolName);
+}
 
 // Import tool implementations
 

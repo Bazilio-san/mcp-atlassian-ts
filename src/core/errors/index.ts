@@ -4,7 +4,7 @@
 
 import { createLogger } from '../utils/logger.js';
 
-import type { McpError } from '../../types/index.js';
+import type { McpError } from '../../types';
 
 const logger = createLogger('errors');
 
@@ -41,15 +41,15 @@ export class McpAtlassianError extends Error implements McpError {
       code: this.code,
       message: this.message,
     };
-    
+
     if (this.details !== undefined) {
       result.details = this.details;
     }
-    
+
     if (this.stack !== undefined) {
       result.stack = this.stack;
     }
-    
+
     return result;
   }
 }
@@ -194,15 +194,15 @@ export function createErrorResponse(
       timestamp: new Date().toISOString(),
     } as any,
   };
-  
+
   if (isCustomError && error.details !== undefined) {
     errorResponse.error.details = error.details;
   }
-  
+
   if (requestId !== undefined) {
     errorResponse.error.requestId = requestId;
   }
-  
+
   return errorResponse;
 }
 

@@ -9,19 +9,20 @@ import express from 'express';
 import helmet from 'helmet';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
-import { 
+import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
-  PingRequestSchema
+  PingRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import type { ServerConfig, AtlassianConfig } from '../../types/index.js';
+import type { IConfig } from '../../../_types_/config.js';
+import type { ServerConfig, AtlassianConfig } from '../../types';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
-import { createErrorResponse, McpAtlassianError, ServerError } from '../errors/index.js';
-import { getCache } from '../cache/index.js';
-import { createAuthenticationManager } from '../auth/index.js';
+import { createErrorResponse, McpAtlassianError, ServerError } from '../errors';
+import { getCache } from '../cache';
+import { createAuthenticationManager } from '../auth';
 import { ToolRegistry } from './tools.js';
 
 const logger = createLogger('server');
@@ -37,10 +38,10 @@ export class McpAtlassianServer {
   private rateLimiter: RateLimiterMemory;
   private app?: express.Application;
 
-  constructor(serverConfig: ServerConfig, atlassianConfig: AtlassianConfig) {
+  constructor (serverConfig: ServerConfig, atlassianConfig: AtlassianConfig) {
     this.serverConfig = serverConfig;
     this.atlassianConfig = atlassianConfig;
-    
+
     // Initialize MCP server
     this.server = new Server(
       {
@@ -53,7 +54,7 @@ export class McpAtlassianServer {
           tools: {},
           prompts: {},
         },
-      }
+      },
     );
 
     // Initialize rate limiter
@@ -73,7 +74,7 @@ export class McpAtlassianServer {
   /**
    * Setup MCP server handlers
    */
-  private setupServerHandlers(): void {
+  private setupServerHandlers (): void {
     // Handle list_tools requests
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const tools = await this.toolRegistry.listTools();
@@ -84,25 +85,25 @@ export class McpAtlassianServer {
     // Handle tool_call requests
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      
+
       logger.info('Tool called', { name, hasArgs: !!args });
-      
+
       try {
         // Rate limiting
         await this.rateLimiter.consume('global');
-        
+
         // Execute tool
         const result = await this.toolRegistry.executeTool(name, args || {});
-        
+
         logger.info('Tool executed successfully', { name });
         return result;
       } catch (error) {
         logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
-        
+
         if (error instanceof McpAtlassianError) {
           throw error;
         }
-        
+
         throw new ServerError(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
@@ -123,21 +124,21 @@ export class McpAtlassianServer {
           mimeType: 'application/json',
         },
       ];
-      
+
       return { resources };
     });
 
     // Handle resource read requests
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       const { uri } = request.params;
-      
+
       switch (uri) {
         case 'atlassian://config':
           const authManager = createAuthenticationManager(
             this.atlassianConfig.auth,
-            this.atlassianConfig.url
+            this.atlassianConfig.url,
           );
-          
+
           return {
             contents: [{
               uri,
@@ -150,7 +151,7 @@ export class McpAtlassianServer {
               }, null, 2),
             }],
           };
-          
+
         case 'atlassian://cache/stats':
           const cache = getCache();
           return {
@@ -160,7 +161,7 @@ export class McpAtlassianServer {
               text: JSON.stringify(cache.getStats(), null, 2),
             }],
           };
-          
+
         default:
           throw new ServerError(`Unknown resource URI: ${uri}`);
       }
@@ -177,7 +178,7 @@ export class McpAtlassianServer {
   /**
    * Register all available tools
    */
-  private async registerTools(): Promise<void> {
+  private async registerTools (): Promise<void> {
     try {
       await this.toolRegistry.initializeTools();
       logger.info('Tools registered successfully');
@@ -190,13 +191,13 @@ export class McpAtlassianServer {
   /**
    * Start server with STDIO transport
    */
-  async startStdio(): Promise<void> {
+  async startStdio (): Promise<void> {
     try {
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
-      
+
       logger.info('MCP server started with STDIO transport');
-      
+
       // Handle graceful shutdown
       this.setupGracefulShutdown();
     } catch (error) {
@@ -208,23 +209,23 @@ export class McpAtlassianServer {
   /**
    * Start server with HTTP/SSE transport
    */
-  async startHttp(): Promise<void> {
+  async startHttp (): Promise<void> {
     try {
       this.app = express();
-      
+
       // Security middleware
       this.app.use(helmet({
         contentSecurityPolicy: false, // Allow for SSE
         crossOriginEmbedderPolicy: false,
       }));
-      
+
       // Request logging
       this.app.use(createRequestLogger());
-      
+
       // JSON parsing
       this.app.use(express.json({ limit: '10mb' }));
       this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-      
+
       // CORS headers for development
       if (this.serverConfig.environment === 'development') {
         this.app.use((req, res, next) => {
@@ -252,12 +253,12 @@ export class McpAtlassianServer {
         try {
           const transport = new SSEServerTransport('/sse', res);
           await this.server.connect(transport);
-          
+
           logger.info('SSE client connected');
         } catch (error) {
           logger.error('SSE connection failed', error instanceof Error ? error : new Error(String(error)));
           res.status(500).json(createErrorResponse(
-            new ServerError('Failed to establish SSE connection')
+            new ServerError('Failed to establish SSE connection'),
           ));
         }
       });
@@ -268,25 +269,25 @@ export class McpAtlassianServer {
           // Rate limiting
           const clientId = req.ip || 'anonymous';
           await this.rateLimiter.consume(clientId);
-          
+
           // Process MCP request directly (bypass the normal transport layer for testing)
           const { method, params, id } = req.body;
-          
+
           logger.info('HTTP MCP request received', { method, id });
-          
+
           let result;
-          
+
           switch (method) {
             case 'tools/list':
               const tools = await this.toolRegistry.listTools();
               result = { tools };
               break;
-              
+
             case 'tools/call':
               const { name, arguments: args } = params;
               result = await this.toolRegistry.executeTool(name, args || {});
               break;
-              
+
             case 'resources/list':
               result = {
                 resources: [
@@ -305,15 +306,15 @@ export class McpAtlassianServer {
                 ],
               };
               break;
-              
+
             case 'ping':
               result = { pong: true };
               break;
-              
+
             default:
               throw new ServerError(`Unknown method: ${method}`);
           }
-          
+
           res.json({
             jsonrpc: '2.0',
             id,
@@ -324,7 +325,7 @@ export class McpAtlassianServer {
           if (errorString.includes('Rate limit')) {
             logger.warn('Rate limit exceeded', { ip: req.ip });
             res.status(429).json(createErrorResponse(
-              new ServerError('Rate limit exceeded')
+              new ServerError('Rate limit exceeded'),
             ));
           } else {
             logger.error('MCP request failed', error instanceof Error ? error : new Error(String(error)));
@@ -333,8 +334,8 @@ export class McpAtlassianServer {
               id: req.body?.id || null,
               error: {
                 code: -1,
-                message: error instanceof Error ? error.message : String(error)
-              }
+                message: error instanceof Error ? error.message : String(error),
+              },
             });
           }
         }
@@ -343,7 +344,7 @@ export class McpAtlassianServer {
       // Error handling middleware
       this.app.use((error: Error, req: express.Request, res: express.Response) => {
         logger.error('Express error handler', error);
-        
+
         if (!res.headersSent) {
           res.status(500).json(createErrorResponse(error));
         }
@@ -357,7 +358,7 @@ export class McpAtlassianServer {
         logger.info(`SSE endpoint: http://localhost:${port}/sse`);
         logger.info(`MCP endpoint: http://localhost:${port}/mcp`);
       });
-      
+
       // Handle graceful shutdown
       this.setupGracefulShutdown();
     } catch (error) {
@@ -369,21 +370,21 @@ export class McpAtlassianServer {
   /**
    * Setup graceful shutdown handlers
    */
-  private setupGracefulShutdown(): void {
+  private setupGracefulShutdown (): void {
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}, shutting down gracefully...`);
-      
+
       try {
         // Close server connections
         if (this.server) {
           // The MCP server doesn't have a close method, so we'll just log
           logger.info('MCP server connections closed');
         }
-        
+
         // Close cache
         const cache = getCache();
         cache.close();
-        
+
         logger.info('Graceful shutdown completed');
         process.exit(0);
       } catch (error) {
@@ -399,14 +400,14 @@ export class McpAtlassianServer {
   /**
    * Get server instance for testing
    */
-  getServer(): Server {
+  getServer (): Server {
     return this.server;
   }
 
   /**
    * Get Express app for testing
    */
-  getApp(): express.Application | undefined {
+  getApp (): express.Application | undefined {
     return this.app;
   }
 }
@@ -414,9 +415,47 @@ export class McpAtlassianServer {
 /**
  * Create and configure MCP server
  */
-export function createMcpServer(
-  serverConfig: ServerConfig,
-  atlassianConfig: AtlassianConfig
-): McpAtlassianServer {
+export function createMcpServer (config: IConfig): McpAtlassianServer {
+  // Convert IConfig to the expected ServerConfig and AtlassianConfig formats
+  const {
+    atlassian: {
+      auth: {
+        pat: pat,
+        oauth2,
+        apiToken,
+      } = {},
+      email,
+      url,
+    },
+    cache,
+    logger: { level: logLevel },
+    server: {
+      port,
+      transportType,
+      environment,
+    },
+    rateLimit,
+    confluence,
+    jira,
+  } = config;
+
+  const serverConfig: ServerConfig = { port, environment, logLevel, transportType, rateLimit, cache };
+
+  // Build auth config from appConfig
+  let auth: any;
+  if (pat) {
+    auth = { type: 'pat', token: pat };
+  } else if (oauth2?.clientId) {
+    auth = { type: 'oauth2', ...oauth2 };
+  } else if (apiToken && email) {
+    auth = { type: 'basic', email, token: apiToken };
+  }
+
+  const atlassianConfig: AtlassianConfig = { url, auth, jira, confluence } as AtlassianConfig;
+
+  if (email) {
+    atlassianConfig.email = email;
+  }
+
   return new McpAtlassianServer(serverConfig, atlassianConfig);
 }

@@ -6,50 +6,59 @@
  * Atlassian JIRA and Confluence with modern architecture and features.
  */
 
-import { createAuthenticationManager, validateAuthConfig } from './core/auth/index.js';
-import { initializeCache } from './core/cache/index.js';
-import { getServerConfig, getAtlassianConfig, validateEnvironment } from './core/config/index.js';
-import { ServerError } from './core/errors/index.js';
-import { createMcpServer } from './core/server/index.js';
+import { appConfig } from './bootstrap/init-config';
+import { createAuthenticationManager, validateAuthConfig } from './core/auth';
+import { initializeCache } from './core/cache';
+import { ServerError } from './core/errors';
+import { createMcpServer } from './core/server';
 import { createLogger } from './core/utils/logger.js';
 import { pathToFileURL } from 'url';
 
 const logger = createLogger('main');
 
 /**
+ * Build authentication config from app config
+ */
+function buildAuthConfig (atlassianConfig: any): any {
+  const {
+    auth: { pat, oauth2 = {}, apiToken } = {},
+    email,
+  } = atlassianConfig;
+  if (pat) {
+    return { type: 'pat', token: pat };
+  } else if (oauth2.clientId) {
+    return { type: 'oauth2', ...oauth2 };
+  } else if (apiToken && email) {
+    return { type: 'basic', email, token: apiToken };
+  }
+
+  throw new ServerError('No valid authentication method configured');
+}
+
+/**
  * Main application entry point
  */
-async function main() {
+async function main () {
   try {
     logger.info('Starting MCP Atlassian TypeScript Server v2.0.0');
 
-    // Validate environment configuration
-    validateEnvironment();
+    // Configuration is already loaded and validated in init-config.ts
+    const { server: { environment, transportType, port }, atlassian, cache } = appConfig;
+    const { url } = atlassian;
 
-    // Load configuration
-    const serverConfig = getServerConfig();
-    const atlassianConfig = getAtlassianConfig();
+    logger.info('Configuration loaded', { environment, transportType, atlassianUrl: url });
 
-    logger.info('Configuration loaded', {
-      environment: serverConfig.environment,
-      transportType: serverConfig.transportType,
-      atlassianUrl: atlassianConfig.url,
-      authType: atlassianConfig.auth.type,
-    });
-
-    // Validate authentication configuration
-    validateAuthConfig(atlassianConfig.auth);
+    // Build auth config from appConfig
+    const authConfig = buildAuthConfig(atlassian);
+    validateAuthConfig(authConfig);
 
     // Initialize cache
-    initializeCache(serverConfig.cache);
-    logger.info('Cache initialized', {
-      ttlSeconds: serverConfig.cache.ttlSeconds,
-      maxItems: serverConfig.cache.maxItems,
-    });
+    initializeCache(cache);
+    logger.info('Cache initialized', { ...cache });
 
     // Test Atlassian connectivity
-    const authManager = createAuthenticationManager(atlassianConfig.auth, atlassianConfig.url);
-    const isConnected = await authManager.testAuthentication(atlassianConfig.url);
+    const authManager = createAuthenticationManager(authConfig, url);
+    const isConnected = await authManager.testAuthentication(url);
 
     if (!isConnected) {
       throw new ServerError('Failed to authenticate with Atlassian services');
@@ -58,10 +67,10 @@ async function main() {
     logger.info('Atlassian authentication successful');
 
     // Create and configure MCP server
-    const mcpServer = createMcpServer(serverConfig, atlassianConfig);
+    const mcpServer = createMcpServer(appConfig);
 
     // Start server based on transport type
-    switch (serverConfig.transportType) {
+    switch (transportType) {
       case 'stdio':
         logger.info('Starting server with STDIO transport');
         await mcpServer.startStdio();
@@ -69,20 +78,18 @@ async function main() {
 
       case 'http':
       case 'sse':
-        logger.info('Starting server with HTTP/SSE transport', {
-          port: serverConfig.port,
-        });
+        logger.info('Starting server with HTTP/SSE transport', { port });
         await mcpServer.startHttp();
         break;
 
       default:
-        throw new ServerError(`Unsupported transport type: ${serverConfig.transportType}`);
+        throw new ServerError(`Unsupported transport type: ${transportType}`);
     }
 
     logger.info('MCP Atlassian Server started successfully');
 
     // Keep the process alive for HTTP/SSE transport
-    if (serverConfig.transportType === 'http' || serverConfig.transportType === 'sse') {
+    if (transportType === 'http' || transportType === 'sse') {
       // Keep the process alive
       const keepAlive = setInterval(() => {
         // This keeps the event loop alive
@@ -103,74 +110,9 @@ async function main() {
 }
 
 /**
- * Handle CLI arguments for different modes
- */
-function handleCliArguments() {
-  const args = process.argv.slice(2);
-
-  // Help flag
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log(`
-MCP Atlassian TypeScript Server v2.0.0
-
-Usage: mcp-atlassian [options]
-
-Options:
-  --help, -h          Show this help message
-  --version, -v       Show version information
-  --stdio             Force STDIO transport (overrides config)
-  --http              Force HTTP transport (overrides config)
-  --port <port>       Set HTTP port (overrides config)
-  --debug             Enable debug logging (overrides config)
-  
-Environment Variables:
-  ATLASSIAN_URL       Atlassian instance URL (required)
-  ATLASSIAN_EMAIL     Email for basic auth
-  ATLASSIAN_API_TOKEN API token for basic auth
-  ATLASSIAN_PAT       Personal Access Token
-  PORT                HTTP server port (default: 3000)
-  LOG_LEVEL           Logging level (debug, info, warn, error)
-  TRANSPORT_TYPE      Transport type (stdio, http, sse)
-  
-Examples:
-  mcp-atlassian --stdio              # Start with STDIO transport
-  mcp-atlassian --http --port 8080   # Start HTTP server on port 8080
-  mcp-atlassian --debug              # Start with debug logging
-  
-For more information, visit: https://github.com/example/mcp-atlassian-typescript
-`);
-    process.exit(0);
-  }
-
-  // Version flag
-  if (args.includes('--version') || args.includes('-v')) {
-    console.log('MCP Atlassian TypeScript Server v2.0.0');
-    process.exit(0);
-  }
-
-  // Override transport type based on CLI args
-  if (args.includes('--stdio')) {
-    process.env.TRANSPORT_TYPE = 'stdio';
-  } else if (args.includes('--http')) {
-    process.env.TRANSPORT_TYPE = 'http';
-  }
-
-  // Override port
-  const portIndex = args.indexOf('--port');
-  if (portIndex !== -1 && args[portIndex + 1]) {
-    process.env.PORT = args[portIndex + 1];
-  }
-
-  // Override log level for debug
-  if (args.includes('--debug')) {
-    process.env.LOG_LEVEL = 'debug';
-  }
-}
-
-/**
  * Setup process event handlers
  */
-function setupProcessHandlers() {
+function setupProcessHandlers () {
   // Handle uncaught exceptions
   process.on('uncaughtException', error => {
     logger.fatal('Uncaught exception', error);
@@ -202,19 +144,19 @@ function setupProcessHandlers() {
 /**
  * Display startup banner
  */
-function displayBanner() {
+function displayBanner () {
   if (process.env.NODE_ENV === 'development') {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║    MCP Atlassian TypeScript Server v2.0.0                   ║
-║    Modern, Type-safe, Production-ready                      ║
+║    MCP Atlassian TypeScript Server v2.0.0                    ║
+║    Modern, Type-safe, Production-ready                       ║
 ║                                                              ║
 ║    🚀 JIRA & Confluence Integration                          ║
-║    🔒 Secure Authentication (Basic/PAT/OAuth2)              ║
-║    ⚡ High Performance Caching                              ║
-║    📝 Comprehensive Logging                                 ║
-║    🛡️  Error Handling & Rate Limiting                       ║
+║    🔒 Secure Authentication (Basic/PAT/OAuth2)               ║
+║    ⚡ High Performance Caching                               ║
+║    📝 Comprehensive Logging                                  ║
+║    🛡️  Error Handling & Rate Limiting                        ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 `);
@@ -227,7 +169,6 @@ const mainFileUrl = process.argv[1] ? pathToFileURL(process.argv[1]).href : '';
 
 if (currentFileUrl === mainFileUrl) {
   displayBanner();
-  handleCliArguments();
   setupProcessHandlers();
 
   // Start the application

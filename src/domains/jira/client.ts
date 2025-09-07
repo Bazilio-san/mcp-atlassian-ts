@@ -2,9 +2,9 @@
  * JIRA API client with comprehensive functionality
  */
 
-import { createAuthenticationManager } from '../../core/auth/index.js';
-import { getCache, generateCacheKey } from '../../core/cache/index.js';
-import { withErrorHandling, NotFoundError, ValidationError } from '../../core/errors/index.js';
+import { createAuthenticationManager } from '../../core/auth';
+import { getCache, generateCacheKey } from '../../core/cache';
+import { withErrorHandling, NotFoundError, ValidationError } from '../../core/errors';
 import { createLogger } from '../../core/utils/logger.js';
 
 import type {
@@ -19,7 +19,7 @@ import type {
   JiraComment,
   JiraWorklogInput,
   JiraWorklog,
-} from '../../types/index.js';
+} from '../../types';
 import type { AxiosInstance } from 'axios';
 
 const logger = createLogger('jira-client');

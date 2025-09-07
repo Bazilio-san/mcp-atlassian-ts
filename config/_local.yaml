@@ -1,0 +1,16 @@
+# Template for local configuration overrides
+# Copy this file to local.yaml and modify as needed
+# local.yaml is gitignored and won't be committed
+
+# Example overrides:
+# server:
+#   port: 8080
+#   environment: development
+# 
+# logger:
+#   level: debug
+#   pretty: true
+# 
+# cache:
+#   ttlSeconds: 60
+#   maxItems: 500

@@ -1,0 +1,17 @@
+# Test environment configuration overrides
+
+logger:
+  level: error   # Minimal logging during tests
+  pretty: false
+
+server:
+  environment: test
+  port: 3001     # Different port for test environment
+
+rateLimit:
+  windowMs: 1000       # 1 second for testing
+  maxRequests: 1000    # High limit for testing
+
+cache:
+  ttlSeconds: 1        # Minimal cache TTL for testing
+  maxItems: 10         # Small cache for testing

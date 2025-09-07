@@ -362,7 +362,7 @@ When migrating existing projects to node-config:
 
 - [ ] Install `config` and `dotenv` packages
 - [ ] Create `/config` directory structure
-- [ ] Move existing configuration to `default.js`
+- [ ] Move existing configuration to `default.js`. NO default.json! Namely `default.js`
 - [ ] Create TypeScript interfaces for all config sections
 - [ ] Map environment variables in `custom-environment-variables.yaml`
 - [ ] Create `.env.example` with all variables documented

@@ -1,0 +1,48 @@
+# Environment variable mappings for node-config
+# These environment variables will override values in default.js
+
+server:
+  port: PORT
+  host: HOST
+  environment: NODE_ENV
+  transportType: TRANSPORT_TYPE
+
+atlassian:
+  url: ATLASSIAN_URL
+  email: ATLASSIAN_EMAIL
+  auth:
+    apiToken: ATLASSIAN_API_TOKEN
+    pat: ATLASSIAN_PAT
+    oauth2:
+      clientId: ATLASSIAN_OAUTH_CLIENT_ID
+      clientSecret: ATLASSIAN_OAUTH_CLIENT_SECRET
+      accessToken: ATLASSIAN_OAUTH_ACCESS_TOKEN
+      refreshToken: ATLASSIAN_OAUTH_REFRESH_TOKEN
+      redirectUri: ATLASSIAN_OAUTH_REDIRECT_URI
+
+jira:
+  maxResults: JIRA_MAX_RESULTS
+  defaultProject: JIRA_DEFAULT_PROJECT
+
+confluence:
+  maxResults: CONFLUENCE_MAX_RESULTS
+  defaultSpace: CONFLUENCE_DEFAULT_SPACE
+
+logger:
+  level: LOG_LEVEL
+  pretty: LOG_PRETTY
+
+rateLimit:
+  windowMs: RATE_LIMIT_WINDOW_MS
+  maxRequests: RATE_LIMIT_MAX_REQUESTS
+
+cache:
+  ttlSeconds: CACHE_TTL_SECONDS
+  maxItems: CACHE_MAX_ITEMS
+
+ssl:
+  rejectUnauthorized: NODE_TLS_REJECT_UNAUTHORIZED
+  verifyPeer: SSL_VERIFY_PEER
+
+features:
+  enabledTools: ENABLED_TOOLS

@@ -4,10 +4,10 @@
 
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders } from 'axios';
 
-import { AuthenticationError } from '../errors/index.js';
+import { AuthenticationError } from '../errors';
 import { createLogger } from '../utils/logger.js';
 
-import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
+import type { AuthConfig, HttpClientConfig } from '../../types';
 
 const logger = createLogger('auth');
 
