@@ -39,10 +39,9 @@ export default {
       statements: 70,
     },
   },
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 10000,
   verbose: true,
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@domains/(.*)$': '<rootDir>/src/domains/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
