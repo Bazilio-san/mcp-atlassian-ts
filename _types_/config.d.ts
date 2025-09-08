@@ -68,7 +68,6 @@ export interface IJiraConfig {
     };
   };
   maxResults: number;
-  defaultProject?: string;
 }
 
 // Confluence configuration
@@ -87,13 +86,11 @@ export interface IConfluenceConfig {
     };
   };
   maxResults: number;
-  defaultSpace?: string;
 }
 
 // SSL/TLS configuration
 export interface ISslConfig {
   rejectUnauthorized: boolean;
-  verifyPeer: boolean;
 }
 
 // Main configuration interface

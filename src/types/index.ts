@@ -48,7 +48,6 @@ export interface JiraConfig {
   email?: string;
   auth: AuthConfig;
   maxResults: number;
-  defaultProject?: string;
 }
 
 // Confluence configuration
@@ -57,7 +56,6 @@ export interface ConfluenceConfig {
   email?: string;
   auth: AuthConfig;
   maxResults: number;
-  defaultSpace?: string;
 }
 
 // API Response types

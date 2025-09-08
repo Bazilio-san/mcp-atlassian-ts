@@ -8,7 +8,7 @@ import { getCache } from '../cache/index.js';
 import { ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
-import type { JiraConfig, ConfluenceConfig } from '../../types';
+import type { JiraConfig, ConfluenceConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 import type { ServiceMode } from './factory.js';

@@ -1,7 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TEST MCP" type="NodeJSConfigurationType"
-                 application-parameters="help"
-                 path-to-js-file="tests/src/mcp-client-tests.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="TEST MCP" type="NodeJSConfigurationType" application-parameters="test" path-to-js-file="tests/mcp-client-tests.js" working-dir="$PROJECT_DIR$">
     <method v="2" />
   </configuration>
 </component>

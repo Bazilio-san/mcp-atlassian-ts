@@ -32,7 +32,7 @@ class JiraEndpointsTester {
     };
 
     if (this.auth.type === 'basic') {
-      const credentials = btoa(`${this.auth.username}:${this.auth.password}`);
+      const credentials = Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64');
       headers['Authorization'] = `Basic ${credentials}`;
     } else if (this.auth.type === 'token') {
       headers['Authorization'] = `Bearer ${this.auth.token}`;
@@ -681,6 +681,217 @@ class JiraEndpointsTester {
     }
   }
 
+  /**
+   * Запустить расширенные тесты для всех эндпоинтов эмулятора
+   */
+  async runExtendedTests() {
+    console.log('🚀 Starting EXTENDED JIRA EMULATOR tests...');
+    console.log(`📡 Base URL: ${this.baseUrl}`);
+    console.log('🔍 Testing ALL implemented endpoints comprehensively...\n');
+
+    const startTime = Date.now();
+
+    try {
+      // Системные эндпоинты
+      console.log('\n=== TESTING SYSTEM ENDPOINTS ===');
+      const myself = await this.makeRequest('GET', '/myself');
+      this.logTest('Get Current User (myself)', myself, 200, '/myself');
+
+      const serverInfo = await this.makeRequest('GET', '/serverInfo');
+      this.logTest('Get Server Info', serverInfo, 200, '/serverInfo');
+
+      const config = await this.makeRequest('GET', '/configuration');
+      this.logTest('Get Configuration', config, 200, '/configuration');
+
+      const appRoles = await this.makeRequest('GET', '/applicationrole');
+      this.logTest('Get Application Roles', appRoles, 200, '/applicationrole');
+
+      const permissions = await this.makeRequest('GET', '/permissions');
+      this.logTest('Get Permissions', permissions, 200, '/permissions');
+
+      // Стандартные тесты
+      await this.testIssueEndpoints();
+      await this.testSearchEndpoints();
+      await this.testProjectEndpoints();
+      await this.testUserEndpoints();
+      await this.testMetadataEndpoints();
+
+      // Версии и компоненты
+      console.log('\n=== TESTING VERSION & COMPONENT ENDPOINTS ===');
+      
+      // Создаем версию
+      const version = await this.makeRequest('POST', '/version', {
+        name: 'Test Version 2.0',
+        description: 'Test version for comprehensive testing',
+        projectId: 10000,
+        released: false,
+      });
+      this.logTest('Create Version', version, 201, '/version');
+      
+      if (version.success && version.data.id) {
+        const versionId = version.data.id;
+        this.createdResources.versions.push(versionId);
+        
+        const getVersion = await this.makeRequest('GET', `/version/${versionId}`);
+        this.logTest('Get Version', getVersion, 200, `/version/${versionId}`);
+        
+        const updateVersion = await this.makeRequest('PUT', `/version/${versionId}`, { released: true });
+        this.logTest('Update Version', updateVersion, 200, `/version/${versionId}`);
+      }
+
+      // Issue Links
+      console.log('\n=== TESTING ISSUE LINK ENDPOINTS ===');
+      
+      const linkTypes = await this.makeRequest('GET', '/issueLinkType');
+      this.logTest('Get Issue Link Types', linkTypes, 200, '/issueLinkType');
+      
+      // Создаем две задачи для связывания
+      const issue1 = await this.makeRequest('POST', '/issue', {
+        fields: {
+          summary: 'Link Test Issue 1',
+          project: { key: 'TEST' },
+          issuetype: { name: 'Task' },
+        },
+      });
+      this.logTest('Create Link Test Issue 1', issue1, 201, '/issue');
+      
+      const issue2 = await this.makeRequest('POST', '/issue', {
+        fields: {
+          summary: 'Link Test Issue 2',
+          project: { key: 'TEST' },
+          issuetype: { name: 'Task' },
+        },
+      });
+      this.logTest('Create Link Test Issue 2', issue2, 201, '/issue');
+      
+      if (issue1.success && issue2.success) {
+        this.createdResources.issues.push(issue1.data.key, issue2.data.key);
+        
+        const link = await this.makeRequest('POST', '/issueLink', {
+          type: { id: '10000' },
+          inwardIssue: { key: issue1.data.key, id: issue1.data.id },
+          outwardIssue: { key: issue2.data.key, id: issue2.data.id },
+        });
+        this.logTest('Create Issue Link', link, 201, '/issueLink');
+        
+        if (link.success && link.data.id) {
+          this.createdResources.links.push(link.data.id);
+          
+          const deleteLink = await this.makeRequest('DELETE', `/issueLink/${link.data.id}`);
+          this.logTest('Delete Issue Link', deleteLink, 204, `/issueLink/${link.data.id}`);
+        }
+        
+        // Remote links
+        const remoteLink = await this.makeRequest('POST', `/issue/${issue1.data.key}/remotelink`, {
+          object: {
+            url: 'https://example.com',
+            title: 'Example Remote Link',
+          },
+        });
+        this.logTest('Create Remote Link', remoteLink, 201, `/issue/${issue1.data.key}/remotelink`);
+        
+        const getRemoteLinks = await this.makeRequest('GET', `/issue/${issue1.data.key}/remotelink`);
+        this.logTest('Get Remote Links', getRemoteLinks, 200, `/issue/${issue1.data.key}/remotelink`);
+      }
+
+      // Workflows and Schemes
+      console.log('\n=== TESTING WORKFLOW & SCHEME ENDPOINTS ===');
+      
+      const workflows = await this.makeRequest('GET', '/workflow');
+      this.logTest('Get Workflows', workflows, 200, '/workflow');
+      
+      const workflowSchemes = await this.makeRequest('GET', '/workflowscheme');
+      this.logTest('Get Workflow Schemes', workflowSchemes, 200, '/workflowscheme');
+      
+      const notificationSchemes = await this.makeRequest('GET', '/notificationscheme');
+      this.logTest('Get Notification Schemes', notificationSchemes, 200, '/notificationscheme');
+      
+      const permissionSchemes = await this.makeRequest('GET', '/permissionscheme');
+      this.logTest('Get Permission Schemes', permissionSchemes, 200, '/permissionscheme');
+
+      // Dashboards and Filters
+      console.log('\n=== TESTING DASHBOARD & FILTER ENDPOINTS ===');
+      
+      const dashboards = await this.makeRequest('GET', '/dashboard');
+      this.logTest('Get Dashboards', dashboards, 200, '/dashboard');
+      
+      const filters = await this.makeRequest('GET', '/filter/favourite');
+      this.logTest('Get Favourite Filters', filters, 200, '/filter/favourite');
+
+      // Groups and Roles
+      console.log('\n=== TESTING GROUP & ROLE ENDPOINTS ===');
+      
+      const groups = await this.makeRequest('GET', '/groups/picker');
+      this.logTest('Get Groups', groups, 200, '/groups/picker');
+      
+      const roles = await this.makeRequest('GET', '/role');
+      this.logTest('Get Roles', roles, 200, '/role');
+
+      // Attachments
+      console.log('\n=== TESTING ATTACHMENT ENDPOINTS ===');
+      
+      const attachment = await this.makeRequest('GET', '/attachment/10000');
+      this.logTest('Get Attachment', attachment, 200, '/attachment/10000');
+
+      // Bulk operations
+      console.log('\n=== TESTING BULK OPERATION ENDPOINTS ===');
+      
+      const bulkIssues = await this.makeRequest('POST', '/issue/bulk', {
+        issueUpdates: [
+          {
+            fields: {
+              summary: 'Bulk Issue 1',
+              project: { key: 'TEST' },
+              issuetype: { name: 'Task' },
+            },
+          },
+          {
+            fields: {
+              summary: 'Bulk Issue 2',
+              project: { key: 'TEST' },
+              issuetype: { name: 'Task' },
+            },
+          },
+        ],
+      });
+      this.logTest('Create Bulk Issues', bulkIssues, 201, '/issue/bulk');
+      
+      if (bulkIssues.success && bulkIssues.data.issues) {
+        const issueKeys = bulkIssues.data.issues.map(i => i.key);
+        this.createdResources.issues.push(...issueKeys);
+        
+        // Test changelog
+        const changelog = await this.makeRequest('POST', '/issue/changelog/list', {
+          issueIds: issueKeys,
+        });
+        this.logTest('Get Issues Changelog', changelog, 200, '/issue/changelog/list');
+      }
+
+      // Search GET endpoint
+      console.log('\n=== TESTING SEARCH GET ENDPOINT ===');
+      
+      const searchGet = await this.makeRequest('GET', `/search?jql=project=${this.testProjectKey}&maxResults=5`);
+      this.logTest('Search Issues (GET)', searchGet, 200, '/search');
+
+      // Изменяющие тесты
+      await this.testModifyingEndpoints();
+
+      // Agile эндпоинты
+      await this.testAgileEndpoints();
+
+      // Дополнительные эндпоинты
+      await this.testAdditionalEndpoints();
+
+      // Очистка созданных ресурсов
+      await this.cleanup();
+
+    } catch (error) {
+      console.error('💥 Test execution failed:', error.message);
+    } finally {
+      await this.generateReport(startTime);
+    }
+  }
+
   async generateReport (startTime) {
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
@@ -739,6 +950,17 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
       }
     });
 
-    await tester.runAllTests();
+    // Проверяем аргументы командной строки
+    const args = process.argv.slice(2);
+    const isExtended = args.includes('--extended') || args.includes('-e');
+    
+    if (isExtended) {
+      console.log('📋 Running EXTENDED test suite...\n');
+      await tester.runExtendedTests();
+    } else {
+      console.log('📋 Running standard test suite...');
+      console.log('💡 Tip: Use --extended or -e flag for comprehensive testing\n');
+      await tester.runAllTests();
+    }
   })();
 }

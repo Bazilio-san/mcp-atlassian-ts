@@ -173,7 +173,6 @@ There is no combined mode - each server instance is dedicated to a single servic
 | `JIRA_OAUTH_CLIENT_ID` | ❌ | OAuth 2.0 client ID |
 | `JIRA_OAUTH_CLIENT_SECRET` | ❌ | OAuth 2.0 client secret |
 | `JIRA_MAX_RESULTS` | ❌ | Max results per query (default: 50) |
-| `JIRA_DEFAULT_PROJECT` | ❌ | Default project key |
 
 #### Confluence Configuration
 
@@ -186,7 +185,6 @@ There is no combined mode - each server instance is dedicated to a single servic
 | `CONFLUENCE_OAUTH_CLIENT_ID` | ❌ | OAuth 2.0 client ID |
 | `CONFLUENCE_OAUTH_CLIENT_SECRET` | ❌ | OAuth 2.0 client secret |
 | `CONFLUENCE_MAX_RESULTS` | ❌ | Max results per query (default: 50) |
-| `CONFLUENCE_DEFAULT_SPACE` | ❌ | Default space key |
 
 *Required for Basic Auth with API token
 
@@ -327,7 +325,7 @@ module.exports = {
   apps: [
     {
       name: 'mcp-jira',
-      script: 'dist/index.js',
+      script: 'dist/src/index.js',
       env: {
         MCP_SERVICE: 'jira',
         JIRA_URL: 'https://jira.company.com',
@@ -337,7 +335,7 @@ module.exports = {
     },
     {
       name: 'mcp-confluence',
-      script: 'dist/index.js',
+      script: 'dist/src/index.js',
       env: {
         MCP_SERVICE: 'confluence',
         CONFLUENCE_URL: 'https://wiki.company.com',

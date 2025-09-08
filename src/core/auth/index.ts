@@ -7,7 +7,7 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosR
 import { AuthenticationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
-import type { AuthConfig, HttpClientConfig } from '../../types';
+import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
 
 const logger = createLogger('auth');
 

@@ -19,7 +19,7 @@ import {
   PingRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import type { ServerConfig, JiraConfig, ConfluenceConfig } from '../../types';
+import type { ServerConfig, JiraConfig, ConfluenceConfig } from '../../types/index.js';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
 import { createErrorResponse, McpAtlassianError, ServerError } from '../errors/index.js';
 import { getCache } from '../cache/index.js';

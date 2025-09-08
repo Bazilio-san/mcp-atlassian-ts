@@ -21,7 +21,6 @@ jira:
       refreshToken: JIRA_OAUTH_REFRESH_TOKEN
       redirectUri: JIRA_OAUTH_REDIRECT_URI
   maxResults: JIRA_MAX_RESULTS
-  defaultProject: JIRA_DEFAULT_PROJECT
 
 confluence:
   url: CONFLUENCE_URL
@@ -36,7 +35,6 @@ confluence:
       refreshToken: CONFLUENCE_OAUTH_REFRESH_TOKEN
       redirectUri: CONFLUENCE_OAUTH_REDIRECT_URI
   maxResults: CONFLUENCE_MAX_RESULTS
-  defaultSpace: CONFLUENCE_DEFAULT_SPACE
 
 logger:
   level: LOG_LEVEL
@@ -52,7 +50,6 @@ cache:
 
 ssl:
   rejectUnauthorized: NODE_TLS_REJECT_UNAUTHORIZED
-  verifyPeer: SSL_VERIFY_PEER
 
 features:
   enabledTools: ENABLED_TOOLS

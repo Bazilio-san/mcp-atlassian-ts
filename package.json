@@ -2,20 +2,19 @@
   "name": "mcp-atlassian-ts",
   "version": "1.0.0",
   "description": "Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node dist/index.js",
-    "start:jira": "node dist/index.js --service jira",
-    "start:confluence": "node dist/index.js --service confluence",
-    "build": "tsc -b ./tsconfig.json",
-    "build:clean": "rimraf dist && npm run build",
+    "start": "node dist/src/index.js",
+    "start:jira": "node dist/src/index.js --service jira",
+    "start:confluence": "node dist/src/index.js --service confluence",
+    "build": "tsc",
+    "clean": "rimraf dist && npm run build",
     "cb": "npm run patch_node_modules && npm run clean && npm run build",
     "ci": "node --no-deprecation ./_sh/npm/run.js",
-    "clean": "shx rm -rf ./dist/*",
     "dev": "tsx watch src/index.ts",
     "dev:jira": "tsx src/index.ts --service jira",
     "dev:confluence": "tsx src/index.ts --service confluence",
@@ -66,7 +65,6 @@
     "pino": "^8.19.0",
     "pino-pretty": "^10.3.1",
     "rate-limiter-flexible": "^5.0.3",
-    "shx": "^0.4.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

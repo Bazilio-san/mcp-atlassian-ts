@@ -3,7 +3,7 @@
  */
 
 import type { IConfig } from '../../../_types_/config.js';
-import type { ServerConfig, ConfluenceConfig } from '../../types';
+import type { ServerConfig, ConfluenceConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
@@ -28,7 +28,6 @@ export class ConfluenceServer extends McpAtlassianServer {
         email,
         url,
         maxResults,
-        defaultSpace,
       },
       cache,
       logger: { level: logLevel },
@@ -56,10 +55,6 @@ export class ConfluenceServer extends McpAtlassianServer {
 
     if (email) {
       confluenceConfig.email = email;
-    }
-
-    if (defaultSpace) {
-      confluenceConfig.defaultSpace = defaultSpace;
     }
 
     // Initialize parent with service mode configuration

@@ -2,12 +2,12 @@
  * Confluence MCP tools implementation
  */
 
-import { withErrorHandling, ToolExecutionError } from '../../core/errors';
+import { withErrorHandling, ToolExecutionError } from '../../core/errors/index.js';
 import { createLogger } from '../../core/utils/logger.js';
 
 import { ConfluenceClient } from './client.js';
 
-import type { ConfluenceConfig } from '../../types';
+import type { ConfluenceConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('confluence-tools');

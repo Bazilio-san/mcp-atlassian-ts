@@ -3,7 +3,7 @@
  */
 
 import type { IConfig } from '../../../_types_/config.js';
-import type { ServerConfig, JiraConfig } from '../../types';
+import type { ServerConfig, JiraConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
@@ -28,7 +28,6 @@ export class JiraServer extends McpAtlassianServer {
         email,
         url,
         maxResults,
-        defaultProject,
       },
       cache,
       logger: { level: logLevel },
@@ -56,10 +55,6 @@ export class JiraServer extends McpAtlassianServer {
 
     if (email) {
       jiraConfig.email = email;
-    }
-
-    if (defaultProject) {
-      jiraConfig.defaultProject = defaultProject;
     }
 
     // Initialize parent with service mode configuration

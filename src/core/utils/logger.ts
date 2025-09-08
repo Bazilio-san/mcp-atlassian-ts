@@ -3,7 +3,7 @@
  */
 
 import pino from 'pino';
-import type { LogContext } from '../../types';
+import type { LogContext } from '../../types/index.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 
 // Sensitive data patterns to mask
@@ -98,7 +98,7 @@ function createPinoLogger() {
       target: 'pino-pretty',
       options: {
         colorize: true,
-        ignore: 'pid,hostname',
+        ignore: 'pid,hostname,component',
         translateTime: 'yyyy-mm-dd HH:MM:ss',
         messageFormat: '[{component}] {msg}',
       },

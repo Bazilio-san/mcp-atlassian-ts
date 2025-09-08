@@ -7,9 +7,9 @@
  */
 
 import { appConfig } from './bootstrap/init-config.js';
-import { createAuthenticationManager, validateAuthConfig } from './core/auth';
-import { initializeCache } from './core/cache';
-import { ServerError } from './core/errors';
+import { createAuthenticationManager, validateAuthConfig } from './core/auth/index.js';
+import { initializeCache } from './core/cache/index.js';
+import { ServerError } from './core/errors/index.js';
 import { createServiceServer, validateServiceMode, type ServiceMode } from './core/server/factory.js';
 import { createLogger } from './core/utils/logger.js';
 import { pathToFileURL } from 'url';
@@ -117,7 +117,7 @@ async function main (cliServiceMode?: ServiceMode) {
     // Override service mode in config for the server
     (appConfig.server as any).serviceMode = serviceMode;
 
-    logger.info('Configuration loaded', { environment, transportType, serviceMode });
+    logger.info('Configuration loaded', { environment, transportType, serviceMode, jira });
 
     // Initialize cache
     initializeCache(cache);

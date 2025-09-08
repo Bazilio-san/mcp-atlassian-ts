@@ -1,6 +1,6 @@
 import './dotenv.js';  // Load environment variables first
 import config from 'config';
-import { IConfig } from '../../_types_/config';
+import { IConfig } from '../../_types_/config.js';
 
 // Convert config object to typed interface
 export const appConfig: IConfig = config.util.toObject() as IConfig;

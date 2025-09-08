@@ -4,7 +4,7 @@
 
 import { createLogger } from '../utils/logger.js';
 
-import type { McpError } from '../../types';
+import type { McpError } from '../../types/index.js';
 
 const logger = createLogger('errors');
 

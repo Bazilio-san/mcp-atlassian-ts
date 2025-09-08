@@ -38,8 +38,7 @@ const defaultConfig = {
         redirectUri: '***'       // OAuth 2.0 redirect URI
       }
     },
-    maxResults: 50,              // Maximum results per API request (default: 50, max: 100)
-    defaultProject: null         // Default project key for JIRA operations
+    maxResults: 50              // Maximum results per API request (default: 50, max: 100)
   },
   
   // Confluence configuration
@@ -57,8 +56,7 @@ const defaultConfig = {
         redirectUri: '***'       // OAuth 2.0 redirect URI
       }
     },
-    maxResults: 50,              // Maximum results per API request (default: 50, max: 100)
-    defaultSpace: null           // Default space key for Confluence operations
+    maxResults: 50              // Maximum results per API request (default: 50, max: 100)
   },
   
   // Logging configuration
@@ -81,8 +79,7 @@ const defaultConfig = {
   
   // SSL/TLS configuration
   ssl: {
-    rejectUnauthorized: true,    // Reject unauthorized SSL certificates (set to false for self-signed)
-    verifyPeer: true             // Verify SSL peer certificate
+    rejectUnauthorized: true    // Reject unauthorized SSL certificates (set to false for self-signed)
   },
   
   // Feature flags
