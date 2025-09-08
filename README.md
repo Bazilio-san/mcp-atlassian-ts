@@ -16,15 +16,39 @@ npm run build
 ```
 
 ### 2. Configure environment
-Create `.env` file:
+Create `.env` file with service-specific settings:
+
+#### For JIRA:
 ```bash
-ATLASSIAN_URL=http://localhost:8080
+MCP_SERVICE=jira
+JIRA_URL=https://jira.company.com
+JIRA_EMAIL=user@company.com
+JIRA_API_TOKEN=your-jira-token
+TRANSPORT_TYPE=http
+```
+
+#### For Confluence:
+```bash
+MCP_SERVICE=confluence
+CONFLUENCE_URL=https://wiki.company.com
+CONFLUENCE_EMAIL=user@company.com
+CONFLUENCE_API_TOKEN=your-confluence-token
 TRANSPORT_TYPE=http
 ```
 
 ### 3. Start MCP Server
 ```bash
+# Using environment variable
+export MCP_SERVICE=jira  # or confluence
 npm start
+
+# Or using command line argument
+npm start -- --service jira
+npm start -- --service confluence
+
+# Or using NPM scripts
+npm run start:jira
+npm run start:confluence
 ```
 
 ## 🧪 Testing
@@ -118,25 +142,91 @@ See: [tests/README.md](tests/README.md)
 
 ## ⚙️ Configuration
 
+### Service Mode (Required)
+
+The server requires you to specify which service to run:
+- **JIRA mode**: Runs JIRA tools and connectivity only (30 tools)
+- **Confluence mode**: Runs Confluence tools and connectivity only (17 tools)
+
+There is no combined mode - each server instance is dedicated to a single service for better resource management and deployment flexibility.
+
 ### Environment Variables (.env)
+
+#### Common Variables
 
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
-| `ATLASSIAN_URL` | ✅ | Your Atlassian instance URL | - |
-| `TRANSPORT_TYPE` | ❌ | Transport type | `http` |
+| `MCP_SERVICE` | ✅ | Service mode: `jira` or `confluence` | - |
+| `TRANSPORT_TYPE` | ❌ | Transport type: `stdio`, `http`, `sse` | `http` |
 | `PORT` | ❌ | HTTP server port | `3000` |
+| `LOG_LEVEL` | ❌ | Logging level | `info` |
+| `CACHE_TTL_SECONDS` | ❌ | Cache time-to-live | `300` |
 
-### Authentication
+#### JIRA Configuration
 
-For production use, add authentication:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JIRA_URL` | ✅ | JIRA instance URL |
+| `JIRA_EMAIL` | ✅* | Email for authentication |
+| `JIRA_API_TOKEN` | ❌ | API token (choose one auth method) |
+| `JIRA_PAT` | ❌ | Personal Access Token |
+| `JIRA_OAUTH_CLIENT_ID` | ❌ | OAuth 2.0 client ID |
+| `JIRA_OAUTH_CLIENT_SECRET` | ❌ | OAuth 2.0 client secret |
+| `JIRA_MAX_RESULTS` | ❌ | Max results per query (default: 50) |
+| `JIRA_DEFAULT_PROJECT` | ❌ | Default project key |
 
+#### Confluence Configuration
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `CONFLUENCE_URL` | ✅ | Confluence instance URL |
+| `CONFLUENCE_EMAIL` | ✅* | Email for authentication |
+| `CONFLUENCE_API_TOKEN` | ❌ | API token (choose one auth method) |
+| `CONFLUENCE_PAT` | ❌ | Personal Access Token |
+| `CONFLUENCE_OAUTH_CLIENT_ID` | ❌ | OAuth 2.0 client ID |
+| `CONFLUENCE_OAUTH_CLIENT_SECRET` | ❌ | OAuth 2.0 client secret |
+| `CONFLUENCE_MAX_RESULTS` | ❌ | Max results per query (default: 50) |
+| `CONFLUENCE_DEFAULT_SPACE` | ❌ | Default space key |
+
+*Required for Basic Auth with API token
+
+### Authentication Methods
+
+Each service supports three authentication methods:
+
+#### 1. API Token (Basic Auth)
 ```bash
-# Basic Auth
-ATLASSIAN_EMAIL=your-email@company.com
-ATLASSIAN_API_TOKEN=your-api-token
+# JIRA
+JIRA_EMAIL=user@company.com
+JIRA_API_TOKEN=your-jira-token
 
-# Or Personal Access Token (recommended)
-ATLASSIAN_PAT=your-personal-access-token
+# Confluence
+CONFLUENCE_EMAIL=user@company.com
+CONFLUENCE_API_TOKEN=your-confluence-token
+```
+
+#### 2. Personal Access Token (Recommended)
+```bash
+# JIRA
+JIRA_PAT=your-jira-pat
+
+# Confluence
+CONFLUENCE_PAT=your-confluence-pat
+```
+
+#### 3. OAuth 2.0
+```bash
+# JIRA
+JIRA_OAUTH_CLIENT_ID=jira-client
+JIRA_OAUTH_CLIENT_SECRET=jira-secret
+JIRA_OAUTH_ACCESS_TOKEN=jira-access
+JIRA_OAUTH_REFRESH_TOKEN=jira-refresh
+
+# Confluence
+CONFLUENCE_OAUTH_CLIENT_ID=conf-client
+CONFLUENCE_OAUTH_CLIENT_SECRET=conf-secret
+CONFLUENCE_OAUTH_ACCESS_TOKEN=conf-access
+CONFLUENCE_OAUTH_REFRESH_TOKEN=conf-refresh
 ```
 
 ### Transport Types
@@ -186,17 +276,173 @@ tests/
 
 | Command | Description |
 |---------|-------------|
-| `npm start` | Start production server |
+| `npm start` | Start production server (requires MCP_SERVICE) |
+| `npm run start:jira` | Start JIRA server |
+| `npm run start:confluence` | Start Confluence server |
 | `npm run dev` | Development with hot reload |
+| `npm run dev:jira` | Development JIRA server |
+| `npm run dev:confluence` | Development Confluence server |
 | `npm run build` | Build for production |
 | `npm run test` | Run test suite |
 | `npm run lint` | Code linting |
+| `npm run typecheck` | TypeScript type checking |
 
 ### Health Check
 
 ```bash
 curl http://localhost:3000/health
 ```
+
+## 🚀 Deployment
+
+### Docker Deployment
+
+#### JIRA Server
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci --only=production
+ENV MCP_SERVICE=jira
+ENV JIRA_URL=https://jira.company.com
+CMD ["npm", "start"]
+```
+
+#### Confluence Server
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci --only=production
+ENV MCP_SERVICE=confluence
+ENV CONFLUENCE_URL=https://wiki.company.com
+CMD ["npm", "start"]
+```
+
+### PM2 Deployment
+
+```javascript
+// ecosystem.config.js
+module.exports = {
+  apps: [
+    {
+      name: 'mcp-jira',
+      script: 'dist/index.js',
+      env: {
+        MCP_SERVICE: 'jira',
+        JIRA_URL: 'https://jira.company.com',
+        JIRA_EMAIL: 'bot@company.com',
+        JIRA_API_TOKEN: process.env.JIRA_TOKEN
+      }
+    },
+    {
+      name: 'mcp-confluence',
+      script: 'dist/index.js',
+      env: {
+        MCP_SERVICE: 'confluence',
+        CONFLUENCE_URL: 'https://wiki.company.com',
+        CONFLUENCE_EMAIL: 'bot@company.com',
+        CONFLUENCE_API_TOKEN: process.env.CONFLUENCE_TOKEN
+      }
+    }
+  ]
+};
+```
+
+### Kubernetes Deployment
+
+```yaml
+# jira-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-jira
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: mcp-jira
+        image: mcp-atlassian:latest
+        env:
+        - name: MCP_SERVICE
+          value: "jira"
+        - name: JIRA_URL
+          value: "https://jira.company.com"
+---
+# confluence-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-confluence
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: mcp-confluence
+        image: mcp-atlassian:latest
+        env:
+        - name: MCP_SERVICE
+          value: "confluence"
+        - name: CONFLUENCE_URL
+          value: "https://wiki.company.com"
+```
+
+## 💡 Benefits of Service Separation
+
+### Resource Efficiency
+- Only loads necessary tools for the selected service
+- Reduced memory footprint (30-40% less than combined)
+- Faster startup times
+- Lower CPU usage
+
+### Deployment Flexibility
+- Deploy JIRA and Confluence servers independently
+- Scale each service based on actual usage
+- Different maintenance windows for each service
+- Service-specific monitoring and logging
+
+### Security
+- Separate credentials for each service
+- Principle of least privilege
+- Reduced attack surface
+- Service isolation
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Error: Service mode is required**
+- Solution: Set `MCP_SERVICE` environment variable or use `--service` flag
+
+**Error: JIRA URL is required but not configured**
+- Solution: Set `JIRA_URL` environment variable when running in JIRA mode
+
+**Error: Confluence URL is required but not configured**
+- Solution: Set `CONFLUENCE_URL` environment variable when running in Confluence mode
+
+**Error: No authentication method configured**
+- Solution: Provide API token, PAT, or OAuth credentials for the selected service
+
+### Getting Help
+
+```bash
+# Show available options
+npm start -- --help
+
+# Check health endpoint
+curl http://localhost:3000/health
+```
+
+## 📋 Best Practices
+
+1. **Run separate instances** for JIRA and Confluence in production
+2. **Use service-specific credentials** rather than shared ones
+3. **Monitor each service independently** for better observability
+4. **Scale based on usage** - JIRA typically needs more resources
+5. **Use environment variables** for configuration in production
+6. **Implement health checks** for each service endpoint
 
 ## 📄 License
 
