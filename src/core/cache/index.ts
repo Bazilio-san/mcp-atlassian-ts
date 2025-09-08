@@ -1,10 +1,12 @@
+// noinspection ES6PreferShortImport
+
 /**
  * Caching system for API responses and computed data
  */
 
 import NodeCache from 'node-cache';
 
-import { CacheError } from '../errors';
+import { CacheError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
 

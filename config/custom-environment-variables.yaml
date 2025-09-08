@@ -6,25 +6,35 @@ server:
   host: HOST
   environment: NODE_ENV
   transportType: TRANSPORT_TYPE
-
-atlassian:
-  url: ATLASSIAN_URL
-  email: ATLASSIAN_EMAIL
-  auth:
-    apiToken: ATLASSIAN_API_TOKEN
-    pat: ATLASSIAN_PAT
-    oauth2:
-      clientId: ATLASSIAN_OAUTH_CLIENT_ID
-      clientSecret: ATLASSIAN_OAUTH_CLIENT_SECRET
-      accessToken: ATLASSIAN_OAUTH_ACCESS_TOKEN
-      refreshToken: ATLASSIAN_OAUTH_REFRESH_TOKEN
-      redirectUri: ATLASSIAN_OAUTH_REDIRECT_URI
+  serviceMode: MCP_SERVICE
 
 jira:
+  url: JIRA_URL
+  email: JIRA_EMAIL
+  auth:
+    apiToken: JIRA_API_TOKEN
+    pat: JIRA_PAT
+    oauth2:
+      clientId: JIRA_OAUTH_CLIENT_ID
+      clientSecret: JIRA_OAUTH_CLIENT_SECRET
+      accessToken: JIRA_OAUTH_ACCESS_TOKEN
+      refreshToken: JIRA_OAUTH_REFRESH_TOKEN
+      redirectUri: JIRA_OAUTH_REDIRECT_URI
   maxResults: JIRA_MAX_RESULTS
   defaultProject: JIRA_DEFAULT_PROJECT
 
 confluence:
+  url: CONFLUENCE_URL
+  email: CONFLUENCE_EMAIL
+  auth:
+    apiToken: CONFLUENCE_API_TOKEN
+    pat: CONFLUENCE_PAT
+    oauth2:
+      clientId: CONFLUENCE_OAUTH_CLIENT_ID
+      clientSecret: CONFLUENCE_OAUTH_CLIENT_SECRET
+      accessToken: CONFLUENCE_OAUTH_ACCESS_TOKEN
+      refreshToken: CONFLUENCE_OAUTH_REFRESH_TOKEN
+      redirectUri: CONFLUENCE_OAUTH_REDIRECT_URI
   maxResults: CONFLUENCE_MAX_RESULTS
   defaultSpace: CONFLUENCE_DEFAULT_SPACE
 

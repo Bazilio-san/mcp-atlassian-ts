@@ -8,7 +8,7 @@ import { withErrorHandling, NotFoundError, ValidationError } from '../../core/er
 import { createLogger } from '../../core/utils/logger.js';
 
 import type {
-  AtlassianConfig,
+  ConfluenceConfig,
   ConfluencePage,
   ConfluenceSpace,
   ConfluenceSearchRequest,
@@ -29,11 +29,17 @@ const logger = createLogger('confluence-client');
  */
 export class ConfluenceClient {
   private httpClient: AxiosInstance;
-  private config: AtlassianConfig;
+  private config: ConfluenceConfig;
   private cache = getCache();
 
-  constructor(config: AtlassianConfig) {
+  constructor(config: ConfluenceConfig) {
     this.config = config;
+    if (!config.url || config.url === '***') {
+      throw new Error('Confluence URL is required but not configured');
+    }
+    if (!config.auth) {
+      throw new Error('Confluence authentication is required but not configured');
+    }
     const authManager = createAuthenticationManager(config.auth, config.url);
     this.httpClient = authManager.getHttpClient();
   }
@@ -142,7 +148,7 @@ export class ConfluenceClient {
           // Apply default limit if not specified
           const request = {
             ...searchRequest,
-            limit: searchRequest.limit || this.config.confluence?.maxResults || 50,
+            limit: searchRequest.limit || this.config.maxResults || 50,
           };
 
           const response = await this.httpClient.get('/wiki/rest/api/search', { params: request });
@@ -667,7 +673,7 @@ export class ConfluenceClient {
   /**
    * Get configuration for the client
    */
-  getConfig(): AtlassianConfig {
+  getConfig(): ConfluenceConfig {
     return this.config;
   }
 

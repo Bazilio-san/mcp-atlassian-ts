@@ -1,5 +1,11 @@
 // Default configuration for MCP Atlassian TypeScript server
-const { name, version, description } = require('../package.json');
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
+const { name, version, description } = packageJson;
 
 const defaultConfig = {
   // Package metadata (auto-populated from package.json)
@@ -13,12 +19,13 @@ const defaultConfig = {
     port: 3000,                  // HTTP server port (default: 3000, range: 1024-65535)
     host: '0.0.0.0',            // Server bind address ('0.0.0.0' for all interfaces, 'localhost' for local only)
     environment: 'development',  // Environment: development, production, test
-    transportType: 'http'        // Transport type: stdio, http, sse
+    transportType: 'http',       // Transport type: stdio, http, sse
+    serviceMode: null            // Service mode: jira or confluence (required)
   },
   
-  // Atlassian configuration
-  atlassian: {
-    url: '***',                  // Atlassian instance URL (e.g., https://your-domain.atlassian.net)
+  // JIRA configuration
+  jira: {
+    url: '***',                  // JIRA instance URL (e.g., https://jira.company.com)
     email: '***',                // User email for basic authentication
     auth: {
       apiToken: '***',           // API token for basic authentication
@@ -30,17 +37,26 @@ const defaultConfig = {
         refreshToken: '***',     // OAuth 2.0 refresh token
         redirectUri: '***'       // OAuth 2.0 redirect URI
       }
-    }
-  },
-  
-  // JIRA configuration
-  jira: {
+    },
     maxResults: 50,              // Maximum results per API request (default: 50, max: 100)
     defaultProject: null         // Default project key for JIRA operations
   },
   
   // Confluence configuration
   confluence: {
+    url: '***',                  // Confluence instance URL (e.g., https://wiki.company.com)
+    email: '***',                // User email for basic authentication
+    auth: {
+      apiToken: '***',           // API token for basic authentication
+      pat: '***',                // Personal Access Token (alternative to basic auth)
+      oauth2: {
+        clientId: '***',         // OAuth 2.0 client ID
+        clientSecret: '***',     // OAuth 2.0 client secret
+        accessToken: '***',      // OAuth 2.0 access token
+        refreshToken: '***',     // OAuth 2.0 refresh token
+        redirectUri: '***'       // OAuth 2.0 redirect URI
+      }
+    },
     maxResults: 50,              // Maximum results per API request (default: 50, max: 100)
     defaultSpace: null           // Default space key for Confluence operations
   },
@@ -75,4 +91,4 @@ const defaultConfig = {
   }
 };
 
-module.exports = defaultConfig;
+export default defaultConfig;

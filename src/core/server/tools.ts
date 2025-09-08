@@ -4,13 +4,14 @@
 
 import { ConfluenceToolsManager } from '../../domains/confluence/tools.js';
 import { JiraToolsManager } from '../../domains/jira/tools.js';
-import { getCache } from '../cache';
-import { ToolExecutionError, ValidationError } from '../errors';
+import { getCache } from '../cache/index.js';
+import { ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
-import type { AtlassianConfig } from '../../types';
+import type { JiraConfig, ConfluenceConfig } from '../../types';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { appConfig } from '../../bootstrap/init-config';
+import { appConfig } from '../../bootstrap/init-config.js';
+import type { ServiceMode } from './factory.js';
 
 /**
  * Check if a specific tool is enabled
@@ -44,15 +45,28 @@ const logger = createLogger('tools');
  * Central registry for all MCP tools
  */
 export class ToolRegistry {
-  private atlassianConfig: AtlassianConfig;
-  private jiraTools: JiraToolsManager;
-  private confluenceTools: ConfluenceToolsManager;
-  private toolsMap: Map<string, Tool> = new Map();
+  protected serviceConfig: JiraConfig | ConfluenceConfig;
+  protected jiraTools: JiraToolsManager | null = null;
+  protected confluenceTools: ConfluenceToolsManager | null = null;
+  protected toolsMap: Map<string, Tool> = new Map();
 
-  constructor(atlassianConfig: AtlassianConfig) {
-    this.atlassianConfig = atlassianConfig;
-    this.jiraTools = new JiraToolsManager(atlassianConfig);
-    this.confluenceTools = new ConfluenceToolsManager(atlassianConfig);
+  constructor(serviceConfig: JiraConfig | ConfluenceConfig) {
+    this.serviceConfig = serviceConfig;
+    
+    // Create tool managers based on what config we have
+    // This is a flexible approach that allows JIRA or Confluence tools
+    // even when only one service config is provided
+    try {
+      this.jiraTools = new JiraToolsManager(serviceConfig as JiraConfig);
+    } catch {
+      // If JIRA config is invalid, jiraTools remains null
+    }
+    
+    try {
+      this.confluenceTools = new ConfluenceToolsManager(serviceConfig as ConfluenceConfig);
+    } catch {
+      // If Confluence config is invalid, confluenceTools remains null
+    }
   }
 
   /**
@@ -62,25 +76,32 @@ export class ToolRegistry {
     try {
       logger.info('Initializing tools...');
 
-      // Initialize tool managers
-      await this.jiraTools.initialize();
-      await this.confluenceTools.initialize();
+      let jiraToolsCount = 0;
+      let confluenceToolsCount = 0;
 
-      // Register JIRA tools
-      const jiraTools = this.jiraTools.getAvailableTools();
-      for (const tool of jiraTools) {
-        if (isToolEnabled(tool.name)) {
-          this.toolsMap.set(tool.name, tool);
-          logger.debug('Registered JIRA tool', { name: tool.name });
+      // Initialize and register JIRA tools if available
+      if (this.jiraTools) {
+        await this.jiraTools.initialize();
+        const jiraTools = this.jiraTools.getAvailableTools();
+        for (const tool of jiraTools) {
+          if (isToolEnabled(tool.name)) {
+            this.toolsMap.set(tool.name, tool);
+            logger.debug('Registered JIRA tool', { name: tool.name });
+            jiraToolsCount++;
+          }
         }
       }
 
-      // Register Confluence tools
-      const confluenceTools = this.confluenceTools.getAvailableTools();
-      for (const tool of confluenceTools) {
-        if (isToolEnabled(tool.name)) {
-          this.toolsMap.set(tool.name, tool);
-          logger.debug('Registered Confluence tool', { name: tool.name });
+      // Initialize and register Confluence tools if available
+      if (this.confluenceTools) {
+        await this.confluenceTools.initialize();
+        const confluenceTools = this.confluenceTools.getAvailableTools();
+        for (const tool of confluenceTools) {
+          if (isToolEnabled(tool.name)) {
+            this.toolsMap.set(tool.name, tool);
+            logger.debug('Registered Confluence tool', { name: tool.name });
+            confluenceToolsCount++;
+          }
         }
       }
 
@@ -89,8 +110,8 @@ export class ToolRegistry {
 
       logger.info('Tools initialized', {
         total: this.toolsMap.size,
-        jira: jiraTools.filter(t => isToolEnabled(t.name)).length,
-        confluence: confluenceTools.filter(t => isToolEnabled(t.name)).length,
+        jira: jiraToolsCount,
+        confluence: confluenceToolsCount,
       });
     } catch (error) {
       logger.error('Failed to initialize tools', error instanceof Error ? error : new Error(String(error)));
@@ -101,7 +122,7 @@ export class ToolRegistry {
   /**
    * Register utility and system tools
    */
-  private registerUtilityTools(): void {
+  protected registerUtilityTools(): void {
     // Cache management tool
     this.toolsMap.set('cache_clear', {
       name: 'cache_clear',
@@ -174,8 +195,14 @@ export class ToolRegistry {
 
       // Execute tool based on category
       if (name.startsWith('jira_')) {
+        if (!this.jiraTools) {
+          throw new ToolExecutionError(name, 'JIRA tools are not available - no JIRA configuration provided');
+        }
         return await this.jiraTools.executeTool(name, args);
       } else if (name.startsWith('confluence_')) {
+        if (!this.confluenceTools) {
+          throw new ToolExecutionError(name, 'Confluence tools are not available - no Confluence configuration provided');
+        }
         return await this.confluenceTools.executeTool(name, args);
       } else {
         // Execute utility tools
@@ -266,33 +293,37 @@ export class ToolRegistry {
   /**
    * Perform health check
    */
-  private async performHealthCheck(detailed: boolean): Promise<any> {
+  protected async performHealthCheck(detailed: boolean): Promise<any> {
     const health: any = {
       timestamp: new Date().toISOString(),
       status: 'ok',
       services: {},
     };
 
-    try {
-      // Check JIRA connectivity
-      health.services.jira = await this.jiraTools.healthCheck();
-    } catch (error) {
-      health.services.jira = {
-        status: 'error',
-        error: error instanceof Error ? error.message : String(error),
-      };
-      health.status = 'degraded';
+    // Check JIRA connectivity if available
+    if (this.jiraTools) {
+      try {
+        health.services.jira = await this.jiraTools.healthCheck();
+      } catch (error) {
+        health.services.jira = {
+          status: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        };
+        health.status = 'degraded';
+      }
     }
 
-    try {
-      // Check Confluence connectivity
-      health.services.confluence = await this.confluenceTools.healthCheck();
-    } catch (error) {
-      health.services.confluence = {
-        status: 'error',
-        error: error instanceof Error ? error.message : String(error),
-      };
-      health.status = 'degraded';
+    // Check Confluence connectivity if available  
+    if (this.confluenceTools) {
+      try {
+        health.services.confluence = await this.confluenceTools.healthCheck();
+      } catch (error) {
+        health.services.confluence = {
+          status: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        };
+        health.status = 'degraded';
+      }
     }
 
     if (detailed) {
@@ -370,5 +401,140 @@ export class ToolRegistry {
       confluence: tools.filter(name => name.startsWith('confluence_')),
       utility: tools.filter(name => !name.startsWith('jira_') && !name.startsWith('confluence_')),
     };
+  }
+}
+
+/**
+ * Service-specific tool registry that only initializes tools for specific services
+ */
+export class ServiceToolRegistry extends ToolRegistry {
+  private serviceMode: ServiceMode;
+
+  constructor(serviceConfig: JiraConfig | ConfluenceConfig, serviceMode: ServiceMode) {
+    super(serviceConfig);
+    this.serviceMode = serviceMode;
+    
+    // Override the parent's approach - create only the tools we need based on service mode
+    this.jiraTools = null;
+    this.confluenceTools = null;
+    
+    if (serviceMode === 'jira') {
+      this.jiraTools = new JiraToolsManager(serviceConfig as JiraConfig);
+    }
+    
+    if (serviceMode === 'confluence') {
+      this.confluenceTools = new ConfluenceToolsManager(serviceConfig as ConfluenceConfig);
+    }
+  }
+
+  /**
+   * Initialize tools based on service mode
+   */
+  override async initializeTools(): Promise<void> {
+    try {
+      logger.info('Initializing tools for service mode', { serviceMode: this.serviceMode });
+
+      // Initialize only the relevant tool managers based on service mode
+      if (this.serviceMode === 'jira' && this.jiraTools) {
+        await this.jiraTools.initialize();
+        
+        // Register JIRA tools
+        const jiraTools = this.jiraTools.getAvailableTools();
+        for (const tool of jiraTools) {
+          if (isToolEnabled(tool.name)) {
+            this.toolsMap.set(tool.name, tool);
+            logger.debug('Registered JIRA tool', { name: tool.name });
+          }
+        }
+      }
+
+      if (this.serviceMode === 'confluence' && this.confluenceTools) {
+        await this.confluenceTools.initialize();
+        
+        // Register Confluence tools
+        const confluenceTools = this.confluenceTools.getAvailableTools();
+        for (const tool of confluenceTools) {
+          if (isToolEnabled(tool.name)) {
+            this.toolsMap.set(tool.name, tool);
+            logger.debug('Registered Confluence tool', { name: tool.name });
+          }
+        }
+      }
+
+      // Always register utility tools
+      this.registerUtilityTools();
+
+      // Count tools by service
+      const jiraCount = this.serviceMode === 'jira' && this.jiraTools
+        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length 
+        : 0;
+      const confluenceCount = this.serviceMode === 'confluence' && this.confluenceTools
+        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length 
+        : 0;
+
+      logger.info('Service-specific tools initialized', {
+        serviceMode: this.serviceMode,
+        total: this.toolsMap.size,
+        jira: jiraCount,
+        confluence: confluenceCount,
+      });
+    } catch (error) {
+      logger.error('Failed to initialize service-specific tools', error instanceof Error ? error : new Error(String(error)));
+      throw new ToolExecutionError('system', 'Failed to initialize service-specific tools');
+    }
+  }
+
+  /**
+   * Override health check to only check relevant services
+   */
+  protected override async performHealthCheck(detailed: boolean): Promise<any> {
+    const health: any = {
+      timestamp: new Date().toISOString(),
+      status: 'ok',
+      serviceMode: this.serviceMode,
+      services: {},
+    };
+
+    // Check JIRA connectivity only if needed
+    if (this.serviceMode === 'jira' && this.jiraTools) {
+      try {
+        health.services.jira = await this.jiraTools.healthCheck();
+      } catch (error) {
+        health.services.jira = {
+          status: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        };
+        health.status = 'degraded';
+      }
+    }
+
+    // Check Confluence connectivity only if needed
+    if (this.serviceMode === 'confluence' && this.confluenceTools) {
+      try {
+        health.services.confluence = await this.confluenceTools.healthCheck();
+      } catch (error) {
+        health.services.confluence = {
+          status: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        };
+        health.status = 'degraded';
+      }
+    }
+
+    if (detailed) {
+      const cache = getCache();
+      health.cache = cache.getStats();
+      health.memory = process.memoryUsage();
+      health.uptime = process.uptime();
+    }
+
+    return health;
+  }
+
+  /**
+   * Get service mode
+   */
+  getServiceMode(): ServiceMode {
+    return this.serviceMode;
   }
 }

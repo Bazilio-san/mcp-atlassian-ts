@@ -7,7 +7,7 @@ import { createLogger } from '../../core/utils/logger.js';
 
 import { ConfluenceClient } from './client.js';
 
-import type { AtlassianConfig } from '../../types';
+import type { ConfluenceConfig } from '../../types';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('confluence-tools');
@@ -17,9 +17,9 @@ const logger = createLogger('confluence-tools');
  */
 export class ConfluenceToolsManager {
   private client: ConfluenceClient;
-  private config: AtlassianConfig;
+  private config: ConfluenceConfig;
 
-  constructor(config: AtlassianConfig) {
+  constructor(config: ConfluenceConfig) {
     this.config = config;
     this.client = new ConfluenceClient(config);
   }

@@ -7,7 +7,7 @@ import { createLogger } from '../../core/utils/logger.js';
 
 import { JiraClient } from './client.js';
 
-import type { AtlassianConfig } from '../../types';
+import type { JiraConfig } from '../../types';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('jira-tools');
@@ -17,9 +17,9 @@ const logger = createLogger('jira-tools');
  */
 export class JiraToolsManager {
   private client: JiraClient;
-  private config: AtlassianConfig;
+  private config: JiraConfig;
 
-  constructor(config: AtlassianConfig) {
+  constructor(config: JiraConfig) {
     this.config = config;
     this.client = new JiraClient(config);
   }

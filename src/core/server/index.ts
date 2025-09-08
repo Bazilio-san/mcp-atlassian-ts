@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /**
  * MCP Server implementation with multiple transport support
  */
@@ -17,12 +19,11 @@ import {
   PingRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import type { IConfig } from '../../../_types_/config.js';
-import type { ServerConfig, AtlassianConfig } from '../../types';
+import type { ServerConfig, JiraConfig, ConfluenceConfig } from '../../types';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
-import { createErrorResponse, McpAtlassianError, ServerError } from '../errors';
-import { getCache } from '../cache';
-import { createAuthenticationManager } from '../auth';
+import { createErrorResponse, McpAtlassianError, ServerError } from '../errors/index.js';
+import { getCache } from '../cache/index.js';
+import { createAuthenticationManager } from '../auth/index.js';
 import { ToolRegistry } from './tools.js';
 
 const logger = createLogger('server');
@@ -32,15 +33,15 @@ const logger = createLogger('server');
  */
 export class McpAtlassianServer {
   private server: Server;
-  private serverConfig: ServerConfig;
-  private atlassianConfig: AtlassianConfig;
-  private toolRegistry: ToolRegistry;
-  private rateLimiter: RateLimiterMemory;
-  private app?: express.Application;
+  protected serverConfig: ServerConfig;
+  protected serviceConfig: JiraConfig | ConfluenceConfig;
+  protected toolRegistry: ToolRegistry;
+  protected rateLimiter: RateLimiterMemory;
+  protected app?: express.Application;
 
-  constructor (serverConfig: ServerConfig, atlassianConfig: AtlassianConfig) {
+  constructor (serverConfig: ServerConfig, serviceConfig: JiraConfig | ConfluenceConfig) {
     this.serverConfig = serverConfig;
-    this.atlassianConfig = atlassianConfig;
+    this.serviceConfig = serviceConfig;
 
     // Initialize MCP server
     this.server = new Server(
@@ -65,7 +66,7 @@ export class McpAtlassianServer {
     });
 
     // Initialize tool registry
-    this.toolRegistry = new ToolRegistry(atlassianConfig);
+    this.toolRegistry = new ToolRegistry(serviceConfig);
 
     this.setupServerHandlers();
     this.registerTools();
@@ -135,8 +136,8 @@ export class McpAtlassianServer {
       switch (uri) {
         case 'atlassian://config':
           const authManager = createAuthenticationManager(
-            this.atlassianConfig.auth,
-            this.atlassianConfig.url,
+            this.serviceConfig.auth,
+            this.serviceConfig.url,
           );
 
           return {
@@ -144,10 +145,9 @@ export class McpAtlassianServer {
               uri,
               mimeType: 'application/json',
               text: JSON.stringify({
-                url: this.atlassianConfig.url,
+                url: this.serviceConfig.url,
                 auth: authManager.getAuthInfo(),
-                jira: this.atlassianConfig.jira,
-                confluence: this.atlassianConfig.confluence,
+                config: this.serviceConfig,
               }, null, 2),
             }],
           };
@@ -178,7 +178,7 @@ export class McpAtlassianServer {
   /**
    * Register all available tools
    */
-  private async registerTools (): Promise<void> {
+  protected async registerTools (): Promise<void> {
     try {
       await this.toolRegistry.initializeTools();
       logger.info('Tools registered successfully');
@@ -238,14 +238,7 @@ export class McpAtlassianServer {
 
       // Health check endpoint
       this.app.get('/health', (req, res) => {
-        res.json({
-          status: 'ok',
-          service: 'mcp-atlassian-typescript',
-          version: '2.0.0',
-          environment: this.serverConfig.environment,
-          uptime: process.uptime(),
-          timestamp: new Date().toISOString(),
-        });
+        res.json(this.getHealthCheckInfo());
       });
 
       // SSE endpoint for MCP communication
@@ -410,52 +403,21 @@ export class McpAtlassianServer {
   getApp (): express.Application | undefined {
     return this.app;
   }
+
+  /**
+   * Get health check information (can be overridden by subclasses)
+   */
+  protected getHealthCheckInfo(): any {
+    return {
+      status: 'ok',
+      service: 'mcp-atlassian-typescript',
+      version: '2.0.0',
+      environment: this.serverConfig.environment,
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
-/**
- * Create and configure MCP server
- */
-export function createMcpServer (config: IConfig): McpAtlassianServer {
-  // Convert IConfig to the expected ServerConfig and AtlassianConfig formats
-  const {
-    atlassian: {
-      auth: {
-        pat: pat,
-        oauth2,
-        apiToken,
-      } = {},
-      email,
-      url,
-    },
-    cache,
-    logger: { level: logLevel },
-    server: {
-      port,
-      transportType,
-      environment,
-    },
-    rateLimit,
-    confluence,
-    jira,
-  } = config;
-
-  const serverConfig: ServerConfig = { port, environment, logLevel, transportType, rateLimit, cache };
-
-  // Build auth config from appConfig
-  let auth: any;
-  if (pat) {
-    auth = { type: 'pat', token: pat };
-  } else if (oauth2?.clientId) {
-    auth = { type: 'oauth2', ...oauth2 };
-  } else if (apiToken && email) {
-    auth = { type: 'basic', email, token: apiToken };
-  }
-
-  const atlassianConfig: AtlassianConfig = { url, auth, jira, confluence } as AtlassianConfig;
-
-  if (email) {
-    atlassianConfig.email = email;
-  }
-
-  return new McpAtlassianServer(serverConfig, atlassianConfig);
-}
+// Re-export factory function for convenience
+export { createServiceServer } from './factory.js';

@@ -25,30 +25,13 @@ export interface IOAuth2Auth {
 
 export type IAuthConfig = IBasicAuth | IPatAuth | IOAuth2Auth;
 
-// Atlassian configuration
-export interface IAtlassianConfig {
-  url: string;
-  email?: string;
-  auth?: {
-    email?: string;
-    apiToken?: string;
-    pat?: string;
-    oauth2?: {
-      clientId?: string;
-      clientSecret?: string;
-      accessToken?: string;
-      refreshToken?: string;
-      redirectUri?: string;
-    };
-  };
-}
-
 // Server configuration
 export interface IServerConfig {
   port: number;
   host: string;
   environment: 'development' | 'production' | 'test';
   transportType: 'stdio' | 'http' | 'sse';
+  serviceMode?: 'jira' | 'confluence';
 }
 
 // Logging configuration
@@ -71,12 +54,38 @@ export interface ICacheConfig {
 
 // JIRA configuration
 export interface IJiraConfig {
+  url: string;
+  email?: string;
+  auth?: {
+    apiToken?: string;
+    pat?: string;
+    oauth2?: {
+      clientId?: string;
+      clientSecret?: string;
+      accessToken?: string;
+      refreshToken?: string;
+      redirectUri?: string;
+    };
+  };
   maxResults: number;
   defaultProject?: string;
 }
 
 // Confluence configuration
 export interface IConfluenceConfig {
+  url: string;
+  email?: string;
+  auth?: {
+    apiToken?: string;
+    pat?: string;
+    oauth2?: {
+      clientId?: string;
+      clientSecret?: string;
+      accessToken?: string;
+      refreshToken?: string;
+      redirectUri?: string;
+    };
+  };
   maxResults: number;
   defaultSpace?: string;
 }
@@ -97,9 +106,6 @@ export interface IConfig {
   
   // Server settings
   server: IServerConfig;
-  
-  // Atlassian settings
-  atlassian: IAtlassianConfig;
   
   // Service-specific settings
   jira: IJiraConfig;

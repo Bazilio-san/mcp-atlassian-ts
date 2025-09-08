@@ -4,7 +4,7 @@
 
 import pino from 'pino';
 import type { LogContext } from '../../types';
-import { appConfig } from '../../bootstrap/init-config';
+import { appConfig } from '../../bootstrap/init-config.js';
 
 // Sensitive data patterns to mask
 const SENSITIVE_PATTERNS = [

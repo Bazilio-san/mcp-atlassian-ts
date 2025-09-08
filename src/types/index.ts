@@ -2,11 +2,6 @@
  * Core TypeScript type definitions for the MCP Atlassian server
  */
 
-// Base types
-export interface BaseConfig {
-  url: string;
-  email?: string;
-}
 
 // Authentication types
 export interface BasicAuth {
@@ -47,17 +42,22 @@ export interface ServerConfig {
   };
 }
 
-// Atlassian configuration
-export interface AtlassianConfig extends BaseConfig {
+// JIRA configuration
+export interface JiraConfig {
+  url: string;
+  email?: string;
   auth: AuthConfig;
-  jira?: {
-    maxResults: number;
-    defaultProject?: string;
-  };
-  confluence?: {
-    maxResults: number;
-    defaultSpace?: string;
-  };
+  maxResults: number;
+  defaultProject?: string;
+}
+
+// Confluence configuration
+export interface ConfluenceConfig {
+  url: string;
+  email?: string;
+  auth: AuthConfig;
+  maxResults: number;
+  defaultSpace?: string;
 }
 
 // API Response types

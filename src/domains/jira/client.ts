@@ -8,7 +8,7 @@ import { withErrorHandling, NotFoundError, ValidationError } from '../../core/er
 import { createLogger } from '../../core/utils/logger.js';
 
 import type {
-  AtlassianConfig,
+  JiraConfig,
   JiraIssue,
   JiraSearchRequest,
   JiraSearchResponse,
@@ -29,11 +29,17 @@ const logger = createLogger('jira-client');
  */
 export class JiraClient {
   private httpClient: AxiosInstance;
-  private config: AtlassianConfig;
+  private config: JiraConfig;
   private cache = getCache();
 
-  constructor(config: AtlassianConfig) {
+  constructor(config: JiraConfig) {
     this.config = config;
+    if (!config.url || config.url === '***') {
+      throw new Error('JIRA URL is required but not configured');
+    }
+    if (!config.auth) {
+      throw new Error('JIRA authentication is required but not configured');
+    }
     const authManager = createAuthenticationManager(config.auth, config.url);
     this.httpClient = authManager.getHttpClient();
   }
@@ -142,7 +148,7 @@ export class JiraClient {
           // Apply default maxResults if not specified
           const request = {
             ...searchRequest,
-            maxResults: searchRequest.maxResults || this.config.jira?.maxResults || 50,
+            maxResults: searchRequest.maxResults || this.config.maxResults || 50,
           };
 
           const response = await this.httpClient.post('/rest/api/2/search', request);
@@ -497,7 +503,7 @@ export class JiraClient {
   /**
    * Get configuration for the client
    */
-  getConfig(): AtlassianConfig {
+  getConfig(): JiraConfig {
     return this.config;
   }
 
