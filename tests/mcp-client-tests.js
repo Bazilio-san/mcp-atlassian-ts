@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// noinspection UnnecessaryLocalVariableJS
 
 /**
  * MCP Client for testing MCP Atlassian server over network

@@ -12,6 +12,7 @@ import chalk from 'chalk';
 const MOCK_USER = {
   self: 'https://test.atlassian.net/rest/api/2/user/12345',
   accountId: '12345',
+  name: 'admin', // Add name property for user endpoints
   displayName: 'Test User',
   emailAddress: 'test@example.com',
   active: true,
@@ -394,7 +395,223 @@ export class JiraEmulator {
       res.json(MOCK_USER);
     });
 
-    // Get issue by key or ID
+    // Get issue comments (must be before generic issue route)
+    this.app.get('/rest/api/2/issue/:issueKey/comment', (req, res) => {
+      const { issueKey } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      const issueComments = comments.get(issue.id) || [];
+      res.json({
+        startAt: 0,
+        maxResults: issueComments.length,
+        total: issueComments.length,
+        comments: issueComments,
+      });
+    });
+
+    // Get issue transitions (must be before generic issue route)
+    this.app.get('/rest/api/2/issue/:issueKey/transitions', (req, res) => {
+      const { issueKey } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      const currentStatus = issue.fields.status.name;
+      let availableTransitions = [];
+
+      if (currentStatus === 'To Do') {
+        availableTransitions = [
+          {
+            id: '11',
+            name: 'Start Progress',
+            to: {
+              id: '3',
+              name: 'In Progress',
+              description: 'This issue is being actively worked on.',
+            },
+            hasScreen: false,
+            isGlobal: false,
+            isInitial: false,
+            isConditional: false,
+          },
+        ];
+      } else if (currentStatus === 'In Progress') {
+        availableTransitions = [
+          {
+            id: '21',
+            name: 'Stop Progress',
+            to: {
+              id: '1',
+              name: 'To Do',
+              description: 'The issue is open and ready for work.',
+            },
+            hasScreen: false,
+            isGlobal: false,
+            isInitial: false,
+            isConditional: false,
+          },
+          {
+            id: '31',
+            name: 'Done',
+            to: {
+              id: '10001',
+              name: 'Done',
+              description: 'The issue is closed and completed.',
+            },
+            hasScreen: false,
+            isGlobal: false,
+            isInitial: false,
+            isConditional: false,
+          },
+        ];
+      }
+
+      res.json({ transitions: availableTransitions });
+    });
+
+    // Get issue worklogs (must be before generic issue route)
+    this.app.get('/rest/api/2/issue/:issueKey/worklog', (req, res) => {
+      const { issueKey } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      const issueWorklogs = worklogs.get(issue.id) || [];
+      res.json({
+        startAt: 0,
+        maxResults: issueWorklogs.length,
+        total: issueWorklogs.length,
+        worklogs: issueWorklogs,
+      });
+    });
+
+    // Get issue edit metadata (must be before generic issue route)
+    this.app.get('/rest/api/2/issue/:issueKey/editmeta', (req, res) => {
+      const { issueKey } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      res.json({
+        fields: {
+          summary: {
+            required: true,
+            schema: { type: 'string', system: 'summary' },
+            name: 'Summary',
+            operations: ['set'],
+          },
+          description: {
+            required: false,
+            schema: { type: 'string', system: 'description' },
+            name: 'Description',
+            operations: ['set'],
+          },
+          priority: {
+            required: false,
+            schema: { type: 'priority', system: 'priority' },
+            name: 'Priority',
+            operations: ['set'],
+            allowedValues: MOCK_PRIORITIES,
+          },
+          labels: {
+            required: false,
+            schema: { type: 'array', items: 'string', system: 'labels' },
+            name: 'Labels',
+            operations: ['add', 'remove', 'set'],
+          },
+        },
+      });
+    });
+
+    // Get remote links (must be before generic issue route)
+    this.app.get('/rest/api/2/issue/:issueKey/remotelink', (req, res) => {
+      const { issueKey } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      const issueRemoteLinks = remoteLinks.get(issue.id) || [];
+      res.json(issueRemoteLinks);
+    });
+
+    // Get issue create metadata (must be before generic issue route)
+    this.app.get('/rest/api/2/issue/createmeta', (req, res) => {
+      res.json({
+        expand: 'projects',
+        projects: [
+          {
+            id: '10000',
+            key: 'TEST',
+            name: 'Test Project',
+            issuetypes: MOCK_ISSUE_TYPES.map(type => ({
+              ...type,
+              fields: {
+                summary: {
+                  required: true,
+                  schema: { type: 'string', system: 'summary' },
+                  name: 'Summary',
+                  operations: ['set'],
+                },
+                description: {
+                  required: false,
+                  schema: { type: 'string', system: 'description' },
+                  name: 'Description',
+                  operations: ['set'],
+                },
+                issuetype: {
+                  required: true,
+                  schema: { type: 'issuetype', system: 'issuetype' },
+                  name: 'Issue Type',
+                  operations: ['set'],
+                  allowedValues: MOCK_ISSUE_TYPES,
+                },
+                priority: {
+                  required: false,
+                  schema: { type: 'priority', system: 'priority' },
+                  name: 'Priority',
+                  operations: ['set'],
+                  allowedValues: MOCK_PRIORITIES,
+                },
+              },
+            })),
+          },
+        ],
+      });
+    });
+
+    // Get issue by key or ID (must be after specific issue routes)
     this.app.get('/rest/api/2/issue/:issueKey', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -822,72 +1039,6 @@ export class JiraEmulator {
       res.status(204).send();
     });
 
-    // Get issue transitions
-    this.app.get('/rest/api/2/issue/:issueKey/transitions', (req, res) => {
-      const { issueKey } = req.params;
-      const issue = issues.get(issueKey);
-
-      if (!issue) {
-        res.status(404).json({
-          errorMessages: ['Issue Does Not Exist'],
-          errors: {},
-        });
-        return;
-      }
-
-      const currentStatus = issue.fields.status.name;
-      let availableTransitions = [];
-
-      if (currentStatus === 'To Do') {
-        availableTransitions = [
-          {
-            id: '11',
-            name: 'Start Progress',
-            to: {
-              id: '3',
-              name: 'In Progress',
-              description: 'This issue is being actively worked on.',
-            },
-            hasScreen: false,
-            isGlobal: false,
-            isInitial: false,
-            isConditional: false,
-          },
-        ];
-      } else if (currentStatus === 'In Progress') {
-        availableTransitions = [
-          {
-            id: '21',
-            name: 'Stop Progress',
-            to: {
-              id: '1',
-              name: 'To Do',
-              description: 'The issue is open and ready for work.',
-            },
-            hasScreen: false,
-            isGlobal: false,
-            isInitial: false,
-            isConditional: false,
-          },
-          {
-            id: '31',
-            name: 'Done',
-            to: {
-              id: '10001',
-              name: 'Done',
-              description: 'The issue is closed and completed.',
-            },
-            hasScreen: false,
-            isGlobal: false,
-            isInitial: false,
-            isConditional: false,
-          },
-        ];
-      }
-
-      res.json({ transitions: availableTransitions });
-    });
-
     // Perform issue transition
     this.app.post('/rest/api/2/issue/:issueKey/transitions', (req, res) => {
       const { issueKey } = req.params;
@@ -915,28 +1066,6 @@ export class JiraEmulator {
 
       console.log(chalk.green(`[JIRA EMULATOR] Transitioned issue ${issueKey} to ${issue.fields.status.name}`));
       res.status(204).send();
-    });
-
-    // Get issue worklogs
-    this.app.get('/rest/api/2/issue/:issueKey/worklog', (req, res) => {
-      const { issueKey } = req.params;
-      const issue = issues.get(issueKey);
-
-      if (!issue) {
-        res.status(404).json({
-          errorMessages: ['Issue Does Not Exist'],
-          errors: {},
-        });
-        return;
-      }
-
-      const issueWorklogs = worklogs.get(issue.id) || [];
-      res.json({
-        startAt: 0,
-        maxResults: issueWorklogs.length,
-        total: issueWorklogs.length,
-        worklogs: issueWorklogs,
-      });
     });
 
     // Add worklog to issue
@@ -1033,95 +1162,6 @@ export class JiraEmulator {
 
       console.log(chalk.red(`[JIRA EMULATOR] Deleted worklog ${worklogId} from ${issueKey}`));
       res.status(204).send();
-    });
-
-    // Get issue edit metadata
-    this.app.get('/rest/api/2/issue/:issueKey/editmeta', (req, res) => {
-      const { issueKey } = req.params;
-      const issue = issues.get(issueKey);
-
-      if (!issue) {
-        res.status(404).json({
-          errorMessages: ['Issue Does Not Exist'],
-          errors: {},
-        });
-        return;
-      }
-
-      res.json({
-        fields: {
-          summary: {
-            required: true,
-            schema: { type: 'string', system: 'summary' },
-            name: 'Summary',
-            operations: ['set'],
-          },
-          description: {
-            required: false,
-            schema: { type: 'string', system: 'description' },
-            name: 'Description',
-            operations: ['set'],
-          },
-          priority: {
-            required: false,
-            schema: { type: 'priority', system: 'priority' },
-            name: 'Priority',
-            operations: ['set'],
-            allowedValues: MOCK_PRIORITIES,
-          },
-          labels: {
-            required: false,
-            schema: { type: 'array', items: 'string', system: 'labels' },
-            name: 'Labels',
-            operations: ['add', 'remove', 'set'],
-          },
-        },
-      });
-    });
-
-    // Get issue create metadata
-    this.app.get('/rest/api/2/issue/createmeta', (req, res) => {
-      res.json({
-        expand: 'projects',
-        projects: [
-          {
-            id: '10000',
-            key: 'TEST',
-            name: 'Test Project',
-            issuetypes: MOCK_ISSUE_TYPES.map(type => ({
-              ...type,
-              fields: {
-                summary: {
-                  required: true,
-                  schema: { type: 'string', system: 'summary' },
-                  name: 'Summary',
-                  operations: ['set'],
-                },
-                description: {
-                  required: false,
-                  schema: { type: 'string', system: 'description' },
-                  name: 'Description',
-                  operations: ['set'],
-                },
-                issuetype: {
-                  required: true,
-                  schema: { type: 'issuetype', system: 'issuetype' },
-                  name: 'Issue Type',
-                  operations: ['set'],
-                  allowedValues: MOCK_ISSUE_TYPES,
-                },
-                priority: {
-                  required: false,
-                  schema: { type: 'priority', system: 'priority' },
-                  name: 'Priority',
-                  operations: ['set'],
-                  allowedValues: MOCK_PRIORITIES,
-                },
-              },
-            })),
-          },
-        ],
-      });
     });
 
     // Get issue changelog
@@ -1263,22 +1303,6 @@ export class JiraEmulator {
 
       console.log(chalk.green(`[JIRA EMULATOR] Added remote link to ${issueKey}`));
       res.status(201).json(newRemoteLink);
-    });
-
-    this.app.get('/rest/api/2/issue/:issueKey/remotelink', (req, res) => {
-      const { issueKey } = req.params;
-      const issue = issues.get(issueKey);
-
-      if (!issue) {
-        res.status(404).json({
-          errorMessages: ['Issue Does Not Exist'],
-          errors: {},
-        });
-        return;
-      }
-
-      const issueRemoteLinks = remoteLinks.get(issue.id) || [];
-      res.json(issueRemoteLinks);
     });
 
     // User endpoints

@@ -82,6 +82,46 @@ class JiraEndpointsTester {
   }
 
   /**
+   * Выполнить HTTP запрос к Agile API
+   */
+  async makeAgileRequest (method, endpoint, data = null, options = {}) {
+    const url = `${this.baseUrl}/rest${endpoint}`;
+    const config = {
+      method,
+      headers: { ...this.getAuthHeaders(), ...options.headers },
+    };
+
+    if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      config.body = JSON.stringify(data);
+    }
+
+    try {
+      const response = await fetch(url, config);
+      const responseData = response.headers.get('content-type')?.includes('json')
+        ? await response.json()
+        : await response.text();
+
+      return {
+        success: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData,
+        url,
+        method
+      };
+    } catch (error) {
+      return {
+        success: false,
+        status: 0,
+        statusText: 'Network Error',
+        error: error.message,
+        url,
+        method
+      };
+    }
+  }
+
+  /**
    * Логирование результатов тестов
    */
   logTest (testName, result, expected = null, endpoint = null) {
@@ -551,18 +591,18 @@ class JiraEndpointsTester {
     // но мы их протестируем для полноты
 
     // GET /agile/1.0/board - получить доски
-    const boards = await this.makeRequest('GET', '/agile/1.0/board', null, {});
+    const boards = await this.makeAgileRequest('GET', '/agile/1.0/board', null, {});
     this.logTest('Get Agile Boards', boards, [200, 404], '/agile/1.0/board');
 
     if (boards.success && boards.data.values && boards.data.values.length > 0) {
       const boardId = boards.data.values[0].id;
 
       // GET /agile/1.0/board/{boardId}/sprint - получить спринты
-      const sprints = await this.makeRequest('GET', `/agile/1.0/board/${boardId}/sprint`);
+      const sprints = await this.makeAgileRequest('GET', `/agile/1.0/board/${boardId}/sprint`);
       this.logTest('Get Board Sprints', sprints, [200, 404], `/agile/1.0/board/${boardId}/sprint`);
 
       // GET /agile/1.0/board/{boardId}/issue - получить задачи доски
-      const boardIssues = await this.makeRequest('GET', `/agile/1.0/board/${boardId}/issue`);
+      const boardIssues = await this.makeAgileRequest('GET', `/agile/1.0/board/${boardId}/issue`);
       this.logTest('Get Board Issues', boardIssues, [200, 404], `/agile/1.0/board/${boardId}/issue`);
     }
   }

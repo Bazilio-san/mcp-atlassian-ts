@@ -28,23 +28,70 @@ node tests/mcp-client-tests.js
 ## 🧪 Покрываемые эндпоинты
 
 ### Информационные эндпоинты
-- **Issues**: `GET /issue/{key}`, `GET /issue/{key}/editmeta`, `GET /issue/{key}/transitions`, `GET /issue/{key}/comment`, `GET /issue/{key}/worklog`, `GET /issue/createmeta`
-- **Search**: `POST /search`, `GET /search` (JQL queries)  
-- **Projects**: `GET /project`, `GET /project/{key}`, `GET /project/{key}/statuses`, `GET /project/{key}/versions`, `GET /project/{key}/components`
-- **Users**: `GET /user`, `GET /user/search`, `GET /user/assignable/search`, `GET /myself`
-- **Metadata**: `GET /priority`, `GET /status`, `GET /issuetype`, `GET /field`, `GET /resolution`, `GET /role`, `GET /issueLinkType`
-- **Additional**: `GET /serverInfo`, `GET /configuration`, `GET /dashboard`, `GET /filter/favourite`, `GET /permissions`, etc.
+- **Issues**:
+  - `GET /issue/{key}`
+  - `GET /issue/{key}/editmeta`
+  - `GET /issue/{key}/transitions`
+  - `GET /issue/{key}/comment`
+  - `GET /issue/{key}/worklog`
+  - `GET /issue/createmeta`
+- **Search**:
+  - `POST /search`
+  - `GET /search` (JQL queries)
+- **Projects**:
+  - `GET /project`
+  - `GET /project/{key}`
+  - `GET /project/{key}/statuses`
+  - `GET /project/{key}/versions`
+  - `GET /project/{key}/components`
+- **Users**:
+  - `GET /user`
+  - `GET /user/search`
+  - `GET /user/assignable/search`
+  - `GET /myself`
+- **Metadata**:
+  - `GET /priority`
+  - `GET /status`
+  - `GET /issuetype`
+  - `GET /field`
+  - `GET /resolution`
+  - `GET /role`
+  - `GET /issueLinkType`
+- **Additional**:
+  - `GET /serverInfo`
+  - `GET /configuration`
+  - `GET /dashboard`
+  - `GET /filter/favourite`
+  - `GET /permissions`
 
-### Изменяющие эндпоинты  
-- **Issue Management**: `POST /issue`, `PUT /issue/{key}`, `DELETE /issue/{key}`
-- **Comments**: `POST /issue/{key}/comment`, `PUT /issue/{key}/comment/{id}`, `DELETE /issue/{key}/comment/{id}`
-- **Transitions**: `POST /issue/{key}/transitions`
-- **Worklog**: `POST /issue/{key}/worklog`, `PUT /issue/{key}/worklog/{id}`, `DELETE /issue/{key}/worklog/{id}`
-- **Versions**: `POST /version`, `PUT /version/{id}`, `DELETE /version/{id}`
-- **Issue Links**: `POST /issueLink`, `POST /issue/{key}/remotelink`
+### Изменяющие эндпоинты
+- **Issue Management**:
+  - `POST /issue`
+  - `PUT /issue/{key}`
+  - `DELETE /issue/{key}`
+- **Comments**:
+  - `POST /issue/{key}/comment`
+  - `PUT /issue/{key}/comment/{id}`
+  - `DELETE /issue/{key}/comment/{id}`
+- **Transitions**:
+  - `POST /issue/{key}/transitions`
+- **Worklog**:
+  - `POST /issue/{key}/worklog`
+  - `PUT /issue/{key}/worklog/{id}`
+  - `DELETE /issue/{key}/worklog/{id}`
+- **Versions**:
+  - `POST /version`
+  - `PUT /version/{id}`
+  - `DELETE /version/{id}`
+- **Issue Links**:
+  - `POST /issueLink`
+  - `POST /issue/{key}/remotelink`
 
 ### Agile эндпоинты
-- **Boards**: `GET /agile/1.0/board`, `GET /agile/1.0/board/{id}/sprint`, `GET /agile/1.0/board/{id}/issue`
+- **Boards**:
+  - `GET /agile/1.0/board`
+  - `GET /agile/1.0/board/{id}/sprint`
+  - `GET /agile/1.0/board/{id}/issue`
 
 ## 🚀 Использование
 
