@@ -2,7 +2,7 @@
  * Confluence-specific MCP server implementation
  */
 
-import type { IConfig } from '../../../_types_/config.js';
+import type { IConfig } from '../../types/config';
 import type { ServerConfig, ConfluenceConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
@@ -62,7 +62,7 @@ export class ConfluenceServer extends McpAtlassianServer {
 
     // Replace the default tool registry with Confluence-only registry
     this.toolRegistry = new ServiceToolRegistry(confluenceConfig, 'confluence');
-    
+
     logger.info('Confluence server initialized');
   }
 

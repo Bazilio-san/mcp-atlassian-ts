@@ -2,7 +2,7 @@
  * Server factory for creating service-specific MCP servers
  */
 
-import type { IConfig } from '../../../_types_/config.js';
+import type { IConfig } from '../../types/config';
 import { McpAtlassianServer } from './index.js';
 import { JiraServer } from './jira-server.js';
 import { ConfluenceServer } from './confluence-server.js';
@@ -20,7 +20,7 @@ export type ServiceMode = 'jira' | 'confluence';
  */
 export function createServiceServer(config: IConfig): McpAtlassianServer {
   const serviceMode: ServiceMode = config.server.serviceMode as ServiceMode;
-  
+
   if (!serviceMode) {
     throw new Error('Service mode is required. Set MCP_SERVICE environment variable to "jira" or "confluence"');
   }
@@ -30,10 +30,10 @@ export function createServiceServer(config: IConfig): McpAtlassianServer {
   switch (serviceMode) {
     case 'jira':
       return new JiraServer(config);
-    
+
     case 'confluence':
       return new ConfluenceServer(config);
-    
+
     default:
       throw new Error(`Invalid service mode: ${serviceMode}. Must be 'jira' or 'confluence'`);
   }

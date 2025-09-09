@@ -7,15 +7,17 @@
 
 import axios from 'axios';
 import chalk from 'chalk';
+import { appConfig } from '../dist/src/bootstrap/init-config.js';
 
-const DEFAULT_MCP_SERVER_URL = 'http://localhost:3001';
+const { host = 'localhost', port = 3000 } = appConfig.server;
+const DEFAULT_MCP_SERVER_URL = `http://localhost:${port}`;
 
 /**
  * MCP Atlassian Test Client
  * JavaScript client for testing MCP Atlassian server functionality
  */
 class MCPAtlassianClient {
-  constructor(serverUrl, timeout = 30000) {
+  constructor (serverUrl, timeout = 30000) {
     this.serverUrl = serverUrl;
     this.requestId = 1;
     this.client = axios.create({
@@ -30,7 +32,7 @@ class MCPAtlassianClient {
   /**
    * Проверка здоровья сервера
    */
-  async healthCheck() {
+  async healthCheck () {
     const response = await this.client.get('/health');
     return response.data;
   }
@@ -38,7 +40,7 @@ class MCPAtlassianClient {
   /**
    * Получить список доступных инструментов
    */
-  async listTools() {
+  async listTools () {
     const request = {
       jsonrpc: '2.0',
       id: this.requestId++,
@@ -52,7 +54,7 @@ class MCPAtlassianClient {
   /**
    * Вызвать MCP инструмент
    */
-  async callTool(name, args = {}) {
+  async callTool (name, args = {}) {
     const request = {
       jsonrpc: '2.0',
       id: this.requestId++,
@@ -70,7 +72,7 @@ class MCPAtlassianClient {
   /**
    * Получить информацию об инструменте
    */
-  async getToolInfo(name) {
+  async getToolInfo (name) {
     const request = {
       jsonrpc: '2.0',
       id: this.requestId++,
@@ -85,7 +87,7 @@ class MCPAtlassianClient {
   /**
    * Проверить соединение с сервером
    */
-  async ping() {
+  async ping () {
     try {
       const health = await this.healthCheck();
       return health.status === 'ok';
@@ -97,7 +99,7 @@ class MCPAtlassianClient {
   /**
    * Получить статистику кеша (если доступна)
    */
-  async getCacheStats() {
+  async getCacheStats () {
     try {
       const response = await this.client.get('/cache/stats');
       return response.data;
@@ -115,7 +117,7 @@ class JiraTestClient extends MCPAtlassianClient {
   /**
    * Получить задачу JIRA
    */
-  async getIssue(issueKey, options = {}) {
+  async getIssue (issueKey, options = {}) {
     return this.callTool('jira_get_issue', {
       issueKey,
       ...options,
@@ -125,7 +127,7 @@ class JiraTestClient extends MCPAtlassianClient {
   /**
    * Поиск задач JIRA
    */
-  async searchIssues(jql, options = {}) {
+  async searchIssues (jql, options = {}) {
     return this.callTool('jira_search_issues', {
       jql,
       startAt: options.startAt || 0,
@@ -137,21 +139,21 @@ class JiraTestClient extends MCPAtlassianClient {
   /**
    * Создать задачу JIRA
    */
-  async createIssue(params) {
+  async createIssue (params) {
     return this.callTool('jira_create_issue', params);
   }
 
   /**
    * Получить проекты
    */
-  async getProjects() {
+  async getProjects () {
     return this.callTool('jira_get_projects', {});
   }
 
   /**
    * Добавить комментарий к задаче
    */
-  async addComment(issueKey, body) {
+  async addComment (issueKey, body) {
     return this.callTool('jira_add_comment', {
       issueKey,
       body,
@@ -161,7 +163,7 @@ class JiraTestClient extends MCPAtlassianClient {
   /**
    * Получить переходы статусов для задачи
    */
-  async getTransitions(issueKey) {
+  async getTransitions (issueKey) {
     return this.callTool('jira_get_transitions', {
       issueKey,
     });
@@ -172,7 +174,7 @@ class JiraTestClient extends MCPAtlassianClient {
  * Test Runner для проверки интеграции MCP Atlassian сервера
  */
 class MCPTestRunner {
-  constructor(client) {
+  constructor (client) {
     this.client = client;
     this.results = [];
   }
@@ -180,7 +182,7 @@ class MCPTestRunner {
   /**
    * Выполнить конкретный тест
    */
-  async runTest(name, testFn) {
+  async runTest (name, testFn) {
     const startTime = Date.now();
 
     try {
@@ -215,7 +217,7 @@ class MCPTestRunner {
   /**
    * Тест проверки подключения к MCP серверу
    */
-  async testConnection() {
+  async testConnection () {
     const result = await this.runTest('MCP Server Connection', async () => {
       const isConnected = await this.client.ping();
       if (!isConnected) {
@@ -232,7 +234,7 @@ class MCPTestRunner {
   /**
    * Тест получения списка доступных инструментов
    */
-  async testListTools() {
+  async testListTools () {
     const result = await this.runTest('List Available Tools', async () => {
       const response = await this.client.listTools();
 
@@ -255,7 +257,7 @@ class MCPTestRunner {
   /**
    * Тест получения задачи JIRA
    */
-  async testGetIssue() {
+  async testGetIssue () {
     const result = await this.runTest('Get JIRA Issue', async () => {
       const response = await this.client.getIssue('TEST-1', {
         expand: ['comment'],
@@ -284,7 +286,7 @@ class MCPTestRunner {
   /**
    * Тест поиска задач JIRA
    */
-  async testSearchIssues() {
+  async testSearchIssues () {
     const result = await this.runTest('Search JIRA Issues', async () => {
       const response = await this.client.searchIssues('project = TEST', {
         maxResults: 10,
@@ -313,7 +315,7 @@ class MCPTestRunner {
   /**
    * Тест получения проектов
    */
-  async testGetProjects() {
+  async testGetProjects () {
     const result = await this.runTest('Get JIRA Projects', async () => {
       const response = await this.client.getProjects();
 
@@ -340,7 +342,7 @@ class MCPTestRunner {
   /**
    * Тест создания задачи
    */
-  async testCreateIssue() {
+  async testCreateIssue () {
     const result = await this.runTest('Create JIRA Issue', async () => {
       const response = await this.client.createIssue({
         project: 'TEST',
@@ -373,11 +375,11 @@ class MCPTestRunner {
   /**
    * Тест добавления комментария
    */
-  async testAddComment() {
+  async testAddComment () {
     const result = await this.runTest('Add Comment to Issue', async () => {
       const response = await this.client.addComment(
         'TEST-1',
-        'This comment was added by MCP test client'
+        'This comment was added by MCP test client',
       );
 
       if (response.error) {
@@ -403,7 +405,7 @@ class MCPTestRunner {
   /**
    * Тест получения переходов статуса
    */
-  async testGetTransitions() {
+  async testGetTransitions () {
     const result = await this.runTest('Get Issue Transitions', async () => {
       const response = await this.client.getTransitions('TEST-1');
 
@@ -426,7 +428,7 @@ class MCPTestRunner {
   /**
    * Запустить все тесты
    */
-  async runAllTests() {
+  async runAllTests () {
     console.log(chalk.yellow('🚀 Starting MCP Atlassian integration tests...\n'));
 
     // Базовые тесты соединения
@@ -447,7 +449,7 @@ class MCPTestRunner {
   /**
    * Показать итоговый отчет
    */
-  printSummary() {
+  printSummary () {
     console.log('\n' + chalk.yellow('📊 Test Summary:'));
     console.log('='.repeat(50));
 
@@ -475,12 +477,12 @@ class MCPTestRunner {
   /**
    * Получить результаты тестов
    */
-  getResults() {
+  getResults () {
     return this.results;
   }
 }
 
-async function main() {
+async function main () {
   const args = process.argv.slice(2);
   const command = args[0] || 'test';
 
@@ -496,7 +498,7 @@ async function main() {
   }
 }
 
-async function runTests() {
+async function runTests () {
   console.log('🧪 Running MCP client tests against running MCP server...');
   console.log('📍 MCP Server URL:', DEFAULT_MCP_SERVER_URL);
   console.log('⚠️  Make sure MCP server is running and JIRA emulator is available\n');
@@ -518,7 +520,7 @@ async function runTests() {
   }
 }
 
-function showHelp() {
+function showHelp () {
   console.log(`
 MCP Atlassian Network Test Client
 

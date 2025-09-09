@@ -2,7 +2,7 @@
  * JIRA-specific MCP server implementation
  */
 
-import type { IConfig } from '../../../_types_/config.js';
+import type { IConfig } from '../../types/config';
 import type { ServerConfig, JiraConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
@@ -62,7 +62,7 @@ export class JiraServer extends McpAtlassianServer {
 
     // Replace the default tool registry with JIRA-only registry
     this.toolRegistry = new ServiceToolRegistry(jiraConfig, 'jira');
-    
+
     logger.info('JIRA server initialized');
   }
 
