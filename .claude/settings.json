@@ -27,6 +27,7 @@
       "Bash(powershell:*)",
       "Bash(python:*)",
       "Bash(rm:*)",
+      "Bash(set:*)",
       "Bash(taskkill:*)",
       "Bash(tasklist:*)",
       "Bash(timeout:*)",

@@ -93,7 +93,7 @@ export class McpAtlassianServer {
         // Rate limiting
         await this.rateLimiter.consume('global');
 
-        // Execute tool
+        // Execute tool (STDIO/SSE transport doesn't have custom headers)
         const result = await this.toolRegistry.executeTool(name, args || {});
 
         logger.info('Tool executed successfully', { name });
@@ -263,10 +263,27 @@ export class McpAtlassianServer {
           const clientId = req.ip || 'anonymous';
           await this.rateLimiter.consume(clientId);
 
+          // Extract X-headers from request for passthrough
+          const customHeaders: Record<string, string> = {};
+          Object.keys(req.headers).forEach(headerName => {
+            if (headerName.toLowerCase().startsWith('x-')) {
+              const headerValue = req.headers[headerName];
+              if (typeof headerValue === 'string') {
+                customHeaders[headerName] = headerValue;
+              } else if (Array.isArray(headerValue)) {
+                customHeaders[headerName] = headerValue.join(', ');
+              }
+            }
+          });
+
           // Process MCP request directly (bypass the normal transport layer for testing)
           const { method, params, id } = req.body;
 
-          logger.info('HTTP MCP request received', { method, id });
+          logger.info('HTTP MCP request received', { 
+            method, 
+            id, 
+            customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined 
+          });
 
           let result;
 
@@ -278,7 +295,7 @@ export class McpAtlassianServer {
 
             case 'tools/call':
               const { name, arguments: args } = params;
-              result = await this.toolRegistry.executeTool(name, args || {});
+              result = await this.toolRegistry.executeTool(name, args || {}, customHeaders);
               break;
 
             case 'resources/list':

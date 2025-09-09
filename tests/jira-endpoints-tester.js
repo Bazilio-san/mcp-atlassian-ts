@@ -6,10 +6,11 @@
 
 // Для Node.js версий без глобального fetch
 import fetch from 'node-fetch';
+import { appConfig } from '../dist/src/bootstrap/init-config.js';
 
 class JiraEndpointsTester {
   constructor (config = {}) {
-    this.baseUrl = config.baseUrl || 'http://localhost:8080';
+    this.baseUrl = config.baseUrl || appConfig.jira?.url || 'http://localhost:8080';
     this.auth = config.auth || { type: 'basic', username: 'admin', password: 'admin' };
     this.testResults = [];
     this.testIssueKey = null;
@@ -20,6 +21,42 @@ class JiraEndpointsTester {
       versions: [],
       links: []
     };
+    
+    // Поддержка переменной окружения для добавления X-заголовков
+    this.customHeaders = this.parseTestXHeaders();
+  }
+
+  /**
+   * Парсинг X-заголовков из переменной окружения TEST_ADD_X_HEADER
+   * Формат: "x-header-name:value" или "x-header1:value1,x-header2:value2"
+   */
+  parseTestXHeaders () {
+    const testHeaders = process.env.TEST_ADD_X_HEADER;
+    if (!testHeaders) {
+      return {};
+    }
+
+    const headers = {};
+    try {
+      // Поддерживаем как одиночные заголовки, так и список через запятую
+      const headerPairs = testHeaders.split(',').map(h => h.trim());
+      
+      for (const pair of headerPairs) {
+        const [name, ...valueParts] = pair.split(':');
+        if (name && valueParts.length > 0) {
+          const value = valueParts.join(':').trim(); // На случай если в значении есть двоеточие
+          headers[name.trim()] = value;
+        }
+      }
+      
+      if (Object.keys(headers).length > 0) {
+        console.log('🔧 Добавляемые X-заголовки из TEST_ADD_X_HEADER:', headers);
+      }
+    } catch (error) {
+      console.warn('⚠️  Ошибка при парсинге TEST_ADD_X_HEADER:', error.message);
+    }
+
+    return headers;
   }
 
   /**
@@ -28,7 +65,8 @@ class JiraEndpointsTester {
   getAuthHeaders () {
     const headers = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      ...this.customHeaders // Добавляем X-заголовки из переменной окружения
     };
 
     if (this.auth.type === 'basic') {
@@ -982,7 +1020,7 @@ export default JiraEndpointsTester;
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   (async () => {
     const tester = new JiraEndpointsTester({
-      baseUrl: 'http://localhost:8080', // URL эмулятора JIRA
+      // baseUrl теперь берется из appConfig.jira.url автоматически
       auth: {
         type: 'basic',
         username: 'admin',

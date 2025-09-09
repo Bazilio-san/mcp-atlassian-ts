@@ -880,9 +880,14 @@ export class JiraToolsManager {
   /**
    * Execute a JIRA tool
    */
-  async executeTool(toolName: string, args: Record<string, any>): Promise<any> {
+  async executeTool(toolName: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
     return withErrorHandling(async () => {
-      logger.info('Executing JIRA tool', { toolName });
+      logger.info('Executing JIRA tool', { toolName, hasCustomHeaders: !!customHeaders });
+
+      // Set custom headers in the client if provided
+      if (customHeaders && Object.keys(customHeaders).length > 0) {
+        this.client.setCustomHeaders(customHeaders);
+      }
 
       switch (toolName) {
         // Basic operations

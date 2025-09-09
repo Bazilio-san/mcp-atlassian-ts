@@ -181,7 +181,7 @@ export class ToolRegistry {
   /**
    * Execute a tool by name
    */
-  async executeTool(name: string, args: Record<string, any>): Promise<any> {
+  async executeTool(name: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
     const tool = this.toolsMap.get(name);
     if (!tool) {
       throw new ToolExecutionError(name, `Tool '${name}' not found`);
@@ -198,12 +198,12 @@ export class ToolRegistry {
         if (!this.jiraTools) {
           throw new ToolExecutionError(name, 'JIRA tools are not available - no JIRA configuration provided');
         }
-        return await this.jiraTools.executeTool(name, args);
+        return await this.jiraTools.executeTool(name, args, customHeaders);
       } else if (name.startsWith('confluence_')) {
         if (!this.confluenceTools) {
           throw new ToolExecutionError(name, 'Confluence tools are not available - no Confluence configuration provided');
         }
-        return await this.confluenceTools.executeTool(name, args);
+        return await this.confluenceTools.executeTool(name, args, customHeaders);
       } else {
         // Execute utility tools
         return await this.executeUtilityTool(name, args);
