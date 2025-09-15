@@ -8,6 +8,7 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
+import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js';
 
 const { host = 'localhost', port = 3000 } = appConfig.server;
 const DEFAULT_MCP_SERVER_URL = `http://localhost:${port}`;
@@ -177,6 +178,10 @@ class MCPTestRunner {
   constructor (client) {
     this.client = client;
     this.results = [];
+    this.testCases = new SharedJiraTestCases({
+      testProjectKey: 'TEST',
+      testUsername: 'admin'
+    });
   }
 
   /**
@@ -255,174 +260,30 @@ class MCPTestRunner {
   }
 
   /**
-   * Тест получения задачи JIRA
+   * Выполнить тест-кейс из shared test cases
    */
-  async testGetIssue () {
-    const result = await this.runTest('Get JIRA Issue', async () => {
-      const response = await this.client.getIssue('TEST-1', {
-        expand: ['comment'],
-      });
+  async runSharedTestCase(testCase) {
+    const result = await this.runTest(testCase.name, async () => {
+      // Выполняем MCP вызов
+      const response = await this.client.callTool(testCase.mcpTool, testCase.mcpArgs);
 
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
+      // Валидируем MCP ответ
+      const validation = TestValidationUtils.validateMcpResponse(response, testCase);
+      if (!validation.success) {
+        throw new Error(validation.message);
       }
 
-      const content = response.result?.content?.[0]?.text;
-      if (!content) {
-        throw new Error('No content returned from MCP tool');
+      // Выполняем дополнительную валидацию если необходимо
+      if (testCase.cleanup) {
+        testCase.cleanup(response.result);
       }
 
-      if (!content.includes('TEST-1')) {
-        throw new Error('Response does not contain expected issue key');
-      }
-
-      console.log(chalk.gray(`   Issue retrieved successfully`));
+      console.log(chalk.gray(`   ${testCase.description} - completed successfully`));
       return response.result;
     });
 
     this.results.push(result);
-  }
-
-  /**
-   * Тест поиска задач JIRA
-   */
-  async testSearchIssues () {
-    const result = await this.runTest('Search JIRA Issues', async () => {
-      const response = await this.client.searchIssues('project = TEST', {
-        maxResults: 10,
-      });
-
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
-      }
-
-      const content = response.result?.content?.[0]?.text;
-      if (!content) {
-        throw new Error('No content returned from search');
-      }
-
-      if (!content.includes('Search Results')) {
-        throw new Error('Response does not contain expected search results');
-      }
-
-      console.log(chalk.gray(`   Search completed successfully`));
-      return response.result;
-    });
-
-    this.results.push(result);
-  }
-
-  /**
-   * Тест получения проектов
-   */
-  async testGetProjects () {
-    const result = await this.runTest('Get JIRA Projects', async () => {
-      const response = await this.client.getProjects();
-
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
-      }
-
-      const content = response.result?.content?.[0]?.text;
-      if (!content) {
-        throw new Error('No content returned from get projects');
-      }
-
-      if (!content.includes('Projects')) {
-        throw new Error('Response does not contain expected projects data');
-      }
-
-      console.log(chalk.gray(`   Projects retrieved successfully`));
-      return response.result;
-    });
-
-    this.results.push(result);
-  }
-
-  /**
-   * Тест создания задачи
-   */
-  async testCreateIssue () {
-    const result = await this.runTest('Create JIRA Issue', async () => {
-      const response = await this.client.createIssue({
-        project: 'TEST',
-        issueType: 'Task',
-        summary: 'Test Issue Created by MCP Client',
-        description: 'This issue was created during MCP integration testing',
-        labels: ['mcp-test', 'automated'],
-      });
-
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
-      }
-
-      const content = response.result?.content?.[0]?.text;
-      if (!content) {
-        throw new Error('No content returned from create issue');
-      }
-
-      if (!content.includes('Successfully')) {
-        throw new Error('Response does not indicate successful creation');
-      }
-
-      console.log(chalk.gray(`   Issue created successfully`));
-      return response.result;
-    });
-
-    this.results.push(result);
-  }
-
-  /**
-   * Тест добавления комментария
-   */
-  async testAddComment () {
-    const result = await this.runTest('Add Comment to Issue', async () => {
-      const response = await this.client.addComment(
-        'TEST-1',
-        'This comment was added by MCP test client',
-      );
-
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
-      }
-
-      const content = response.result?.content?.[0]?.text;
-      if (!content) {
-        throw new Error('No content returned from add comment');
-      }
-
-      if (!content.includes('Successfully')) {
-        throw new Error('Response does not indicate successful comment addition');
-      }
-
-      console.log(chalk.gray(`   Comment added successfully`));
-      return response.result;
-    });
-
-    this.results.push(result);
-  }
-
-  /**
-   * Тест получения переходов статуса
-   */
-  async testGetTransitions () {
-    const result = await this.runTest('Get Issue Transitions', async () => {
-      const response = await this.client.getTransitions('TEST-1');
-
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
-      }
-
-      const content = response.result?.content?.[0]?.text;
-      if (!content) {
-        throw new Error('No content returned from get transitions');
-      }
-
-      console.log(chalk.gray(`   Transitions retrieved successfully`));
-      return response.result;
-    });
-
-    this.results.push(result);
+    return result;
   }
 
   /**
@@ -435,13 +296,53 @@ class MCPTestRunner {
     await this.testConnection();
     await this.testListTools();
 
-    // Тесты функциональности JIRA
-    await this.testGetIssue();
-    await this.testSearchIssues();
-    await this.testGetProjects();
-    await this.testCreateIssue();
-    await this.testAddComment();
-    await this.testGetTransitions();
+    // Получаем минимальный набор тест-кейсов для быстрого тестирования
+    const testCases = this.testCases.getMinimalTestCases();
+    
+    console.log(chalk.blue(`\n📋 Running ${testCases.length} shared test cases...\n`));
+
+    // Выполняем тест-кейсы
+    for (const testCase of testCases) {
+      try {
+        await this.runSharedTestCase(testCase);
+      } catch (error) {
+        console.log(chalk.red(`❌ Test case failed: ${testCase.name}`));
+        console.log(chalk.red(`   Error: ${error.message}`));
+      }
+    }
+
+    return this.results;
+  }
+
+  /**
+   * Запустить расширенные тесты
+   */
+  async runExtendedTests() {
+    console.log(chalk.yellow('🚀 Starting EXTENDED MCP Atlassian integration tests...\n'));
+
+    // Базовые тесты соединения
+    await this.testConnection();
+    await this.testListTools();
+
+    // Получаем все тест-кейсы
+    const allTestCases = this.testCases.getAllTestCases();
+    const testCasesList = [
+      ...allTestCases.informational,
+      ...allTestCases.modifying,
+      ...allTestCases.extended
+    ];
+    
+    console.log(chalk.blue(`\n📋 Running ${testCasesList.length} comprehensive test cases...\n`));
+
+    // Выполняем тест-кейсы
+    for (const testCase of testCasesList) {
+      try {
+        await this.runSharedTestCase(testCase);
+      } catch (error) {
+        console.log(chalk.red(`❌ Test case failed: ${testCase.name}`));
+        console.log(chalk.red(`   Error: ${error.message}`));
+      }
+    }
 
     return this.results;
   }
@@ -485,10 +386,11 @@ class MCPTestRunner {
 async function main () {
   const args = process.argv.slice(2);
   const command = args[0] || 'test';
+  const isExtended = args.includes('--extended') || args.includes('-e');
 
   switch (command) {
     case 'test':
-      await runTests();
+      await runTests(isExtended);
       break;
 
     case 'help':
@@ -498,8 +400,9 @@ async function main () {
   }
 }
 
-async function runTests () {
-  console.log('🧪 Running MCP client tests against running MCP server...');
+async function runTests (isExtended = false) {
+  const testType = isExtended ? 'EXTENDED MCP client tests' : 'MCP client tests';
+  console.log(`🧪 Running ${testType} against running MCP server...`);
   console.log('📍 MCP Server URL:', DEFAULT_MCP_SERVER_URL);
   console.log('⚠️  Make sure MCP server is running and JIRA emulator is available\n');
 
@@ -507,7 +410,12 @@ async function runTests () {
   const runner = new MCPTestRunner(client);
 
   try {
-    await runner.runAllTests();
+    if (isExtended) {
+      await runner.runExtendedTests();
+    } else {
+      await runner.runAllTests();
+    }
+    
     runner.printSummary();
 
     const results = runner.getResults();
@@ -525,26 +433,32 @@ function showHelp () {
 MCP Atlassian Network Test Client
 
 Usage:
-  node tests/mcp-client-tests.js [command]
+  node tests/mcp-client-tests.js [command] [options]
 
 Commands:
   test        Run MCP client tests against running MCP server (default)
   help        Show this help
 
+Options:
+  --extended, -e    Run extended comprehensive test suite
+
 Examples:
-  node tests/mcp-client-tests.js        # Test MCP server at http://localhost:3001
+  node tests/mcp-client-tests.js                 # Run standard tests
+  node tests/mcp-client-tests.js --extended      # Run extended tests
+  node tests/mcp-client-tests.js test -e         # Run extended tests
 
 Prerequisites:
   1. Start JIRA emulator:
      node tests/jira-emulator.js
   
   2. Start MCP server with:
-     ATLASSIAN_URL=http://localhost:8080 TRANSPORT_TYPE=http node src/index.js
+     ATLASSIAN_URL=http://localhost:8080 TRANSPORT_TYPE=http npm start
 
 Notes:
   - This client tests a running MCP server over HTTP
-  - MCP server should be running on port 3001
+  - MCP server should be running on port 3000 (or configured port)
   - JIRA emulator should be running on port 8080
+  - Uses shared test cases from tests/shared-test-cases.js
 `);
 }
 

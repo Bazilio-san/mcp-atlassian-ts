@@ -1,12 +1,11 @@
 /**
- * Comprehensive JIRA REST API v2 Endpoints Tester
- * Vanilla JavaScript module for testing all JIRA endpoints
- * Не использует тестовые фреймворки - только ванильный JS
+ * JIRA REST API v2 Endpoints Tester
  */
 
 // Для Node.js версий без глобального fetch
 import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
+import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js';
 
 class JiraEndpointsTester {
   constructor (config = {}) {
@@ -21,9 +20,15 @@ class JiraEndpointsTester {
       versions: [],
       links: []
     };
-    
+
     // Поддержка переменной окружения для добавления X-заголовков
     this.customHeaders = this.parseTestXHeaders();
+
+    // Инициализируем shared test cases
+    this.sharedTestCases = new SharedJiraTestCases({
+      testProjectKey: this.testProjectKey,
+      testUsername: this.auth.username
+    });
   }
 
   /**
@@ -40,7 +45,7 @@ class JiraEndpointsTester {
     try {
       // Поддерживаем как одиночные заголовки, так и список через запятую
       const headerPairs = testHeaders.split(',').map(h => h.trim());
-      
+
       for (const pair of headerPairs) {
         const [name, ...valueParts] = pair.split(':');
         if (name && valueParts.length > 0) {
@@ -48,7 +53,7 @@ class JiraEndpointsTester {
           headers[name.trim()] = value;
         }
       }
-      
+
       if (Object.keys(headers).length > 0) {
         console.log('🔧 Добавляемые X-заголовки из TEST_ADD_X_HEADER:', headers);
       }
@@ -195,6 +200,55 @@ class JiraEndpointsTester {
     }
     console.log(`✅ PASS ${testName} - All expected properties present`);
     return true;
+  }
+
+  /**
+   * Выполнить тест-кейс из shared test cases через прямой API вызов
+   */
+  async runSharedTestCase(testCase) {
+    const api = testCase.directApi;
+
+    // Определяем метод запроса
+    let result;
+    if (api.endpoint.startsWith('/agile/')) {
+      result = await this.makeAgileRequest(api.method, api.endpoint, api.data);
+    } else {
+      result = await this.makeRequest(api.method, api.endpoint, api.data);
+    }
+
+    this.logTest(testCase.name, result, 200, api.endpoint);
+
+    // Валидируем результат
+    const validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
+    if (!validation.success) {
+      console.log(`❌ VALIDATION FAIL ${testCase.name} - ${validation.message}`);
+    } else {
+      console.log(`✅ VALIDATION PASS ${testCase.name} - ${testCase.description}`);
+    }
+
+    // Выполняем cleanup если необходимо
+    if (testCase.cleanup && result.success) {
+      testCase.cleanup(result.data);
+    }
+
+    return result;
+  }
+
+  /**
+   * Запустить shared test cases
+   */
+  async testSharedTestCases() {
+    console.log('\n=== TESTING SHARED TEST CASES ===');
+
+    const testCases = this.sharedTestCases.getMinimalTestCases();
+
+    for (const testCase of testCases) {
+      try {
+        await this.runSharedTestCase(testCase);
+      } catch (error) {
+        console.log(`❌ ERROR ${testCase.name} - ${error.message}`);
+      }
+    }
   }
 
   /**
@@ -736,6 +790,9 @@ class JiraEndpointsTester {
     const startTime = Date.now();
 
     try {
+      // Сначала запускаем shared test cases для согласованности с MCP тестами
+      await this.testSharedTestCases();
+
       // Тестируем информационные эндпоинты
       await this.testIssueEndpoints();
       await this.testSearchEndpoints();
@@ -787,6 +844,9 @@ class JiraEndpointsTester {
       const permissions = await this.makeRequest('GET', '/permissions');
       this.logTest('Get Permissions', permissions, 200, '/permissions');
 
+      // Запускаем shared test cases для согласованности
+      await this.testSharedTestCases();
+
       // Стандартные тесты
       await this.testIssueEndpoints();
       await this.testSearchEndpoints();
@@ -796,7 +856,7 @@ class JiraEndpointsTester {
 
       // Версии и компоненты
       console.log('\n=== TESTING VERSION & COMPONENT ENDPOINTS ===');
-      
+
       // Создаем версию
       const version = await this.makeRequest('POST', '/version', {
         name: 'Test Version 2.0',
@@ -805,24 +865,24 @@ class JiraEndpointsTester {
         released: false,
       });
       this.logTest('Create Version', version, 201, '/version');
-      
+
       if (version.success && version.data.id) {
         const versionId = version.data.id;
         this.createdResources.versions.push(versionId);
-        
+
         const getVersion = await this.makeRequest('GET', `/version/${versionId}`);
         this.logTest('Get Version', getVersion, 200, `/version/${versionId}`);
-        
+
         const updateVersion = await this.makeRequest('PUT', `/version/${versionId}`, { released: true });
         this.logTest('Update Version', updateVersion, 200, `/version/${versionId}`);
       }
 
       // Issue Links
       console.log('\n=== TESTING ISSUE LINK ENDPOINTS ===');
-      
+
       const linkTypes = await this.makeRequest('GET', '/issueLinkType');
       this.logTest('Get Issue Link Types', linkTypes, 200, '/issueLinkType');
-      
+
       // Создаем две задачи для связывания
       const issue1 = await this.makeRequest('POST', '/issue', {
         fields: {
@@ -832,7 +892,7 @@ class JiraEndpointsTester {
         },
       });
       this.logTest('Create Link Test Issue 1', issue1, 201, '/issue');
-      
+
       const issue2 = await this.makeRequest('POST', '/issue', {
         fields: {
           summary: 'Link Test Issue 2',
@@ -841,24 +901,24 @@ class JiraEndpointsTester {
         },
       });
       this.logTest('Create Link Test Issue 2', issue2, 201, '/issue');
-      
+
       if (issue1.success && issue2.success) {
         this.createdResources.issues.push(issue1.data.key, issue2.data.key);
-        
+
         const link = await this.makeRequest('POST', '/issueLink', {
           type: { id: '10000' },
           inwardIssue: { key: issue1.data.key, id: issue1.data.id },
           outwardIssue: { key: issue2.data.key, id: issue2.data.id },
         });
         this.logTest('Create Issue Link', link, 201, '/issueLink');
-        
+
         if (link.success && link.data.id) {
           this.createdResources.links.push(link.data.id);
-          
+
           const deleteLink = await this.makeRequest('DELETE', `/issueLink/${link.data.id}`);
           this.logTest('Delete Issue Link', deleteLink, 204, `/issueLink/${link.data.id}`);
         }
-        
+
         // Remote links
         const remoteLink = await this.makeRequest('POST', `/issue/${issue1.data.key}/remotelink`, {
           object: {
@@ -867,53 +927,53 @@ class JiraEndpointsTester {
           },
         });
         this.logTest('Create Remote Link', remoteLink, 201, `/issue/${issue1.data.key}/remotelink`);
-        
+
         const getRemoteLinks = await this.makeRequest('GET', `/issue/${issue1.data.key}/remotelink`);
         this.logTest('Get Remote Links', getRemoteLinks, 200, `/issue/${issue1.data.key}/remotelink`);
       }
 
       // Workflows and Schemes
       console.log('\n=== TESTING WORKFLOW & SCHEME ENDPOINTS ===');
-      
+
       const workflows = await this.makeRequest('GET', '/workflow');
       this.logTest('Get Workflows', workflows, 200, '/workflow');
-      
+
       const workflowSchemes = await this.makeRequest('GET', '/workflowscheme');
       this.logTest('Get Workflow Schemes', workflowSchemes, 200, '/workflowscheme');
-      
+
       const notificationSchemes = await this.makeRequest('GET', '/notificationscheme');
       this.logTest('Get Notification Schemes', notificationSchemes, 200, '/notificationscheme');
-      
+
       const permissionSchemes = await this.makeRequest('GET', '/permissionscheme');
       this.logTest('Get Permission Schemes', permissionSchemes, 200, '/permissionscheme');
 
       // Dashboards and Filters
       console.log('\n=== TESTING DASHBOARD & FILTER ENDPOINTS ===');
-      
+
       const dashboards = await this.makeRequest('GET', '/dashboard');
       this.logTest('Get Dashboards', dashboards, 200, '/dashboard');
-      
+
       const filters = await this.makeRequest('GET', '/filter/favourite');
       this.logTest('Get Favourite Filters', filters, 200, '/filter/favourite');
 
       // Groups and Roles
       console.log('\n=== TESTING GROUP & ROLE ENDPOINTS ===');
-      
+
       const groups = await this.makeRequest('GET', '/groups/picker');
       this.logTest('Get Groups', groups, 200, '/groups/picker');
-      
+
       const roles = await this.makeRequest('GET', '/role');
       this.logTest('Get Roles', roles, 200, '/role');
 
       // Attachments
       console.log('\n=== TESTING ATTACHMENT ENDPOINTS ===');
-      
+
       const attachment = await this.makeRequest('GET', '/attachment/10000');
       this.logTest('Get Attachment', attachment, 200, '/attachment/10000');
 
       // Bulk operations
       console.log('\n=== TESTING BULK OPERATION ENDPOINTS ===');
-      
+
       const bulkIssues = await this.makeRequest('POST', '/issue/bulk', {
         issueUpdates: [
           {
@@ -933,11 +993,11 @@ class JiraEndpointsTester {
         ],
       });
       this.logTest('Create Bulk Issues', bulkIssues, 201, '/issue/bulk');
-      
+
       if (bulkIssues.success && bulkIssues.data.issues) {
         const issueKeys = bulkIssues.data.issues.map(i => i.key);
         this.createdResources.issues.push(...issueKeys);
-        
+
         // Test changelog
         const changelog = await this.makeRequest('POST', '/issue/changelog/list', {
           issueIds: issueKeys,
@@ -947,7 +1007,7 @@ class JiraEndpointsTester {
 
       // Search GET endpoint
       console.log('\n=== TESTING SEARCH GET ENDPOINT ===');
-      
+
       const searchGet = await this.makeRequest('GET', `/search?jql=project=${this.testProjectKey}&maxResults=5`);
       this.logTest('Search Issues (GET)', searchGet, 200, '/search');
 
@@ -1031,7 +1091,7 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
     // Проверяем аргументы командной строки
     const args = process.argv.slice(2);
     const isExtended = args.includes('--extended') || args.includes('-e');
-    
+
     if (isExtended) {
       console.log('📋 Running EXTENDED test suite...\n');
       await tester.runExtendedTests();

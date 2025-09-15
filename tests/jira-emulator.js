@@ -7,6 +7,7 @@
 
 import express from 'express';
 import chalk from 'chalk';
+import { appConfig } from '../dist/src/bootstrap/init-config.js';
 
 // Тестовые данные
 const MOCK_USER = {
@@ -335,9 +336,19 @@ function initializeTestData() {
   dashboards.set('10000', dashboard1);
 }
 
+function getPort(urlString) {
+  try {
+    const url = new URL(urlString.includes('://') ? urlString : `http://${urlString}`);
+    return url.port ? Number(url.port) : 80;
+  } catch {
+    // Если строка некорректная — используем порт 80
+    return 80;
+  }
+}
+
 export class JiraEmulator {
-  constructor(port = 8080) {
-    this.port = port;
+  constructor(port) {
+    this.port = port || getPort(appConfig.jira.url);
     this.app = express();
     this.server = null;
     this.setupMiddleware();
@@ -354,7 +365,7 @@ export class JiraEmulator {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-      
+
       if (req.method === 'OPTIONS') {
         res.sendStatus(200);
       } else {
@@ -1248,7 +1259,7 @@ export class JiraEmulator {
 
     this.app.post('/rest/api/2/issueLink', (req, res) => {
       const { type, inwardIssue, outwardIssue } = req.body;
-      
+
       const newLink = {
         id: (10000 + linkCounter++).toString(),
         type: MOCK_LINK_TYPES.find(t => t.id === type.id) || MOCK_LINK_TYPES[0],
@@ -1264,7 +1275,7 @@ export class JiraEmulator {
 
     this.app.delete('/rest/api/2/issueLink/:linkId', (req, res) => {
       const { linkId } = req.params;
-      
+
       if (!issueLinks.has(linkId)) {
         res.status(404).json({
           errorMessages: ['Issue Link Does Not Exist'],
@@ -1535,7 +1546,7 @@ export class JiraEmulator {
 
     this.app.get('/rest/agile/1.0/board/:boardId/sprint', (req, res) => {
       const { boardId } = req.params;
-      
+
       if (!boards.has(boardId)) {
         res.status(404).json({
           errorMessages: ['Board Does Not Exist'],
@@ -1545,7 +1556,7 @@ export class JiraEmulator {
       }
 
       const boardSprints = Array.from(sprints.values()).filter(s => s.originBoardId == boardId);
-      
+
       res.json({
         maxResults: 50,
         startAt: 0,
@@ -1556,7 +1567,7 @@ export class JiraEmulator {
 
     this.app.get('/rest/agile/1.0/board/:boardId/issue', (req, res) => {
       const { boardId } = req.params;
-      
+
       if (!boards.has(boardId)) {
         res.status(404).json({
           errorMessages: ['Board Does Not Exist'],
@@ -1566,7 +1577,7 @@ export class JiraEmulator {
       }
 
       const boardIssues = Array.from(issues.values()).filter(issue => issue.key && issue.key.startsWith('TEST'));
-      
+
       res.json({
         maxResults: 50,
         startAt: 0,
@@ -1577,7 +1588,7 @@ export class JiraEmulator {
 
     this.app.get('/rest/agile/1.0/sprint/:sprintId/issue', (req, res) => {
       const { sprintId } = req.params;
-      
+
       if (!sprints.has(sprintId)) {
         res.status(404).json({
           errorMessages: ['Sprint Does Not Exist'],
@@ -1587,7 +1598,7 @@ export class JiraEmulator {
       }
 
       const sprintIssues = Array.from(issues.values()).filter(issue => issue.key && issue.key.startsWith('TEST'));
-      
+
       res.json({
         maxResults: 50,
         startAt: 0,
@@ -1683,7 +1694,7 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith(
   async function runStandaloneEmulator() {
     console.log('🚀 Starting JIRA Emulator...');
 
-    const emulator = new JiraEmulator(8080);
+    const emulator = new JiraEmulator();
 
     process.on('SIGINT', async () => {
       console.log('\n🛑 Shutting down emulator...');
