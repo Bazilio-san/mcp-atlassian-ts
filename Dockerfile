@@ -49,7 +49,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "import('http').then(({default: http}) => { \
     const options = { \
       host: 'localhost', \
-      port: process.env.PORT || 3000, \
+      port: process.env.SERVER_PORT || 3000, \
       path: '/health', \
       timeout: 2000 \
     }; \

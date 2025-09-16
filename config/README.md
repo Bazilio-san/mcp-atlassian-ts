@@ -41,7 +41,7 @@ Set environment variables to override configuration:
 
 ```bash
 export ATLASSIAN_URL=https://your-domain.atlassian.net
-export PORT=8080
+export SERVER_PORT=8080
 export LOG_LEVEL=debug
 ```
 

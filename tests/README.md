@@ -104,8 +104,8 @@ node tests/mcp-client-tests.js
 ```dotenv
 JIRA_URL=http://localhost:8080
 JIRA_PAT=test
-PORT=3000
-TEST_ADD_X_HEADER=x-finam-user:vpupkin
+SERVER_PORT=3000
+TEST_ADD_X_HEADER=x-user:vpupkin
 ```
 
 ```bash
@@ -117,14 +117,7 @@ node tests/jira-endpoints-tester.js
 const JiraEndpointsTester = require('./jira-endpoints-tester');
 
 // Создание экземпляра тестера
-const tester = new JiraEndpointsTester({
-    baseUrl: 'http://localhost:8080',  // URL JIRA сервера
-    auth: { 
-        type: 'basic', 
-        username: 'admin', 
-        password: 'admin' 
-    }
-});
+const tester = new JiraEndpointsTester();
 
 // Запуск всех тестов
 const results = await tester.runAllTests();
@@ -135,13 +128,7 @@ console.log(`Процент успешности: ${results.passRate}%`);
 
 ### Кастомная конфигурация
 ```javascript
-const tester = new JiraEndpointsTester({
-    baseUrl: 'https://your-jira.com',
-    auth: { 
-        type: 'token',  // или 'basic'
-        token: 'your-api-token'
-    }
-});
+const tester = new JiraEndpointsTester();
 
 // Тестирование только информационных эндпоинтов
 await tester.testIssueEndpoints();

@@ -1,3 +1,5 @@
+// noinspection UnnecessaryLocalVariableJS
+
 /**
  * JIRA REST API v2 Endpoints Tester
  */
@@ -7,10 +9,27 @@ import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js';
 
+const {
+  jira: {
+    url,
+    auth: {
+      pat,
+      basic: {
+        username = '*',
+        password = '*',
+      } = {},
+    } = {},
+  } = {},
+} = appConfig;
+
 class JiraEndpointsTester {
-  constructor (config = {}) {
-    this.baseUrl = appConfig.jira?.url || 'http://localhost:8080';
-    this.auth = config.auth || { type: 'basic', username: 'admin', password: 'admin' };
+  constructor () {
+    this.baseUrl = url || 'http://localhost:8080';
+    if (pat && pat.length > 3) {
+      this.auth = { type: 'token', token: pat };
+    } else {
+      this.auth = { type: 'basic', username, password };
+    }
     this.testResults = [];
     this.testIssueKey = null;
     this.testProjectKey = 'TEST';
@@ -18,7 +37,7 @@ class JiraEndpointsTester {
       issues: [],
       sprints: [],
       versions: [],
-      links: []
+      links: [],
     };
 
     // Поддержка переменной окружения для добавления X-заголовков
@@ -27,8 +46,70 @@ class JiraEndpointsTester {
     // Инициализируем shared test cases
     this.sharedTestCases = new SharedJiraTestCases({
       testProjectKey: this.testProjectKey,
-      testUsername: this.auth.username
+      testUsername: this.auth.username,
     });
+
+    // Парсим селективные тесты из аргументов командной строки
+    this.parseSelectedTests();
+  }
+
+  /**
+   * Парсинг номеров тестов для селективного выполнения
+   * Формат: node tests/jira-endpoints-tester.js --tests=1,5,10-15,20
+   */
+  parseSelectedTests() {
+    const args = process.argv.slice(2);
+    const testsArg = args.find(arg => arg.startsWith('--tests='));
+
+    if (!testsArg) {
+      this.selectedTests = null;
+      return;
+    }
+
+    const testsString = testsArg.split('=')[1];
+    if (!testsString) {
+      this.selectedTests = null;
+      return;
+    }
+
+    try {
+      const selectedSet = new Set();
+      const parts = testsString.split(',');
+
+      for (const part of parts) {
+        if (part.includes('-')) {
+          // Обработка диапазонов типа "10-15"
+          const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+          if (!isNaN(start) && !isNaN(end) && start <= end) {
+            for (let i = start; i <= end; i++) {
+              selectedSet.add(i);
+            }
+          }
+        } else {
+          // Обработка одиночных номеров
+          const num = parseInt(part.trim());
+          if (!isNaN(num)) {
+            selectedSet.add(num);
+          }
+        }
+      }
+
+      this.selectedTests = Array.from(selectedSet).sort((a, b) => a - b);
+      console.log(`🎯 Селективное выполнение тестов: [${this.selectedTests.join(', ')}]\n`);
+    } catch (error) {
+      console.warn('⚠️  Ошибка при парсинге --tests параметра:', error.message);
+      this.selectedTests = null;
+    }
+  }
+
+  /**
+   * Проверить, нужно ли выполнять тест с данным номером
+   */
+  shouldRunTest(testNumber) {
+    if (this.selectedTests === null) {
+      return true; // Выполнять все тесты
+    }
+    return this.selectedTests.includes(testNumber);
   }
 
   /**
@@ -71,7 +152,7 @@ class JiraEndpointsTester {
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...this.customHeaders // Добавляем X-заголовки из переменной окружения
+      ...this.customHeaders, // Добавляем X-заголовки из переменной окружения
     };
 
     if (this.auth.type === 'basic') {
@@ -110,7 +191,7 @@ class JiraEndpointsTester {
         statusText: response.statusText,
         data: responseData,
         url,
-        method
+        method,
       };
     } catch (error) {
       return {
@@ -119,7 +200,7 @@ class JiraEndpointsTester {
         statusText: 'Network Error',
         error: error.message,
         url,
-        method
+        method,
       };
     }
   }
@@ -150,7 +231,7 @@ class JiraEndpointsTester {
         statusText: response.statusText,
         data: responseData,
         url,
-        method
+        method,
       };
     } catch (error) {
       return {
@@ -159,7 +240,7 @@ class JiraEndpointsTester {
         statusText: 'Network Error',
         error: error.message,
         url,
-        method
+        method,
       };
     }
   }
@@ -181,7 +262,7 @@ class JiraEndpointsTester {
       endpoint,
       method: result.method,
       details: result.statusText || result.error,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     if (!result.success && result.error) {
@@ -205,7 +286,7 @@ class JiraEndpointsTester {
   /**
    * Выполнить тест-кейс из shared test cases через прямой API вызов
    */
-  async runSharedTestCase(testCase) {
+  async runSharedTestCase (testCase) {
     const api = testCase.directApi;
 
     // Определяем метод запроса
@@ -237,7 +318,7 @@ class JiraEndpointsTester {
   /**
    * Запустить shared test cases
    */
-  async testSharedTestCases() {
+  async testSharedTestCases () {
     console.log('\n=== TESTING SHARED TEST CASES ===');
 
     const testCases = this.sharedTestCases.getMinimalTestCases();
@@ -307,7 +388,7 @@ class JiraEndpointsTester {
     const searchData = {
       jql: `project = ${this.testProjectKey}`,
       maxResults: 10,
-      fields: ['summary', 'status', 'assignee']
+      fields: ['summary', 'status', 'assignee'],
     };
     const search = await this.makeRequest('POST', '/search', searchData);
     this.logTest('JQL Search', search, 200, '/search');
@@ -463,8 +544,8 @@ class JiraEndpointsTester {
         project: { key: this.testProjectKey },
         summary: `Test Issue for API Testing - ${new Date().toISOString()}`,
         description: 'This issue was created for API endpoint testing purposes.',
-        issuetype: { name: 'Task' }
-      }
+        issuetype: { name: 'Task' },
+      },
     };
 
     const result = await this.makeRequest('POST', '/issue', issueData);
@@ -486,8 +567,8 @@ class JiraEndpointsTester {
     const updateData = {
       fields: {
         summary: `Updated Test Issue - ${new Date().toISOString()}`,
-        description: 'Updated description for API testing'
-      }
+        description: 'Updated description for API testing',
+      },
     };
 
     const update = await this.makeRequest('PUT', `/issue/${this.testIssueKey}`, updateData);
@@ -509,7 +590,7 @@ class JiraEndpointsTester {
 
     // POST /issue/{issueIdOrKey}/comment - добавить комментарий
     const commentData = {
-      body: `Test comment added via API - ${new Date().toISOString()}`
+      body: `Test comment added via API - ${new Date().toISOString()}`,
     };
 
     const addComment = await this.makeRequest('POST', `/issue/${this.testIssueKey}/comment`, commentData);
@@ -527,7 +608,7 @@ class JiraEndpointsTester {
     // PUT /issue/{issueIdOrKey}/comment/{id} - обновить комментарий
     if (commentId) {
       const updateCommentData = {
-        body: `Updated test comment - ${new Date().toISOString()}`
+        body: `Updated test comment - ${new Date().toISOString()}`,
       };
       const updateComment = await this.makeRequest('PUT', `/issue/${this.testIssueKey}/comment/${commentId}`, updateCommentData);
       this.logTest('Update Comment', updateComment, 200, `/issue/${this.testIssueKey}/comment/${commentId}`);
@@ -552,7 +633,7 @@ class JiraEndpointsTester {
 
       // POST /issue/{issueIdOrKey}/transitions - выполнить переход
       const transitionData = {
-        transition: { id: firstTransition.id }
+        transition: { id: firstTransition.id },
       };
 
       const doTransition = await this.makeRequest('POST', `/issue/${this.testIssueKey}/transitions`, transitionData);
@@ -569,7 +650,7 @@ class JiraEndpointsTester {
     const worklogData = {
       timeSpent: '2h',
       comment: `API testing worklog - ${new Date().toISOString()}`,
-      started: new Date().toISOString()
+      started: new Date().toISOString(),
     };
 
     const addWorklog = await this.makeRequest('POST', `/issue/${this.testIssueKey}/worklog`, worklogData);
@@ -588,7 +669,7 @@ class JiraEndpointsTester {
     if (worklogId) {
       const updateWorklogData = {
         timeSpent: '3h',
-        comment: `Updated API testing worklog - ${new Date().toISOString()}`
+        comment: `Updated API testing worklog - ${new Date().toISOString()}`,
       };
       const updateWorklog = await this.makeRequest('PUT', `/issue/${this.testIssueKey}/worklog/${worklogId}`, updateWorklogData);
       this.logTest('Update Worklog', updateWorklog, 200, `/issue/${this.testIssueKey}/worklog/${worklogId}`);
@@ -606,7 +687,7 @@ class JiraEndpointsTester {
     const versionData = {
       name: `API Test Version - ${Date.now()}`,
       description: 'Version created for API testing',
-      project: this.testProjectKey
+      project: this.testProjectKey,
     };
 
     const createVersion = await this.makeRequest('POST', '/version', versionData);
@@ -622,7 +703,7 @@ class JiraEndpointsTester {
     if (versionId) {
       const updateVersionData = {
         name: `Updated API Test Version - ${Date.now()}`,
-        description: 'Updated version for API testing'
+        description: 'Updated version for API testing',
       };
       const updateVersion = await this.makeRequest('PUT', `/version/${versionId}`, updateVersionData);
       this.logTest('Update Version', updateVersion, 200, `/version/${versionId}`);
@@ -650,7 +731,7 @@ class JiraEndpointsTester {
       type: { name: 'Relates' },
       inwardIssue: { key: this.testIssueKey },
       outwardIssue: { key: secondIssue.key },
-      comment: { body: 'Link created for API testing' }
+      comment: { body: 'Link created for API testing' },
     };
 
     const createLink = await this.makeRequest('POST', '/issueLink', linkData);
@@ -660,8 +741,8 @@ class JiraEndpointsTester {
     const remoteLinkData = {
       object: {
         url: 'https://example.com/test-link',
-        title: 'Test Remote Link'
-      }
+        title: 'Test Remote Link',
+      },
     };
 
     const createRemoteLink = await this.makeRequest('POST', `/issue/${this.testIssueKey}/remotelink`, remoteLinkData);
@@ -819,7 +900,7 @@ class JiraEndpointsTester {
   /**
    * Запустить расширенные тесты для всех эндпоинтов эмулятора
    */
-  async runExtendedTests() {
+  async runExtendedTests () {
     console.log('🚀 Starting EXTENDED JIRA EMULATOR tests...');
     console.log(`📡 Base URL: ${this.baseUrl}`);
     console.log('🔍 Testing ALL implemented endpoints comprehensively...\n');
@@ -1068,7 +1149,7 @@ class JiraEndpointsTester {
       failedTests,
       passRate,
       duration,
-      results: this.testResults
+      results: this.testResults,
     };
   }
 }
@@ -1079,25 +1160,39 @@ export default JiraEndpointsTester;
 // Автозапуск если файл запущен напрямую
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   (async () => {
-    const tester = new JiraEndpointsTester({
-      // baseUrl теперь берется из appConfig.jira.url автоматически
-      auth: {
-        type: 'basic',
-        username: 'admin',
-        password: 'admin'
-      }
-    });
+    const tester = new JiraEndpointsTester();
 
     // Проверяем аргументы командной строки
     const args = process.argv.slice(2);
     const isExtended = args.includes('--extended') || args.includes('-e');
+    const showHelp = args.includes('--help') || args.includes('-h');
+
+    if (showHelp) {
+      console.log('🚀 JIRA REST API v2 Endpoints Tester\n');
+      console.log('Usage: node tests/jira-endpoints-tester.js [options]\n');
+      console.log('Options:');
+      console.log('  --extended, -e     Run extended test suite');
+      console.log('  --tests=1,5,10-15  Run only specific tests (numbers or ranges)');
+      console.log('  --help, -h         Show this help message\n');
+      console.log('Examples:');
+      console.log('  node tests/jira-endpoints-tester.js --tests=1,5,10');
+      console.log('  node tests/jira-endpoints-tester.js --tests=1-20,50-60');
+      console.log('  node tests/jira-endpoints-tester.js --extended\n');
+      return;
+    }
 
     if (isExtended) {
       console.log('📋 Running EXTENDED test suite...\n');
       await tester.runExtendedTests();
     } else {
       console.log('📋 Running standard test suite...');
-      console.log('💡 Tip: Use --extended or -e flag for comprehensive testing\n');
+      if (tester.selectedTests) {
+        console.log(`🎯 Selected tests: ${tester.selectedTests.length} test(s)`);
+      } else {
+        console.log('💡 Tip: Use --extended or -e flag for comprehensive testing');
+        console.log('💡 Tip: Use --tests=1,5,10-15 for selective test execution');
+      }
+      console.log('');
       await tester.runAllTests();
     }
   })();

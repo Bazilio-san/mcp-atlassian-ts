@@ -2,8 +2,8 @@
 # These environment variables will override values in default.js
 
 server:
-  port: PORT
-  host: HOST
+  port: SERVER_PORT
+  host: SERVER_HOST
   environment: NODE_ENV
   transportType: TRANSPORT_TYPE
   serviceMode: MCP_SERVICE

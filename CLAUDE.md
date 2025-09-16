@@ -136,7 +136,7 @@ Environment configuration via `.env` file:
 - **OAuth2**: `CONFLUENCE_OAUTH_CLIENT_ID`, `CONFLUENCE_OAUTH_CLIENT_SECRET`, etc.
 
 #### Optional Configuration
-- **Transport**: `TRANSPORT_TYPE` (stdio/http/sse), `PORT` (default: 3000)
+- **Transport**: `TRANSPORT_TYPE` (stdio/http/sse), `SERVER_PORT` (default: 3000)
 - **Performance**: `CACHE_TTL_SECONDS`, `RATE_LIMIT_MAX_REQUESTS`
 - **Logging**: `LOG_LEVEL`, `LOG_PRETTY`
 - **Features**: `ENABLED_TOOLS` (comma-separated list of tools to enable)
