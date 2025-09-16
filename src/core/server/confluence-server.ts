@@ -3,7 +3,7 @@
  */
 
 import type { IConfig } from '../../types/config';
-import type { ServerConfig, ConfluenceConfig } from '../../types/index.js';
+import { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
@@ -17,15 +17,14 @@ export class ConfluenceServer extends McpAtlassianServer {
   protected override toolRegistry: ServiceToolRegistry;
 
   constructor(config: IConfig) {
-    // Convert IConfig to the expected ServerConfig and ConfluenceConfig formats
+    // Convert IConfig to the expected ServerConfig and JCConfig formats
     const {
       confluence: {
         auth: {
-          pat: pat,
+          basic,
+          pat,
           oauth2,
-          apiToken,
         } = {},
-        email,
         url,
         maxResults,
       },
@@ -46,16 +45,12 @@ export class ConfluenceServer extends McpAtlassianServer {
     if (pat) {
       auth = { type: 'pat', token: pat };
     } else if (oauth2?.clientId) {
-      auth = { type: 'oauth2', ...oauth2 };
-    } else if (apiToken && email) {
-      auth = { type: 'basic', email, token: apiToken };
+      auth = { ...oauth2, type: 'oauth2' };
+    } else if (basic?.username && basic?.password) {
+      auth = { type: 'basic', username: basic.username, password: basic.password };
     }
 
-    const confluenceConfig: ConfluenceConfig = { url, auth, maxResults };
-
-    if (email) {
-      confluenceConfig.email = email;
-    }
+    const confluenceConfig: JCConfig = { url, auth, maxResults };
 
     // Initialize parent with service mode configuration
     super(serverConfig, confluenceConfig);

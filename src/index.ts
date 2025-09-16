@@ -70,31 +70,32 @@ Examples:
 Environment Variables:
   MCP_SERVICE            Service mode (jira|confluence) - required
   JIRA_URL              JIRA instance URL
-  JIRA_EMAIL            Email for JIRA authentication
-  JIRA_API_TOKEN        API token for JIRA
+  JIRA_USERNAME         Username for JIRA authentication
+  JIRA_PASSWORD         Password/token for JIRA authentication
   CONFLUENCE_URL        Confluence instance URL
-  CONFLUENCE_EMAIL      Email for Confluence authentication
-  CONFLUENCE_API_TOKEN  API token for Confluence
+  CONFLUENCE_USERNAME   Username for Confluence authentication
+  CONFLUENCE_PASSWORD   Password/token for Confluence authentication
 `);
 }
 
 /**
  * Build authentication config from app config
  */
-function buildAuthConfig (atlassianConfig: any): any {
-  const {
-    auth: { pat, oauth2 = {}, apiToken } = {},
-    email,
-  } = atlassianConfig;
-  if (pat) {
-    return { type: 'pat', token: pat };
-  } else if (oauth2.clientId) {
-    return { type: 'oauth2', ...oauth2 };
-  } else if (apiToken && email) {
-    return { type: 'basic', email, token: apiToken };
+function buildAuthConfig(
+  auth: { basic?: { username?: string; password?: string }; pat?: string; oauth2?: any } | undefined
+): any {
+  if (!auth) {
+    throw new ServerError('Authentication configuration is missing');
   }
-
-  throw new ServerError('No valid authentication method configured');
+  if (auth.pat) {
+    return { type: 'pat', token: auth.pat };
+  } else if (auth.oauth2?.clientId) {
+    return { type: 'oauth2', ...auth.oauth2 };
+  } else if (auth.basic?.username && auth.basic?.password) {
+    return { type: 'basic', username: auth.basic.username, password: auth.basic.password };
+  } else {
+    throw new ServerError('No valid authentication method configured');
+  }
 }
 
 /**
@@ -128,7 +129,7 @@ async function main (cliServiceMode?: ServiceMode) {
       if (!jira?.url || jira.url === '***') {
         throw new ServerError('JIRA URL is required but not configured');
       }
-      const authConfig = buildAuthConfig(jira);
+      const authConfig = buildAuthConfig(jira.auth || {});
       validateAuthConfig(authConfig);
       const authManager = createAuthenticationManager(authConfig, jira.url);
       const isConnected = await authManager.testAuthentication(jira.url);
@@ -140,7 +141,7 @@ async function main (cliServiceMode?: ServiceMode) {
       if (!confluence?.url || confluence.url === '***') {
         throw new ServerError('Confluence URL is required but not configured');
       }
-      const authConfig = buildAuthConfig(confluence);
+      const authConfig = buildAuthConfig(confluence.auth || {});
       validateAuthConfig(authConfig);
       const authManager = createAuthenticationManager(authConfig, confluence.url);
       const isConnected = await authManager.testAuthentication(confluence.url);

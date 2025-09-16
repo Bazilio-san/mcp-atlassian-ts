@@ -19,7 +19,7 @@ import {
   PingRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import type { ServerConfig, JiraConfig, ConfluenceConfig } from '../../types/index.js';
+import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
 import { createErrorResponse, McpAtlassianError, ServerError } from '../errors/index.js';
 import { getCache } from '../cache/index.js';
@@ -34,12 +34,12 @@ const logger = createLogger('server');
 export class McpAtlassianServer {
   private server: Server;
   protected serverConfig: ServerConfig;
-  protected serviceConfig: JiraConfig | ConfluenceConfig;
+  protected serviceConfig: JCConfig;
   protected toolRegistry: ToolRegistry;
   protected rateLimiter: RateLimiterMemory;
   protected app?: express.Application;
 
-  constructor (serverConfig: ServerConfig, serviceConfig: JiraConfig | ConfluenceConfig) {
+  constructor (serverConfig: ServerConfig, serviceConfig: JCConfig) {
     this.serverConfig = serverConfig;
     this.serviceConfig = serviceConfig;
 
@@ -279,10 +279,10 @@ export class McpAtlassianServer {
           // Process MCP request directly (bypass the normal transport layer for testing)
           const { method, params, id } = req.body;
 
-          logger.info('HTTP MCP request received', { 
-            method, 
-            id, 
-            customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined 
+          logger.info('HTTP MCP request received', {
+            method,
+            id,
+            customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined
           });
 
           let result;

@@ -75,9 +75,7 @@ export class AuthenticationManager {
 
     switch (this.authConfig.type) {
       case 'basic':
-        const basicAuth = Buffer.from(`${this.authConfig.email}:${this.authConfig.token}`).toString(
-          'base64'
-        );
+        const basicAuth = Buffer.from(`${this.authConfig.username}:${this.authConfig.password}`).toString('base64');
         config.headers.Authorization = `Basic ${basicAuth}`;
         break;
 
@@ -179,8 +177,8 @@ export class AuthenticationManager {
       case 'basic':
         return {
           type,
-          email: this.authConfig.email,
-          hasToken: !!this.authConfig.token,
+          username: this.authConfig.username,
+          hasPassword: !!this.authConfig.password,
         };
       case 'pat':
         return {
@@ -350,8 +348,8 @@ export function createAuthenticationManager(
 export function validateAuthConfig(authConfig: AuthConfig): void {
   switch (authConfig.type) {
     case 'basic':
-      if (!authConfig.email || !authConfig.token) {
-        throw new AuthenticationError('Basic auth requires both email and token');
+      if (!authConfig.username || !authConfig.password) {
+        throw new AuthenticationError('Basic auth requires both username and password');
       }
       break;
     case 'pat':

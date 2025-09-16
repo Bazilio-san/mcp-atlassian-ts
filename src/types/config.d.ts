@@ -4,9 +4,8 @@
 
 // Authentication types
 export interface IBasicAuth {
-  type: 'basic';
-  email: string;
-  token: string;
+  username?: string;
+  password?: string;
 }
 
 export interface IPatAuth {
@@ -52,38 +51,13 @@ export interface ICacheConfig {
   maxItems: number;
 }
 
-// JIRA configuration
-export interface IJiraConfig {
+// JIRA & Confluence configuration
+export interface IJCConfig {
   url: string;
-  email?: string;
   auth?: {
-    apiToken?: string;
+    basic?: IBasicAuth;
     pat?: string;
-    oauth2?: {
-      clientId?: string;
-      clientSecret?: string;
-      accessToken?: string;
-      refreshToken?: string;
-      redirectUri?: string;
-    };
-  };
-  maxResults: number;
-}
-
-// Confluence configuration
-export interface IConfluenceConfig {
-  url: string;
-  email?: string;
-  auth?: {
-    apiToken?: string;
-    pat?: string;
-    oauth2?: {
-      clientId?: string;
-      clientSecret?: string;
-      accessToken?: string;
-      refreshToken?: string;
-      redirectUri?: string;
-    };
+    oauth2?: IOAuth2Auth;
   };
   maxResults: number;
 }
@@ -100,20 +74,20 @@ export interface IConfig {
   productName: string;
   version: string;
   description: string;
-  
+
   // Server settings
   server: IServerConfig;
-  
+
   // Service-specific settings
-  jira: IJiraConfig;
-  confluence: IConfluenceConfig;
-  
+  jira: IJCConfig;
+  confluence: IJCConfig;
+
   // Infrastructure settings
   logger: ILoggerConfig;
   rateLimit: IRateLimitConfig;
   cache: ICacheConfig;
   ssl: ISslConfig;
-  
+
   // Feature flags
   features: {
     enabledTools?: string[];

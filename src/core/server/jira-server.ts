@@ -3,7 +3,7 @@
  */
 
 import type { IConfig } from '../../types/config';
-import type { ServerConfig, JiraConfig } from '../../types/index.js';
+import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
@@ -21,11 +21,10 @@ export class JiraServer extends McpAtlassianServer {
     const {
       jira: {
         auth: {
-          pat: pat,
+          basic,
+          pat,
           oauth2,
-          apiToken,
         } = {},
-        email,
         url,
         maxResults,
       },
@@ -46,16 +45,12 @@ export class JiraServer extends McpAtlassianServer {
     if (pat) {
       auth = { type: 'pat', token: pat };
     } else if (oauth2?.clientId) {
-      auth = { type: 'oauth2', ...oauth2 };
-    } else if (apiToken && email) {
-      auth = { type: 'basic', email, token: apiToken };
+      auth = { ...oauth2, type: 'oauth2' };
+    } else if (basic?.username && basic?.password) {
+      auth = { type: 'basic', username: basic.username, password: basic.password };
     }
 
-    const jiraConfig: JiraConfig = { url, auth, maxResults };
-
-    if (email) {
-      jiraConfig.email = email;
-    }
+    const jiraConfig: JCConfig = { url, auth, maxResults };
 
     // Initialize parent with service mode configuration
     super(serverConfig, jiraConfig);

@@ -8,7 +8,7 @@ import { getCache } from '../cache/index.js';
 import { ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
-import type { JiraConfig, ConfluenceConfig } from '../../types/index.js';
+import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 import type { ServiceMode } from './factory.js';
@@ -45,25 +45,25 @@ const logger = createLogger('tools');
  * Central registry for all MCP tools
  */
 export class ToolRegistry {
-  protected serviceConfig: JiraConfig | ConfluenceConfig;
+  protected serviceConfig: JCConfig;
   protected jiraTools: JiraToolsManager | null = null;
   protected confluenceTools: ConfluenceToolsManager | null = null;
   protected toolsMap: Map<string, Tool> = new Map();
 
-  constructor(serviceConfig: JiraConfig | ConfluenceConfig) {
+  constructor(serviceConfig: JCConfig) {
     this.serviceConfig = serviceConfig;
-    
+
     // Create tool managers based on what config we have
     // This is a flexible approach that allows JIRA or Confluence tools
     // even when only one service config is provided
     try {
-      this.jiraTools = new JiraToolsManager(serviceConfig as JiraConfig);
+      this.jiraTools = new JiraToolsManager(serviceConfig);
     } catch {
       // If JIRA config is invalid, jiraTools remains null
     }
-    
+
     try {
-      this.confluenceTools = new ConfluenceToolsManager(serviceConfig as ConfluenceConfig);
+      this.confluenceTools = new ConfluenceToolsManager(serviceConfig);
     } catch {
       // If Confluence config is invalid, confluenceTools remains null
     }
@@ -313,7 +313,7 @@ export class ToolRegistry {
       }
     }
 
-    // Check Confluence connectivity if available  
+    // Check Confluence connectivity if available
     if (this.confluenceTools) {
       try {
         health.services.confluence = await this.confluenceTools.healthCheck();
@@ -410,20 +410,20 @@ export class ToolRegistry {
 export class ServiceToolRegistry extends ToolRegistry {
   private serviceMode: ServiceMode;
 
-  constructor(serviceConfig: JiraConfig | ConfluenceConfig, serviceMode: ServiceMode) {
+  constructor(serviceConfig: JCConfig, serviceMode: ServiceMode) {
     super(serviceConfig);
     this.serviceMode = serviceMode;
-    
+
     // Override the parent's approach - create only the tools we need based on service mode
     this.jiraTools = null;
     this.confluenceTools = null;
-    
+
     if (serviceMode === 'jira') {
-      this.jiraTools = new JiraToolsManager(serviceConfig as JiraConfig);
+      this.jiraTools = new JiraToolsManager(serviceConfig);
     }
-    
+
     if (serviceMode === 'confluence') {
-      this.confluenceTools = new ConfluenceToolsManager(serviceConfig as ConfluenceConfig);
+      this.confluenceTools = new ConfluenceToolsManager(serviceConfig);
     }
   }
 
@@ -437,7 +437,7 @@ export class ServiceToolRegistry extends ToolRegistry {
       // Initialize only the relevant tool managers based on service mode
       if (this.serviceMode === 'jira' && this.jiraTools) {
         await this.jiraTools.initialize();
-        
+
         // Register JIRA tools
         const jiraTools = this.jiraTools.getAvailableTools();
         for (const tool of jiraTools) {
@@ -450,7 +450,7 @@ export class ServiceToolRegistry extends ToolRegistry {
 
       if (this.serviceMode === 'confluence' && this.confluenceTools) {
         await this.confluenceTools.initialize();
-        
+
         // Register Confluence tools
         const confluenceTools = this.confluenceTools.getAvailableTools();
         for (const tool of confluenceTools) {
@@ -466,10 +466,10 @@ export class ServiceToolRegistry extends ToolRegistry {
 
       // Count tools by service
       const jiraCount = this.serviceMode === 'jira' && this.jiraTools
-        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length 
+        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
         : 0;
       const confluenceCount = this.serviceMode === 'confluence' && this.confluenceTools
-        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length 
+        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
         : 0;
 
       logger.info('Service-specific tools initialized', {

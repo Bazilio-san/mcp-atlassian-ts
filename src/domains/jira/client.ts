@@ -8,7 +8,7 @@ import { withErrorHandling, NotFoundError, ValidationError } from '../../core/er
 import { createLogger } from '../../core/utils/logger.js';
 
 import type {
-  JiraConfig,
+  JCConfig,
   JiraIssue,
   JiraSearchRequest,
   JiraSearchResponse,
@@ -29,11 +29,11 @@ const logger = createLogger('jira-client');
  */
 export class JiraClient {
   private httpClient: AxiosInstance;
-  private config: JiraConfig;
+  private config: JCConfig;
   private cache = getCache();
   private customHeaders: Record<string, string> = {};
 
-  constructor(config: JiraConfig) {
+  constructor(config: JCConfig) {
     this.config = config;
     if (!config.url || config.url === '***') {
       throw new Error('JIRA URL is required but not configured');
@@ -70,7 +70,7 @@ export class JiraClient {
 
     const authManager = createAuthenticationManager(this.config.auth, this.config.url);
     const client = authManager.getHttpClient();
-    
+
     // Add custom headers to the client
     client.interceptors.request.use(
       config => {
@@ -544,7 +544,7 @@ export class JiraClient {
   /**
    * Get configuration for the client
    */
-  getConfig(): JiraConfig {
+  getConfig(): JCConfig {
     return this.config;
   }
 

@@ -6,8 +6,8 @@
 // Authentication types
 export interface BasicAuth {
   type: 'basic';
-  email: string;
-  token: string;
+  username: string;
+  password: string;
 }
 
 export interface PersonalAccessToken {
@@ -43,17 +43,8 @@ export interface ServerConfig {
 }
 
 // JIRA configuration
-export interface JiraConfig {
+export interface JCConfig {
   url: string;
-  email?: string;
-  auth: AuthConfig;
-  maxResults: number;
-}
-
-// Confluence configuration
-export interface ConfluenceConfig {
-  url: string;
-  email?: string;
   auth: AuthConfig;
   maxResults: number;
 }

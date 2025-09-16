@@ -10,9 +10,10 @@ server:
 
 jira:
   url: JIRA_URL
-  email: JIRA_EMAIL
   auth:
-    apiToken: JIRA_API_TOKEN
+    basic:
+      username: JIRA_USERNAME
+      password: JIRA_PASSWORD
     pat: JIRA_PAT
     oauth2:
       clientId: JIRA_OAUTH_CLIENT_ID
@@ -24,9 +25,10 @@ jira:
 
 confluence:
   url: CONFLUENCE_URL
-  email: CONFLUENCE_EMAIL
   auth:
-    apiToken: CONFLUENCE_API_TOKEN
+    basic:
+      username: CONFLUENCE_USERNAME
+      password: CONFLUENCE_PASSWORD
     pat: CONFLUENCE_PAT
     oauth2:
       clientId: CONFLUENCE_OAUTH_CLIENT_ID

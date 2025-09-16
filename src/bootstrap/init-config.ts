@@ -18,12 +18,12 @@ const validateConfig = () => {
     }
 
     // Validate JIRA authentication is configured
-    const hasApiToken = jira.auth?.apiToken;
+    const hasBasicAuth = jira.auth?.basic?.username && jira.auth?.basic?.password;
     const hasPat = jira.auth?.pat;
     const hasOAuth = jira.auth?.oauth2?.clientId;
 
-    if (!hasApiToken && !hasPat && !hasOAuth) {
-      throw new Error('No JIRA authentication method configured. Please provide API Token, PAT, or OAuth2 credentials');
+    if (!hasBasicAuth && !hasPat && !hasOAuth) {
+      throw new Error('No JIRA authentication method configured. Please provide Basic Auth (username/password), PAT, or OAuth2 credentials');
     }
   }
 
@@ -34,12 +34,12 @@ const validateConfig = () => {
     }
 
     // Validate Confluence authentication is configured
-    const hasApiToken = confluence.auth?.apiToken;
+    const hasBasicAuth = confluence.auth?.basic?.username && confluence.auth?.basic?.password;
     const hasPat = confluence.auth?.pat;
     const hasOAuth = confluence.auth?.oauth2?.clientId;
 
-    if (!hasApiToken && !hasPat && !hasOAuth) {
-      throw new Error('No Confluence authentication method configured. Please provide API Token, PAT, or OAuth2 credentials');
+    if (!hasBasicAuth && !hasPat && !hasOAuth) {
+      throw new Error('No Confluence authentication method configured. Please provide Basic Auth (username/password), PAT, or OAuth2 credentials');
     }
   }
 };

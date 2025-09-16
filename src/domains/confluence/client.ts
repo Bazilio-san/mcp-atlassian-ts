@@ -8,7 +8,7 @@ import { withErrorHandling, NotFoundError, ValidationError } from '../../core/er
 import { createLogger } from '../../core/utils/logger.js';
 
 import type {
-  ConfluenceConfig,
+  JCConfig,
   ConfluencePage,
   ConfluenceSpace,
   ConfluenceSearchRequest,
@@ -29,11 +29,11 @@ const logger = createLogger('confluence-client');
  */
 export class ConfluenceClient {
   private httpClient: AxiosInstance;
-  private config: ConfluenceConfig;
+  private config: JCConfig;
   private cache = getCache();
   private customHeaders: Record<string, string> = {};
 
-  constructor(config: ConfluenceConfig) {
+  constructor(config: JCConfig) {
     this.config = config;
     if (!config.url || config.url === '***') {
       throw new Error('Confluence URL is required but not configured');
@@ -70,7 +70,7 @@ export class ConfluenceClient {
 
     const authManager = createAuthenticationManager(this.config.auth, this.config.url);
     const client = authManager.getHttpClient();
-    
+
     // Add custom headers to the client
     client.interceptors.request.use(
       config => {
@@ -714,7 +714,7 @@ export class ConfluenceClient {
   /**
    * Get configuration for the client
    */
-  getConfig(): ConfluenceConfig {
+  getConfig(): JCConfig {
     return this.config;
   }
 

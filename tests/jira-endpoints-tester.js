@@ -9,7 +9,7 @@ import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js
 
 class JiraEndpointsTester {
   constructor (config = {}) {
-    this.baseUrl = config.baseUrl || appConfig.jira?.url || 'http://localhost:8080';
+    this.baseUrl = appConfig.jira?.url || 'http://localhost:8080';
     this.auth = config.auth || { type: 'basic', username: 'admin', password: 'admin' };
     this.testResults = [];
     this.testIssueKey = null;
