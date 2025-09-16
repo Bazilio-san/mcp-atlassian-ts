@@ -4,6 +4,10 @@
 4) Проверить все на боевом контуре jira со своим аккаунтом и в проекте AITECH
 5) Проверить работу с baseUrl прослойки имперсонализации
 
+doc/network-deployment-guide.md
+README.md
+CLAUDE.md
+
 В случае использования jira и confluence на предприятии настройки серверов будут разными.
 Поэтому те настройки, что сейчас есть в Atlassian configuration надо применить по отдельности к настройкам jira и confluence.
 А Atlassian configuration - упразднить.

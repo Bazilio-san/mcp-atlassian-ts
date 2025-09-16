@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` - Development with hot reload using tsx watch
 - `npm run dev:stdio` - Run in development with STDIO transport
 - `npm start` - Start production server from `dist/src/index.js`
+- `npm run start:jira` - Start JIRA-only service mode
+- `npm run start:confluence` - Start Confluence-only service mode
 
 ### Testing
 - `npm test` - Run Jest test suite
@@ -81,6 +83,11 @@ src/
 └── index.ts          # Main entry point with CLI support
 ```
 
+### Service Mode Support
+The server supports single-service mode operation:
+- `MCP_SERVICE=jira` - JIRA-only mode (30 tools)
+- `MCP_SERVICE=confluence` - Confluence-only mode (17 tools)
+
 ### Transport Support
 The server supports multiple transport types:
 - `stdio` - For MCP client integration (Claude Desktop)
@@ -112,10 +119,49 @@ The server supports multiple transport types:
 
 ### Configuration
 Environment configuration via `.env` file:
-- **Required**: `ATLASSIAN_URL` 
-- **Authentication**: One of `ATLASSIAN_API_TOKEN`, `ATLASSIAN_PAT`, or OAuth2 credentials
+
+#### Required Variables
+- **Service Mode**: `MCP_SERVICE` (jira|confluence) - **REQUIRED**
+- **URLs**: `JIRA_URL` and/or `CONFLUENCE_URL` 
+
+#### Authentication (Choose ONE method per service)
+**JIRA Authentication:**
+- **Basic Auth**: `JIRA_USERNAME` + `JIRA_PASSWORD` (username + API token)
+- **PAT**: `JIRA_PAT` (Personal Access Token)
+- **OAuth2**: `JIRA_OAUTH_CLIENT_ID`, `JIRA_OAUTH_CLIENT_SECRET`, etc.
+
+**Confluence Authentication:**
+- **Basic Auth**: `CONFLUENCE_USERNAME` + `CONFLUENCE_PASSWORD` (username + API token)
+- **PAT**: `CONFLUENCE_PAT` (Personal Access Token)  
+- **OAuth2**: `CONFLUENCE_OAUTH_CLIENT_ID`, `CONFLUENCE_OAUTH_CLIENT_SECRET`, etc.
+
+#### Optional Configuration
 - **Transport**: `TRANSPORT_TYPE` (stdio/http/sse), `PORT` (default: 3000)
 - **Performance**: `CACHE_TTL_SECONDS`, `RATE_LIMIT_MAX_REQUESTS`
+- **Logging**: `LOG_LEVEL`, `LOG_PRETTY`
+- **Features**: `ENABLED_TOOLS` (comma-separated list of tools to enable)
+
+### Authentication Structure
+The new authentication system uses a structured approach:
+
+```typescript
+interface JiraConfig {
+  url: string;
+  auth: {
+    basic?: {
+      username: string;  // JIRA_USERNAME
+      password: string;  // JIRA_PASSWORD (API token)
+    };
+    pat?: string;        // JIRA_PAT
+    oauth2?: {
+      clientId: string;
+      clientSecret: string;
+      // ...
+    };
+  };
+  maxResults: number;
+}
+```
 
 ### TypeScript Configuration
 - Target: ES2022 with ESNext modules
@@ -129,3 +175,14 @@ Environment configuration via `.env` file:
 - Rate limiting and security headers
 - Caching layer with statistics
 - Production-ready error handling
+- Service-specific deployment options
+- Docker container support
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+      
+      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
