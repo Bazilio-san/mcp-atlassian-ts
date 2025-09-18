@@ -4,14 +4,18 @@
  * как для прямого тестирования эмулятора, так и для тестирования MCP сервера
  */
 
+import { appConfig } from '../dist/src/bootstrap/init-config.js';
+import { TEST_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT } from './constants.js';
+
 /**
  * Определяет набор тест-кейсов для различных JIRA API эндпоинтов
  * Каждый тест-кейс содержит информацию о том, как вызвать API и как проверить результат
  */
 export class SharedJiraTestCases {
-  constructor(config = {}) {
-    this.testProjectKey = config.testProjectKey || 'TEST';
-    this.testUsername = config.testUsername || 'admin';
+  constructor() {
+    this.testProjectKey = TEST_JIRA_PROJECT;
+    this.testUsername = appConfig.jira.auth.basic.username;
+    this.testIssueKey = TEST_ISSUE_KEY;
     this.createdResources = {
       issues: [],
       versions: [],
@@ -30,16 +34,16 @@ export class SharedJiraTestCases {
         description: 'Получить информацию о задаче',
         mcpTool: 'jira_get_issue',
         mcpArgs: {
-          issueKey: `${this.testProjectKey}-1`,
+          issueKey: this.testIssueKey,
           expand: ['comment']
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testProjectKey}-1`
+          endpoint: `/issue/${this.testIssueKey}`
         },
         validation: {
-          checkContent: (content) => content && content.includes(`${this.testProjectKey}-1`),
-          checkResult: (result) => result && result.key === `${this.testProjectKey}-1`,
+          checkContent: (content) => content && content.includes(this.testIssueKey),
+          checkResult: (result) => result && result.key === this.testIssueKey,
           expectedProps: ['key', 'fields']
         }
       },
@@ -104,11 +108,11 @@ export class SharedJiraTestCases {
         description: 'Получить доступные переходы статуса для задачи',
         mcpTool: 'jira_get_transitions',
         mcpArgs: {
-          issueKey: `${this.testProjectKey}-1`
+          issueKey: this.testIssueKey
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testProjectKey}-1/transitions`
+          endpoint: `/issue/${this.testIssueKey}/transitions`
         },
         validation: {
           checkContent: (content) => content && content.includes('transitions'),
@@ -121,11 +125,11 @@ export class SharedJiraTestCases {
         description: 'Получить комментарии к задаче',
         mcpTool: 'jira_get_comments',
         mcpArgs: {
-          issueKey: `${this.testProjectKey}-1`
+          issueKey: this.testIssueKey
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testProjectKey}-1/comment`
+          endpoint: `/issue/${this.testIssueKey}/comment`
         },
         validation: {
           checkContent: (content) => content && (content.includes('comments') || content.includes('Comments')),
@@ -225,7 +229,7 @@ export class SharedJiraTestCases {
         mcpTool: 'jira_create_issue',
         mcpArgs: {
           project: this.testProjectKey,
-          issueType: 'Task',
+          issueType: TEST_ISSUE_TYPE_NAME,
           summary: 'Test Issue Created by MCP Client',
           description: 'This issue was created during MCP integration testing',
           labels: ['mcp-test', 'automated']
@@ -238,7 +242,7 @@ export class SharedJiraTestCases {
               project: { key: this.testProjectKey },
               summary: 'Test Issue Created by API Client',
               description: 'This issue was created during API testing',
-              issuetype: { name: 'Task' }
+              issuetype: { name: TEST_ISSUE_TYPE_NAME }
             }
           }
         },
@@ -258,12 +262,12 @@ export class SharedJiraTestCases {
         description: 'Добавить комментарий к задаче',
         mcpTool: 'jira_add_comment',
         mcpArgs: {
-          issueKey: `${this.testProjectKey}-1`,
+          issueKey: this.testIssueKey,
           body: 'This comment was added by MCP test client'
         },
         directApi: {
           method: 'POST',
-          endpoint: `/issue/${this.testProjectKey}-1/comment`,
+          endpoint: `/issue/${this.testIssueKey}/comment`,
           data: {
             body: 'This comment was added by API test client'
           }
@@ -279,13 +283,13 @@ export class SharedJiraTestCases {
         description: 'Обновить существующую задачу',
         mcpTool: 'jira_update_issue',
         mcpArgs: {
-          issueKey: `${this.testProjectKey}-1`,
+          issueKey: this.testIssueKey,
           summary: `Updated Test Issue - ${new Date().toISOString()}`,
           description: 'Updated description for MCP testing'
         },
         directApi: {
           method: 'PUT',
-          endpoint: `/issue/${this.testProjectKey}-1`,
+          endpoint: `/issue/${this.testIssueKey}`,
           data: {
             fields: {
               summary: `Updated Test Issue - ${new Date().toISOString()}`,
@@ -303,13 +307,13 @@ export class SharedJiraTestCases {
         description: 'Добавить рабочий лог к задаче',
         mcpTool: 'jira_add_worklog',
         mcpArgs: {
-          issueKey: `${this.testProjectKey}-1`,
+          issueKey: this.testIssueKey,
           timeSpent: '2h',
           comment: 'MCP test worklog entry'
         },
         directApi: {
           method: 'POST',
-          endpoint: `/issue/${this.testProjectKey}-1/worklog`,
+          endpoint: `/issue/${this.testIssueKey}/worklog`,
           data: {
             timeSpent: '2h',
             comment: 'API test worklog entry',
@@ -457,7 +461,7 @@ export class SharedJiraTestCases {
   getMinimalTestCases() {
     const informational = this.getInformationalTestCases();
     const modifying = this.getModifyingTestCases();
-    
+
     return [
       informational.find(tc => tc.name === 'Get Issue'),
       informational.find(tc => tc.name === 'Search Issues'),

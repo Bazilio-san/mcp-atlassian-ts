@@ -8,6 +8,7 @@
 import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js';
+import { TEST_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT } from './constants.js';
 
 const {
   jira: {
@@ -22,6 +23,7 @@ const {
   } = {},
 } = appConfig;
 
+
 class JiraEndpointsTester {
   constructor () {
     this.baseUrl = url || 'http://localhost:8080';
@@ -32,7 +34,10 @@ class JiraEndpointsTester {
     }
     this.testResults = [];
     this.testIssueKey = null;
-    this.testProjectKey = 'TEST';
+    this.testProjectKey = TEST_JIRA_PROJECT;
+    this.testIssueKey = TEST_ISSUE_KEY;
+    this.testCounter = 0;
+    this.failedTestNumbers = [];
     this.createdResources = {
       issues: [],
       sprints: [],
@@ -44,10 +49,7 @@ class JiraEndpointsTester {
     this.customHeaders = this.parseTestXHeaders();
 
     // Инициализируем shared test cases
-    this.sharedTestCases = new SharedJiraTestCases({
-      testProjectKey: this.testProjectKey,
-      testUsername: this.auth.username,
-    });
+    this.sharedTestCases = new SharedJiraTestCases();
 
     // Парсим селективные тесты из аргументов командной строки
     this.parseSelectedTests();
@@ -67,8 +69,8 @@ class JiraEndpointsTester {
     }
 
     const testsString = testsArg.split('=')[1];
-    if (!testsString) {
-      this.selectedTests = null;
+    if (!testsString || testsString.trim() === '') {
+      this.selectedTests = null; // Пустое значение = все тесты
       return;
     }
 
@@ -110,6 +112,65 @@ class JiraEndpointsTester {
       return true; // Выполнять все тесты
     }
     return this.selectedTests.includes(testNumber);
+  }
+
+  /**
+   * Проверить, есть ли в диапазоне номеров выбранные тесты
+   */
+  hasSelectedTestsInRange(startNumber, estimatedCount) {
+    if (this.selectedTests === null) {
+      return true; // Выполнять все тесты
+    }
+
+    for (let i = startNumber; i < startNumber + estimatedCount; i++) {
+      if (this.selectedTests.includes(i)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Выполнить тест с проверкой селективности
+   */
+  async executeTest(testName, testFunction, expected = null, endpoint = null) {
+    // Увеличиваем счетчик для всех тестов (не здесь, а в logTest)
+    const nextTestNumber = this.testCounter + 1;
+
+    // Если тест не должен выполняться, пропускаем его полностью
+    if (!this.shouldRunTest(nextTestNumber)) {
+      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
+      return null; // Пропускаем выполнение теста
+    }
+
+    // Выполняем тест
+    const result = await testFunction();
+
+    // Логируем результат (logTest увеличит счетчик)
+    this.logTest(testName, result, expected, endpoint);
+
+    return result;
+  }
+
+  /**
+   * Тестовый запрос с автоматической проверкой селективности
+   */
+  async testRequest(testName, method, endpoint, data = null, expected = 200) {
+    const nextTestNumber = this.testCounter + 1;
+
+    // Если тест не должен выполняться, пропускаем его полностью
+    if (!this.shouldRunTest(nextTestNumber)) {
+      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
+      return null; // Пропускаем выполнение теста
+    }
+
+    // Выполняем запрос
+    const result = await this.makeRequest(method, endpoint, data);
+
+    // Логируем результат (logTest увеличит счетчик)
+    this.logTest(testName, result, expected, endpoint);
+
+    return result;
   }
 
   /**
@@ -181,15 +242,29 @@ class JiraEndpointsTester {
 
     try {
       const response = await fetch(url, config);
+
       const responseData = response.headers.get('content-type')?.includes('json')
         ? await response.json()
         : await response.text();
+
+      let errorMessage = null;
+      if (!response.ok && responseData && typeof responseData === 'object') {
+        if (responseData.errors && Object.keys(responseData.errors).length > 0) {
+          const errorMessages = Object.entries(responseData.errors)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join(', ');
+          errorMessage = `Validation errors: ${errorMessages}`;
+        } else if (responseData.errorMessages && responseData.errorMessages.length > 0) {
+          errorMessage = `Error messages: ${responseData.errorMessages.join(', ')}`;
+        }
+      }
 
       return {
         success: response.ok,
         status: response.status,
         statusText: response.statusText,
         data: responseData,
+        error: errorMessage || (response.ok ? null : response.statusText || 'Unknown error'),
         url,
         method,
       };
@@ -225,11 +300,24 @@ class JiraEndpointsTester {
         ? await response.json()
         : await response.text();
 
+      let errorMessage = null;
+      if (!response.ok && responseData && typeof responseData === 'object') {
+        if (responseData.errors && Object.keys(responseData.errors).length > 0) {
+          const errorMessages = Object.entries(responseData.errors)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join(', ');
+          errorMessage = `Validation errors: ${errorMessages}`;
+        } else if (responseData.errorMessages && responseData.errorMessages.length > 0) {
+          errorMessage = `Error messages: ${responseData.errorMessages.join(', ')}`;
+        }
+      }
+
       return {
         success: response.ok,
         status: response.status,
         statusText: response.statusText,
         data: responseData,
+        error: errorMessage || (response.ok ? null : response.statusText || 'Unknown error'),
         url,
         method,
       };
@@ -246,16 +334,29 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Логирование результатов тестов
+   * Логирование результатов тестов с нумерацией (НЕ увеличивает счетчик)
    */
   logTest (testName, result, expected = null, endpoint = null) {
+    // Ensure testCounter is properly initialized
+    if (typeof this.testCounter !== 'number' || isNaN(this.testCounter)) {
+      this.testCounter = 0;
+    }
+
+    this.testCounter++; // Увеличиваем счетчик для всех тестов
+
+    // Если тест не должен выполняться/логироваться при селективном выполнении
+    if (!this.shouldRunTest(this.testCounter)) {
+      return false; // Тест был пропущен
+    }
+
     const status = result.success ? '✅ PASS' : '❌ FAIL';
     const details = expected ? `Expected: ${expected}, Got: ${result.status}` : `Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
-    console.log(`${status} ${testName}${endpointInfo} - ${details}`);
+    console.log(`${status} [${this.testCounter}] ${testName}${endpointInfo} - ${details}`);
 
     this.testResults.push({
+      number: this.testCounter,
       name: testName,
       success: result.success,
       status: result.status,
@@ -265,28 +366,76 @@ class JiraEndpointsTester {
       timestamp: new Date().toISOString(),
     });
 
-    if (!result.success && result.error) {
-      console.error(`   Error: ${result.error}`);
+    // Сохраняем номера неудачных тестов
+    if (!result.success) {
+      if (!this.failedTestNumbers) {
+        this.failedTestNumbers = [];
+      }
+      this.failedTestNumbers.push(this.testCounter);
     }
+
+    if (!result.success && result.error) {
+      console.error(`      Error: ${result.error}`);
+    }
+
+    return true; // Тест был выполнен
   }
 
   /**
    * Проверить наличие ожидаемых свойств в объекте
    */
   validateProperties (obj, expectedProps, testName) {
-    const missing = expectedProps.filter(prop => !(prop in obj));
-    if (missing.length > 0) {
-      console.log(`❌ FAIL ${testName} - Missing properties: ${missing.join(', ')}`);
-      return false;
+    // Ensure testCounter is properly initialized
+    if (typeof this.testCounter !== 'number' || isNaN(this.testCounter)) {
+      this.testCounter = 0;
     }
-    console.log(`✅ PASS ${testName} - All expected properties present`);
-    return true;
+
+    this.testCounter++;
+
+    // Проверяем, нужно ли выполнять этот тест
+    if (!this.shouldRunTest(this.testCounter)) {
+      return true; // Пропускаем тест полностью, считаем успешным
+    }
+
+    const missing = expectedProps.filter(prop => !(prop in obj));
+    const success = missing.length === 0;
+
+    if (!success) {
+      console.log(`❌ FAIL [${this.testCounter}] ${testName} - Missing properties: ${missing.join(', ')}`);
+      if (!this.failedTestNumbers) {
+        this.failedTestNumbers = [];
+      }
+      this.failedTestNumbers.push(this.testCounter);
+    } else {
+      console.log(`✅ PASS [${this.testCounter}] ${testName} - All expected properties present`);
+    }
+
+    this.testResults.push({
+      number: this.testCounter,
+      name: testName,
+      success: success,
+      status: success ? 200 : 400,
+      endpoint: null,
+      method: 'VALIDATE',
+      details: success ? 'Properties validated' : `Missing: ${missing.join(', ')}`,
+      timestamp: new Date().toISOString(),
+    });
+
+    return success;
   }
 
   /**
    * Выполнить тест-кейс из shared test cases через прямой API вызов
    */
   async runSharedTestCase (testCase) {
+    // Проверяем селективное выполнение ПЕРЕД выполнением запроса
+    const nextTestNumber = this.testCounter + 1;
+
+    if (!this.shouldRunTest(nextTestNumber)) {
+      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
+      return null; // Пропускаем выполнение теста
+    }
+
     const api = testCase.directApi;
 
     // Определяем метод запроса
@@ -319,6 +468,13 @@ class JiraEndpointsTester {
    * Запустить shared test cases
    */
   async testSharedTestCases () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 6 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 6)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 6; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING SHARED TEST CASES ===');
 
     const testCases = this.sharedTestCases.getMinimalTestCases();
@@ -337,51 +493,64 @@ class JiraEndpointsTester {
    */
 
   async testIssueEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 8 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 8)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 8; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING ISSUE ENDPOINTS ===');
 
     // GET /issue/{issueIdOrKey} - получить задачу
-    const getIssue = await this.makeRequest('GET', `/issue/${this.testProjectKey}-1`);
-    this.logTest('Get Issue', getIssue, 200, `/issue/${this.testProjectKey}-1`);
+    const getIssue = await this.executeTest(
+      'Get Issue',
+      () => this.makeRequest('GET', `/issue/${this.testIssueKey}`),
+      200,
+      `/issue/${this.testIssueKey}`
+    );
 
-    if (getIssue.success) {
+    if (getIssue && getIssue.success) {
       this.validateProperties(getIssue.data, ['key', 'fields'], 'Issue Properties');
       this.validateProperties(getIssue.data.fields, ['summary', 'status', 'issuetype'], 'Issue Fields');
     }
 
     // GET /issue/{issueIdOrKey}/editmeta - метаданные для редактирования
-    const editMeta = await this.makeRequest('GET', `/issue/${this.testProjectKey}-1/editmeta`);
-    this.logTest('Get Issue Edit Meta', editMeta, 200, `/issue/${this.testProjectKey}-1/editmeta`);
+    const editMeta = await this.testRequest('Get Issue Edit Meta', 'GET', `/issue/${this.testIssueKey}/editmeta`, null, 200);
 
-    if (editMeta.success) {
+    if (editMeta && editMeta.success) {
       this.validateProperties(editMeta.data, ['fields'], 'Edit Meta Properties');
     }
 
     // GET /issue/{issueIdOrKey}/transitions - доступные переходы
-    const transitions = await this.makeRequest('GET', `/issue/${this.testProjectKey}-1/transitions`);
-    this.logTest('Get Issue Transitions', transitions, 200, `/issue/${this.testProjectKey}-1/transitions`);
+    const transitions = await this.testRequest('Get Issue Transitions', 'GET', `/issue/${this.testIssueKey}/transitions`, null, 200);
 
-    if (transitions.success && transitions.data.transitions) {
+    if (transitions && transitions.success && transitions.data.transitions) {
       this.validateProperties(transitions.data.transitions[0] || {}, ['id', 'name'], 'Transition Properties');
     }
 
     // GET /issue/{issueIdOrKey}/comment - комментарии
-    const comments = await this.makeRequest('GET', `/issue/${this.testProjectKey}-1/comment`);
-    this.logTest('Get Issue Comments', comments, 200, `/issue/${this.testProjectKey}-1/comment`);
+    const comments = await this.testRequest('Get Issue Comments', 'GET', `/issue/${this.testIssueKey}/comment`, null, 200);
 
     // GET /issue/{issueIdOrKey}/worklog - рабочие логи
-    const worklog = await this.makeRequest('GET', `/issue/${this.testProjectKey}-1/worklog`);
-    this.logTest('Get Issue Worklog', worklog, 200, `/issue/${this.testProjectKey}-1/worklog`);
+    const worklog = await this.testRequest('Get Issue Worklog', 'GET', `/issue/${this.testIssueKey}/worklog`, null, 200);
 
     // GET /issue/createmeta - метаданные для создания
-    const createMeta = await this.makeRequest('GET', '/issue/createmeta');
-    this.logTest('Get Create Meta', createMeta, 200, '/issue/createmeta');
+    const createMeta = await this.testRequest('Get Create Meta', 'GET', '/issue/createmeta', null, 200);
 
-    if (createMeta.success) {
+    if (createMeta && createMeta.success) {
       this.validateProperties(createMeta.data, ['projects'], 'Create Meta Properties');
     }
   }
 
   async testSearchEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 3 теста)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 3)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 3; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING SEARCH ENDPOINTS ===');
 
     // POST /search - поиск JQL
@@ -390,19 +559,24 @@ class JiraEndpointsTester {
       maxResults: 10,
       fields: ['summary', 'status', 'assignee'],
     };
-    const search = await this.makeRequest('POST', '/search', searchData);
-    this.logTest('JQL Search', search, 200, '/search');
+    const search = await this.testRequest('JQL Search', 'POST', '/search', searchData, 200);
 
-    if (search.success) {
+    if (search && search.success) {
       this.validateProperties(search.data, ['issues', 'total'], 'Search Results Properties');
     }
 
     // GET /search - поиск GET параметрами
-    const searchGet = await this.makeRequest('GET', `/search?jql=project=${this.testProjectKey}&maxResults=5`);
-    this.logTest('JQL Search GET', searchGet, 200, '/search');
+    const searchGet = await this.testRequest('JQL Search GET', 'GET', `/search?jql=project=${this.testProjectKey}&maxResults=5`, null, 200);
   }
 
   async testProjectEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 7 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 7)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 7; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING PROJECT ENDPOINTS ===');
 
     // GET /project - все проекты
@@ -435,6 +609,13 @@ class JiraEndpointsTester {
   }
 
   async testUserEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 6 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 6)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 6; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING USER ENDPOINTS ===');
 
     // GET /user - получить пользователя
@@ -459,6 +640,13 @@ class JiraEndpointsTester {
   }
 
   async testMetadataEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 10 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 10)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 10; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING METADATA ENDPOINTS ===');
 
     // GET /priority - приоритеты
@@ -503,6 +691,13 @@ class JiraEndpointsTester {
    */
 
   async testModifyingEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 20 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 20)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 20; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING MODIFYING ENDPOINTS ===');
     console.log('Creating test issue for modification tests...');
 
@@ -544,7 +739,7 @@ class JiraEndpointsTester {
         project: { key: this.testProjectKey },
         summary: `Test Issue for API Testing - ${new Date().toISOString()}`,
         description: 'This issue was created for API endpoint testing purposes.',
-        issuetype: { name: 'Task' },
+        issuetype: { name: TEST_ISSUE_TYPE_NAME },
       },
     };
 
@@ -758,6 +953,13 @@ class JiraEndpointsTester {
    */
 
   async testAgileEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 5 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 5)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 5; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING AGILE ENDPOINTS ===');
 
     // Эти эндпоинты могут быть недоступны в тестовом эмуляторе
@@ -785,6 +987,13 @@ class JiraEndpointsTester {
    */
 
   async testAdditionalEndpoints () {
+    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 15 тестов)
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 15)) {
+      // Блок пропускается без сообщения
+      this.testCounter += 15; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
     console.log('\n=== TESTING ADDITIONAL ENDPOINTS ===');
 
     // GET /attachment/{id} - получить вложение (если есть)
@@ -968,8 +1177,8 @@ class JiraEndpointsTester {
       const issue1 = await this.makeRequest('POST', '/issue', {
         fields: {
           summary: 'Link Test Issue 1',
-          project: { key: 'TEST' },
-          issuetype: { name: 'Task' },
+          project: { key: this.testProjectKey },
+          issuetype: { name: TEST_ISSUE_TYPE_NAME },
         },
       });
       this.logTest('Create Link Test Issue 1', issue1, 201, '/issue');
@@ -977,8 +1186,8 @@ class JiraEndpointsTester {
       const issue2 = await this.makeRequest('POST', '/issue', {
         fields: {
           summary: 'Link Test Issue 2',
-          project: { key: 'TEST' },
-          issuetype: { name: 'Task' },
+          project: { key: this.testProjectKey },
+          issuetype: { name: TEST_ISSUE_TYPE_NAME },
         },
       });
       this.logTest('Create Link Test Issue 2', issue2, 201, '/issue');
@@ -1060,15 +1269,15 @@ class JiraEndpointsTester {
           {
             fields: {
               summary: 'Bulk Issue 1',
-              project: { key: 'TEST' },
-              issuetype: { name: 'Task' },
+              project: { key: this.testProjectKey },
+              issuetype: { name: TEST_ISSUE_TYPE_NAME },
             },
           },
           {
             fields: {
               summary: 'Bulk Issue 2',
-              project: { key: 'TEST' },
-              issuetype: { name: 'Task' },
+              project: { key: this.testProjectKey },
+              issuetype: { name: TEST_ISSUE_TYPE_NAME },
             },
           },
         ],
@@ -1135,8 +1344,13 @@ class JiraEndpointsTester {
       this.testResults
         .filter(t => !t.success)
         .forEach(test => {
-          console.log(`   • ${test.name} [${test.method} ${test.endpoint}] - ${test.status}: ${test.details}`);
+          console.log(`   • [${test.number}] ${test.name} [${test.method} ${test.endpoint}] - ${test.status}: ${test.details}`);
         });
+
+
+      if (this.failedTestNumbers && this.failedTestNumbers.length > 0) {
+        console.log(`\n❌ FAILED TEST NUMBERS: ${this.failedTestNumbers.join(',')}`);
+      }
     }
 
     console.log('\n📝 Detailed results saved to testResults array');

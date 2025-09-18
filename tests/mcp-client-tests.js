@@ -178,10 +178,7 @@ class MCPTestRunner {
   constructor (client) {
     this.client = client;
     this.results = [];
-    this.testCases = new SharedJiraTestCases({
-      testProjectKey: 'TEST',
-      testUsername: 'admin'
-    });
+    this.testCases = new SharedJiraTestCases();
   }
 
   /**
@@ -298,7 +295,7 @@ class MCPTestRunner {
 
     // Получаем минимальный набор тест-кейсов для быстрого тестирования
     const testCases = this.testCases.getMinimalTestCases();
-    
+
     console.log(chalk.blue(`\n📋 Running ${testCases.length} shared test cases...\n`));
 
     // Выполняем тест-кейсы
@@ -331,7 +328,7 @@ class MCPTestRunner {
       ...allTestCases.modifying,
       ...allTestCases.extended
     ];
-    
+
     console.log(chalk.blue(`\n📋 Running ${testCasesList.length} comprehensive test cases...\n`));
 
     // Выполняем тест-кейсы
@@ -415,7 +412,7 @@ async function runTests (isExtended = false) {
     } else {
       await runner.runAllTests();
     }
-    
+
     runner.printSummary();
 
     const results = runner.getResults();

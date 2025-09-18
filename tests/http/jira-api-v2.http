@@ -25,6 +25,32 @@ Authorization: Basic <base64(user:pass)>
   }
 }
 
+### Пример создания задачи:
+POST {{baseUrl}}/rest/api/2/issue
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+Content-Type: application/json
+
+{
+  "fields": {
+    "project": {
+      "key": "AITECH"
+    },
+    "summary": "TEST-AITECH-2",
+    "issuetype": {
+      "name": "Задача+"
+    },
+    "description": "Три девицы под окном\nПряли поздно вечерком",
+    "assignee": {
+      "name": "vvmakarov"
+    },
+    "labels": ["CS-BOT"],
+    "priority": {
+      "id": "10504"
+    }
+  }
+}
+
+
 ###
 
 # 2. Метаданные
