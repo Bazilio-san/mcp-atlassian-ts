@@ -11,19 +11,12 @@
 #| `GET`    | `/issue/{issueIdOrKey}/comment` | Получить список комментариев  |
 #
 
-### Пример создания задачи:
-POST /rest/api/2/issue
+### Получить полные данные задачи
+GET {{baseUrl}}/rest/api/2/issue/AITECH-379
 Content-Type: application/json
-Authorization: Basic <base64(user:pass)>
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-{
-  "fields": {
-    "project": { "key": "TEST" },
-    "summary": "Ошибка в отчёте",
-    "description": "Подробности ошибки...",
-    "issuetype": { "name": "Bug" }
-  }
-}
+
 
 ### Пример создания задачи:
 POST {{baseUrl}}/rest/api/2/issue

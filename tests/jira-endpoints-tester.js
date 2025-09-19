@@ -451,7 +451,7 @@ class JiraEndpointsTester {
     // Валидируем результат
     const validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
     if (!validation.success) {
-      console.log(`❌ VALIDATION FAIL ${testCase.name} - ${validation.message}`);
+      console.log(`❌ VALIDATION FAIL ${testCase.name} [${this.testCounter}] - ${validation.message}`);
     } else {
       console.log(`✅ VALIDATION PASS ${testCase.name} - ${testCase.description}`);
     }
