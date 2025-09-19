@@ -8,6 +8,42 @@ import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { TEST_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT } from './constants.js';
 
 /**
+ * Константы групп тестов
+ */
+export const TEST_GROUPS = {
+  SYSTEM: 1,
+  INFORMATIONAL: 2,
+  ISSUE_DETAILED: 3,
+  SEARCH_DETAILED: 4,
+  PROJECT_DETAILED: 5,
+  USER_DETAILED: 6,
+  METADATA_DETAILED: 7,
+  MODIFYING: 8,
+  AGILE: 9,
+  ADDITIONAL: 10,
+  EXTENDED: 11,
+  CASCADE: 12
+};
+
+/**
+ * Информация о группах тестов
+ */
+export const GROUP_INFO = {
+  [TEST_GROUPS.SYSTEM]: { name: 'System', description: 'Системные эндпоинты' },
+  [TEST_GROUPS.INFORMATIONAL]: { name: 'Informational', description: 'Базовые информационные тесты' },
+  [TEST_GROUPS.ISSUE_DETAILED]: { name: 'IssueDetailed', description: 'Детальные тесты задач' },
+  [TEST_GROUPS.SEARCH_DETAILED]: { name: 'SearchDetailed', description: 'Детальные тесты поиска' },
+  [TEST_GROUPS.PROJECT_DETAILED]: { name: 'ProjectDetailed', description: 'Детальные тесты проектов' },
+  [TEST_GROUPS.USER_DETAILED]: { name: 'UserDetailed', description: 'Детальные тесты пользователей' },
+  [TEST_GROUPS.METADATA_DETAILED]: { name: 'MetadataDetailed', description: 'Детальные тесты метаданных' },
+  [TEST_GROUPS.MODIFYING]: { name: 'Modifying', description: 'Тесты изменения данных' },
+  [TEST_GROUPS.AGILE]: { name: 'Agile', description: 'Тесты Agile API' },
+  [TEST_GROUPS.ADDITIONAL]: { name: 'Additional', description: 'Дополнительные тесты' },
+  [TEST_GROUPS.EXTENDED]: { name: 'Extended', description: 'Расширенные тесты' },
+  [TEST_GROUPS.CASCADE]: { name: 'Cascade', description: 'Каскадные операции' }
+};
+
+/**
  * Определяет набор тест-кейсов для различных JIRA API эндпоинтов
  * Каждый тест-кейс содержит информацию о том, как вызвать API и как проверить результат
  */
@@ -30,6 +66,9 @@ export class SharedJiraTestCases {
   getInformationalTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 1,
+        fullId: "2-1",
         name: 'Get Issue',
         description: 'Получить информацию о задаче',
         mcpTool: 'jira_get_issue',
@@ -48,6 +87,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 2,
+        fullId: "2-2",
         name: 'Search Issues',
         description: 'Поиск задач по JQL',
         mcpTool: 'jira_search_issues',
@@ -72,6 +114,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 3,
+        fullId: "2-3",
         name: 'Get Projects',
         description: 'Получить список проектов',
         mcpTool: 'jira_get_projects',
@@ -87,6 +132,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 4,
+        fullId: "2-4",
         name: 'Get Project Details',
         description: 'Получить детальную информацию о проекте',
         mcpTool: 'jira_get_project',
@@ -104,6 +152,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 5,
+        fullId: "2-5",
         name: 'Get Issue Transitions',
         description: 'Получить доступные переходы статуса для задачи',
         mcpTool: 'jira_get_transitions',
@@ -122,6 +173,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 6,
+        fullId: "2-6",
         name: 'Get Issue Comments',
         description: 'Получить комментарии к задаче',
         mcpTool: 'jira_get_comments',
@@ -139,6 +193,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 7,
+        fullId: "2-7",
         name: 'Get User Info',
         description: 'Получить информацию о пользователе',
         mcpTool: 'jira_get_user',
@@ -156,6 +213,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 8,
+        fullId: "2-8",
         name: 'Get Current User',
         description: 'Получить информацию о текущем пользователе',
         mcpTool: 'jira_get_current_user',
@@ -171,6 +231,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 9,
+        fullId: "2-9",
         name: 'Get Priorities',
         description: 'Получить список приоритетов',
         mcpTool: 'jira_get_priorities',
@@ -186,6 +249,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 10,
+        fullId: "2-10",
         name: 'Get Statuses',
         description: 'Получить список статусов',
         mcpTool: 'jira_get_statuses',
@@ -201,6 +267,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.INFORMATIONAL,
+        testNumber: 11,
+        fullId: "2-11",
         name: 'Get Issue Types',
         description: 'Получить список типов задач',
         mcpTool: 'jira_get_issue_types',
@@ -224,6 +293,9 @@ export class SharedJiraTestCases {
   getSystemTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 1,
+        fullId: "1-1",
         name: 'Get Server Info',
         description: 'Получить информацию о сервере JIRA',
         mcpTool: 'jira_get_server_info',
@@ -239,6 +311,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 2,
+        fullId: "1-2",
         name: 'Get Configuration',
         description: 'Получить конфигурацию JIRA',
         mcpTool: null, // нет MCP инструмента
@@ -254,6 +329,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 3,
+        fullId: "1-3",
         name: 'Get Permissions',
         description: 'Получить разрешения JIRA',
         mcpTool: null, // нет MCP инструмента
@@ -269,6 +347,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 4,
+        fullId: "1-4",
         name: 'Get Application Roles',
         description: 'Получить роли приложений',
         mcpTool: null, // нет MCP инструмента
@@ -292,6 +373,9 @@ export class SharedJiraTestCases {
   getIssueDetailedTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.ISSUE_DETAILED,
+        testNumber: 1,
+        fullId: "3-1",
         name: 'Get Issue Edit Meta',
         description: 'Получить метаданные для редактирования задачи',
         mcpTool: null, // нет MCP инструмента
@@ -307,6 +391,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ISSUE_DETAILED,
+        testNumber: 2,
+        fullId: "3-2",
         name: 'Get Issue Worklog',
         description: 'Получить рабочие логи задачи',
         mcpTool: 'jira_get_worklog',
@@ -324,6 +411,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ISSUE_DETAILED,
+        testNumber: 3,
+        fullId: "3-3",
         name: 'Get Create Meta',
         description: 'Получить метаданные для создания задач',
         mcpTool: 'jira_get_create_meta',
@@ -349,6 +439,9 @@ export class SharedJiraTestCases {
   getSearchDetailedTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.SEARCH_DETAILED,
+        testNumber: 1,
+        fullId: "4-1",
         name: 'JQL Search GET',
         description: 'Поиск задач по JQL через GET запрос',
         mcpTool: 'jira_search_issues', // используем тот же MCP инструмент
@@ -375,6 +468,9 @@ export class SharedJiraTestCases {
   getProjectDetailedTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.PROJECT_DETAILED,
+        testNumber: 1,
+        fullId: "5-1",
         name: 'Get All Projects',
         description: 'Получить список всех проектов',
         mcpTool: 'jira_get_projects',
@@ -390,6 +486,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.PROJECT_DETAILED,
+        testNumber: 2,
+        fullId: "5-2",
         name: 'Get Project Statuses',
         description: 'Получить статусы проекта',
         mcpTool: null, // нет MCP инструмента
@@ -413,6 +512,9 @@ export class SharedJiraTestCases {
   getUserDetailedTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.USER_DETAILED,
+        testNumber: 1,
+        fullId: "6-1",
         name: 'Get User by Username',
         description: 'Получить пользователя по имени',
         mcpTool: 'jira_get_user',
@@ -430,6 +532,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.USER_DETAILED,
+        testNumber: 2,
+        fullId: "6-2",
         name: 'Search Users by Username',
         description: 'Поиск пользователей по имени',
         mcpTool: 'jira_search_users',
@@ -447,6 +552,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.USER_DETAILED,
+        testNumber: 3,
+        fullId: "6-3",
         name: 'Get Assignable Users',
         description: 'Получить назначаемых пользователей для проекта',
         mcpTool: null, // нет MCP инструмента
@@ -470,6 +578,9 @@ export class SharedJiraTestCases {
   getMetadataDetailedTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.METADATA_DETAILED,
+        testNumber: 1,
+        fullId: "7-1",
         name: 'Get Fields',
         description: 'Получить список полей JIRA',
         mcpTool: 'jira_get_fields',
@@ -485,6 +596,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.METADATA_DETAILED,
+        testNumber: 2,
+        fullId: "7-2",
         name: 'Get Resolutions',
         description: 'Получить список резолюций',
         mcpTool: null, // нет MCP инструмента
@@ -500,6 +614,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.METADATA_DETAILED,
+        testNumber: 3,
+        fullId: "7-3",
         name: 'Get Project Roles',
         description: 'Получить роли проекта',
         mcpTool: null, // нет MCP инструмента
@@ -515,6 +632,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.METADATA_DETAILED,
+        testNumber: 4,
+        fullId: "7-4",
         name: 'Get Issue Link Types',
         description: 'Получить типы связей задач',
         mcpTool: null, // нет MCP инструмента
@@ -539,6 +659,9 @@ export class SharedJiraTestCases {
   getModifyingTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 1,
+        fullId: "8-1",
         name: 'Create Issue',
         description: 'Создать новую задачу',
         mcpTool: 'jira_create_issue',
@@ -573,6 +696,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 2,
+        fullId: "8-2",
         name: 'Add Comment',
         description: 'Добавить комментарий к задаче',
         mcpTool: 'jira_add_comment',
@@ -594,6 +720,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 3,
+        fullId: "8-3",
         name: 'Update Issue',
         description: 'Обновить существующую задачу',
         mcpTool: 'jira_update_issue',
@@ -618,6 +747,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 4,
+        fullId: "8-4",
         name: 'Add Worklog',
         description: 'Добавить рабочий лог к задаче',
         mcpTool: 'jira_add_worklog',
@@ -647,6 +779,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 5,
+        fullId: "8-5",
         name: 'Create Version',
         description: 'Создать версию проекта',
         mcpTool: null, // нет MCP инструмента
@@ -672,6 +807,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 6,
+        fullId: "8-6",
         name: 'Update Version',
         description: 'Обновить версию проекта',
         mcpTool: null, // нет MCP инструмента
@@ -691,6 +829,9 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Version' // зависит от создания версии
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 7,
+        fullId: "8-7",
         name: 'Get Version',
         description: 'Получить информацию о версии',
         mcpTool: null, // нет MCP инструмента
@@ -707,6 +848,9 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Version'
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 8,
+        fullId: "8-8",
         name: 'Create Issue Link',
         description: 'Создать связь между задачами',
         mcpTool: null, // нет MCP инструмента
@@ -728,6 +872,9 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Issue' // зависит от создания второй задачи
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 9,
+        fullId: "8-9",
         name: 'Create Remote Link',
         description: 'Создать удаленную связь для задачи',
         mcpTool: null, // нет MCP инструмента
@@ -749,6 +896,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 10,
+        fullId: "8-10",
         name: 'Get Remote Links',
         description: 'Получить удаленные связи задачи',
         mcpTool: null, // нет MCP инструмента
@@ -772,6 +922,9 @@ export class SharedJiraTestCases {
   getAgileTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.AGILE,
+        testNumber: 1,
+        fullId: "9-1",
         name: 'Get Agile Boards',
         description: 'Получить список Agile досок',
         mcpTool: null, // нет MCP инструмента
@@ -787,6 +940,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.AGILE,
+        testNumber: 2,
+        fullId: "9-2",
         name: 'Get Board Sprints',
         description: 'Получить спринты доски',
         mcpTool: null, // нет MCP инструмента
@@ -803,6 +959,9 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Agile Boards'
       },
       {
+        groupNumber: TEST_GROUPS.AGILE,
+        testNumber: 3,
+        fullId: "9-3",
         name: 'Get Board Issues',
         description: 'Получить задачи доски',
         mcpTool: null, // нет MCP инструмента
@@ -827,6 +986,9 @@ export class SharedJiraTestCases {
   getAdditionalTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 1,
+        fullId: "10-1",
         name: 'Get Attachment Sample',
         description: 'Получить пример вложения',
         mcpTool: null, // нет MCP инструмента
@@ -842,6 +1004,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 2,
+        fullId: "10-2",
         name: 'Get Dashboards',
         description: 'Получить панели управления',
         mcpTool: null, // нет MCP инструмента
@@ -857,6 +1022,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 3,
+        fullId: "10-3",
         name: 'Get Favourite Filters',
         description: 'Получить избранные фильтры',
         mcpTool: null, // нет MCP инструмента
@@ -872,6 +1040,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 4,
+        fullId: "10-4",
         name: 'Get Groups Picker',
         description: 'Получить группы (picker)',
         mcpTool: null, // нет MCP инструмента
@@ -887,6 +1058,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 5,
+        fullId: "10-5",
         name: 'Get Notification Schemes',
         description: 'Получить схемы уведомлений',
         mcpTool: null, // нет MCP инструмента
@@ -902,6 +1076,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 6,
+        fullId: "10-6",
         name: 'Get Permission Schemes',
         description: 'Получить схемы разрешений',
         mcpTool: null, // нет MCP инструмента
@@ -917,6 +1094,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 7,
+        fullId: "10-7",
         name: 'Get Workflows',
         description: 'Получить рабочие процессы',
         mcpTool: null, // нет MCP инструмента
@@ -932,6 +1112,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 8,
+        fullId: "10-8",
         name: 'Get Workflow Schemes',
         description: 'Получить схемы рабочих процессов',
         mcpTool: null, // нет MCP инструмента
@@ -955,6 +1138,9 @@ export class SharedJiraTestCases {
   getCascadeTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.CASCADE,
+        testNumber: 1,
+        fullId: "12-1",
         name: 'Complete Issue Modification Workflow',
         description: 'Полный цикл работы с задачей: создание, модификация, добавление комментария, worklog, cleanup',
         type: 'cascade',
@@ -967,6 +1153,9 @@ export class SharedJiraTestCases {
         ]
       },
       {
+        groupNumber: TEST_GROUPS.CASCADE,
+        testNumber: 2,
+        fullId: "12-2",
         name: 'Version Management Workflow',
         description: 'Создание, обновление и получение версии проекта',
         type: 'cascade',
@@ -978,6 +1167,9 @@ export class SharedJiraTestCases {
         ]
       },
       {
+        groupNumber: TEST_GROUPS.CASCADE,
+        testNumber: 3,
+        fullId: "12-3",
         name: 'Issue Linking Workflow',
         description: 'Создание двух задач и связывание их между собой',
         type: 'cascade',
@@ -999,6 +1191,9 @@ export class SharedJiraTestCases {
   getExtendedTestCases() {
     return [
       {
+        groupNumber: TEST_GROUPS.EXTENDED,
+        testNumber: 1,
+        fullId: "11-1",
         name: 'Get Server Info',
         description: 'Получить информацию о сервере JIRA',
         mcpTool: 'jira_get_server_info',
@@ -1014,6 +1209,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.EXTENDED,
+        testNumber: 2,
+        fullId: "11-2",
         name: 'Get Project Versions',
         description: 'Получить версии проекта',
         mcpTool: 'jira_get_project_versions',
@@ -1030,6 +1228,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.EXTENDED,
+        testNumber: 3,
+        fullId: "11-3",
         name: 'Get Project Components',
         description: 'Получить компоненты проекта',
         mcpTool: 'jira_get_project_components',
@@ -1046,6 +1247,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.EXTENDED,
+        testNumber: 4,
+        fullId: "11-4",
         name: 'Search Users',
         description: 'Поиск пользователей',
         mcpTool: 'jira_search_users',
@@ -1062,6 +1266,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.EXTENDED,
+        testNumber: 5,
+        fullId: "11-5",
         name: 'Get Fields',
         description: 'Получить список полей JIRA',
         mcpTool: 'jira_get_fields',
@@ -1076,6 +1283,9 @@ export class SharedJiraTestCases {
         }
       },
       {
+        groupNumber: TEST_GROUPS.EXTENDED,
+        testNumber: 6,
+        fullId: "11-6",
         name: 'Get Create Meta',
         description: 'Получить метаданные для создания задач',
         mcpTool: 'jira_get_create_meta',
@@ -1212,6 +1422,200 @@ export class SharedJiraTestCases {
       versions: [],
       links: []
     };
+  }
+
+  // ========== GROUPED TEST MANAGEMENT METHODS ==========
+
+  /**
+   * Получить тест по полному ID (формат N-M)
+   */
+  getTestByFullId(fullId) {
+    const allTestCases = this.getAllTestCasesFlat();
+    return allTestCases.find(tc => tc.fullId === fullId);
+  }
+
+  /**
+   * Получить все тесты в группе
+   */
+  getTestsByGroup(groupNumber) {
+    const allTestCases = this.getAllTestCasesFlat();
+    return allTestCases.filter(tc => tc.groupNumber === groupNumber);
+  }
+
+  /**
+   * Получить информацию о группе
+   */
+  getGroupInfo(groupNumber) {
+    return GROUP_INFO[groupNumber] || null;
+  }
+
+  /**
+   * Получить все группы с их информацией
+   */
+  getAllGroupInfo() {
+    return GROUP_INFO;
+  }
+
+  /**
+   * Валидировать уникальность ID тестов
+   */
+  validateTestIds() {
+    const allTestCases = this.getAllTestCasesFlat();
+    const idCounts = new Map();
+    const duplicates = [];
+
+    // Подсчитываем встречаемость каждого ID
+    allTestCases.forEach(tc => {
+      if (tc.fullId) {
+        const count = idCounts.get(tc.fullId) || 0;
+        idCounts.set(tc.fullId, count + 1);
+        if (count === 1) {
+          duplicates.push(tc.fullId);
+        }
+      }
+    });
+
+    // Проверяем также соответствие fullId формату N-M
+    const invalidFormats = allTestCases
+      .filter(tc => tc.fullId && !/^\d+-\d+$/.test(tc.fullId))
+      .map(tc => tc.fullId);
+
+    return {
+      isValid: duplicates.length === 0 && invalidFormats.length === 0,
+      duplicates,
+      invalidFormats,
+      totalTests: allTestCases.length,
+      testsWithIds: allTestCases.filter(tc => tc.fullId).length
+    };
+  }
+
+  /**
+   * Парсинг команды выбора тестов (формат --tests=1-1,4-*,5)
+   */
+  parseTestSelection(testsString) {
+    if (!testsString) {
+      return { includeAll: true, selections: [] };
+    }
+
+    const selections = [];
+    const parts = testsString.split(',').map(s => s.trim()).filter(Boolean);
+
+    for (const part of parts) {
+      if (part.includes('-')) {
+        const [groupStr, testStr] = part.split('-', 2);
+        const groupNumber = parseInt(groupStr);
+
+        if (isNaN(groupNumber)) {
+          throw new Error(`Invalid group number: ${groupStr}`);
+        }
+
+        if (testStr === '*') {
+          // Вся группа: 4-*
+          selections.push({
+            type: 'group',
+            groupNumber,
+            testNumber: null
+          });
+        } else {
+          const testNumber = parseInt(testStr);
+          if (isNaN(testNumber)) {
+            throw new Error(`Invalid test number: ${testStr}`);
+          }
+          // Конкретный тест: 1-1
+          selections.push({
+            type: 'test',
+            groupNumber,
+            testNumber,
+            fullId: `${groupNumber}-${testNumber}`
+          });
+        }
+      } else {
+        // Только номер группы: 5 (эквивалентно 5-*)
+        const groupNumber = parseInt(part);
+        if (isNaN(groupNumber)) {
+          throw new Error(`Invalid group number: ${part}`);
+        }
+        selections.push({
+          type: 'group',
+          groupNumber,
+          testNumber: null
+        });
+      }
+    }
+
+    return {
+      includeAll: false,
+      selections
+    };
+  }
+
+  /**
+   * Фильтрация тестов на основе выбора пользователя
+   */
+  getTestsBySelection(testsString) {
+    const selection = this.parseTestSelection(testsString);
+
+    if (selection.includeAll) {
+      return this.getAllTestCasesFlat();
+    }
+
+    const allTestCases = this.getAllTestCasesFlat();
+    const selectedTests = [];
+
+    for (const sel of selection.selections) {
+      if (sel.type === 'group') {
+        // Добавляем все тесты из группы
+        const groupTests = allTestCases.filter(tc => tc.groupNumber === sel.groupNumber);
+        selectedTests.push(...groupTests);
+      } else if (sel.type === 'test') {
+        // Добавляем конкретный тест
+        const test = allTestCases.find(tc => tc.fullId === sel.fullId);
+        if (test) {
+          selectedTests.push(test);
+        }
+      }
+    }
+
+    // Удаляем дубликаты по fullId
+    const uniqueTests = selectedTests.filter((test, index, arr) =>
+      arr.findIndex(t => t.fullId === test.fullId) === index
+    );
+
+    return uniqueTests;
+  }
+
+  /**
+   * Получить статистику по группам
+   */
+  getGroupStatistics() {
+    const allTestCases = this.getAllTestCasesFlat();
+    const groupStats = {};
+
+    // Инициализируем статистику для всех групп
+    Object.keys(GROUP_INFO).forEach(groupNum => {
+      groupStats[groupNum] = {
+        groupNumber: parseInt(groupNum),
+        groupName: GROUP_INFO[groupNum].name,
+        totalTests: 0,
+        testsWithMcp: 0,
+        testsWithDirectApi: 0
+      };
+    });
+
+    // Подсчитываем статистику
+    allTestCases.forEach(tc => {
+      if (tc.groupNumber && groupStats[tc.groupNumber]) {
+        groupStats[tc.groupNumber].totalTests++;
+        if (tc.mcpTool) {
+          groupStats[tc.groupNumber].testsWithMcp++;
+        }
+        if (tc.directApi) {
+          groupStats[tc.groupNumber].testsWithDirectApi++;
+        }
+      }
+    });
+
+    return groupStats;
   }
 }
 

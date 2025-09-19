@@ -53,68 +53,100 @@ class JiraEndpointsTester {
 
   /**
    * Парсинг номеров тестов для селективного выполнения
-   * Формат: node tests/jira-endpoints-tester.js --tests=1,5,10-15,20
+   * Новый формат: node tests/jira-endpoints-tester.js --tests=1-1,4-*,5
+   * N-M где N - номер группы, M - номер теста в группе (* для всей группы)
+   * Также поддерживается N (эквивалентно N-*)
    */
   parseSelectedTests() {
     const args = process.argv.slice(2);
     const testsArg = args.find(arg => arg.startsWith('--tests='));
 
     if (!testsArg) {
-      this.selectedTests = null;
+      this.selectedTestsGrouped = null;
       return;
     }
 
     const testsString = testsArg.split('=')[1];
     if (!testsString || testsString.trim() === '') {
-      this.selectedTests = null; // Пустое значение = все тесты
+      this.selectedTestsGrouped = null; // Пустое значение = все тесты
       return;
     }
 
     try {
-      const selectedSet = new Set();
-      const parts = testsString.split(',');
+      // Используем новый метод парсинга из SharedJiraTestCases
+      const selection = this.sharedTestCases.parseTestSelection(testsString);
 
-      for (const part of parts) {
-        if (part.includes('-')) {
-          // Обработка диапазонов типа "10-15"
-          const [start, end] = part.split('-').map(n => parseInt(n.trim()));
-          if (!isNaN(start) && !isNaN(end) && start <= end) {
-            for (let i = start; i <= end; i++) {
-              selectedSet.add(i);
-            }
+      if (selection.includeAll) {
+        this.selectedTestsGrouped = null;
+        console.log('🎯 Выполнение всех тестов\n');
+      } else {
+        this.selectedTestsGrouped = selection.selections;
+
+        // Формируем человекочитаемое описание выбора
+        const selectionDescriptions = selection.selections.map(sel => {
+          if (sel.type === 'group') {
+            const groupInfo = this.sharedTestCases.getGroupInfo(sel.groupNumber);
+            return `группа ${sel.groupNumber} (${groupInfo?.name || 'Unknown'})`;
+          } else {
+            const groupInfo = this.sharedTestCases.getGroupInfo(sel.groupNumber);
+            return `тест ${sel.fullId} из группы "${groupInfo?.name || 'Unknown'}"`;
           }
-        } else {
-          // Обработка одиночных номеров
-          const num = parseInt(part.trim());
-          if (!isNaN(num)) {
-            selectedSet.add(num);
-          }
-        }
+        });
+
+        console.log(`🎯 Селективное выполнение тестов: ${selectionDescriptions.join(', ')}\n`);
       }
-
-      this.selectedTests = Array.from(selectedSet).sort((a, b) => a - b);
-      console.log(`🎯 Селективное выполнение тестов: [${this.selectedTests.join(', ')}]\n`);
     } catch (error) {
       console.warn('⚠️  Ошибка при парсинге --tests параметра:', error.message);
-      this.selectedTests = null;
+      this.selectedTestsGrouped = null;
     }
   }
 
   /**
-   * Проверить, нужно ли выполнять тест с данным номером
+   * Проверить, нужно ли выполнять тест с данным номером или fullId
+   * Поддерживает как старую нумерацию (testNumber), так и новую групповую (fullId)
    */
-  shouldRunTest(testNumber) {
-    if (this.selectedTests === null) {
+  shouldRunTest(testNumberOrFullId) {
+    if (this.selectedTestsGrouped === null) {
       return true; // Выполнять все тесты
     }
-    return this.selectedTests.includes(testNumber);
+
+    // Если это тест из SharedJiraTestCases с fullId
+    if (typeof testNumberOrFullId === 'string' && testNumberOrFullId.includes('-')) {
+      const [groupNumber, testNumber] = testNumberOrFullId.split('-').map(n => parseInt(n));
+
+      return this.selectedTestsGrouped.some(sel => {
+        if (sel.type === 'group' && sel.groupNumber === groupNumber) {
+          return true; // Вся группа выбрана
+        }
+        if (sel.type === 'test' && sel.groupNumber === groupNumber && sel.testNumber === testNumber) {
+          return true; // Конкретный тест выбран
+        }
+        return false;
+      });
+    }
+
+    // Обратная совместимость со старой системой нумерации
+    if (typeof testNumberOrFullId === 'number') {
+      // Для обратной совместимости, если используется старая система нумерации
+      // пока что возвращаем true (выполняем все тесты)
+      return true;
+    }
+
+    return false;
   }
 
   /**
    * Проверить, есть ли в диапазоне номеров выбранные тесты
+   * DEPRECATED: Этот метод используется только для старой системы нумерации
    */
   hasSelectedTestsInRange(startNumber, estimatedCount) {
-    if (this.selectedTests === null) {
+    // Если используется новая групповая система, всегда возвращаем true
+    if (this.selectedTestsGrouped !== null && this.selectedTestsGrouped !== undefined) {
+      return true;
+    }
+
+    // Старая система нумерации
+    if (this.selectedTests === null || this.selectedTests === undefined) {
       return true; // Выполнять все тесты
     }
 
@@ -330,29 +362,44 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Логирование результатов тестов с нумерацией (НЕ увеличивает счетчик)
+   * Логирование результатов тестов с нумерацией
+   * Поддерживает как старую систему счетчика, так и новую групповую нумерацию
    */
-  logTest (testName, result, expected = null, endpoint = null) {
-    // Ensure testCounter is properly initialized
-    if (typeof this.testCounter !== 'number' || isNaN(this.testCounter)) {
-      this.testCounter = 0;
-    }
+  logTest (testName, result, expected = null, endpoint = null, fullId = null) {
+    // Определяем идентификатор теста
+    let testId;
+    if (fullId) {
+      // Используем новую групповую систему
+      testId = fullId;
 
-    this.testCounter++; // Увеличиваем счетчик для всех тестов
+      // Проверяем селективное выполнение для групповых тестов
+      if (!this.shouldRunTest(fullId)) {
+        return false; // Тест был пропущен
+      }
+    } else {
+      // Используем старую систему счетчика для обратной совместимости
+      if (typeof this.testCounter !== 'number' || isNaN(this.testCounter)) {
+        this.testCounter = 0;
+      }
+      this.testCounter++; // Увеличиваем счетчик для всех тестов
+      testId = this.testCounter;
 
-    // Если тест не должен выполняться/логироваться при селективном выполнении
-    if (!this.shouldRunTest(this.testCounter)) {
-      return false; // Тест был пропущен
+      // Проверяем селективное выполнение для старых тестов
+      if (!this.shouldRunTest(this.testCounter)) {
+        return false; // Тест был пропущен
+      }
     }
 
     const status = result.success ? '✅ PASS' : '❌ FAIL';
     const details = expected ? `Expected: ${expected}, Got: ${result.status}` : `Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
-    console.log(`${status} [${this.testCounter}] ${testName}${endpointInfo} - ${details}`);
+    console.log(`${status} [${testId}] ${testName}${endpointInfo} - ${details}`);
 
     this.testResults.push({
-      number: this.testCounter,
+      number: fullId ? null : this.testCounter, // Для обратной совместимости
+      fullId: fullId,
+      testId: testId,
       name: testName,
       success: result.success,
       status: result.status,
@@ -367,7 +414,8 @@ class JiraEndpointsTester {
       if (!this.failedTestNumbers) {
         this.failedTestNumbers = [];
       }
-      this.failedTestNumbers.push(this.testCounter);
+      // Используем правильный ID теста (fullId для групповых тестов, testCounter для старых)
+      this.failedTestNumbers.push(testId);
     }
 
     if (!result.success && result.error) {
@@ -448,11 +496,8 @@ class JiraEndpointsTester {
    * Выполнить тест-кейс из shared test cases через прямой API вызов
    */
   async runSharedTestCase (testCase) {
-    // Проверяем селективное выполнение ПЕРЕД выполнением запроса
-    const nextTestNumber = this.testCounter + 1;
-
-    if (!this.shouldRunTest(nextTestNumber)) {
-      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
+    // Проверяем селективное выполнение используя новую групповую систему
+    if (testCase.fullId && !this.shouldRunTest(testCase.fullId)) {
       return null; // Пропускаем выполнение теста
     }
 
@@ -475,11 +520,12 @@ class JiraEndpointsTester {
       result.error = validation.message;
     }
 
-    this.logTest(testCase.name, result, 200, api.endpoint);
+    this.logTest(testCase.name, result, 200, api.endpoint, testCase.fullId);
 
     // Выводим результат валидации
     if (!validation.success) {
-      console.log(`❌ VALIDATION FAIL ${testCase.name} [${this.testCounter}] - ${validation.message}`);
+      const testId = testCase.fullId || 'Unknown';
+      console.log(`❌ VALIDATION FAIL ${testCase.name} [${testId}] - ${validation.message}`);
     } else {
       console.log(`✅ VALIDATION PASS ${testCase.name} - ${testCase.description}`);
     }
@@ -493,23 +539,36 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Выполнить тесты определенной категории
+   * Выполнить тесты определенной категории с поддержкой групповой нумерации
    */
   async runTestsByCategory(categoryName, estimatedCount = 10) {
-    // Проверяем, есть ли выбранные тесты в этом блоке
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, estimatedCount)) {
-      // Блок пропускается без сообщения
-      this.testCounter += estimatedCount; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log(`\n=== TESTING ${categoryName.toUpperCase()} ===`);
-
     const testCases = this.sharedTestCases.getTestCasesByCategory(categoryName);
+
+    // Проверяем, есть ли тесты для выполнения в этой категории
+    if (this.selectedTestsGrouped !== null) {
+      // В режиме селективного выполнения проверяем, есть ли выбранные тесты в категории
+      const selectedTestsInCategory = testCases.filter(tc =>
+        tc.fullId && this.shouldRunTest(tc.fullId)
+      );
+
+      if (selectedTestsInCategory.length === 0) {
+        // Категория пропускается полностью
+        return;
+      }
+
+      console.log(`\n=== TESTING ${categoryName.toUpperCase()} (${selectedTestsInCategory.length}/${testCases.length} tests selected) ===`);
+    } else {
+      // Выполняем все тесты в категории
+      console.log(`\n=== TESTING ${categoryName.toUpperCase()} (${testCases.length} tests) ===`);
+    }
 
     for (const testCase of testCases) {
       try {
-        await this.runSharedTestCase(testCase);
+        const result = await this.runSharedTestCase(testCase);
+        if (result === null) {
+          // Тест был пропущен из-за селективного выполнения
+          continue;
+        }
       } catch (error) {
         console.log(`❌ ERROR ${testCase.name} - ${error.message}`);
       }
@@ -967,14 +1026,83 @@ class JiraEndpointsTester {
     console.log(`📈 Pass Rate: ${passRate}%`);
     console.log('='.repeat(80));
 
+    // Добавляем статистику по группам если есть тесты с fullId
+    const groupedTests = this.testResults.filter(t => t.fullId);
+    if (groupedTests.length > 0) {
+      console.log('\n📋 STATISTICS BY TEST GROUPS:');
+      console.log('-'.repeat(60));
+
+      // Получаем статистику по группам
+      const groupStats = {};
+      const allGroupInfo = this.sharedTestCases.getAllGroupInfo();
+
+      groupedTests.forEach(test => {
+        if (test.fullId) {
+          const [groupNumber] = test.fullId.split('-').map(n => parseInt(n));
+          if (!groupStats[groupNumber]) {
+            groupStats[groupNumber] = {
+              name: allGroupInfo[groupNumber]?.name || `Group ${groupNumber}`,
+              total: 0,
+              passed: 0,
+              failed: 0,
+              tests: []
+            };
+          }
+          groupStats[groupNumber].total++;
+          if (test.success) {
+            groupStats[groupNumber].passed++;
+          } else {
+            groupStats[groupNumber].failed++;
+            groupStats[groupNumber].tests.push(test);
+          }
+        }
+      });
+
+      // Выводим статистику по группам
+      Object.keys(groupStats)
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .forEach(groupNumber => {
+          const stats = groupStats[groupNumber];
+          const passRate = ((stats.passed / stats.total) * 100).toFixed(1);
+          const status = stats.failed === 0 ? '✅' : '❌';
+          console.log(`${status} Group ${groupNumber}: ${stats.name} - ${stats.passed}/${stats.total} (${passRate}%)`);
+        });
+
+      console.log('-'.repeat(60));
+    }
+
     if (failedTests > 0) {
       console.log('\n❌ FAILED TESTS:');
       this.testResults
         .filter(t => !t.success)
         .forEach(test => {
-          console.log(`   • [${test.number}] ${test.name} [${test.method} ${test.endpoint}] - ${test.status}: ${test.details}`);
+          const testId = test.fullId || test.number || 'Unknown';
+          console.log(`   • [${testId}] ${test.name} [${test.method} ${test.endpoint}] - ${test.status}: ${test.details}`);
         });
 
+      // Показываем неудачные тесты по группам
+      const groupedFailedTests = this.testResults.filter(t => !t.success && t.fullId);
+      if (groupedFailedTests.length > 0) {
+        console.log('\n❌ FAILED TESTS BY GROUPS:');
+        const failedByGroup = {};
+        groupedFailedTests.forEach(test => {
+          const [groupNumber] = test.fullId.split('-').map(n => parseInt(n));
+          if (!failedByGroup[groupNumber]) {
+            failedByGroup[groupNumber] = [];
+          }
+          failedByGroup[groupNumber].push(test);
+        });
+
+        Object.keys(failedByGroup)
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .forEach(groupNumber => {
+            const groupInfo = this.sharedTestCases.getGroupInfo(parseInt(groupNumber));
+            console.log(`   Group ${groupNumber} (${groupInfo?.name || 'Unknown'}):`);
+            failedByGroup[groupNumber].forEach(test => {
+              console.log(`     • [${test.fullId}] ${test.name} - ${test.details}`);
+            });
+          });
+      }
 
       if (this.failedTestNumbers && this.failedTestNumbers.length > 0) {
         console.log(`\n❌ FAILED TEST NUMBERS: ${this.failedTestNumbers.join(',')}`);
@@ -992,6 +1120,7 @@ class JiraEndpointsTester {
       passRate,
       duration,
       results: this.testResults,
+      groupStatistics: groupedTests.length > 0 ? this.sharedTestCases.getGroupStatistics() : null
     };
   }
 }
