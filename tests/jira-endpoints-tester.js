@@ -388,6 +388,17 @@ class JiraEndpointsTester {
       replacedEndpoint = replacedEndpoint.replace('{boardId}', '1');
     }
 
+    if (endpoint.includes('{attachmentId}')) {
+      // Используем созданный attachment или fallback
+      const attachmentId = createdResources.attachments && createdResources.attachments.length > 0
+        ? createdResources.attachments[0]
+        : '10000'; // fallback ID
+      replacedEndpoint = replacedEndpoint.replace('{attachmentId}', attachmentId);
+    }
+
+    // Обработка {linkId} требует специальной логики - будет обработана в runTest
+    // так как требует асинхронного запроса для получения ID связи
+
     return replacedEndpoint;
   }
 
@@ -401,10 +412,48 @@ class JiraEndpointsTester {
     }
 
     const api = testCase.directApi;
-
-    // Заменяем плейсхолдеры в endpoint
     const originalEndpoint = api.endpoint;
-    api.endpoint = this.replacePlaceholders(originalEndpoint);
+
+    // Специальная обработка для тестов, требующих linkId
+    if (testCase.requiresLinkId && originalEndpoint.includes('{linkId}')) {
+      try {
+        // Получаем информацию о задаче и её связях
+        const issueResult = await this.makeRequest('GET', `/issue/${this.testIssueKey}`, null, { fullId: testCase.fullId + '-link-lookup' });
+        if (issueResult.success && issueResult.data && issueResult.data.fields && issueResult.data.fields.issuelinks) {
+          const links = issueResult.data.fields.issuelinks;
+          // Ищем связь с типом TEST_ISSUE_LINK_TYPE и второй задачей
+          const targetLink = links.find(link =>
+            (link.type && link.type.name === this.sharedTestCases.secondTestIssueKey) ||
+            (link.outwardIssue && link.outwardIssue.key === this.sharedTestCases.secondTestIssueKey) ||
+            (link.inwardIssue && link.inwardIssue.key === this.sharedTestCases.secondTestIssueKey)
+          );
+
+          if (targetLink && targetLink.id) {
+            api.endpoint = originalEndpoint.replace('{linkId}', targetLink.id);
+          } else {
+            // Если не нашли связь, используем фиксированный ID для демонстрации ошибки
+            api.endpoint = originalEndpoint.replace('{linkId}', 'LINK_NOT_FOUND');
+          }
+        } else {
+          api.endpoint = originalEndpoint.replace('{linkId}', 'ISSUE_NOT_FOUND');
+        }
+      } catch (error) {
+        api.endpoint = originalEndpoint.replace('{linkId}', 'ERROR_GETTING_LINKS');
+      }
+    } else {
+      // Заменяем плейсхолдеры в endpoint
+      api.endpoint = this.replacePlaceholders(originalEndpoint);
+    }
+
+    // Специальная обработка для тестов, требующих файлы
+    if (testCase.requiresFile && api.method === 'POST' && api.endpoint.includes('/attachments')) {
+      // Создаем тестовый файл для attachment
+      const testFileContent = 'This is a test file for JIRA attachment testing.';
+      const blob = new Blob([testFileContent], { type: 'text/plain' });
+      const formData = new FormData();
+      formData.append('file', blob, 'test-attachment.txt');
+      api.data = formData;
+    }
 
     // Определяем метод запроса
     let result;

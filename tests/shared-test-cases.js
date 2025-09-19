@@ -56,7 +56,8 @@ export class SharedJiraTestCases {
     this.createdResources = {
       issues: [],
       versions: [],
-      links: []
+      links: [],
+      attachments: []
     };
   }
 
@@ -1064,24 +1065,52 @@ export class SharedJiraTestCases {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 1,
         fullId: "10-1",
-        name: 'Get Attachment Sample',
-        description: 'Получить пример вложения',
+        name: 'Create Attachment',
+        description: 'Создать вложение к задаче',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
-          method: 'GET',
-          endpoint: '/attachment/10000'
+          method: 'POST',
+          endpoint: `/issue/${this.testIssueKey}/attachments`,
+          data: new FormData() // Будет заполнено в runtime файлом
         },
         validation: {
-          checkContent: (content) => content && content.includes('attachment'),
-          checkResult: (result, response) => response && [200, 404].includes(response.status),
-          expectedProps: []
-        }
+          checkContent: (content) => content && content.includes('Successfully'),
+          checkResult: (result) => result && result.id,
+          expectedProps: ['id', 'filename']
+        },
+        cleanup: (result) => {
+          if (result && result.id) {
+            // Сохраняем ID созданного attachment для использования в других тестах
+            this.createdResources.attachments = this.createdResources.attachments || [];
+            this.createdResources.attachments.push(result.id);
+          }
+        },
+        requiresFile: true // специальный флаг для создания тестового файла
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 2,
         fullId: "10-2",
+        name: 'Get Attachment Sample',
+        description: 'Получить созданное вложение',
+        mcpTool: null, // нет MCP инструмента
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/attachment/{attachmentId}' // будет заменено в runtime
+        },
+        validation: {
+          checkContent: (content) => content && content.includes('attachment'),
+          checkResult: (result, response) => response && [200].includes(response.status),
+          expectedProps: ['id', 'filename']
+        },
+        dependsOn: 'Create Attachment'
+      },
+      {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 3,
+        fullId: "10-3",
         name: 'Get Dashboards',
         description: 'Получить панели управления',
         mcpTool: null, // нет MCP инструмента
