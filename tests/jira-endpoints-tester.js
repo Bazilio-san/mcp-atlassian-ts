@@ -193,9 +193,19 @@ class JiraEndpointsTester {
     try {
       const response = await fetch(url, config);
 
-      const responseData = response.headers.get('content-type')?.includes('json')
-        ? await response.json()
-        : await response.text();
+      // Проверяем, есть ли содержимое для парсинга (status 204 = No Content)
+      let responseData = null;
+      if (response.status !== 204) {
+        const contentLength = response.headers.get('content-length');
+        if (contentLength !== '0') {
+          responseData = response.headers.get('content-type')?.includes('json')
+            ? await response.json()
+            : await response.text();
+        }
+      } else {
+        const contentLength = response.headers.get('content-length');
+        console.log(contentLength);
+      }
 
       let errorMessage = null;
       if (!response.ok && responseData && typeof responseData === 'object') {
@@ -246,9 +256,16 @@ class JiraEndpointsTester {
 
     try {
       const response = await fetch(url, config);
-      const responseData = response.headers.get('content-type')?.includes('json')
-        ? await response.json()
-        : await response.text();
+      // Проверяем, есть ли содержимое для парсинга (status 204 = No Content)
+      let responseData = null;
+      if (response.status !== 204) {
+        const contentLength = response.headers.get('content-length');
+        if (contentLength !== '0') {
+          responseData = response.headers.get('content-type')?.includes('json')
+            ? await response.json()
+            : await response.text();
+        }
+      }
 
       let errorMessage = null;
       if (!response.ok && responseData && typeof responseData === 'object') {

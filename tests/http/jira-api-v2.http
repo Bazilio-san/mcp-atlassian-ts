@@ -29,7 +29,16 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
   }
 }
 
+### Add worklog
+POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/worklog
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+{
+  "timeSpent": "2m",
+  "comment": "API test worklog entry",
+  "started": "2025-09-19T15:00:00.000+0000"
+}
 
 
 ### Пример создания задачи:
