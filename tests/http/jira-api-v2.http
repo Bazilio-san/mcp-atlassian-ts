@@ -1,23 +1,3 @@
-### Создать вложение к задаче
-POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/attachments
-Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
-X-Atlassian-Token: no-check
-Content-Type: multipart/form-data; boundary=WebAppBoundary
-
---WebAppBoundary
-Content-Disposition: form-data; name="comment"
-Content-Type: text/plain
-
-Test upload
---WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="test.txt"
-Content-Type: text/plain
-
-< ./test-attachment.txt
---WebAppBoundary--
-
-
-
 # 1. Задачи (Issues)
 #| Метод    | URL                             | Описание                      |
 #| -------- | ------------------------------- | ----------------------------- |
@@ -111,6 +91,25 @@ Content-Type: application/json
     }
   }
 }
+
+
+### Создать вложение к задаче
+POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/attachments
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+X-Atlassian-Token: no-check
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="comment"
+Content-Type: text/plain
+
+Test upload
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+< ./test-attachment.txt
+--WebAppBoundary--
 
 
 ###
@@ -245,3 +244,53 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/latest/user/assignable/search?issueKey=AITECH-845&username=Макаро
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+
+### assignee
+GET {{baseUrl}}/rest/agile/1.0/board/
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+
+### assignee
+GET {{baseUrl}}/rest/agile/1.0/board/968/sprint
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+
+### assignee
+GET {{baseUrl}}/rest/agile/1.0/board/820/sprint
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Kanban boards list
+GET {{baseUrl}}/rest/agile/1.0/board?type=kanban
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board info (EDOX PROD ISSUES board - ID 820)
+GET {{baseUrl}}/rest/agile/1.0/board/820
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board configuration (columns, ranking, estimation)
+GET {{baseUrl}}/rest/agile/1.0/board/820/configuration
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board projects
+GET {{baseUrl}}/rest/agile/1.0/board/820/project
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board issues with JQL and quick filter
+GET {{baseUrl}}/rest/agile/1.0/board/820/issue?jql=project%20%3D%20AITECH%20AND%20status%20!%3D%20Done&maxResults=50&quickFilterId=1
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board epics
+GET {{baseUrl}}/rest/agile/1.0/board/820/epic
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Issues of a specific epic on the board
+GET {{baseUrl}}/rest/agile/1.0/board/820/epic/12345/issue
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board versions
+GET {{baseUrl}}/rest/agile/1.0/board/820/version
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Board properties (list)
+GET {{baseUrl}}/rest/agile/1.0/board/820/properties
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}

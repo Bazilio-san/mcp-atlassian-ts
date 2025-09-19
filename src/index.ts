@@ -6,7 +6,7 @@
  * Atlassian JIRA and Confluence with modern architecture and features.
  */
 
-import { appConfig } from './bootstrap/init-config.js';
+import { appConfig, hasStringValue } from './bootstrap/init-config.js';
 import { createAuthenticationManager, validateAuthConfig } from './core/auth/index.js';
 import { initializeCache } from './core/cache/index.js';
 import { ServerError } from './core/errors/index.js';
@@ -19,7 +19,7 @@ const logger = createLogger('main');
 /**
  * Parse CLI arguments
  */
-function parseCliArguments(): { serviceMode?: ServiceMode; help?: boolean } {
+function parseCliArguments (): { serviceMode?: ServiceMode; help?: boolean } {
   const args = process.argv.slice(2);
   const options: { serviceMode?: ServiceMode; help?: boolean } = {};
 
@@ -47,7 +47,7 @@ function parseCliArguments(): { serviceMode?: ServiceMode; help?: boolean } {
 /**
  * Display help information
  */
-function displayHelp(): void {
+function displayHelp (): void {
   console.log(`
 MCP Atlassian TypeScript Server v2.0.0
 
@@ -81,18 +81,30 @@ Environment Variables:
 /**
  * Build authentication config from app config
  */
-function buildAuthConfig(
-  auth: { basic?: { username?: string; password?: string }; pat?: string; oauth2?: any } | undefined
+function buildAuthConfig (
+  auth: {
+    basic?: {
+      username?: string;
+      password?: string
+    };
+    pat?: string;
+    oauth2?: any
+  } | undefined,
 ): any {
   if (!auth) {
     throw new ServerError('Authentication configuration is missing');
   }
-  if (auth.pat) {
-    return { type: 'pat', token: auth.pat };
-  } else if (auth.oauth2?.clientId) {
-    return { type: 'oauth2', ...auth.oauth2 };
-  } else if (auth.basic?.username && auth.basic?.password) {
-    return { type: 'basic', username: auth.basic.username, password: auth.basic.password };
+  const {
+    pat: token,
+    basic: { username, password } = {},
+    oauth2 = {},
+  } = auth;
+  if (hasStringValue(token)) {
+    return { type: 'pat', token };
+  } else if (hasStringValue(oauth2.clientId)) {
+    return { type: 'oauth2', ...oauth2 };
+  } else if (hasStringValue(username) && hasStringValue(password)) {
+    return { type: 'basic', username, password };
   } else {
     throw new ServerError('No valid authentication method configured');
   }
@@ -153,6 +165,9 @@ async function main (cliServiceMode?: ServiceMode) {
 
     // Create and configure MCP server based on service mode
     const mcpServer = createServiceServer(appConfig);
+
+    // Initialize tools after server creation (needed for proper inheritance)
+    await mcpServer.registerTools();
 
     // Start server based on transport type
     switch (transportType) {
@@ -233,7 +248,7 @@ function displayBanner (serviceMode: ServiceMode) {
   if (process.env.NODE_ENV === 'development') {
     const serviceDescription = {
       jira: '🎯 JIRA-Only Server',
-      confluence: '📝 Confluence-Only Server'
+      confluence: '📝 Confluence-Only Server',
     }[serviceMode] || '❓ Unknown Service Mode';
 
     console.log(`

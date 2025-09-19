@@ -33,6 +33,7 @@ class JiraEndpointsTester {
     }
     this.testResults = [];
     this.testProjectKey = TEST_JIRA_PROJECT;
+    this.testProjectId = null; // Будет получен динамически
     this.testIssueKey = TEST_ISSUE_KEY;
     this.failedTestIds = [];
     this.resourceManager = new ResourceManager();
@@ -190,7 +191,7 @@ class JiraEndpointsTester {
       config.headers = {
         ...this.getAuthHeaders(),
         'X-Atlassian-Token': 'no-check', // Отключаем XSRF проверку для загрузки файлов
-        ...options.headers
+        ...options.headers,
       };
       // Удаляем Content-Type для FormData
       delete config.headers['Content-Type'];
@@ -367,7 +368,7 @@ class JiraEndpointsTester {
   /**
    * Заменить плейсхолдеры в endpoint на реальные значения
    */
-  replacePlaceholders (endpoint) {
+  async replacePlaceholders (endpoint) {
     // Получаем созданные ресурсы
     const createdResources = this.resourceManager.getCreatedResources();
 
@@ -396,8 +397,26 @@ class JiraEndpointsTester {
     }
 
     if (endpoint.includes('{boardId}')) {
-      // Для board ID используем фиксированное значение из эмулятора
-      replacedEndpoint = replacedEndpoint.replace('{boardId}', '1');
+      // Динамически ищем доску типа scrum
+      let boardId = '1'; // fallback значение
+
+      try {
+        const boardsResult = await this.makeAgileRequest('GET', '/agile/1.0/board');
+        if (boardsResult.success && boardsResult.data && boardsResult.data.values) {
+          // Ищем первую доску типа scrum
+          const scrumBoard = boardsResult.data.values.find(board => board.type === 'scrum');
+          if (scrumBoard) {
+            boardId = scrumBoard.id.toString();
+            console.log(`🎯 Found scrum board: ${scrumBoard.name} (ID: ${boardId})`);
+          } else {
+            console.log('⚠️ No scrum board found, using fallback ID: 1');
+          }
+        }
+      } catch (error) {
+        console.log(`⚠️ Error fetching boards: ${error.message}, using fallback ID: 1`);
+      }
+
+      replacedEndpoint = replacedEndpoint.replace('{boardId}', boardId);
     }
 
     if (endpoint.includes('{attachmentId}')) {
@@ -406,6 +425,14 @@ class JiraEndpointsTester {
         ? createdResources.attachments[0]
         : '10000'; // fallback ID
       replacedEndpoint = replacedEndpoint.replace('{attachmentId}', attachmentId);
+    }
+
+    if (endpoint.includes('{workflowSchemeId}')) {
+      // Для workflow scheme ID используем сохраненное значение из первого теста
+      const workflowSchemeId = createdResources.workflowSchemes && createdResources.workflowSchemes.length > 0
+        ? createdResources.workflowSchemes[0]
+        : '1'; // fallback ID для тестирования
+      replacedEndpoint = replacedEndpoint.replace('{workflowSchemeId}', workflowSchemeId);
     }
 
     // Обработка {linkId} требует специальной логики - будет обработана в runTest
@@ -427,34 +454,56 @@ class JiraEndpointsTester {
     const originalEndpoint = api.endpoint;
 
     // Специальная обработка для тестов, требующих linkId
-    if (testCase.requiresLinkId && originalEndpoint.includes('{linkId}')) {
+    if (originalEndpoint.includes('{linkId}')) {
+      let linkReplacement = 'ISSUE_NOT_FOUND';
       try {
         // Получаем информацию о задаче и её связях
-        const issueResult = await this.makeRequest('GET', `/issue/${this.testIssueKey}`, null, { fullId: testCase.fullId + '-link-lookup' });
-        if (issueResult.success && issueResult.data && issueResult.data.fields && issueResult.data.fields.issuelinks) {
-          const links = issueResult.data.fields.issuelinks;
+        const options = { fullId: testCase.fullId + '-link-lookup' }; // Это вспомогательный запрос, поэтому добавляем суяяикс
+        const issueResult = await this.makeRequest('GET', `/issue/${this.testIssueKey}`, null, options);
+        const links = issueResult?.data?.fields?.issuelinks;
+        if (issueResult.success && links?.length) {
+          const linkKey = this.sharedTestCases.secondTestIssueKey;
           // Ищем связь с типом TEST_ISSUE_LINK_TYPE и второй задачей
           const targetLink = links.find(link =>
-            (link.type && link.type.name === this.sharedTestCases.secondTestIssueKey) ||
-            (link.outwardIssue && link.outwardIssue.key === this.sharedTestCases.secondTestIssueKey) ||
-            (link.inwardIssue && link.inwardIssue.key === this.sharedTestCases.secondTestIssueKey)
+            (link.type?.name === linkKey) ||
+            (link.outwardIssue?.key === linkKey) ||
+            (link.inwardIssue?.key === linkKey),
           );
-
-          if (targetLink && targetLink.id) {
-            api.endpoint = originalEndpoint.replace('{linkId}', targetLink.id);
-          } else {
-            // Если не нашли связь, используем фиксированный ID для демонстрации ошибки
-            api.endpoint = originalEndpoint.replace('{linkId}', 'LINK_NOT_FOUND');
-          }
-        } else {
-          api.endpoint = originalEndpoint.replace('{linkId}', 'ISSUE_NOT_FOUND');
+          linkReplacement = targetLink?.id || 'LINK_NOT_FOUND';
         }
       } catch (error) {
-        api.endpoint = originalEndpoint.replace('{linkId}', 'ERROR_GETTING_LINKS');
+        linkReplacement = 'ERROR_GETTING_LINKS';
       }
+      api.endpoint = originalEndpoint.replace('{linkId}', linkReplacement);
+    } else if (originalEndpoint.includes('{workflowSchemeId}') && testCase.dependsOn === 'Get Project Workflow Scheme') {
+      // Специальная обработка для тестов workflow scheme - используем уже сохраненный ID
+      let workflowSchemeId = null;
+      try {
+        const createdResources = this.resourceManager.getCreatedResources();
+
+        if (createdResources.workflowSchemes?.length) {
+          workflowSchemeId = createdResources.workflowSchemes[0];
+        } else {
+          // Если ID еще не получен, получаем его из первого теста
+          const options = { fullId: testCase.fullId + '-scheme-lookup' }; // Это вспомогательный запрос, поэтому добавляем суяяикс
+          const schemeResult = await this.makeRequest('GET', `/project/${this.testProjectKey}/workflowscheme`, null, options);
+          workflowSchemeId = schemeResult?.data?.id;
+          if (schemeResult.success && workflowSchemeId) {
+            this.resourceManager.addResource('workflowSchemes', workflowSchemeId);
+          } else {
+            workflowSchemeId = '1'; // fallback
+          }
+        }
+        // Заменяем остальные плейсхолдеры
+        api.endpoint = await this.replacePlaceholders(api.endpoint);
+      } catch (error) {
+        workflowSchemeId = 'ERROR_GETTING_SCHEME';
+      }
+      api.endpoint = originalEndpoint.replace('{workflowSchemeId}', workflowSchemeId);
+
     } else {
       // Заменяем плейсхолдеры в endpoint
-      api.endpoint = this.replacePlaceholders(originalEndpoint);
+      api.endpoint = await this.replacePlaceholders(originalEndpoint);
     }
 
     // Специальная обработка для тестов, требующих файлы
@@ -470,19 +519,23 @@ class JiraEndpointsTester {
 
     // Определяем метод запроса
     let result;
+    const options = { fullId: testCase.fullId };
     if (api.endpoint.startsWith('/agile/')) {
-      result = await this.makeAgileRequest(api.method, api.endpoint, api.data);
+      result = await this.makeAgileRequest(api.method, api.endpoint, api.data, options);
     } else {
-      result = await this.makeRequest(api.method, api.endpoint, api.data, { fullId: testCase.fullId });
+      result = await this.makeRequest(api.method, api.endpoint, api.data, options);
     }
 
-    // Валидируем результат ПЕРЕД логированием (всегда, даже при ошибках)
-    let validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
+    // Валидируем результат ТОЛЬКО если запрос был успешным
+    let validation = { success: true, message: null };
+    if (result.success) {
+      validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
 
-    // Если валидация не прошла, помечаем тест как неуспешный
-    if (!validation.success) {
-      result.success = false;
-      result.error = validation.message;
+      // Если валидация не прошла, помечаем тест как неуспешный
+      if (!validation.success) {
+        result.success = false;
+        result.error = validation.message;
+      }
     }
 
     const expectedStatus = testCase.expectedStatus || 200;
@@ -509,6 +562,14 @@ class JiraEndpointsTester {
       }
       if (testCase.name === 'Create Attachment' && result.data && Array.isArray(result.data) && result.data.length > 0 && result.data[0].id) {
         this.resourceManager.addResource('attachments', result.data[0].id);
+      }
+    }
+
+    // Регистрируем важные ресурсы даже без cleanup
+    if (result.success) {
+      if (testCase.name === 'Get Project Workflow Scheme' && result.data && result.data.id) {
+        this.resourceManager.addResource('workflowSchemes', result.data.id);
+        console.log(`💾 Saved workflow scheme ID: ${result.data.id} for subsequent tests`);
       }
     }
 
@@ -617,6 +678,47 @@ class JiraEndpointsTester {
     await this.runTestsByCategory('additional');
   }
 
+  /**
+   * === WORKFLOW SCHEMES ENDPOINTS ===
+   */
+
+  async testWorkflowSchemesEndpoints () {
+    // Сначала получаем project ID для TEST_JIRA_PROJECT
+    await this.getProjectId();
+    await this.runTestsByCategory('workflowSchemes');
+  }
+
+  /**
+   * Получить ID проекта по ключу
+   */
+  async getProjectId () {
+    if (this.testProjectId !== null) {
+      return this.testProjectId; // Уже получен
+    }
+
+    try {
+      console.log(`🔍 Searching for project ID for "${this.testProjectKey}"...`);
+      const result = await this.makeRequest('GET', `/project/${this.testProjectKey}`);
+
+      if (result.success && result.data && result.data.id) {
+        this.testProjectId = result.data.id;
+        this.sharedTestCases.testProjectId = result.data.id;
+        console.log(`✅ Found project ID: ${this.testProjectId} for project "${this.testProjectKey}"`);
+        return this.testProjectId;
+      } else {
+        console.log(`❌ Could not find project ID for "${this.testProjectKey}", using fallback: 10000`);
+        this.testProjectId = '10000'; // fallback
+        this.sharedTestCases.testProjectId = '10000';
+        return this.testProjectId;
+      }
+    } catch (error) {
+      console.log(`❌ Error getting project ID for "${this.testProjectKey}": ${error.message}, using fallback: 10000`);
+      this.testProjectId = '10000'; // fallback
+      this.sharedTestCases.testProjectId = '10000';
+      return this.testProjectId;
+    }
+  }
+
   async cleanupTestIssue () {
     console.log('\n--- Cleaning Up Test Resources ---');
 
@@ -679,6 +781,9 @@ class JiraEndpointsTester {
 
       // Тестируем дополнительные эндпоинты
       await this.testAdditionalEndpoints();
+
+      // Тестируем workflow schemes эндпоинты
+      await this.testWorkflowSchemesEndpoints();
 
       // Тестируем каскадные операции
       await this.runCascadeTests();

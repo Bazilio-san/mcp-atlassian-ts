@@ -65,11 +65,11 @@ export class McpAtlassianServer {
       duration: this.serverConfig.rateLimit.windowMs / 1000, // Convert to seconds
     });
 
-    // Initialize tool registry
+    // Initialize tool registry (will be overridden by subclasses if needed)
     this.toolRegistry = new ToolRegistry(serviceConfig);
 
     this.setupServerHandlers();
-    this.registerTools();
+    // Don't call registerTools here - let it be called explicitly after construction
   }
 
   /**
@@ -178,7 +178,7 @@ export class McpAtlassianServer {
   /**
    * Register all available tools
    */
-  protected async registerTools (): Promise<void> {
+  async registerTools (): Promise<void> {
     try {
       await this.toolRegistry.initializeTools();
       logger.info('Tools registered successfully');

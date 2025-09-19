@@ -7,6 +7,7 @@ import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
+import { hasStringValue } from "../../bootstrap/init-config.js";
 
 const logger = createLogger('jira-server');
 
@@ -16,12 +17,12 @@ const logger = createLogger('jira-server');
 export class JiraServer extends McpAtlassianServer {
   protected override toolRegistry: ServiceToolRegistry;
 
-  constructor(config: IConfig) {
+  constructor (config: IConfig) {
     // Convert IConfig to the expected ServerConfig and JiraConfig formats
     const {
       jira: {
         auth: {
-          basic,
+          basic: { username, password } = {},
           pat,
           oauth2,
         } = {},
@@ -40,14 +41,14 @@ export class JiraServer extends McpAtlassianServer {
 
     const serverConfig: ServerConfig = { port, environment, logLevel, transportType, rateLimit, cache };
 
-    // Build auth config from JIRA config
+    // Build auth config from JIRA config - prioritize Basic auth
     let auth: any;
-    if (pat) {
+    if (hasStringValue(username) && hasStringValue(password)) {
+      auth = { type: 'basic', username, password };
+    } else if (hasStringValue(pat)) {
       auth = { type: 'pat', token: pat };
     } else if (oauth2?.clientId) {
       auth = { ...oauth2, type: 'oauth2' };
-    } else if (basic?.username && basic?.password) {
-      auth = { type: 'basic', username: basic.username, password: basic.password };
     }
 
     const jiraConfig: JCConfig = { url, auth, maxResults };
@@ -64,7 +65,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Register JIRA-specific tools only
    */
-  protected override async registerTools(): Promise<void> {
+  override async registerTools (): Promise<void> {
     try {
       await this.toolRegistry.initializeTools();
       logger.info('JIRA tools registered successfully');
@@ -77,7 +78,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Override health check endpoint to show JIRA service info
    */
-  protected override getHealthCheckInfo() {
+  protected override getHealthCheckInfo () {
     return {
       status: 'ok',
       service: 'mcp-atlassian-jira',

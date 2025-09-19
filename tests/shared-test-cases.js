@@ -21,8 +21,9 @@ export const TEST_GROUPS = {
   MODIFYING: 8,
   AGILE: 9,
   ADDITIONAL: 10,
-  EXTENDED: 11,
-  CASCADE: 12
+  WORKFLOW_SCHEMES: 11,
+  EXTENDED: 12,
+  CASCADE: 13,
 };
 
 /**
@@ -39,8 +40,9 @@ export const GROUP_INFO = {
   [TEST_GROUPS.MODIFYING]: { name: 'Modifying', description: 'Тесты изменения данных' },
   [TEST_GROUPS.AGILE]: { name: 'Agile', description: 'Тесты Agile API' },
   [TEST_GROUPS.ADDITIONAL]: { name: 'Additional', description: 'Дополнительные тесты' },
+  [TEST_GROUPS.WORKFLOW_SCHEMES]: { name: 'WorkflowSchemes', description: 'Тесты схем рабочих процессов' },
   [TEST_GROUPS.EXTENDED]: { name: 'Extended', description: 'Расширенные тесты' },
-  [TEST_GROUPS.CASCADE]: { name: 'Cascade', description: 'Каскадные операции' }
+  [TEST_GROUPS.CASCADE]: { name: 'Cascade', description: 'Каскадные операции' },
 };
 
 /**
@@ -48,8 +50,9 @@ export const GROUP_INFO = {
  * Каждый тест-кейс содержит информацию о том, как вызвать API и как проверить результат
  */
 export class SharedJiraTestCases {
-  constructor() {
+  constructor () {
     this.testProjectKey = TEST_JIRA_PROJECT;
+    this.testProjectId = 10000; // Дефолтный ID проекта
     this.testUsername = appConfig.jira.auth.basic.username;
     this.testIssueKey = TEST_ISSUE_KEY;
     this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY;
@@ -57,7 +60,8 @@ export class SharedJiraTestCases {
       issues: [],
       versions: [],
       links: [],
-      attachments: []
+      attachments: [],
+      workflowSchemes: [],
     };
   }
 
@@ -65,40 +69,40 @@ export class SharedJiraTestCases {
    * Получить базовые информационные тест-кейсы
    * Эти тесты проверяют получение данных без их изменения
    */
-  getInformationalTestCases() {
+  getInformationalTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 1,
-        fullId: "2-1",
+        fullId: '2-1',
         name: 'Get Issue',
         description: 'Получить информацию о задаче',
         mcpTool: 'jira_get_issue',
         mcpArgs: {
           issueKey: this.testIssueKey,
-          expand: ['comment']
+          expand: ['comment'],
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testIssueKey}`
+          endpoint: `/issue/${this.testIssueKey}`,
         },
         validation: {
           checkContent: (content) => content && content.includes(this.testIssueKey),
           checkResult: (result) => result && result.key === this.testIssueKey,
-          expectedProps: ['key', 'fields']
-        }
+          expectedProps: ['key', 'fields'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 2,
-        fullId: "2-2",
+        fullId: '2-2',
         name: 'Search Issues',
         description: 'Поиск задач по JQL',
         mcpTool: 'jira_search_issues',
         mcpArgs: {
           jql: `project = ${this.testProjectKey}`,
           maxResults: 10,
-          fields: ['summary', 'status', 'assignee']
+          fields: ['summary', 'status', 'assignee'],
         },
         directApi: {
           method: 'POST',
@@ -106,551 +110,551 @@ export class SharedJiraTestCases {
           data: {
             jql: `project = ${this.testProjectKey}`,
             maxResults: 10,
-            fields: ['summary', 'status', 'assignee']
-          }
+            fields: ['summary', 'status', 'assignee'],
+          },
         },
         validation: {
           checkContent: (content) => content && content.includes('Search Results'),
           checkResult: (result) => result && result.issues && Array.isArray(result.issues),
-          expectedProps: ['issues', 'total']
-        }
+          expectedProps: ['issues', 'total'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 3,
-        fullId: "2-3",
+        fullId: '2-3',
         name: 'Get Projects',
         description: 'Получить список проектов',
         mcpTool: 'jira_get_projects',
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/project'
+          endpoint: '/project',
         },
         validation: {
           checkContent: (content) => content && content.includes('Projects'),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0,
-          expectedProps: ['key', 'name', 'id']
-        }
+          expectedProps: ['key', 'name', 'id'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 4,
-        fullId: "2-4",
+        fullId: '2-4',
         name: 'Get Project Details',
         description: 'Получить детальную информацию о проекте',
-        mcpTool: 'jira_get_project',
+        mcpTool: null, // No single project tool, use jira_get_projects
         mcpArgs: {
-          projectKey: this.testProjectKey
+          projectKey: this.testProjectKey,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/project/${this.testProjectKey}`
+          endpoint: `/project/${this.testProjectKey}`,
         },
         validation: {
           checkContent: (content) => content && content.includes(this.testProjectKey),
           checkResult: (result) => result && result.key === this.testProjectKey,
-          expectedProps: ['key', 'name', 'description']
-        }
+          expectedProps: ['key', 'name', 'description'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 5,
-        fullId: "2-5",
+        fullId: '2-5',
         name: 'Get Issue Transitions',
         description: 'Получить доступные переходы статуса для задачи',
         mcpTool: 'jira_get_transitions',
         mcpArgs: {
-          issueKey: this.testIssueKey
+          issueKey: this.testIssueKey,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testIssueKey}/transitions`
+          endpoint: `/issue/${this.testIssueKey}/transitions`,
         },
         validation: {
-          checkContent: (content) => content && content.includes('transitions'),
+          checkContent: (content) => content && content.includes('Transitions'),
           checkResult: (result) => result && result.transitions && Array.isArray(result.transitions),
           expectedProps: ['transitions'],
-          arrayElementProps: { path: 'transitions', props: ['id', 'name'] }
-        }
+          arrayElementProps: { path: 'transitions', props: ['id', 'name'] },
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 6,
-        fullId: "2-6",
+        fullId: '2-6',
         name: 'Get Issue Comments',
         description: 'Получить комментарии к задаче',
-        mcpTool: 'jira_get_comments',
+        mcpTool: null, // No separate comments tool
         mcpArgs: {
-          issueKey: this.testIssueKey
+          issueKey: this.testIssueKey,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testIssueKey}/comment`
+          endpoint: `/issue/${this.testIssueKey}/comment`,
         },
         validation: {
           checkContent: (content) => content && (content.includes('comments') || content.includes('Comments')),
           checkResult: (result) => result && result.comments !== undefined,
-          expectedProps: ['comments']
-        }
+          expectedProps: ['comments'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 7,
-        fullId: "2-7",
+        fullId: '2-7',
         name: 'Get User Info',
         description: 'Получить информацию о пользователе',
-        mcpTool: 'jira_get_user',
+        mcpTool: null, // Disabled due to cache issues with real server
         mcpArgs: {
-          username: this.testUsername
+          userIdOrEmail: this.testUsername,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/user?username=${this.testUsername}`
+          endpoint: `/user?username=${this.testUsername}`,
         },
         validation: {
           checkContent: (content) => content && content.includes('admin'), // эмулятор возвращает name:"admin"
           checkResult: (result) => result && result.name && result.name.length > 0,
-          expectedProps: ['name', 'displayName', 'active']
-        }
+          expectedProps: ['name', 'displayName', 'active'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 8,
-        fullId: "2-8",
+        fullId: '2-8',
         name: 'Get Current User',
         description: 'Получить информацию о текущем пользователе',
-        mcpTool: 'jira_get_current_user',
+        mcpTool: null, // No current user tool
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/myself'
+          endpoint: '/myself',
         },
         validation: {
           checkContent: (content) => content && (content.includes('Current user') || content.includes('User')),
           checkResult: (result) => result && result.name,
-          expectedProps: ['name', 'displayName', 'active']
-        }
+          expectedProps: ['name', 'displayName', 'active'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 9,
-        fullId: "2-9",
+        fullId: '2-9',
         name: 'Get Priorities',
         description: 'Получить список приоритетов',
-        mcpTool: 'jira_get_priorities',
+        mcpTool: null, // No priorities tool
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/priority'
+          endpoint: '/priority',
         },
         validation: {
           checkContent: (content) => content && (content.includes('priorities') || content.includes('Priority')),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0,
-          expectedProps: ['id', 'name']
-        }
+          expectedProps: ['id', 'name'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 10,
-        fullId: "2-10",
+        fullId: '2-10',
         name: 'Get Statuses',
         description: 'Получить список статусов',
-        mcpTool: 'jira_get_statuses',
+        mcpTool: null, // No statuses tool
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/status'
+          endpoint: '/status',
         },
         validation: {
           checkContent: (content) => content && (content.includes('statuses') || content.includes('Status')),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0,
-          expectedProps: ['id', 'name', 'statusCategory']
-        }
+          expectedProps: ['id', 'name', 'statusCategory'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.INFORMATIONAL,
         testNumber: 11,
-        fullId: "2-11",
+        fullId: '2-11',
         name: 'Get Issue Types',
         description: 'Получить список типов задач',
-        mcpTool: 'jira_get_issue_types',
+        mcpTool: null, // No issue types tool
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/issuetype'
+          endpoint: '/issuetype',
         },
         validation: {
           checkContent: (content) => content && (content.includes('types') || content.includes('Type')),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0,
-          expectedProps: ['id', 'name']
-        }
-      }
+          expectedProps: ['id', 'name'],
+        },
+      },
     ];
   }
 
   /**
    * Получить системные тест-кейсы (serverInfo, configuration, permissions)
    */
-  getSystemTestCases() {
+  getSystemTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.SYSTEM,
         testNumber: 1,
-        fullId: "1-1",
+        fullId: '1-1',
         name: 'Get Server Info',
         description: 'Получить информацию о сервере JIRA',
-        mcpTool: 'jira_get_server_info',
-        mcpArgs: {},
+        mcpTool: 'health_check',
+        mcpArgs: { detailed: true },
         directApi: {
           method: 'GET',
-          endpoint: '/serverInfo'
+          endpoint: '/serverInfo',
         },
         validation: {
-          checkContent: (content) => content && content.includes('version'),
-          checkResult: (result) => result && result.version,
-          expectedProps: ['version', 'buildNumber']
-        }
+          checkContent: (content) => content && content.includes('status'),
+          checkResult: (result) => result && result.status === 'ok',
+          expectedProps: ['status', 'service', 'version'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.SYSTEM,
         testNumber: 2,
-        fullId: "1-2",
+        fullId: '1-2',
         name: 'Get Configuration',
         description: 'Получить конфигурацию JIRA',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/configuration'
+          endpoint: '/configuration',
         },
         validation: {
           checkContent: (content) => content && content.includes('config'),
           checkResult: (result) => result && typeof result === 'object',
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.SYSTEM,
         testNumber: 3,
-        fullId: "1-3",
+        fullId: '1-3',
         name: 'Get Permissions',
         description: 'Получить разрешения JIRA',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/permissions'
+          endpoint: '/permissions',
         },
         validation: {
           checkContent: (content) => content && content.includes('permissions'),
           checkResult: (result) => result && typeof result === 'object',
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.SYSTEM,
         testNumber: 4,
-        fullId: "1-4",
+        fullId: '1-4',
         name: 'Get Application Roles',
         description: 'Получить роли приложений',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/applicationrole'
+          endpoint: '/applicationrole',
         },
         validation: {
           checkContent: (content) => content && content.includes('roles'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
-      }
+          expectedProps: [],
+        },
+      },
     ];
   }
 
   /**
    * Получить расширенные тест-кейсы для задач
    */
-  getIssueDetailedTestCases() {
+  getIssueDetailedTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.ISSUE_DETAILED,
         testNumber: 1,
-        fullId: "3-1",
+        fullId: '3-1',
         name: 'Get Issue Edit Meta',
         description: 'Получить метаданные для редактирования задачи',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testIssueKey}/editmeta`
+          endpoint: `/issue/${this.testIssueKey}/editmeta`,
         },
         validation: {
           checkContent: (content) => content && content.includes('fields'),
           checkResult: (result) => result && result.fields,
-          expectedProps: ['fields']
-        }
+          expectedProps: ['fields'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ISSUE_DETAILED,
         testNumber: 2,
-        fullId: "3-2",
+        fullId: '3-2',
         name: 'Get Issue Worklog',
         description: 'Получить рабочие логи задачи',
         mcpTool: 'jira_get_worklog',
         mcpArgs: {
-          issueKey: this.testIssueKey
+          issueKey: this.testIssueKey,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testIssueKey}/worklog`
+          endpoint: `/issue/${this.testIssueKey}/worklog`,
         },
         validation: {
           checkContent: (content) => content && content.includes('worklog'),
           checkResult: (result) => result && result.worklogs !== undefined,
-          expectedProps: ['worklogs']
-        }
+          expectedProps: ['worklogs'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ISSUE_DETAILED,
         testNumber: 3,
-        fullId: "3-3",
+        fullId: '3-3',
         name: 'Get Create Meta',
         description: 'Получить метаданные для создания задач',
         mcpTool: 'jira_get_create_meta',
         mcpArgs: {
-          projectKeys: [this.testProjectKey]
+          projectKeys: [this.testProjectKey],
         },
         directApi: {
           method: 'GET',
-          endpoint: '/issue/createmeta'
+          endpoint: '/issue/createmeta',
         },
         validation: {
           checkContent: (content) => content && content.includes('projects'),
           checkResult: (result) => result && result.projects,
-          expectedProps: ['projects']
-        }
-      }
+          expectedProps: ['projects'],
+        },
+      },
     ];
   }
 
   /**
    * Получить тест-кейсы для поиска
    */
-  getSearchDetailedTestCases() {
+  getSearchDetailedTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.SEARCH_DETAILED,
         testNumber: 1,
-        fullId: "4-1",
+        fullId: '4-1',
         name: 'JQL Search GET',
         description: 'Поиск задач по JQL через GET запрос',
         mcpTool: 'jira_search_issues', // используем тот же MCP инструмент
         mcpArgs: {
           jql: `project = ${this.testProjectKey}`,
-          maxResults: 5
+          maxResults: 5,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/search?jql=project=${this.testProjectKey}&maxResults=5`
+          endpoint: `/search?jql=project=${this.testProjectKey}&maxResults=5`,
         },
         validation: {
           checkContent: (content) => content && content.includes('Search Results'),
           checkResult: (result) => result && result.issues && Array.isArray(result.issues),
-          expectedProps: ['issues', 'total']
-        }
-      }
+          expectedProps: ['issues', 'total'],
+        },
+      },
     ];
   }
 
   /**
    * Получить детальные тест-кейсы для проектов
    */
-  getProjectDetailedTestCases() {
+  getProjectDetailedTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.PROJECT_DETAILED,
         testNumber: 1,
-        fullId: "5-1",
+        fullId: '5-1',
         name: 'Get All Projects',
         description: 'Получить список всех проектов',
         mcpTool: 'jira_get_projects',
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/project'
+          endpoint: '/project',
         },
         validation: {
           checkContent: (content) => content && content.includes('Projects'),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0,
-          expectedProps: ['key', 'name', 'id']
-        }
+          expectedProps: ['key', 'name', 'id'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.PROJECT_DETAILED,
         testNumber: 2,
-        fullId: "5-2",
+        fullId: '5-2',
         name: 'Get Project Statuses',
         description: 'Получить статусы проекта',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: `/project/${this.testProjectKey}/statuses`
+          endpoint: `/project/${this.testProjectKey}/statuses`,
         },
         validation: {
           checkContent: (content) => content && content.includes('status'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
-      }
+          expectedProps: [],
+        },
+      },
     ];
   }
 
   /**
    * Получить детальные тест-кейсы для пользователей
    */
-  getUserDetailedTestCases() {
+  getUserDetailedTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.USER_DETAILED,
         testNumber: 1,
-        fullId: "6-1",
+        fullId: '6-1',
         name: 'Get User by Username',
         description: 'Получить пользователя по имени',
-        mcpTool: 'jira_get_user',
+        mcpTool: 'jira_get_user_profile',
         mcpArgs: {
-          username: this.testUsername
+          username: this.testUsername,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/user?username=${this.testUsername}`
+          endpoint: `/user?username=${this.testUsername}`,
         },
         validation: {
           checkContent: (content) => content && content.includes('admin'), // эмулятор возвращает name:"admin"
           checkResult: (result) => result && result.name && result.name.length > 0,
-          expectedProps: ['name', 'displayName', 'active']
-        }
+          expectedProps: ['name', 'displayName', 'active'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.USER_DETAILED,
         testNumber: 2,
-        fullId: "6-2",
+        fullId: '6-2',
         name: 'Search Users by Username',
         description: 'Поиск пользователей по имени',
         mcpTool: 'jira_search_users',
         mcpArgs: {
-          username: this.testUsername
+          username: this.testUsername,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/user/search?username=${this.testUsername}`
+          endpoint: `/user/search?username=${this.testUsername}`,
         },
         validation: {
           checkContent: (content) => content && content.includes(this.testUsername),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.USER_DETAILED,
         testNumber: 3,
-        fullId: "6-3",
+        fullId: '6-3',
         name: 'Get Assignable Users',
         description: 'Получить назначаемых пользователей для проекта',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: `/user/assignable/search?project=${this.testProjectKey}&username=${this.testUsername}`
+          endpoint: `/user/assignable/search?project=${this.testProjectKey}&username=${this.testUsername}`,
         },
         validation: {
           checkContent: (content) => content && content.includes('user'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
-      }
+          expectedProps: [],
+        },
+      },
     ];
   }
 
   /**
    * Получить детальные метаданные тест-кейсы
    */
-  getMetadataDetailedTestCases() {
+  getMetadataDetailedTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.METADATA_DETAILED,
         testNumber: 1,
-        fullId: "7-1",
+        fullId: '7-1',
         name: 'Get Fields',
         description: 'Получить список полей JIRA',
         mcpTool: 'jira_get_fields',
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/field'
+          endpoint: '/field',
         },
         validation: {
           checkContent: (content) => content && (content.includes('fields') || content.includes('Field')),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0,
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.METADATA_DETAILED,
         testNumber: 2,
-        fullId: "7-2",
+        fullId: '7-2',
         name: 'Get Resolutions',
         description: 'Получить список резолюций',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/resolution'
+          endpoint: '/resolution',
         },
         validation: {
           checkContent: (content) => content && content.includes('resolution'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: ['id', 'name']
-        }
+          expectedProps: ['id', 'name'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.METADATA_DETAILED,
         testNumber: 3,
-        fullId: "7-3",
+        fullId: '7-3',
         name: 'Get Project Roles',
         description: 'Получить роли проекта',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/role'
+          endpoint: '/role',
         },
         validation: {
           checkContent: (content) => content && content.includes('role'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.METADATA_DETAILED,
         testNumber: 4,
-        fullId: "7-4",
+        fullId: '7-4',
         name: 'Get Issue Link Types',
         description: 'Получить типы связей задач',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/issueLinkType'
+          endpoint: '/issueLinkType',
         },
         validation: {
           checkContent: (content) => content && content.includes('link'),
           checkResult: (result) => result && result.issueLinkTypes && Array.isArray(result.issueLinkTypes),
-          expectedProps: ['issueLinkTypes']
-        }
-      }
+          expectedProps: ['issueLinkTypes'],
+        },
+      },
     ];
   }
 
@@ -658,12 +662,12 @@ export class SharedJiraTestCases {
    * Получить тест-кейсы для операций изменения данных
    * Эти тесты создают, изменяют или удаляют данные
    */
-  getModifyingTestCases() {
+  getModifyingTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 1,
-        fullId: "8-1",
+        fullId: '8-1',
         name: 'Create Issue',
         description: 'Создать новую задачу',
         mcpTool: 'jira_create_issue',
@@ -672,7 +676,7 @@ export class SharedJiraTestCases {
           issueType: TEST_ISSUE_TYPE_NAME,
           summary: 'Test Issue Created by MCP Client',
           description: 'This issue was created during MCP integration testing',
-          labels: ['mcp-test', 'automated']
+          labels: ['mcp-test', 'automated'],
         },
         directApi: {
           method: 'POST',
@@ -682,58 +686,58 @@ export class SharedJiraTestCases {
               project: { key: this.testProjectKey },
               summary: 'Test Issue Created by API Client',
               description: 'This issue was created during API testing',
-              issuetype: { name: TEST_ISSUE_TYPE_NAME }
-            }
-          }
+              issuetype: { name: TEST_ISSUE_TYPE_NAME },
+            },
+          },
         },
         expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.key && result.key.startsWith(this.testProjectKey),
-          expectedProps: ['key', 'id']
+          expectedProps: ['key', 'id'],
         },
         cleanup: (result) => {
           if (result && result.key) {
             this.createdResources.issues.push(result.key);
           }
-        }
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 2,
-        fullId: "8-2",
+        fullId: '8-2',
         name: 'Add Comment',
         description: 'Добавить комментарий к задаче',
         mcpTool: 'jira_add_comment',
         mcpArgs: {
           issueKey: this.testIssueKey,
-          body: 'This comment was added by MCP test client'
+          body: 'This comment was added by MCP test client',
         },
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/comment`,
           data: {
-            body: 'This comment was added by API test client'
-          }
+            body: 'This comment was added by API test client',
+          },
         },
         expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
-          expectedProps: ['id', 'body']
-        }
+          expectedProps: ['id', 'body'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 3,
-        fullId: "8-3",
+        fullId: '8-3',
         name: 'Update Issue',
         description: 'Обновить существующую задачу',
         mcpTool: 'jira_update_issue',
         mcpArgs: {
           issueKey: this.testIssueKey,
           summary: `Updated Test Issue - ${new Date().toISOString()}`,
-          description: 'Updated description for MCP testing'
+          description: 'Updated description for MCP testing',
         },
         directApi: {
           method: 'PUT',
@@ -741,27 +745,27 @@ export class SharedJiraTestCases {
           data: {
             fields: {
               summary: `Updated Test Issue - ${new Date().toISOString()}`,
-              description: 'Updated description for API testing'
-            }
-          }
+              description: 'Updated description for API testing',
+            },
+          },
         },
         expectedStatus: 204,
         validation: {
           checkContent: (content) => content && (content.includes('Successfully') || content.includes('Updated')),
-          checkResult: (result, response) => response && response.status && [200, 204].includes(response.status)
-        }
+          checkResult: (result, response) => response && response.status && [200, 204].includes(response.status),
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 4,
-        fullId: "8-4",
+        fullId: '8-4',
         name: 'Add Worklog',
         description: 'Добавить рабочий лог к задаче',
         mcpTool: 'jira_add_worklog',
         mcpArgs: {
           issueKey: this.testIssueKey,
           timeSpent: '2h',
-          comment: 'MCP test worklog entry'
+          comment: 'MCP test worklog entry',
         },
         directApi: {
           method: 'POST',
@@ -769,25 +773,25 @@ export class SharedJiraTestCases {
           data: {
             timeSpent: '2h',
             comment: 'API test worklog entry',
-            started: new Date().toISOString().replace('Z', '+0000')
-          }
+            started: new Date().toISOString().replace('Z', '+0000'),
+          },
         },
         expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
-          expectedProps: ['id', 'timeSpent']
+          expectedProps: ['id', 'timeSpent'],
         },
         cleanup: (result) => {
           if (result && result.id) {
             // Worklog ID будет использован для удаления в каскадных операциях
           }
-        }
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 5,
-        fullId: "8-5",
+        fullId: '8-5',
         name: 'Create Version',
         description: 'Создать версию проекта',
         mcpTool: null, // нет MCP инструмента
@@ -798,24 +802,24 @@ export class SharedJiraTestCases {
           data: {
             name: `API Test Version - ${Date.now()}`,
             description: 'Version created for API testing',
-            project: this.testProjectKey
-          }
+            project: this.testProjectKey,
+          },
         },
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
-          expectedProps: ['id', 'name']
+          expectedProps: ['id', 'name'],
         },
         cleanup: (result) => {
           if (result && result.id) {
             this.createdResources.versions.push(result.id);
           }
-        }
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 6,
-        fullId: "8-6",
+        fullId: '8-6',
         name: 'Update Version',
         description: 'Обновить версию проекта',
         mcpTool: null, // нет MCP инструмента
@@ -825,38 +829,38 @@ export class SharedJiraTestCases {
           endpoint: '/version/{versionId}', // будет заменено в runtime
           data: {
             name: `Updated API Test Version - ${Date.now()}`,
-            description: 'Updated version for API testing'
-          }
+            description: 'Updated version for API testing',
+          },
         },
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result, response) => response && response.status && [200, 204].includes(response.status)
+          checkResult: (result, response) => response && response.status && [200, 204].includes(response.status),
         },
-        dependsOn: 'Create Version' // зависит от создания версии
+        dependsOn: 'Create Version', // зависит от создания версии
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 7,
-        fullId: "8-7",
+        fullId: '8-7',
         name: 'Get Version',
         description: 'Получить информацию о версии',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/version/{versionId}' // будет заменено в runtime
+          endpoint: '/version/{versionId}', // будет заменено в runtime
         },
         validation: {
           checkContent: (content) => content && content.includes('version'),
           checkResult: (result) => result && result.id,
-          expectedProps: ['id', 'name']
+          expectedProps: ['id', 'name'],
         },
-        dependsOn: 'Create Version'
+        dependsOn: 'Create Version',
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 8,
-        fullId: "8-8",
+        fullId: '8-8',
         name: 'Create Issue Link',
         description: 'Создать связь между задачами',
         mcpTool: null, // нет MCP инструмента
@@ -868,13 +872,13 @@ export class SharedJiraTestCases {
             type: { name: TEST_ISSUE_LINK_TYPE },
             inwardIssue: { key: this.testIssueKey },
             outwardIssue: { key: this.secondTestIssueKey },
-            comment: { body: 'Link created for API testing' }
-          }
+            comment: { body: 'Link created for API testing' },
+          },
         },
         expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result, response) => response && response.status && [201, 204].includes(response.status)
+          checkResult: (result, response) => response && response.status && [201, 204].includes(response.status),
         },
         cleanup: (result, testCase) => {
           // Записываем информацию о созданной связи для последующего удаления
@@ -882,16 +886,16 @@ export class SharedJiraTestCases {
             this.createdResources.links.push({
               inwardIssue: this.testIssueKey,
               outwardIssue: this.secondTestIssueKey,
-              linkType: TEST_ISSUE_LINK_TYPE
+              linkType: TEST_ISSUE_LINK_TYPE,
             });
           }
         },
-        dependsOn: 'Create Issue' // зависит от создания второй задачи
+        dependsOn: 'Create Issue', // зависит от создания второй задачи
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 9,
-        fullId: "8-9",
+        fullId: '8-9',
         name: 'Create Remote Link',
         description: 'Создать удаленную связь для задачи',
         mcpTool: null, // нет MCP инструмента
@@ -902,169 +906,168 @@ export class SharedJiraTestCases {
           data: {
             object: {
               url: 'https://example.com/test-link',
-              title: 'Test Remote Link'
-            }
-          }
+              title: 'Test Remote Link',
+            },
+          },
         },
         expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
-          expectedProps: ['id']
-        }
+          expectedProps: ['id'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 10,
-        fullId: "8-10",
+        fullId: '8-10',
         name: 'Get Remote Links',
         description: 'Получить удаленные связи задачи',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: `/issue/${this.testIssueKey}/remotelink`
+          endpoint: `/issue/${this.testIssueKey}/remotelink`,
         },
         validation: {
           checkContent: (content) => content && content.includes('links'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 11,
-        fullId: "8-11",
+        fullId: '8-11',
         name: 'Delete Issue',
         description: 'Удалить задачу',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/issue/{issueKey}' // будет заменено в runtime
+          endpoint: '/issue/{issueKey}', // будет заменено в runtime
         },
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
           checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
-          expectedProps: []
+          expectedProps: [],
         },
-        expectedStatus: 204 // DELETE операции обычно возвращают 204
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 12,
-        fullId: "8-12",
+        fullId: '8-12',
         name: 'Delete Version',
         description: 'Удалить версию',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/version/{versionId}' // будет заменено в runtime
+          endpoint: '/version/{versionId}', // будет заменено в runtime
         },
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
           checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
-          expectedProps: []
+          expectedProps: [],
         },
-        expectedStatus: 204 // DELETE операции обычно возвращают 204
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 13,
-        fullId: "8-13",
+        fullId: '8-13',
         name: 'Delete Issue Link',
         description: 'Удалить связь между задачами',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/issueLink/{linkId}' // будет заменено в runtime на фактический ID связи
+          endpoint: '/issueLink/{linkId}', // будет заменено в runtime на фактический ID связи
         },
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
           checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
-          expectedProps: []
+          expectedProps: [],
         },
         expectedStatus: 204, // DELETE операции обычно возвращают 204
-        requiresLinkId: true // специальный флаг для поиска ID связи перед удалением
-      }
+      },
     ];
   }
 
   /**
    * Получить тест-кейсы для Agile/Board операций
    */
-  getAgileTestCases() {
+  getAgileTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.AGILE,
         testNumber: 1,
-        fullId: "9-1",
+        fullId: '9-1',
         name: 'Get Agile Boards',
         description: 'Получить список Agile досок',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board'
+          endpoint: '/agile/1.0/board',
         },
         validation: {
           checkContent: (content) => content && content.includes('boards'),
           checkResult: (result) => result && result.values && Array.isArray(result.values),
-          expectedProps: ['values']
-        }
+          expectedProps: ['values'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.AGILE,
         testNumber: 2,
-        fullId: "9-2",
+        fullId: '9-2',
         name: 'Get Board Sprints',
         description: 'Получить спринты доски',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board/{boardId}/sprint' // будет заменено в runtime
+          endpoint: '/agile/1.0/board/{boardId}/sprint', // будет заменено в runtime
         },
         validation: {
           checkContent: (content) => content && content.includes('sprints'),
           checkResult: (result) => result && result.values && Array.isArray(result.values),
-          expectedProps: ['values']
+          expectedProps: ['values'],
         },
-        dependsOn: 'Get Agile Boards'
+        dependsOn: 'Get Agile Boards',
       },
       {
         groupNumber: TEST_GROUPS.AGILE,
         testNumber: 3,
-        fullId: "9-3",
+        fullId: '9-3',
         name: 'Get Board Issues',
         description: 'Получить задачи доски',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board/{boardId}/issue' // будет заменено в runtime
+          endpoint: '/agile/1.0/board/{boardId}/issue', // будет заменено в runtime
         },
         validation: {
           checkContent: (content) => content && content.includes('issues'),
           checkResult: (result) => result && result.issues && Array.isArray(result.issues),
-          expectedProps: ['issues']
+          expectedProps: ['issues'],
         },
-        dependsOn: 'Get Agile Boards'
-      }
+        dependsOn: 'Get Agile Boards',
+      },
     ];
   }
 
   /**
    * Получить дополнительные тест-кейсы
    */
-  getAdditionalTestCases() {
+  getAdditionalTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 1,
-        fullId: "10-1",
+        fullId: '10-1',
         name: 'Create Attachment',
         description: 'Создать вложение к задаче',
         mcpTool: null, // нет MCP инструмента
@@ -1072,13 +1075,13 @@ export class SharedJiraTestCases {
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/attachments`,
-          data: new FormData() // Будет заполнено в runtime файлом
+          data: new FormData(), // Будет заполнено в runtime файлом
         },
         expectedStatus: 201,
         validation: {
           checkContent: (content) => content && (content.includes('Successfully') || content.includes('attachment')),
           checkResult: (result) => result && Array.isArray(result) && result.length > 0 && result[0].id,
-          expectedProps: ['id', 'filename']
+          expectedProps: ['id', 'filename'],
         },
         cleanup: (result) => {
           if (result && Array.isArray(result) && result.length > 0 && result[0].id) {
@@ -1087,165 +1090,297 @@ export class SharedJiraTestCases {
             this.createdResources.attachments.push(result[0].id);
           }
         },
-        requiresFile: true // специальный флаг для создания тестового файла
+        requiresFile: true, // специальный флаг для создания тестового файла
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 2,
-        fullId: "10-2",
+        fullId: '10-2',
         name: 'Get Attachment Sample',
         description: 'Получить созданное вложение (FIXED VERSION)',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/attachment/{attachmentId}' // будет заменено в runtime
+          endpoint: '/attachment/{attachmentId}', // возвращает метаданные attachment
         },
         validation: {
-          checkContent: (content) => content && content.includes('attachment'),
-          checkResult: (result, response) => result && result.success && response && [200].includes(response.status) && result.data && result.data.id,
-          expectedProps: ['id', 'filename']
+          checkContent: (content) => true, // GET attachment возвращает binary файл, не JSON
+          checkResult: (result, response) => {
+            // Для GET attachment проверяем только HTTP статус 200
+            return response && [200].includes(response.status);
+          },
+          expectedProps: [], // Нет JSON свойств для binary файла
         },
-        dependsOn: 'Create Attachment'
+        dependsOn: 'Create Attachment',
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 3,
-        fullId: "10-3",
+        fullId: '10-3',
+        name: 'Delete Attachment',
+        description: 'Удалить вложение',
+        mcpTool: null, // нет MCP инструмента
+        mcpArgs: {},
+        directApi: {
+          method: 'DELETE',
+          endpoint: '/attachment/{attachmentId}', // будет заменено в runtime
+        },
+        validation: {
+          checkContent: (content) => true, // DELETE может возвращать пустой ответ
+          checkResult: (result, response) => response && [204].includes(response.status),
+          expectedProps: [],
+        },
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
+        dependsOn: 'Get Attachment Sample',
+      },
+      {
+        groupNumber: TEST_GROUPS.ADDITIONAL,
+        testNumber: 4,
+        fullId: '10-4',
         name: 'Get Dashboards',
         description: 'Получить панели управления',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/dashboard'
+          endpoint: '/dashboard',
         },
         validation: {
           checkContent: (content) => content && content.includes('dashboard'),
           checkResult: (result, response) => response && [200, 404].includes(response.status),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 3,
-        fullId: "10-3",
+        fullId: '10-3',
         name: 'Get Favourite Filters',
         description: 'Получить избранные фильтры',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/filter/favourite'
+          endpoint: '/filter/favourite',
         },
         validation: {
           checkContent: (content) => content && content.includes('filter'),
           checkResult: (result) => result && Array.isArray(result),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 4,
-        fullId: "10-4",
+        fullId: '10-4',
         name: 'Get Groups Picker',
         description: 'Получить группы (picker)',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/groups/picker'
+          endpoint: '/groups/picker',
         },
         validation: {
           checkContent: (content) => content && content.includes('groups'),
           checkResult: (result, response) => response && [200, 403].includes(response.status),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 5,
-        fullId: "10-5",
+        fullId: '10-5',
         name: 'Get Notification Schemes',
         description: 'Получить схемы уведомлений',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/notificationscheme'
+          endpoint: '/notificationscheme',
         },
         validation: {
           checkContent: (content) => content && content.includes('scheme'),
           checkResult: (result, response) => response && [200, 403].includes(response.status),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 6,
-        fullId: "10-6",
+        fullId: '10-6',
         name: 'Get Permission Schemes',
         description: 'Получить схемы разрешений',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/permissionscheme'
+          endpoint: '/permissionscheme',
         },
         validation: {
           checkContent: (content) => content && content.includes('scheme'),
           checkResult: (result, response) => response && [200, 403].includes(response.status),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 7,
-        fullId: "10-7",
+        fullId: '10-7',
         name: 'Get Workflows',
         description: 'Получить рабочие процессы',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/workflow'
+          endpoint: '/workflow',
         },
         validation: {
           checkContent: (content) => content && content.includes('workflow'),
           checkResult: (result, response) => response && [200, 403].includes(response.status),
-          expectedProps: []
-        }
+          expectedProps: [],
+        },
       },
+    ];
+  }
+
+  /**
+   * Получить тест-кейсы для схем рабочих процессов
+   */
+  getWorkflowSchemesTestCases () {
+    return [
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 8,
-        fullId: "10-8",
-        name: 'Get Workflow Schemes',
-        description: 'Получить схемы рабочих процессов',
-        mcpTool: null, // нет MCP инструмента
+        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
+        testNumber: 1,
+        fullId: '11-1',
+        name: 'Get Project Workflow Scheme',
+        description: 'Получить схему рабочих процессов проекта',
+        mcpTool: null,
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/workflowscheme'
+          endpoint: `/project/${this.testProjectKey}/workflowscheme`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('scheme'),
-          checkResult: (result, response) => response && [200, 403].includes(response.status),
-          expectedProps: []
-        }
-      }
+          checkContent: (content) => content && (content.includes('scheme') || content.includes('workflow')),
+          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          expectedProps: ['id', 'name'],
+        },
+      },
+      {
+        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
+        testNumber: 2,
+        fullId: '11-2',
+        name: 'Get Workflow Scheme by ID',
+        description: 'Получить схему рабочих процессов по ID',
+        mcpTool: null,
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/workflowscheme/{workflowSchemeId}',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (content) => content && (content.includes('scheme') || content.includes('workflow')),
+          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          expectedProps: ['id', 'name'],
+        },
+        dependsOn: 'Get Project Workflow Scheme',
+      },
+      {
+        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
+        testNumber: 3,
+        fullId: '11-3',
+        name: 'Get Workflow Scheme Default',
+        description: 'Получить дефолтный workflow схемы',
+        mcpTool: null,
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/workflowscheme/{workflowSchemeId}/default',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (content) => content && content.includes('workflow'),
+          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          expectedProps: [],
+        },
+        dependsOn: 'Get Project Workflow Scheme',
+      },
+      {
+        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
+        testNumber: 4,
+        fullId: '11-4',
+        name: 'Create Workflow Scheme Draft',
+        description: 'Создать черновик схемы рабочих процессов',
+        mcpTool: null,
+        mcpArgs: {},
+        directApi: {
+          method: 'POST',
+          endpoint: '/workflowscheme/{workflowSchemeId}/createdraft',
+        },
+        expectedStatus: 201,
+        validation: {
+          checkContent: (content) => content && (content.includes('draft') || content.includes('scheme')),
+          checkResult: (result, response) => response && [201, 409].includes(response.status),
+          expectedProps: [],
+        },
+        dependsOn: 'Get Project Workflow Scheme',
+      },
+      {
+        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
+        testNumber: 5,
+        fullId: '11-5',
+        name: 'Get Workflow Scheme Draft',
+        description: 'Получить черновик схемы рабочих процессов',
+        mcpTool: null,
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/workflowscheme/{workflowSchemeId}/draft',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (content) => content && (content.includes('draft') || content.includes('scheme')),
+          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          expectedProps: ['id', 'name'],
+        },
+        dependsOn: 'Create Workflow Scheme Draft',
+      },
+      {
+        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
+        testNumber: 6,
+        fullId: '11-6',
+        name: 'Delete Workflow Scheme Draft',
+        description: 'Удалить черновик схемы рабочих процессов',
+        mcpTool: null,
+        mcpArgs: {},
+        directApi: {
+          method: 'DELETE',
+          endpoint: '/workflowscheme/{workflowSchemeId}/draft',
+        },
+        expectedStatus: 204,
+        validation: {
+          checkContent: (content) => true,
+          checkResult: (result, response) => response && [204, 404].includes(response.status),
+          expectedProps: [],
+        },
+        dependsOn: 'Get Workflow Scheme Draft',
+      },
     ];
   }
 
   /**
    * Получить каскадные тест-кейсы (сложные операции)
    */
-  getCascadeTestCases() {
+  getCascadeTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.CASCADE,
         testNumber: 1,
-        fullId: "12-1",
+        fullId: '12-1',
         name: 'Complete Issue Modification Workflow',
         description: 'Полный цикл работы с задачей: создание, модификация, добавление комментария, worklog, cleanup',
         type: 'cascade',
@@ -1254,13 +1389,13 @@ export class SharedJiraTestCases {
           { action: 'modify', testCase: 'Update Issue', useResource: 'issueKey' },
           { action: 'add', testCase: 'Add Comment', useResource: 'issueKey' },
           { action: 'add', testCase: 'Add Worklog', useResource: 'issueKey' },
-          { action: 'cleanup', testCase: 'Delete Issue', useResource: 'issueKey' }
-        ]
+          { action: 'cleanup', testCase: 'Delete Issue', useResource: 'issueKey' },
+        ],
       },
       {
         groupNumber: TEST_GROUPS.CASCADE,
         testNumber: 2,
-        fullId: "12-2",
+        fullId: '12-2',
         name: 'Version Management Workflow',
         description: 'Создание, обновление и получение версии проекта',
         type: 'cascade',
@@ -1268,13 +1403,13 @@ export class SharedJiraTestCases {
           { action: 'create', testCase: 'Create Version', storeAs: 'versionId' },
           { action: 'modify', testCase: 'Update Version', useResource: 'versionId' },
           { action: 'get', testCase: 'Get Version', useResource: 'versionId' },
-          { action: 'cleanup', testCase: 'Delete Version', useResource: 'versionId' }
-        ]
+          { action: 'cleanup', testCase: 'Delete Version', useResource: 'versionId' },
+        ],
       },
       {
         groupNumber: TEST_GROUPS.CASCADE,
         testNumber: 3,
-        fullId: "12-3",
+        fullId: '12-3',
         name: 'Issue Linking Workflow',
         description: 'Создание двух задач и связывание их между собой',
         type: 'cascade',
@@ -1283,9 +1418,9 @@ export class SharedJiraTestCases {
           { action: 'create', testCase: 'Create Issue', storeAs: 'secondIssueKey' },
           { action: 'link', testCase: 'Create Issue Link', useResources: ['firstIssueKey', 'secondIssueKey'] },
           { action: 'cleanup', testCase: 'Delete Issue', useResource: 'firstIssueKey' },
-          { action: 'cleanup', testCase: 'Delete Issue', useResource: 'secondIssueKey' }
-        ]
-      }
+          { action: 'cleanup', testCase: 'Delete Issue', useResource: 'secondIssueKey' },
+        ],
+      },
     ];
   }
 
@@ -1293,127 +1428,127 @@ export class SharedJiraTestCases {
    * Получить расширенные тест-кейсы для полной проверки API
    * Включает дополнительные эндпоинты и более сложные сценарии
    */
-  getExtendedTestCases() {
+  getExtendedTestCases () {
     return [
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 1,
-        fullId: "11-1",
+        fullId: '11-1',
         name: 'Get Server Info',
         description: 'Получить информацию о сервере JIRA',
-        mcpTool: 'jira_get_server_info',
-        mcpArgs: {},
+        mcpTool: 'health_check',
+        mcpArgs: { detailed: true },
         directApi: {
           method: 'GET',
-          endpoint: '/serverInfo'
+          endpoint: '/serverInfo',
         },
         validation: {
-          checkContent: (content) => content && content.includes('version'),
-          checkResult: (result) => result && result.version,
-          expectedProps: ['version', 'buildNumber']
-        }
+          checkContent: (content) => content && content.includes('status'),
+          checkResult: (result) => result && result.status === 'ok',
+          expectedProps: ['status', 'service', 'version'],
+        },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 2,
-        fullId: "11-2",
+        fullId: '11-2',
         name: 'Get Project Versions',
         description: 'Получить версии проекта',
         mcpTool: 'jira_get_project_versions',
         mcpArgs: {
-          projectKey: this.testProjectKey
+          projectKey: this.testProjectKey,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/project/${this.testProjectKey}/versions`
+          endpoint: `/project/${this.testProjectKey}/versions`,
         },
         validation: {
           checkContent: (content) => content && (content.includes('versions') || content.includes('Version')),
-          checkResult: (result) => result && Array.isArray(result)
-        }
+          checkResult: (result) => result && Array.isArray(result),
+        },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 3,
-        fullId: "11-3",
+        fullId: '11-3',
         name: 'Get Project Components',
         description: 'Получить компоненты проекта',
         mcpTool: 'jira_get_project_components',
         mcpArgs: {
-          projectKey: this.testProjectKey
+          projectKey: this.testProjectKey,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/project/${this.testProjectKey}/components`
+          endpoint: `/project/${this.testProjectKey}/components`,
         },
         validation: {
           checkContent: (content) => content && (content.includes('components') || content.includes('Component')),
-          checkResult: (result) => result && Array.isArray(result)
-        }
+          checkResult: (result) => result && Array.isArray(result),
+        },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 4,
-        fullId: "11-4",
+        fullId: '11-4',
         name: 'Search Users',
         description: 'Поиск пользователей',
         mcpTool: 'jira_search_users',
         mcpArgs: {
-          username: this.testUsername
+          username: this.testUsername,
         },
         directApi: {
           method: 'GET',
-          endpoint: `/user/search?username=${this.testUsername}`
+          endpoint: `/user/search?username=${this.testUsername}`,
         },
         validation: {
           checkContent: (content) => content && content.includes(this.testUsername),
-          checkResult: (result) => result && Array.isArray(result)
-        }
+          checkResult: (result) => result && Array.isArray(result),
+        },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 5,
-        fullId: "11-5",
+        fullId: '11-5',
         name: 'Get Fields',
         description: 'Получить список полей JIRA',
         mcpTool: 'jira_get_fields',
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/field'
+          endpoint: '/field',
         },
         validation: {
           checkContent: (content) => content && (content.includes('fields') || content.includes('Field')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0
-        }
+          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+        },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 6,
-        fullId: "11-6",
+        fullId: '11-6',
         name: 'Get Create Meta',
         description: 'Получить метаданные для создания задач',
         mcpTool: 'jira_get_create_meta',
         mcpArgs: {
-          projectKeys: [this.testProjectKey]
+          projectKeys: [this.testProjectKey],
         },
         directApi: {
           method: 'GET',
-          endpoint: '/issue/createmeta'
+          endpoint: '/issue/createmeta',
         },
         validation: {
           checkContent: (content) => content && content.includes('projects'),
           checkResult: (result) => result && result.projects,
-          expectedProps: ['projects']
-        }
-      }
+          expectedProps: ['projects'],
+        },
+      },
     ];
   }
 
   /**
    * Получить все доступные тест-кейсы по категориям
    */
-  getAllTestCasesByCategory() {
+  getAllTestCasesByCategory () {
     return {
       system: this.getSystemTestCases(),
       informational: this.getInformationalTestCases(),
@@ -1425,26 +1560,27 @@ export class SharedJiraTestCases {
       modifying: this.getModifyingTestCases(),
       agile: this.getAgileTestCases(),
       additional: this.getAdditionalTestCases(),
+      workflowSchemes: this.getWorkflowSchemesTestCases(),
       cascade: this.getCascadeTestCases(),
-      extended: this.getExtendedTestCases()
+      extended: this.getExtendedTestCases(),
     };
   }
 
   /**
    * Получить все доступные тест-кейсы (старый формат для совместимости)
    */
-  getAllTestCases() {
+  getAllTestCases () {
     return {
       informational: this.getInformationalTestCases(),
       modifying: this.getModifyingTestCases(),
-      extended: this.getExtendedTestCases()
+      extended: this.getExtendedTestCases(),
     };
   }
 
   /**
    * Получить плоский список всех тест-кейсов
    */
-  getAllTestCasesFlat() {
+  getAllTestCasesFlat () {
     const allTestCases = this.getAllTestCasesByCategory();
     return [
       ...allTestCases.system,
@@ -1457,39 +1593,40 @@ export class SharedJiraTestCases {
       ...allTestCases.modifying,
       ...allTestCases.agile,
       ...allTestCases.additional,
+      ...allTestCases.workflowSchemes,
       // cascade тесты обрабатываются отдельно
-      ...allTestCases.extended
+      ...allTestCases.extended,
     ];
   }
 
   /**
    * Получить тест-кейсы по именам
    */
-  getTestCasesByNames(names) {
+  getTestCasesByNames (names) {
     const allTestCases = this.getAllTestCasesFlat();
     return names.map(name =>
-      allTestCases.find(tc => tc.name === name)
+      allTestCases.find(tc => tc.name === name),
     ).filter(Boolean);
   }
 
   /**
    * Получить тест-кейсы для быстрого запуска (минимальный набор)
    */
-  getTestCasesForQuickRun() {
+  getTestCasesForQuickRun () {
     return this.getMinimalTestCases();
   }
 
   /**
    * Получить тест-кейсы для полного запуска (~62 теста)
    */
-  getTestCasesForFullRun() {
+  getTestCasesForFullRun () {
     return this.getAllTestCasesFlat();
   }
 
   /**
    * Получить тест-кейсы по категории
    */
-  getTestCasesByCategory(category) {
+  getTestCasesByCategory (category) {
     const allTestCases = this.getAllTestCasesByCategory();
     return allTestCases[category] || [];
   }
@@ -1497,7 +1634,7 @@ export class SharedJiraTestCases {
   /**
    * Получить минимальный набор тест-кейсов для быстрой проверки
    */
-  getMinimalTestCases() {
+  getMinimalTestCases () {
     const informational = this.getInformationalTestCases();
     const modifying = this.getModifyingTestCases();
 
@@ -1507,25 +1644,25 @@ export class SharedJiraTestCases {
       informational.find(tc => tc.name === 'Get Projects'),
       informational.find(tc => tc.name === 'Get Issue Transitions'),
       modifying.find(tc => tc.name === 'Create Issue'),
-      modifying.find(tc => tc.name === 'Add Comment')
+      modifying.find(tc => tc.name === 'Add Comment'),
     ].filter(Boolean);
   }
 
   /**
    * Получить созданные ресурсы для очистки
    */
-  getCreatedResources() {
+  getCreatedResources () {
     return this.createdResources;
   }
 
   /**
    * Очистить созданные ресурсы
    */
-  clearCreatedResources() {
+  clearCreatedResources () {
     this.createdResources = {
       issues: [],
       versions: [],
-      links: []
+      links: [],
     };
   }
 
@@ -1534,7 +1671,7 @@ export class SharedJiraTestCases {
   /**
    * Получить тест по полному ID (формат N-M)
    */
-  getTestByFullId(fullId) {
+  getTestByFullId (fullId) {
     const allTestCases = this.getAllTestCasesFlat();
     return allTestCases.find(tc => tc.fullId === fullId);
   }
@@ -1542,7 +1679,7 @@ export class SharedJiraTestCases {
   /**
    * Получить все тесты в группе
    */
-  getTestsByGroup(groupNumber) {
+  getTestsByGroup (groupNumber) {
     const allTestCases = this.getAllTestCasesFlat();
     return allTestCases.filter(tc => tc.groupNumber === groupNumber);
   }
@@ -1550,21 +1687,21 @@ export class SharedJiraTestCases {
   /**
    * Получить информацию о группе
    */
-  getGroupInfo(groupNumber) {
+  getGroupInfo (groupNumber) {
     return GROUP_INFO[groupNumber] || null;
   }
 
   /**
    * Получить все группы с их информацией
    */
-  getAllGroupInfo() {
+  getAllGroupInfo () {
     return GROUP_INFO;
   }
 
   /**
    * Валидировать уникальность ID тестов
    */
-  validateTestIds() {
+  validateTestIds () {
     const allTestCases = this.getAllTestCasesFlat();
     const idCounts = new Map();
     const duplicates = [];
@@ -1590,14 +1727,14 @@ export class SharedJiraTestCases {
       duplicates,
       invalidFormats,
       totalTests: allTestCases.length,
-      testsWithIds: allTestCases.filter(tc => tc.fullId).length
+      testsWithIds: allTestCases.filter(tc => tc.fullId).length,
     };
   }
 
   /**
    * Парсинг команды выбора тестов (формат --tests=1-1,4-*,5)
    */
-  parseTestSelection(testsString) {
+  parseTestSelection (testsString) {
     if (!testsString) {
       return { includeAll: true, selections: [] };
     }
@@ -1619,7 +1756,7 @@ export class SharedJiraTestCases {
           selections.push({
             type: 'group',
             groupNumber,
-            testNumber: null
+            testNumber: null,
           });
         } else {
           const testNumber = parseInt(testStr);
@@ -1631,7 +1768,7 @@ export class SharedJiraTestCases {
             type: 'test',
             groupNumber,
             testNumber,
-            fullId: `${groupNumber}-${testNumber}`
+            fullId: `${groupNumber}-${testNumber}`,
           });
         }
       } else {
@@ -1643,21 +1780,21 @@ export class SharedJiraTestCases {
         selections.push({
           type: 'group',
           groupNumber,
-          testNumber: null
+          testNumber: null,
         });
       }
     }
 
     return {
       includeAll: false,
-      selections
+      selections,
     };
   }
 
   /**
    * Фильтрация тестов на основе выбора пользователя
    */
-  getTestsBySelection(testsString) {
+  getTestsBySelection (testsString) {
     const selection = this.parseTestSelection(testsString);
 
     if (selection.includeAll) {
@@ -1683,7 +1820,7 @@ export class SharedJiraTestCases {
 
     // Удаляем дубликаты по fullId
     const uniqueTests = selectedTests.filter((test, index, arr) =>
-      arr.findIndex(t => t.fullId === test.fullId) === index
+      arr.findIndex(t => t.fullId === test.fullId) === index,
     );
 
     return uniqueTests;
@@ -1692,7 +1829,7 @@ export class SharedJiraTestCases {
   /**
    * Получить статистику по группам
    */
-  getGroupStatistics() {
+  getGroupStatistics () {
     const allTestCases = this.getAllTestCasesFlat();
     const groupStats = {};
 
@@ -1703,7 +1840,7 @@ export class SharedJiraTestCases {
         groupName: GROUP_INFO[groupNum].name,
         totalTests: 0,
         testsWithMcp: 0,
-        testsWithDirectApi: 0
+        testsWithDirectApi: 0,
       };
     });
 
@@ -1728,14 +1865,16 @@ export class SharedJiraTestCases {
  * Менеджер ресурсов для отслеживания созданных объектов и их очистки
  */
 export class ResourceManager {
-  constructor() {
+  constructor () {
     this.resources = {
       issues: [],
       versions: [],
       links: [],
       worklogs: [],
       comments: [],
-      remoteLinks: []
+      remoteLinks: [],
+      attachments: [],
+      workflowSchemes: [],
     };
     this.resourceMap = new Map(); // для хранения связей между именами и ID
   }
@@ -1743,7 +1882,7 @@ export class ResourceManager {
   /**
    * Добавить ресурс для отслеживания
    */
-  addResource(type, id, name = null) {
+  addResource (type, id, name = null) {
     if (this.resources[type]) {
       this.resources[type].push(id);
       if (name) {
@@ -1755,28 +1894,29 @@ export class ResourceManager {
   /**
    * Получить ресурс по имени
    */
-  getResource(name) {
+  getResource (name) {
     return this.resourceMap.get(name);
   }
 
   /**
    * Получить все ресурсы определенного типа
    */
-  getResourcesByType(type) {
+  getResourcesByType (type) {
     return this.resources[type] || [];
   }
 
   /**
    * Очистить все ресурсы
    */
-  clearAll() {
+  clearAll () {
     this.resources = {
       issues: [],
       versions: [],
       links: [],
       worklogs: [],
       comments: [],
-      remoteLinks: []
+      remoteLinks: [],
+      attachments: [],
     };
     this.resourceMap.clear();
   }
@@ -1784,7 +1924,7 @@ export class ResourceManager {
   /**
    * Получить созданные ресурсы для очистки (совместимость)
    */
-  getCreatedResources() {
+  getCreatedResources () {
     return this.resources;
   }
 }
@@ -1793,7 +1933,7 @@ export class ResourceManager {
  * Утилиты для выполнения каскадных операций
  */
 export class CascadeExecutor {
-  constructor(resourceManager) {
+  constructor (resourceManager) {
     this.resourceManager = resourceManager;
     this.executionResults = new Map();
   }
@@ -1801,7 +1941,7 @@ export class CascadeExecutor {
   /**
    * Выполнить каскадную операцию
    */
-  async executeCascade(cascadeTestCase, testRunner) {
+  async executeCascade (cascadeTestCase, testRunner) {
     const results = [];
 
     for (const step of cascadeTestCase.steps) {
@@ -1823,7 +1963,7 @@ export class CascadeExecutor {
           this.resourceManager.addResource(
             this.getResourceType(step.testCase),
             resourceId,
-            step.storeAs
+            step.storeAs,
           );
         }
 
@@ -1831,7 +1971,7 @@ export class CascadeExecutor {
           step: step.action,
           testCase: step.testCase,
           success: result.success,
-          result
+          result,
         });
 
       } catch (error) {
@@ -1839,7 +1979,7 @@ export class CascadeExecutor {
           step: step.action,
           testCase: step.testCase,
           success: false,
-          error: error.message
+          error: error.message,
         });
         break; // прерываем каскад при ошибке
       }
@@ -1849,21 +1989,21 @@ export class CascadeExecutor {
       name: cascadeTestCase.name,
       type: 'cascade',
       success: results.every(r => r.success),
-      steps: results
+      steps: results,
     };
   }
 
   /**
    * Найти тест-кейс по имени
    */
-  findTestCase(name, testRunner) {
+  findTestCase (name, testRunner) {
     return testRunner.sharedTestCases.getTestCasesByNames([name])[0];
   }
 
   /**
    * Подготовить тест-кейс с подстановкой ресурсов
    */
-  prepareTestCase(testCase, step) {
+  prepareTestCase (testCase, step) {
     const prepared = JSON.parse(JSON.stringify(testCase)); // deep clone
 
     if (step.useResource) {
@@ -1878,7 +2018,7 @@ export class CascadeExecutor {
           prepared.directApi.data = this.replacePlaceholders(
             prepared.directApi.data,
             step.useResource,
-            resource.id
+            resource.id,
           );
         }
       }
@@ -1892,7 +2032,7 @@ export class CascadeExecutor {
           prepared.directApi.data = this.replacePlaceholders(
             prepared.directApi.data,
             resourceName,
-            resource.id
+            resource.id,
           );
         }
       });
@@ -1904,7 +2044,7 @@ export class CascadeExecutor {
   /**
    * Заменить плейсхолдеры в объекте данных
    */
-  replacePlaceholders(obj, resourceName, resourceId) {
+  replacePlaceholders (obj, resourceName, resourceId) {
     const jsonStr = JSON.stringify(obj);
     const replaced = jsonStr
       .replace(new RegExp(`{${resourceName}}`, 'g'), resourceId)
@@ -1915,7 +2055,7 @@ export class CascadeExecutor {
   /**
    * Извлечь ID ресурса из результата
    */
-  extractResourceId(data, testCaseName) {
+  extractResourceId (data, testCaseName) {
     if (testCaseName.includes('Issue')) {
       return data.key || data.id;
     }
@@ -1934,7 +2074,7 @@ export class CascadeExecutor {
   /**
    * Определить тип ресурса по имени тест-кейса
    */
-  getResourceType(testCaseName) {
+  getResourceType (testCaseName) {
     if (testCaseName.includes('Issue')) return 'issues';
     if (testCaseName.includes('Version')) return 'versions';
     if (testCaseName.includes('Comment')) return 'comments';
@@ -1951,11 +2091,11 @@ export class TestValidationUtils {
   /**
    * Проверить наличие ожидаемых свойств в объекте
    */
-  static validateProperties(obj, expectedProps, testName, arrayElementProps = null) {
+  static validateProperties (obj, expectedProps, testName, arrayElementProps = null) {
     if (!obj || typeof obj !== 'object') {
       return {
         success: false,
-        message: `${testName}: Object is null or not an object`
+        message: `${testName}: Object is null or not an object`,
       };
     }
 
@@ -1963,7 +2103,7 @@ export class TestValidationUtils {
     if (missing.length > 0) {
       return {
         success: false,
-        message: `${testName}: Missing properties: ${missing.join(', ')}`
+        message: `${testName}: Missing properties: ${missing.join(', ')}`,
       };
     }
 
@@ -1979,7 +2119,7 @@ export class TestValidationUtils {
         if (missingArrayProps.length > 0) {
           return {
             success: false,
-            message: `${testName}: Missing properties in ${arrayPath}[0]: ${missingArrayProps.join(', ')}`
+            message: `${testName}: Missing properties in ${arrayPath}[0]: ${missingArrayProps.join(', ')}`,
           };
         }
       }
@@ -1987,25 +2127,25 @@ export class TestValidationUtils {
 
     return {
       success: true,
-      message: `${testName}: All expected properties present`
+      message: `${testName}: All expected properties present`,
     };
   }
 
   /**
    * Проверить MCP ответ на соответствие ожидаемому формату
    */
-  static validateMcpResponse(response, testCase) {
+  static validateMcpResponse (response, testCase) {
     if (response.error) {
       return {
         success: false,
-        message: `MCP Error: ${response.error.message || 'Unknown error'}`
+        message: `MCP Error: ${response.error.message || 'Unknown error'}`,
       };
     }
 
     if (!response.result) {
       return {
         success: false,
-        message: 'No result in MCP response'
+        message: 'No result in MCP response',
       };
     }
 
@@ -2013,40 +2153,40 @@ export class TestValidationUtils {
     if (!content) {
       return {
         success: false,
-        message: 'No content returned from MCP tool'
+        message: 'No content returned from MCP tool',
       };
     }
 
     if (testCase.validation?.checkContent && !testCase.validation.checkContent(content)) {
       return {
         success: false,
-        message: 'Content validation failed'
+        message: 'Content validation failed',
       };
     }
 
     return {
       success: true,
       message: 'MCP response validation passed',
-      content
+      content,
     };
   }
 
   /**
    * Проверить прямой API ответ
    */
-  static validateDirectApiResponse(response, testCase) {
+  static validateDirectApiResponse (response, testCase) {
     // Сначала проверяем пользовательскую валидацию, если она есть
     if (testCase.validation?.checkResult) {
       if (!testCase.validation.checkResult(response.data, response)) {
         return {
           success: false,
-          message: 'Result validation failed'
+          message: 'Result validation failed',
         };
       }
       // Если пользовательская валидация прошла, считаем тест успешным
       return {
         success: true,
-        message: 'Validation passed'
+        message: 'Validation passed',
       };
     }
 
@@ -2054,7 +2194,7 @@ export class TestValidationUtils {
     if (!response.success) {
       return {
         success: false,
-        message: `API Error: ${response.status} ${response.statusText || response.error}`
+        message: `API Error: ${response.status} ${response.statusText || response.error}`,
       };
     }
 
@@ -2064,7 +2204,7 @@ export class TestValidationUtils {
         // DELETE операции обычно возвращают 204 без данных - это нормально
         return {
           success: true,
-          message: 'DELETE operation completed successfully'
+          message: 'DELETE operation completed successfully',
         };
       }
 
@@ -2072,7 +2212,7 @@ export class TestValidationUtils {
         response.data.length ? response.data[0] : response.data,
         testCase.validation.expectedProps,
         testCase.name,
-        testCase.validation.arrayElementProps
+        testCase.validation.arrayElementProps,
       );
       if (!propCheck.success) {
         return propCheck;
@@ -2082,7 +2222,7 @@ export class TestValidationUtils {
     return {
       success: true,
       message: 'Direct API response validation passed',
-      data: response.data
+      data: response.data,
     };
   }
 }

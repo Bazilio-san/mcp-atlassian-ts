@@ -5,6 +5,8 @@ import { IConfig } from '../types/config';
 // Convert config object to typed interface
 export const appConfig: IConfig = config.util.toObject() as IConfig;
 
+export const hasStringValue = (v: any): boolean => (typeof v === "string" && v.replace(/\*+/g, '').length > 0);
+
 const { confluence, jira } = appConfig;
 // Optional: Validate required configuration
 const validateConfig = () => {
@@ -19,7 +21,7 @@ const validateConfig = () => {
 
     // Validate JIRA authentication is configured
     const hasBasicAuth = jira.auth?.basic?.username && jira.auth?.basic?.password;
-    const hasPat = jira.auth?.pat;
+    const hasPat = hasStringValue(jira.auth?.pat);
     const hasOAuth = jira.auth?.oauth2?.clientId;
 
     if (!hasBasicAuth && !hasPat && !hasOAuth) {
@@ -35,7 +37,7 @@ const validateConfig = () => {
 
     // Validate Confluence authentication is configured
     const hasBasicAuth = confluence.auth?.basic?.username && confluence.auth?.basic?.password;
-    const hasPat = confluence.auth?.pat;
+    const hasPat = hasStringValue(confluence.auth?.pat);
     const hasOAuth = confluence.auth?.oauth2?.clientId;
 
     if (!hasBasicAuth && !hasPat && !hasOAuth) {

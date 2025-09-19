@@ -7,6 +7,7 @@ import { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
+import { hasStringValue } from "../../bootstrap/init-config.js";
 
 const logger = createLogger('confluence-server');
 
@@ -21,7 +22,7 @@ export class ConfluenceServer extends McpAtlassianServer {
     const {
       confluence: {
         auth: {
-          basic,
+          basic: { username, password } = {},
           pat,
           oauth2,
         } = {},
@@ -42,12 +43,12 @@ export class ConfluenceServer extends McpAtlassianServer {
 
     // Build auth config from Confluence config
     let auth: any;
-    if (pat) {
+    if (hasStringValue(pat)) {
       auth = { type: 'pat', token: pat };
     } else if (oauth2?.clientId) {
       auth = { ...oauth2, type: 'oauth2' };
-    } else if (basic?.username && basic?.password) {
-      auth = { type: 'basic', username: basic.username, password: basic.password };
+    } else if (hasStringValue(username) && hasStringValue(password)) {
+      auth = { type: 'basic', username, password };
     }
 
     const confluenceConfig: JCConfig = { url, auth, maxResults };
@@ -64,7 +65,7 @@ export class ConfluenceServer extends McpAtlassianServer {
   /**
    * Register Confluence-specific tools only
    */
-  protected override async registerTools(): Promise<void> {
+  override async registerTools(): Promise<void> {
     try {
       await this.toolRegistry.initializeTools();
       logger.info('Confluence tools registered successfully');
