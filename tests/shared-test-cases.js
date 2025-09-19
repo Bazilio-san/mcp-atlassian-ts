@@ -1074,16 +1074,17 @@ export class SharedJiraTestCases {
           endpoint: `/issue/${this.testIssueKey}/attachments`,
           data: new FormData() // Будет заполнено в runtime файлом
         },
+        expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result) => result && result.id,
+          checkContent: (content) => content && (content.includes('Successfully') || content.includes('attachment')),
+          checkResult: (result) => result && Array.isArray(result) && result.length > 0 && result[0].id,
           expectedProps: ['id', 'filename']
         },
         cleanup: (result) => {
-          if (result && result.id) {
+          if (result && Array.isArray(result) && result.length > 0 && result[0].id) {
             // Сохраняем ID созданного attachment для использования в других тестах
             this.createdResources.attachments = this.createdResources.attachments || [];
-            this.createdResources.attachments.push(result.id);
+            this.createdResources.attachments.push(result[0].id);
           }
         },
         requiresFile: true // специальный флаг для создания тестового файла

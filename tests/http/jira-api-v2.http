@@ -1,3 +1,22 @@
+### Создать вложение к задаче
+POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/attachments
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+X-Atlassian-Token: no-check
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="comment"
+Content-Type: text/plain
+
+Test upload
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+< ./test-attachment.txt
+--WebAppBoundary--
+
+
 
 # 1. Задачи (Issues)
 #| Метод    | URL                             | Описание                      |
@@ -65,8 +84,6 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
     "body": "Link created for API testing"
   }
 }
-
-
 
 
 

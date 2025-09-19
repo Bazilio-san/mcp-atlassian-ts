@@ -183,11 +183,23 @@ class JiraEndpointsTester {
     const url = `${this.baseUrl}/rest/api/2${endpoint}`;
     const config = {
       method,
-      headers: { ...this.getAuthHeaders(), ...options.headers },
     };
 
-    if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
-      config.body = JSON.stringify(data);
+    // Для FormData не устанавливаем Content-Type, браузер сам добавит multipart/form-data
+    if (data instanceof FormData) {
+      config.headers = {
+        ...this.getAuthHeaders(),
+        'X-Atlassian-Token': 'no-check', // Отключаем XSRF проверку для загрузки файлов
+        ...options.headers
+      };
+      // Удаляем Content-Type для FormData
+      delete config.headers['Content-Type'];
+      config.body = data;
+    } else {
+      config.headers = { ...this.getAuthHeaders(), ...options.headers };
+      if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+        config.body = JSON.stringify(data);
+      }
     }
 
     try {
@@ -451,6 +463,7 @@ class JiraEndpointsTester {
       const testFileContent = 'This is a test file for JIRA attachment testing.';
       const blob = new Blob([testFileContent], { type: 'text/plain' });
       const formData = new FormData();
+      formData.append('comment', 'Test upload via API');
       formData.append('file', blob, 'test-attachment.txt');
       api.data = formData;
     }
@@ -496,6 +509,9 @@ class JiraEndpointsTester {
       }
       if (testCase.name === 'Create Issue' && result.data && result.data.key) {
         this.resourceManager.addResource('issues', result.data.key);
+      }
+      if (testCase.name === 'Create Attachment' && result.data && Array.isArray(result.data) && result.data.length > 0 && result.data[0].id) {
+        this.resourceManager.addResource('attachments', result.data[0].id);
       }
     }
 
