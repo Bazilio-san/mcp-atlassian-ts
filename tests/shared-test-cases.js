@@ -5,7 +5,7 @@
  */
 
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import { TEST_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT } from './constants.js';
+import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT, TEST_ISSUE_LINK_TYPE } from './constants.js';
 
 /**
  * Константы групп тестов
@@ -52,6 +52,7 @@ export class SharedJiraTestCases {
     this.testProjectKey = TEST_JIRA_PROJECT;
     this.testUsername = appConfig.jira.auth.basic.username;
     this.testIssueKey = TEST_ISSUE_KEY;
+    this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY;
     this.createdResources = {
       issues: [],
       versions: [],
@@ -684,6 +685,7 @@ export class SharedJiraTestCases {
             }
           }
         },
+        expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.key && result.key.startsWith(this.testProjectKey),
@@ -713,6 +715,7 @@ export class SharedJiraTestCases {
             body: 'This comment was added by API test client'
           }
         },
+        expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
@@ -741,6 +744,7 @@ export class SharedJiraTestCases {
             }
           }
         },
+        expectedStatus: 204,
         validation: {
           checkContent: (content) => content && (content.includes('Successfully') || content.includes('Updated')),
           checkResult: (result, response) => response && response.status && [200, 204].includes(response.status)
@@ -764,9 +768,10 @@ export class SharedJiraTestCases {
           data: {
             timeSpent: '2h',
             comment: 'API test worklog entry',
-            started: new Date().toISOString()
+            started: new Date().toISOString().replace('Z', '+0000')
           }
         },
+        expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
@@ -859,15 +864,26 @@ export class SharedJiraTestCases {
           method: 'POST',
           endpoint: '/issueLink',
           data: {
-            type: { name: 'Relates' },
+            type: { name: TEST_ISSUE_LINK_TYPE },
             inwardIssue: { key: this.testIssueKey },
-            outwardIssue: { key: '{secondIssueKey}' }, // будет заменено в runtime
+            outwardIssue: { key: this.secondTestIssueKey },
             comment: { body: 'Link created for API testing' }
           }
         },
+        expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result, response) => response && response.status && [201, 204].includes(response.status)
+        },
+        cleanup: (result, testCase) => {
+          // Записываем информацию о созданной связи для последующего удаления
+          if (result && result.success) {
+            this.createdResources.links.push({
+              inwardIssue: this.testIssueKey,
+              outwardIssue: this.secondTestIssueKey,
+              linkType: TEST_ISSUE_LINK_TYPE
+            });
+          }
         },
         dependsOn: 'Create Issue' // зависит от создания второй задачи
       },
@@ -889,6 +905,7 @@ export class SharedJiraTestCases {
             }
           }
         },
+        expectedStatus: 201,
         validation: {
           checkContent: (content) => content && content.includes('Successfully'),
           checkResult: (result) => result && result.id,
@@ -950,6 +967,26 @@ export class SharedJiraTestCases {
           expectedProps: []
         },
         expectedStatus: 204 // DELETE операции обычно возвращают 204
+      },
+      {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 13,
+        fullId: "8-13",
+        name: 'Delete Issue Link',
+        description: 'Удалить связь между задачами',
+        mcpTool: null, // нет MCP инструмента
+        mcpArgs: {},
+        directApi: {
+          method: 'DELETE',
+          endpoint: '/issueLink/{linkId}' // будет заменено в runtime на фактический ID связи
+        },
+        validation: {
+          checkContent: (content) => true, // DELETE может возвращать пустой ответ
+          checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
+          expectedProps: []
+        },
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
+        requiresLinkId: true // специальный флаг для поиска ID связи перед удалением
       }
     ];
   }

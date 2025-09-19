@@ -30,7 +30,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 }
 
 ### Add worklog
-POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/worklog
+POST {{baseUrl}}/rest/api/2/issue/AITECH-1/worklog
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -39,6 +39,35 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
   "comment": "API test worklog entry",
   "started": "2025-09-19T15:00:00.000+0000"
 }
+
+### Узнать типы связей между задачами
+GET {{baseUrl}}/rest/api/2/issueLinkType
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+Content-Type: application/json
+
+
+### Создать связь между задачами
+POST https://jira-dev.finam.ru/rest/api/2/issueLink
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+{
+  "type": {
+    "name": "Clone"
+  },
+  "inwardIssue": {
+    "key": "AITECH-1"
+  },
+  "outwardIssue": {
+    "key": "AITECH-2"
+  },
+  "comment": {
+    "body": "Link created for API testing"
+  }
+}
+
+
+
 
 
 ### Пример создания задачи:

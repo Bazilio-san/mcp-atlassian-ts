@@ -202,9 +202,6 @@ class JiraEndpointsTester {
             ? await response.json()
             : await response.text();
         }
-      } else {
-        const contentLength = response.headers.get('content-length');
-        console.log(contentLength);
       }
 
       let errorMessage = null;
@@ -316,7 +313,9 @@ class JiraEndpointsTester {
     }
 
     const status = result.success ? '✅ PASS' : '❌ FAIL';
-    const details = expected ? `Expected: ${expected}, Got: ${result.status}` : `Status: ${result.status}`;
+    const details = expected
+      ? (expected === result.status ? '' : ` - Expected: ${expected}, Got: ${result.status}`)
+      : ` - Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
     // Для ошибок добавляем statusText и error в вывод
@@ -324,7 +323,7 @@ class JiraEndpointsTester {
       ? ` (${result.statusText ? result.statusText : ''}${result.statusText && result.error ? ' - ' : ''}${result.error ? result.error : ''})`
       : '';
 
-    console.log(`${status} [${fullId}] ${testName}${endpointInfo} - ${details}${errorInfo}`);
+    console.log(`${status} [${fullId}] ${testName}${endpointInfo}${details}${errorInfo}`);
 
     this.testResults.push({
       fullId: fullId,
