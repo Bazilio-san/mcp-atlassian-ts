@@ -8,7 +8,7 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js';
+import { SharedJiraTestCases, TestValidationUtils, ResourceManager, CascadeExecutor } from './shared-test-cases.js';
 
 const { host = 'localhost', port = 3000 } = appConfig.server;
 const DEFAULT_MCP_SERVER_URL = `http://localhost:${port}`;
@@ -179,6 +179,8 @@ class MCPTestRunner {
     this.client = client;
     this.results = [];
     this.testCases = new SharedJiraTestCases();
+    this.resourceManager = new ResourceManager();
+    this.cascadeExecutor = new CascadeExecutor(this.resourceManager);
   }
 
   /**
@@ -260,6 +262,12 @@ class MCPTestRunner {
    * Выполнить тест-кейс из shared test cases
    */
   async runSharedTestCase(testCase) {
+    // Пропускаем тесты без MCP инструмента
+    if (!testCase.mcpTool) {
+      console.log(chalk.yellow(`⏭️  Skipping ${testCase.name} - no MCP tool available`));
+      return { name: testCase.name, success: true, skipped: true };
+    }
+
     const result = await this.runTest(testCase.name, async () => {
       // Выполняем MCP вызов
       const response = await this.client.callTool(testCase.mcpTool, testCase.mcpArgs);
@@ -281,6 +289,40 @@ class MCPTestRunner {
 
     this.results.push(result);
     return result;
+  }
+
+  /**
+   * Выполнить тесты определенной категории
+   */
+  async runTestsByCategory(categoryName) {
+    const testCases = this.testCases.getTestCasesByCategory(categoryName);
+
+    if (testCases.length === 0) {
+      console.log(chalk.yellow(`⏭️  No tests found for category: ${categoryName}`));
+      return;
+    }
+
+    console.log(chalk.blue(`\n📋 Running ${categoryName} tests (${testCases.length} tests)...\n`));
+
+    for (const testCase of testCases) {
+      try {
+        await this.runSharedTestCase(testCase);
+      } catch (error) {
+        console.log(chalk.red(`❌ Test case failed: ${testCase.name}`));
+        console.log(chalk.red(`   Error: ${error.message}`));
+      }
+    }
+  }
+
+  /**
+   * Выполнить каскадные тесты (если они поддерживаются в MCP)
+   */
+  async runCascadeTests() {
+    console.log(chalk.blue('\n🔄 Testing CASCADE operations...\n'));
+
+    // Пока каскадные операции работают только с прямыми API вызовами
+    // В будущем можно добавить поддержку каскадов через MCP
+    console.log(chalk.yellow('⏭️  Cascade operations are not yet supported via MCP'));
   }
 
   /**
@@ -321,25 +363,36 @@ class MCPTestRunner {
     await this.testConnection();
     await this.testListTools();
 
-    // Получаем все тест-кейсы
-    const allTestCases = this.testCases.getAllTestCases();
-    const testCasesList = [
-      ...allTestCases.informational,
-      ...allTestCases.modifying,
-      ...allTestCases.extended
+    // Получаем все доступные категории тестов
+    const allTestCases = this.testCases.getAllTestCasesByCategory();
+
+    // Подсчитываем общее количество тестов с MCP инструментами
+    const allTestCasesList = this.testCases.getAllTestCasesFlat();
+    const mcpTestCases = allTestCasesList.filter(tc => tc.mcpTool);
+
+    console.log(chalk.blue(`\n📋 Running ${mcpTestCases.length} comprehensive test cases from all categories...\n`));
+
+    // Выполняем тесты по категориям
+    const categories = [
+      'system',
+      'informational',
+      'issueDetailed',
+      'searchDetailed',
+      'projectDetailed',
+      'userDetailed',
+      'metadataDetailed',
+      'modifying',
+      'agile',
+      'additional',
+      'extended'
     ];
 
-    console.log(chalk.blue(`\n📋 Running ${testCasesList.length} comprehensive test cases...\n`));
-
-    // Выполняем тест-кейсы
-    for (const testCase of testCasesList) {
-      try {
-        await this.runSharedTestCase(testCase);
-      } catch (error) {
-        console.log(chalk.red(`❌ Test case failed: ${testCase.name}`));
-        console.log(chalk.red(`   Error: ${error.message}`));
-      }
+    for (const category of categories) {
+      await this.runTestsByCategory(category);
     }
+
+    // Попытка запуска каскадных тестов
+    await this.runCascadeTests();
 
     return this.results;
   }

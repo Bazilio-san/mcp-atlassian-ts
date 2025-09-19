@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="jira-endpoints-tester.js" type="NodeJSConfigurationType" application-parameters="--tests=4" nameIsGenerated="true" path-to-js-file="tests/jira-endpoints-tester.js" working-dir="$PROJECT_DIR$">
-    <method v="2" />
-  </configuration>
-</component>

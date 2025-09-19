@@ -7,7 +7,7 @@
 // Для Node.js версий без глобального fetch
 import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import { SharedJiraTestCases, TestValidationUtils } from './shared-test-cases.js';
+import { SharedJiraTestCases, TestValidationUtils, ResourceManager, CascadeExecutor } from './shared-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT } from './constants.js';
 
 const {
@@ -38,12 +38,8 @@ class JiraEndpointsTester {
     this.testIssueKey = TEST_ISSUE_KEY;
     this.testCounter = 0;
     this.failedTestNumbers = [];
-    this.createdResources = {
-      issues: [],
-      sprints: [],
-      versions: [],
-      links: [],
-    };
+    this.resourceManager = new ResourceManager();
+    this.cascadeExecutor = new CascadeExecutor(this.resourceManager);
 
     // Поддержка переменной окружения для добавления X-заголовков
     this.customHeaders = this.parseTestXHeaders();
@@ -425,6 +421,30 @@ class JiraEndpointsTester {
   }
 
   /**
+   * Выполнить отдельный тест-кейс
+   */
+  async runTestCase(testCase) {
+    const nextTestNumber = this.testCounter + 1;
+
+    if (!this.shouldRunTest(nextTestNumber)) {
+      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
+      return null; // Пропускаем выполнение теста
+    }
+
+    const api = testCase.directApi;
+
+    // Определяем метод запроса
+    let result;
+    if (api.endpoint.startsWith('/agile/')) {
+      result = await this.makeAgileRequest(api.method, api.endpoint, api.data);
+    } else {
+      result = await this.makeRequest(api.method, api.endpoint, api.data);
+    }
+
+    return result;
+  }
+
+  /**
    * Выполнить тест-кейс из shared test cases через прямой API вызов
    */
   async runSharedTestCase (testCase) {
@@ -473,6 +493,69 @@ class JiraEndpointsTester {
   }
 
   /**
+   * Выполнить тесты определенной категории
+   */
+  async runTestsByCategory(categoryName, estimatedCount = 10) {
+    // Проверяем, есть ли выбранные тесты в этом блоке
+    if (!this.hasSelectedTestsInRange(this.testCounter + 1, estimatedCount)) {
+      // Блок пропускается без сообщения
+      this.testCounter += estimatedCount; // Пропускаем счетчик для всех тестов в блоке
+      return;
+    }
+
+    console.log(`\n=== TESTING ${categoryName.toUpperCase()} ===`);
+
+    const testCases = this.sharedTestCases.getTestCasesByCategory(categoryName);
+
+    for (const testCase of testCases) {
+      try {
+        await this.runSharedTestCase(testCase);
+      } catch (error) {
+        console.log(`❌ ERROR ${testCase.name} - ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Выполнить каскадные тесты
+   */
+  async runCascadeTests() {
+    console.log('\n=== TESTING CASCADE OPERATIONS ===');
+
+    const cascadeTestCases = this.sharedTestCases.getCascadeTestCases();
+
+    for (const cascadeTestCase of cascadeTestCases) {
+      try {
+        const result = await this.cascadeExecutor.executeCascade(cascadeTestCase, this);
+
+        // Логируем результат каскада как один тест
+        const cascadeResult = {
+          success: result.success,
+          status: result.success ? 200 : 400,
+          statusText: result.success ? 'OK' : 'Cascade Failed',
+          data: result,
+          error: result.success ? null : `Cascade failed: ${result.steps.find(s => !s.success)?.error}`,
+          url: 'cascade',
+          method: 'CASCADE'
+        };
+
+        this.logTest(cascadeTestCase.name, cascadeResult, 200, 'cascade');
+
+        // Логируем детали каскада
+        for (const step of result.steps) {
+          console.log(`  ${step.success ? '✅' : '❌'} ${step.step}: ${step.testCase}`);
+          if (!step.success && step.error) {
+            console.log(`    Error: ${step.error}`);
+          }
+        }
+
+      } catch (error) {
+        console.log(`❌ CASCADE ERROR ${cascadeTestCase.name} - ${error.message}`);
+      }
+    }
+  }
+
+  /**
    * Запустить shared test cases
    */
   async testSharedTestCases () {
@@ -501,197 +584,24 @@ class JiraEndpointsTester {
    */
 
   async testIssueEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 8 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 8)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 8; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING ISSUE ENDPOINTS ===');
-
-    // GET /issue/{issueIdOrKey} - получить задачу
-    const getIssue = await this.executeTest(
-      'Get Issue',
-      () => this.makeRequest('GET', `/issue/${this.testIssueKey}`),
-      200,
-      `/issue/${this.testIssueKey}`
-    );
-
-    if (getIssue && getIssue.success) {
-      this.validateProperties(getIssue.data, ['key', 'fields'], 'Issue Properties');
-      this.validateProperties(getIssue.data.fields, ['summary', 'status', 'issuetype'], 'Issue Fields');
-    }
-
-    // GET /issue/{issueIdOrKey}/editmeta - метаданные для редактирования
-    const editMeta = await this.testRequest('Get Issue Edit Meta', 'GET', `/issue/${this.testIssueKey}/editmeta`, null, 200);
-
-    if (editMeta && editMeta.success) {
-      this.validateProperties(editMeta.data, ['fields'], 'Edit Meta Properties');
-    }
-
-    // GET /issue/{issueIdOrKey}/transitions - доступные переходы
-    const transitions = await this.testRequest('Get Issue Transitions', 'GET', `/issue/${this.testIssueKey}/transitions`, null, 200);
-
-    if (transitions && transitions.success && transitions.data.transitions) {
-      this.validateProperties(transitions.data.transitions[0] || {}, ['id', 'name'], 'Transition Properties');
-    }
-
-    // GET /issue/{issueIdOrKey}/comment - комментарии
-    const comments = await this.testRequest('Get Issue Comments', 'GET', `/issue/${this.testIssueKey}/comment`, null, 200);
-
-    // GET /issue/{issueIdOrKey}/worklog - рабочие логи
-    const worklog = await this.testRequest('Get Issue Worklog', 'GET', `/issue/${this.testIssueKey}/worklog`, null, 200);
-
-    // GET /issue/createmeta - метаданные для создания
-    const createMeta = await this.testRequest('Get Create Meta', 'GET', '/issue/createmeta', null, 200);
-
-    if (createMeta && createMeta.success) {
-      this.validateProperties(createMeta.data, ['projects'], 'Create Meta Properties');
-    }
+    await this.runTestsByCategory('informational', 6);
+    await this.runTestsByCategory('issueDetailed', 3);
   }
 
   async testSearchEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 3 теста)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 3)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 3; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING SEARCH ENDPOINTS ===');
-
-    // POST /search - поиск JQL
-    const searchData = {
-      jql: `project = ${this.testProjectKey}`,
-      maxResults: 10,
-      fields: ['summary', 'status', 'assignee'],
-    };
-    const search = await this.testRequest('JQL Search', 'POST', '/search', searchData, 200);
-
-    if (search && search.success) {
-      this.validateProperties(search.data, ['issues', 'total'], 'Search Results Properties');
-    }
-
-    // GET /search - поиск GET параметрами
-    const searchGet = await this.testRequest('JQL Search GET', 'GET', `/search?jql=project=${this.testProjectKey}&maxResults=5`, null, 200);
+    await this.runTestsByCategory('searchDetailed', 2);
   }
 
   async testProjectEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 7 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 7)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 7; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING PROJECT ENDPOINTS ===');
-
-    // GET /project - все проекты
-    const projects = await this.makeRequest('GET', '/project');
-    this.logTest('Get All Projects', projects, 200, '/project');
-
-    if (projects.success && projects.data.length > 0) {
-      this.validateProperties(projects.data[0], ['key', 'name', 'id'], 'Project Properties');
-    }
-
-    // GET /project/{projectIdOrKey} - конкретный проект
-    const project = await this.makeRequest('GET', `/project/${this.testProjectKey}`);
-    this.logTest('Get Specific Project', project, 200, `/project/${this.testProjectKey}`);
-
-    if (project.success) {
-      this.validateProperties(project.data, ['key', 'name', 'description'], 'Single Project Properties');
-    }
-
-    // GET /project/{projectIdOrKey}/statuses - статусы проекта
-    const projectStatuses = await this.makeRequest('GET', `/project/${this.testProjectKey}/statuses`);
-    this.logTest('Get Project Statuses', projectStatuses, 200, `/project/${this.testProjectKey}/statuses`);
-
-    // GET /project/{projectIdOrKey}/versions - версии проекта
-    const versions = await this.makeRequest('GET', `/project/${this.testProjectKey}/versions`);
-    this.logTest('Get Project Versions', versions, 200, `/project/${this.testProjectKey}/versions`);
-
-    // GET /project/{projectIdOrKey}/components - компоненты проекта
-    const components = await this.makeRequest('GET', `/project/${this.testProjectKey}/components`);
-    this.logTest('Get Project Components', components, 200, `/project/${this.testProjectKey}/components`);
+    await this.runTestsByCategory('projectDetailed', 7);
   }
 
   async testUserEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 6 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 6)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 6; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING USER ENDPOINTS ===');
-
-    // GET /user - получить пользователя
-    const user = await this.makeRequest('GET', `/user?username=${this.auth.username}`);
-    this.logTest('Get User', user, 200, '/user');
-
-    if (user.success) {
-      this.validateProperties(user.data, ['name', 'displayName', 'active'], 'User Properties');
-    }
-
-    // GET /user/search - поиск пользователей
-    const userSearch = await this.makeRequest('GET', `/user/search?username=${this.auth.username}`);
-    this.logTest('Search Users', userSearch, 200, '/user/search');
-
-    // GET /user/assignable/search - назначаемые пользователи
-    const assignableUsers = await this.makeRequest('GET', `/user/assignable/search?project=${this.testProjectKey}&username=${this.auth.username}`);
-    this.logTest('Get Assignable Users', assignableUsers, 200, '/user/assignable/search');
-
-    // GET /myself - текущий пользователь
-    const myself = await this.makeRequest('GET', '/myself');
-    this.logTest('Get Current User', myself, 200, '/myself');
+    await this.runTestsByCategory('userDetailed', 6);
   }
 
   async testMetadataEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 10 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 10)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 10; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING METADATA ENDPOINTS ===');
-
-    // GET /priority - приоритеты
-    const priorities = await this.makeRequest('GET', '/priority');
-    this.logTest('Get Priorities', priorities, 200, '/priority');
-
-    if (priorities.success && priorities.data.length > 0) {
-      this.validateProperties(priorities.data[0], ['id', 'name'], 'Priority Properties');
-    }
-
-    // GET /status - статусы
-    const statuses = await this.makeRequest('GET', '/status');
-    this.logTest('Get Statuses', statuses, 200, '/status');
-
-    if (statuses.success && statuses.data.length > 0) {
-      this.validateProperties(statuses.data[0], ['id', 'name', 'statusCategory'], 'Status Properties');
-    }
-
-    // GET /issuetype - типы задач
-    const issueTypes = await this.makeRequest('GET', '/issuetype');
-    this.logTest('Get Issue Types', issueTypes, 200, '/issuetype');
-
-    // GET /field - поля
-    const fields = await this.makeRequest('GET', '/field');
-    this.logTest('Get Fields', fields, 200, '/field');
-
-    // GET /resolution - резолюции
-    const resolutions = await this.makeRequest('GET', '/resolution');
-    this.logTest('Get Resolutions', resolutions, 200, '/resolution');
-
-    // GET /role - роли проекта
-    const roles = await this.makeRequest('GET', '/role');
-    this.logTest('Get Project Roles', roles, 200, '/role');
-
-    // GET /issueLinkType - типы связей
-    const linkTypes = await this.makeRequest('GET', '/issueLinkType');
-    this.logTest('Get Issue Link Types', linkTypes, 200, '/issueLinkType');
+    await this.runTestsByCategory('metadataDetailed', 10);
   }
 
   /**
@@ -699,46 +609,7 @@ class JiraEndpointsTester {
    */
 
   async testModifyingEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 20 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 20)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 20; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING MODIFYING ENDPOINTS ===');
-    console.log('Creating test issue for modification tests...');
-
-    // Создаем тестовую задачу
-    const testIssue = await this.createTestIssue();
-    if (!testIssue) {
-      console.error('❌ Cannot proceed with modifying endpoints - test issue creation failed');
-      return;
-    }
-
-    this.testIssueKey = testIssue.key;
-    console.log(`✅ Test issue created: ${this.testIssueKey}`);
-
-    // Тестируем модификацию задачи
-    await this.testIssueModification();
-
-    // Тестируем комментарии
-    await this.testCommentOperations();
-
-    // Тестируем transitions
-    await this.testIssueTransitions();
-
-    // Тестируем worklog
-    await this.testWorklogOperations();
-
-    // Тестируем версии проекта (если есть права)
-    await this.testVersionOperations();
-
-    // Тестируем связи между задачами
-    await this.testIssueLinkOperations();
-
-    // Удаляем тестовую задачу
-    await this.cleanupTestIssue();
+    await this.runTestsByCategory('modifying', 20);
   }
 
   async createTestIssue () {
@@ -961,33 +832,7 @@ class JiraEndpointsTester {
    */
 
   async testAgileEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 5 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 5)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 5; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING AGILE ENDPOINTS ===');
-
-    // Эти эндпоинты могут быть недоступны в тестовом эмуляторе
-    // но мы их протестируем для полноты
-
-    // GET /agile/1.0/board - получить доски
-    const boards = await this.makeAgileRequest('GET', '/agile/1.0/board', null, {});
-    this.logTest('Get Agile Boards', boards, [200, 404], '/agile/1.0/board');
-
-    if (boards.success && boards.data.values && boards.data.values.length > 0) {
-      const boardId = boards.data.values[0].id;
-
-      // GET /agile/1.0/board/{boardId}/sprint - получить спринты
-      const sprints = await this.makeAgileRequest('GET', `/agile/1.0/board/${boardId}/sprint`);
-      this.logTest('Get Board Sprints', sprints, [200, 404], `/agile/1.0/board/${boardId}/sprint`);
-
-      // GET /agile/1.0/board/{boardId}/issue - получить задачи доски
-      const boardIssues = await this.makeAgileRequest('GET', `/agile/1.0/board/${boardId}/issue`);
-      this.logTest('Get Board Issues', boardIssues, [200, 404], `/agile/1.0/board/${boardId}/issue`);
-    }
+    await this.runTestsByCategory('agile', 5);
   }
 
   /**
@@ -995,84 +840,29 @@ class JiraEndpointsTester {
    */
 
   async testAdditionalEndpoints () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 15 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 15)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 15; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING ADDITIONAL ENDPOINTS ===');
-
-    // GET /attachment/{id} - получить вложение (если есть)
-    const attachmentTest = await this.makeRequest('GET', '/attachment/10000');
-    this.logTest('Get Attachment (Sample)', attachmentTest, [200, 404], '/attachment/10000');
-
-    // GET /applicationrole - роли приложений
-    const appRoles = await this.makeRequest('GET', '/applicationrole');
-    this.logTest('Get Application Roles', appRoles, [200, 403], '/applicationrole');
-
-    // GET /configuration - конфигурация
-    const config = await this.makeRequest('GET', '/configuration');
-    this.logTest('Get Configuration', config, [200, 403], '/configuration');
-
-    // GET /serverInfo - информация о сервере
-    const serverInfo = await this.makeRequest('GET', '/serverInfo');
-    this.logTest('Get Server Info', serverInfo, 200, '/serverInfo');
-
-    if (serverInfo.success) {
-      this.validateProperties(serverInfo.data, ['version', 'buildNumber'], 'Server Info Properties');
-    }
-
-    // GET /dashboard - панели управления
-    const dashboards = await this.makeRequest('GET', '/dashboard');
-    this.logTest('Get Dashboards', dashboards, [200, 404], '/dashboard');
-
-    // GET /filter/favourite - избранные фильтры
-    const filters = await this.makeRequest('GET', '/filter/favourite');
-    this.logTest('Get Favourite Filters', filters, 200, '/filter/favourite');
-
-    // GET /groups/picker - группы (picker)
-    const groups = await this.makeRequest('GET', '/groups/picker');
-    this.logTest('Get Groups Picker', groups, [200, 403], '/groups/picker');
-
-    // GET /notificationscheme - схемы уведомлений
-    const notificationSchemes = await this.makeRequest('GET', '/notificationscheme');
-    this.logTest('Get Notification Schemes', notificationSchemes, [200, 403], '/notificationscheme');
-
-    // GET /permissionscheme - схемы разрешений
-    const permissionSchemes = await this.makeRequest('GET', '/permissionscheme');
-    this.logTest('Get Permission Schemes', permissionSchemes, [200, 403], '/permissionscheme');
-
-    // GET /permissions - разрешения
-    const permissions = await this.makeRequest('GET', '/permissions');
-    this.logTest('Get Permissions', permissions, 200, '/permissions');
-
-    // GET /workflow - рабочие процессы
-    const workflows = await this.makeRequest('GET', '/workflow');
-    this.logTest('Get Workflows', workflows, [200, 403], '/workflow');
-
-    // GET /workflowscheme - схемы рабочих процессов
-    const workflowSchemes = await this.makeRequest('GET', '/workflowscheme');
-    this.logTest('Get Workflow Schemes', workflowSchemes, [200, 403], '/workflowscheme');
+    await this.runTestsByCategory('system', 4);
+    await this.runTestsByCategory('additional', 11);
   }
 
   async cleanupTestIssue () {
     console.log('\n--- Cleaning Up Test Resources ---');
 
+    const createdResources = this.resourceManager.getCreatedResources();
+
     // Удаляем созданные версии
-    for (const versionId of this.createdResources.versions) {
+    for (const versionId of createdResources.versions) {
       const deleteVersion = await this.makeRequest('DELETE', `/version/${versionId}`);
       this.logTest(`Delete Version ${versionId}`, deleteVersion, 204, `/version/${versionId}`);
     }
 
     // Удаляем созданные задачи
-    for (const issueKey of this.createdResources.issues) {
+    for (const issueKey of createdResources.issues) {
       const deleteIssue = await this.makeRequest('DELETE', `/issue/${issueKey}`);
       this.logTest(`Delete Issue ${issueKey}`, deleteIssue, 204, `/issue/${issueKey}`);
     }
 
     console.log('✅ Cleanup completed');
+    this.resourceManager.clearAll();
   }
 
   /**
@@ -1107,9 +897,13 @@ class JiraEndpointsTester {
       // Тестируем дополнительные эндпоинты
       await this.testAdditionalEndpoints();
 
+      // Тестируем каскадные операции
+      await this.runCascadeTests();
+
     } catch (error) {
       console.error('💥 Test execution failed:', error.message);
     } finally {
+      await this.cleanupTestIssue();
       await this.generateReport(startTime);
     }
   }
@@ -1125,205 +919,31 @@ class JiraEndpointsTester {
     const startTime = Date.now();
 
     try {
-      // Системные эндпоинты
-      console.log('\n=== TESTING SYSTEM ENDPOINTS ===');
-      const myself = await this.makeRequest('GET', '/myself');
-      this.logTest('Get Current User (myself)', myself, 200, '/myself');
-
-      const serverInfo = await this.makeRequest('GET', '/serverInfo');
-      this.logTest('Get Server Info', serverInfo, 200, '/serverInfo');
-
-      const config = await this.makeRequest('GET', '/configuration');
-      this.logTest('Get Configuration', config, 200, '/configuration');
-
-      const appRoles = await this.makeRequest('GET', '/applicationrole');
-      this.logTest('Get Application Roles', appRoles, 200, '/applicationrole');
-
-      const permissions = await this.makeRequest('GET', '/permissions');
-      this.logTest('Get Permissions', permissions, 200, '/permissions');
-
-      // Запускаем shared test cases для согласованности
+      // Запускаем все категории тестов из SharedJiraTestCases
+      await this.runTestsByCategory('system', 4);
       await this.testSharedTestCases();
-
-      // Стандартные тесты
       await this.testIssueEndpoints();
       await this.testSearchEndpoints();
       await this.testProjectEndpoints();
       await this.testUserEndpoints();
       await this.testMetadataEndpoints();
 
-      // Версии и компоненты
-      console.log('\n=== TESTING VERSION & COMPONENT ENDPOINTS ===');
-
-      // Создаем версию
-      const version = await this.makeRequest('POST', '/version', {
-        name: 'Test Version 2.0',
-        description: 'Test version for comprehensive testing',
-        projectId: 10000,
-        released: false,
-      });
-      this.logTest('Create Version', version, 201, '/version');
-
-      if (version.success && version.data.id) {
-        const versionId = version.data.id;
-        this.createdResources.versions.push(versionId);
-
-        const getVersion = await this.makeRequest('GET', `/version/${versionId}`);
-        this.logTest('Get Version', getVersion, 200, `/version/${versionId}`);
-
-        const updateVersion = await this.makeRequest('PUT', `/version/${versionId}`, { released: true });
-        this.logTest('Update Version', updateVersion, 200, `/version/${versionId}`);
-      }
-
-      // Issue Links
-      console.log('\n=== TESTING ISSUE LINK ENDPOINTS ===');
-
-      const linkTypes = await this.makeRequest('GET', '/issueLinkType');
-      this.logTest('Get Issue Link Types', linkTypes, 200, '/issueLinkType');
-
-      // Создаем две задачи для связывания
-      const issue1 = await this.makeRequest('POST', '/issue', {
-        fields: {
-          summary: 'Link Test Issue 1',
-          project: { key: this.testProjectKey },
-          issuetype: { name: TEST_ISSUE_TYPE_NAME },
-        },
-      });
-      this.logTest('Create Link Test Issue 1', issue1, 201, '/issue');
-
-      const issue2 = await this.makeRequest('POST', '/issue', {
-        fields: {
-          summary: 'Link Test Issue 2',
-          project: { key: this.testProjectKey },
-          issuetype: { name: TEST_ISSUE_TYPE_NAME },
-        },
-      });
-      this.logTest('Create Link Test Issue 2', issue2, 201, '/issue');
-
-      if (issue1.success && issue2.success) {
-        this.createdResources.issues.push(issue1.data.key, issue2.data.key);
-
-        const link = await this.makeRequest('POST', '/issueLink', {
-          type: { id: '10000' },
-          inwardIssue: { key: issue1.data.key, id: issue1.data.id },
-          outwardIssue: { key: issue2.data.key, id: issue2.data.id },
-        });
-        this.logTest('Create Issue Link', link, 201, '/issueLink');
-
-        if (link.success && link.data.id) {
-          this.createdResources.links.push(link.data.id);
-
-          const deleteLink = await this.makeRequest('DELETE', `/issueLink/${link.data.id}`);
-          this.logTest('Delete Issue Link', deleteLink, 204, `/issueLink/${link.data.id}`);
-        }
-
-        // Remote links
-        const remoteLink = await this.makeRequest('POST', `/issue/${issue1.data.key}/remotelink`, {
-          object: {
-            url: 'https://example.com',
-            title: 'Example Remote Link',
-          },
-        });
-        this.logTest('Create Remote Link', remoteLink, 201, `/issue/${issue1.data.key}/remotelink`);
-
-        const getRemoteLinks = await this.makeRequest('GET', `/issue/${issue1.data.key}/remotelink`);
-        this.logTest('Get Remote Links', getRemoteLinks, 200, `/issue/${issue1.data.key}/remotelink`);
-      }
-
-      // Workflows and Schemes
-      console.log('\n=== TESTING WORKFLOW & SCHEME ENDPOINTS ===');
-
-      const workflows = await this.makeRequest('GET', '/workflow');
-      this.logTest('Get Workflows', workflows, 200, '/workflow');
-
-      const workflowSchemes = await this.makeRequest('GET', '/workflowscheme');
-      this.logTest('Get Workflow Schemes', workflowSchemes, 200, '/workflowscheme');
-
-      const notificationSchemes = await this.makeRequest('GET', '/notificationscheme');
-      this.logTest('Get Notification Schemes', notificationSchemes, 200, '/notificationscheme');
-
-      const permissionSchemes = await this.makeRequest('GET', '/permissionscheme');
-      this.logTest('Get Permission Schemes', permissionSchemes, 200, '/permissionscheme');
-
-      // Dashboards and Filters
-      console.log('\n=== TESTING DASHBOARD & FILTER ENDPOINTS ===');
-
-      const dashboards = await this.makeRequest('GET', '/dashboard');
-      this.logTest('Get Dashboards', dashboards, 200, '/dashboard');
-
-      const filters = await this.makeRequest('GET', '/filter/favourite');
-      this.logTest('Get Favourite Filters', filters, 200, '/filter/favourite');
-
-      // Groups and Roles
-      console.log('\n=== TESTING GROUP & ROLE ENDPOINTS ===');
-
-      const groups = await this.makeRequest('GET', '/groups/picker');
-      this.logTest('Get Groups', groups, 200, '/groups/picker');
-
-      const roles = await this.makeRequest('GET', '/role');
-      this.logTest('Get Roles', roles, 200, '/role');
-
-      // Attachments
-      console.log('\n=== TESTING ATTACHMENT ENDPOINTS ===');
-
-      const attachment = await this.makeRequest('GET', '/attachment/10000');
-      this.logTest('Get Attachment', attachment, 200, '/attachment/10000');
-
-      // Bulk operations
-      console.log('\n=== TESTING BULK OPERATION ENDPOINTS ===');
-
-      const bulkIssues = await this.makeRequest('POST', '/issue/bulk', {
-        issueUpdates: [
-          {
-            fields: {
-              summary: 'Bulk Issue 1',
-              project: { key: this.testProjectKey },
-              issuetype: { name: TEST_ISSUE_TYPE_NAME },
-            },
-          },
-          {
-            fields: {
-              summary: 'Bulk Issue 2',
-              project: { key: this.testProjectKey },
-              issuetype: { name: TEST_ISSUE_TYPE_NAME },
-            },
-          },
-        ],
-      });
-      this.logTest('Create Bulk Issues', bulkIssues, 201, '/issue/bulk');
-
-      if (bulkIssues.success && bulkIssues.data.issues) {
-        const issueKeys = bulkIssues.data.issues.map(i => i.key);
-        this.createdResources.issues.push(...issueKeys);
-
-        // Test changelog
-        const changelog = await this.makeRequest('POST', '/issue/changelog/list', {
-          issueIds: issueKeys,
-        });
-        this.logTest('Get Issues Changelog', changelog, 200, '/issue/changelog/list');
-      }
-
-      // Search GET endpoint
-      console.log('\n=== TESTING SEARCH GET ENDPOINT ===');
-
-      const searchGet = await this.makeRequest('GET', `/search?jql=project=${this.testProjectKey}&maxResults=5`);
-      this.logTest('Search Issues (GET)', searchGet, 200, '/search');
-
-      // Изменяющие тесты
+      // Тестируем изменяющие эндпоинты
       await this.testModifyingEndpoints();
 
-      // Agile эндпоинты
+      // Тестируем Agile эндпоинты
       await this.testAgileEndpoints();
 
-      // Дополнительные эндпоинты
+      // Тестируем дополнительные эндпоинты
       await this.testAdditionalEndpoints();
 
-      // Очистка созданных ресурсов
-      await this.cleanup();
+      // Тестируем каскадные операции
+      await this.runCascadeTests();
 
     } catch (error) {
       console.error('💥 Test execution failed:', error.message);
     } finally {
+      await this.cleanupTestIssue();
       await this.generateReport(startTime);
     }
   }
