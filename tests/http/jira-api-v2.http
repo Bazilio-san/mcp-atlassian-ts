@@ -17,6 +17,20 @@ Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
+### Получить полные данные задачи
+PUT {{baseUrl}}/rest/api/2/issue/AITECH-1
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+{
+  "fields": {
+    "summary": "Updated Test Issue - 2025-09-19T18-15",
+    "description": "Updated description for API testing 2"
+  }
+}
+
+
+
 
 ### Пример создания задачи:
 POST {{baseUrl}}/rest/api/2/issue

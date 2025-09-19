@@ -23,7 +23,6 @@ const {
   } = {},
 } = appConfig;
 
-
 class JiraEndpointsTester {
   constructor () {
     this.baseUrl = url || 'http://localhost:8080';
@@ -54,7 +53,7 @@ class JiraEndpointsTester {
    * N-M где N - номер группы, M - номер теста в группе (* для всей группы)
    * Также поддерживается N (эквивалентно N-*)
    */
-  parseSelectedTests() {
+  parseSelectedTests () {
     const args = process.argv.slice(2);
     const testsArg = args.find(arg => arg.startsWith('--tests='));
 
@@ -101,7 +100,7 @@ class JiraEndpointsTester {
   /**
    * Проверить, нужно ли выполнять тест с данным fullId
    */
-  shouldRunTest(fullId) {
+  shouldRunTest (fullId) {
     if (this.selectedTestsGrouped === null) {
       return true; // Выполнять все тесты
     }
@@ -123,8 +122,6 @@ class JiraEndpointsTester {
 
     return false;
   }
-
-
 
   /**
    * Парсинг X-заголовков из переменной окружения TEST_ADD_X_HEADER
@@ -305,7 +302,12 @@ class JiraEndpointsTester {
     const details = expected ? `Expected: ${expected}, Got: ${result.status}` : `Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
-    console.log(`${status} [${fullId}] ${testName}${endpointInfo} - ${details}`);
+    // Для ошибок добавляем statusText и error в вывод
+    const errorInfo = !result.success && (result.statusText || result.error)
+      ? ` (${result.statusText ? result.statusText : ''}${result.statusText && result.error ? ' - ' : ''}${result.error ? result.error : ''})`
+      : '';
+
+    console.log(`${status} [${fullId}] ${testName}${endpointInfo} - ${details}${errorInfo}`);
 
     this.testResults.push({
       fullId: fullId,
@@ -334,11 +336,10 @@ class JiraEndpointsTester {
     return true; // Тест был выполнен
   }
 
-
   /**
    * Заменить плейсхолдеры в endpoint на реальные значения
    */
-  replacePlaceholders(endpoint) {
+  replacePlaceholders (endpoint) {
     // Получаем созданные ресурсы
     const createdResources = this.resourceManager.getCreatedResources();
 
@@ -394,16 +395,19 @@ class JiraEndpointsTester {
     if (api.endpoint.startsWith('/agile/')) {
       result = await this.makeAgileRequest(api.method, api.endpoint, api.data);
     } else {
-      result = await this.makeRequest(api.method, api.endpoint, api.data);
+      result = await this.makeRequest(api.method, api.endpoint, api.data, { fullId: testCase.fullId });
     }
 
-    // Валидируем результат ПЕРЕД логированием
-    const validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
+    // Валидируем результат ПЕРЕД логированием только если нет ошибки сети
+    let validation = { success: true, message: null };
+    if (result.success !== false || !result.error) {
+      validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
 
-    // Если валидация не прошла, помечаем тест как неуспешный
-    if (!validation.success) {
-      result.success = false;
-      result.error = validation.message;
+      // Если валидация не прошла, помечаем тест как неуспешный
+      if (!validation.success) {
+        result.success = false;
+        result.error = validation.message;
+      }
     }
 
     const expectedStatus = testCase.expectedStatus || 200;
@@ -436,14 +440,14 @@ class JiraEndpointsTester {
   /**
    * Выполнить тесты определенной категории
    */
-  async runTestsByCategory(categoryName) {
+  async runTestsByCategory (categoryName) {
     const testCases = this.sharedTestCases.getTestCasesByCategory(categoryName);
 
     // Проверяем, есть ли тесты для выполнения в этой категории
     if (this.selectedTestsGrouped !== null) {
       // В режиме селективного выполнения проверяем, есть ли выбранные тесты в категории
       const selectedTestsInCategory = testCases.filter(tc =>
-        tc.fullId && this.shouldRunTest(tc.fullId)
+        tc.fullId && this.shouldRunTest(tc.fullId),
       );
 
       if (selectedTestsInCategory.length === 0) {
@@ -473,7 +477,7 @@ class JiraEndpointsTester {
   /**
    * Каскадные тесты отключены - использовались только legacy код
    */
-  async runCascadeTests() {
+  async runCascadeTests () {
     console.log('\n=== CASCADE TESTS DISABLED ===');
     console.log('Cascade tests have been removed. All operations now use individual test cases.');
   }
@@ -517,7 +521,6 @@ class JiraEndpointsTester {
   async testModifyingEndpoints () {
     await this.runTestsByCategory('modifying');
   }
-
 
   /**
    * === AGILE/BOARD ENDPOINTS ===
@@ -688,7 +691,7 @@ class JiraEndpointsTester {
               total: 0,
               passed: 0,
               failed: 0,
-              tests: []
+              tests: [],
             };
           }
           groupStats[groupNumber].total++;
@@ -763,7 +766,7 @@ class JiraEndpointsTester {
       passRate,
       duration,
       results: this.testResults,
-      groupStatistics: groupedTests.length > 0 ? this.sharedTestCases.getGroupStatistics() : null
+      groupStatistics: groupedTests.length > 0 ? this.sharedTestCases.getGroupStatistics() : null,
     };
   }
 }
