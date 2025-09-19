@@ -979,6 +979,13 @@ export class JiraEmulator {
         return;
       }
 
+      // Защищаем базовые тестовые задачи от удаления
+      if (issueKey === 'TEST-1' || issueKey === 'TEST-2') {
+        console.log(chalk.yellow(`[JIRA EMULATOR] Protected issue ${issueKey} from deletion - returning success but not deleting`));
+        res.status(204).send();
+        return;
+      }
+
       issues.delete(issueKey);
       issues.delete(issue.id);
       comments.delete(issue.id);

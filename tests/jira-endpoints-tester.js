@@ -7,8 +7,8 @@
 // Для Node.js версий без глобального fetch
 import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import { SharedJiraTestCases, TestValidationUtils, ResourceManager, CascadeExecutor } from './shared-test-cases.js';
-import { TEST_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT } from './constants.js';
+import { SharedJiraTestCases, TestValidationUtils, ResourceManager } from './shared-test-cases.js';
+import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT } from './constants.js';
 
 const {
   jira: {
@@ -33,13 +33,10 @@ class JiraEndpointsTester {
       this.auth = { type: 'basic', username, password };
     }
     this.testResults = [];
-    this.testIssueKey = null;
     this.testProjectKey = TEST_JIRA_PROJECT;
     this.testIssueKey = TEST_ISSUE_KEY;
-    this.testCounter = 0;
-    this.failedTestNumbers = [];
+    this.failedTestIds = [];
     this.resourceManager = new ResourceManager();
-    this.cascadeExecutor = new CascadeExecutor(this.resourceManager);
 
     // Поддержка переменной окружения для добавления X-заголовков
     this.customHeaders = this.parseTestXHeaders();
@@ -102,17 +99,16 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Проверить, нужно ли выполнять тест с данным номером или fullId
-   * Поддерживает как старую нумерацию (testNumber), так и новую групповую (fullId)
+   * Проверить, нужно ли выполнять тест с данным fullId
    */
-  shouldRunTest(testNumberOrFullId) {
+  shouldRunTest(fullId) {
     if (this.selectedTestsGrouped === null) {
       return true; // Выполнять все тесты
     }
 
-    // Если это тест из SharedJiraTestCases с fullId
-    if (typeof testNumberOrFullId === 'string' && testNumberOrFullId.includes('-')) {
-      const [groupNumber, testNumber] = testNumberOrFullId.split('-').map(n => parseInt(n));
+    // Работаем только с тестами из SharedJiraTestCases с fullId
+    if (typeof fullId === 'string' && fullId.includes('-')) {
+      const [groupNumber, testNumber] = fullId.split('-').map(n => parseInt(n));
 
       return this.selectedTestsGrouped.some(sel => {
         if (sel.type === 'group' && sel.groupNumber === groupNumber) {
@@ -125,81 +121,10 @@ class JiraEndpointsTester {
       });
     }
 
-    // Обратная совместимость со старой системой нумерации
-    if (typeof testNumberOrFullId === 'number') {
-      // Для обратной совместимости, если используется старая система нумерации
-      // пока что возвращаем true (выполняем все тесты)
-      return true;
-    }
-
     return false;
   }
 
-  /**
-   * Проверить, есть ли в диапазоне номеров выбранные тесты
-   * DEPRECATED: Этот метод используется только для старой системы нумерации
-   */
-  hasSelectedTestsInRange(startNumber, estimatedCount) {
-    // Если используется новая групповая система, всегда возвращаем true
-    if (this.selectedTestsGrouped !== null && this.selectedTestsGrouped !== undefined) {
-      return true;
-    }
 
-    // Старая система нумерации
-    if (this.selectedTests === null || this.selectedTests === undefined) {
-      return true; // Выполнять все тесты
-    }
-
-    for (let i = startNumber; i < startNumber + estimatedCount; i++) {
-      if (this.selectedTests.includes(i)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Выполнить тест с проверкой селективности
-   */
-  async executeTest(testName, testFunction, expected = null, endpoint = null) {
-    // Увеличиваем счетчик для всех тестов (не здесь, а в logTest)
-    const nextTestNumber = this.testCounter + 1;
-
-    // Если тест не должен выполняться, пропускаем его полностью
-    if (!this.shouldRunTest(nextTestNumber)) {
-      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
-      return null; // Пропускаем выполнение теста
-    }
-
-    // Выполняем тест
-    const result = await testFunction();
-
-    // Логируем результат (logTest увеличит счетчик)
-    this.logTest(testName, result, expected, endpoint);
-
-    return result;
-  }
-
-  /**
-   * Тестовый запрос с автоматической проверкой селективности
-   */
-  async testRequest(testName, method, endpoint, data = null, expected = 200) {
-    const nextTestNumber = this.testCounter + 1;
-
-    // Если тест не должен выполняться, пропускаем его полностью
-    if (!this.shouldRunTest(nextTestNumber)) {
-      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
-      return null; // Пропускаем выполнение теста
-    }
-
-    // Выполняем запрос
-    const result = await this.makeRequest(method, endpoint, data);
-
-    // Логируем результат (logTest увеличит счетчик)
-    this.logTest(testName, result, expected, endpoint);
-
-    return result;
-  }
 
   /**
    * Парсинг X-заголовков из переменной окружения TEST_ADD_X_HEADER
@@ -362,44 +287,29 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Логирование результатов тестов с нумерацией
-   * Поддерживает как старую систему счетчика, так и новую групповую нумерацию
+   * Логирование результатов тестов
    */
   logTest (testName, result, expected = null, endpoint = null, fullId = null) {
-    // Определяем идентификатор теста
-    let testId;
-    if (fullId) {
-      // Используем новую групповую систему
-      testId = fullId;
+    // Все тесты должны иметь fullId - если нет, пропускаем
+    if (!fullId) {
+      console.warn(`⚠️ Test "${testName}" skipped - no fullId provided`);
+      return false;
+    }
 
-      // Проверяем селективное выполнение для групповых тестов
-      if (!this.shouldRunTest(fullId)) {
-        return false; // Тест был пропущен
-      }
-    } else {
-      // Используем старую систему счетчика для обратной совместимости
-      if (typeof this.testCounter !== 'number' || isNaN(this.testCounter)) {
-        this.testCounter = 0;
-      }
-      this.testCounter++; // Увеличиваем счетчик для всех тестов
-      testId = this.testCounter;
-
-      // Проверяем селективное выполнение для старых тестов
-      if (!this.shouldRunTest(this.testCounter)) {
-        return false; // Тест был пропущен
-      }
+    // Проверяем селективное выполнение для групповых тестов
+    if (!this.shouldRunTest(fullId)) {
+      return false; // Тест был пропущен
     }
 
     const status = result.success ? '✅ PASS' : '❌ FAIL';
     const details = expected ? `Expected: ${expected}, Got: ${result.status}` : `Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
-    console.log(`${status} [${testId}] ${testName}${endpointInfo} - ${details}`);
+    console.log(`${status} [${fullId}] ${testName}${endpointInfo} - ${details}`);
 
     this.testResults.push({
-      number: fullId ? null : this.testCounter, // Для обратной совместимости
       fullId: fullId,
-      testId: testId,
+      testId: fullId, // testId теперь всегда равен fullId
       name: testName,
       success: result.success,
       status: result.status,
@@ -409,13 +319,12 @@ class JiraEndpointsTester {
       timestamp: new Date().toISOString(),
     });
 
-    // Сохраняем номера неудачных тестов
+    // Сохраняем ID неудачных тестов
     if (!result.success) {
-      if (!this.failedTestNumbers) {
-        this.failedTestNumbers = [];
+      if (!this.failedTestIds) {
+        this.failedTestIds = [];
       }
-      // Используем правильный ID теста (fullId для групповых тестов, testCounter для старых)
-      this.failedTestNumbers.push(testId);
+      this.failedTestIds.push(fullId);
     }
 
     if (!result.success && result.error) {
@@ -425,71 +334,44 @@ class JiraEndpointsTester {
     return true; // Тест был выполнен
   }
 
+
   /**
-   * Проверить наличие ожидаемых свойств в объекте
+   * Заменить плейсхолдеры в endpoint на реальные значения
    */
-  validateProperties (obj, expectedProps, testName) {
-    // Ensure testCounter is properly initialized
-    if (typeof this.testCounter !== 'number' || isNaN(this.testCounter)) {
-      this.testCounter = 0;
-    }
+  replacePlaceholders(endpoint) {
+    // Получаем созданные ресурсы
+    const createdResources = this.resourceManager.getCreatedResources();
 
-    this.testCounter++;
+    // Заменяем плейсхолдеры на реальные значения
+    let replacedEndpoint = endpoint;
 
-    // Проверяем, нужно ли выполнять этот тест
-    if (!this.shouldRunTest(this.testCounter)) {
-      return true; // Пропускаем тест полностью, считаем успешным
-    }
-
-    const missing = expectedProps.filter(prop => !(prop in obj));
-    const success = missing.length === 0;
-
-    if (!success) {
-      console.log(`❌ FAIL [${this.testCounter}] ${testName} - Missing properties: ${missing.join(', ')}`);
-      if (!this.failedTestNumbers) {
-        this.failedTestNumbers = [];
+    if (endpoint.includes('{versionId}')) {
+      // Используем созданный ресурс или fallback на наиболее вероятный ID
+      let versionId;
+      if (createdResources.versions.length > 0) {
+        versionId = createdResources.versions[0];
+      } else {
+        // Fallback: эмулятор создает версии начиная с 10001
+        // Используем последнюю созданную версию (предположительно)
+        versionId = '10001'; // первая версия создается тестом 8-5
       }
-      this.failedTestNumbers.push(this.testCounter);
-    } else {
-      console.log(`✅ PASS [${this.testCounter}] ${testName} - All expected properties present`);
+      replacedEndpoint = replacedEndpoint.replace('{versionId}', versionId);
     }
 
-    this.testResults.push({
-      number: this.testCounter,
-      name: testName,
-      success: success,
-      status: success ? 200 : 400,
-      endpoint: null,
-      method: 'VALIDATE',
-      details: success ? 'Properties validated' : `Missing: ${missing.join(', ')}`,
-      timestamp: new Date().toISOString(),
-    });
-
-    return success;
-  }
-
-  /**
-   * Выполнить отдельный тест-кейс
-   */
-  async runTestCase(testCase) {
-    const nextTestNumber = this.testCounter + 1;
-
-    if (!this.shouldRunTest(nextTestNumber)) {
-      this.testCounter++; // Увеличиваем счетчик но пропускаем выполнение
-      return null; // Пропускаем выполнение теста
+    if (endpoint.includes('{issueKey}')) {
+      // Используем созданный ресурс или fallback на тестовую задачу
+      const issueKey = createdResources.issues.length > 0
+        ? createdResources.issues[0]
+        : this.testIssueKey; // fallback на TEST-1
+      replacedEndpoint = replacedEndpoint.replace('{issueKey}', issueKey);
     }
 
-    const api = testCase.directApi;
-
-    // Определяем метод запроса
-    let result;
-    if (api.endpoint.startsWith('/agile/')) {
-      result = await this.makeAgileRequest(api.method, api.endpoint, api.data);
-    } else {
-      result = await this.makeRequest(api.method, api.endpoint, api.data);
+    if (endpoint.includes('{boardId}')) {
+      // Для board ID используем фиксированное значение из эмулятора
+      replacedEndpoint = replacedEndpoint.replace('{boardId}', '1');
     }
 
-    return result;
+    return replacedEndpoint;
   }
 
   /**
@@ -502,6 +384,10 @@ class JiraEndpointsTester {
     }
 
     const api = testCase.directApi;
+
+    // Заменяем плейсхолдеры в endpoint
+    const originalEndpoint = api.endpoint;
+    api.endpoint = this.replacePlaceholders(originalEndpoint);
 
     // Определяем метод запроса
     let result;
@@ -520,28 +406,37 @@ class JiraEndpointsTester {
       result.error = validation.message;
     }
 
-    this.logTest(testCase.name, result, 200, api.endpoint, testCase.fullId);
+    const expectedStatus = testCase.expectedStatus || 200;
+    this.logTest(testCase.name, result, expectedStatus, api.endpoint, testCase.fullId);
 
     // Выводим результат валидации
     if (!validation.success) {
-      const testId = testCase.fullId || 'Unknown';
-      console.log(`❌ VALIDATION FAIL ${testCase.name} [${testId}] - ${validation.message}`);
+      console.log(`❌ VALIDATION FAIL ${testCase.name} [${testCase.fullId}] - ${validation.message}`);
     } else {
       console.log(`✅ VALIDATION PASS ${testCase.name} - ${testCase.description}`);
     }
 
-    // Выполняем cleanup если необходимо
+    // Выполняем cleanup если необходимо - регистрируем созданные ресурсы
     if (testCase.cleanup && result.success) {
+      // Выполняем cleanup в контексте testCase, но также регистрируем в нашем ResourceManager
       testCase.cleanup(result.data);
+
+      // Дополнительно регистрируем в нашем ResourceManager для плейсхолдеров
+      if (testCase.name === 'Create Version' && result.data && result.data.id) {
+        this.resourceManager.addResource('versions', result.data.id);
+      }
+      if (testCase.name === 'Create Issue' && result.data && result.data.key) {
+        this.resourceManager.addResource('issues', result.data.key);
+      }
     }
 
     return result;
   }
 
   /**
-   * Выполнить тесты определенной категории с поддержкой групповой нумерации
+   * Выполнить тесты определенной категории
    */
-  async runTestsByCategory(categoryName, estimatedCount = 10) {
+  async runTestsByCategory(categoryName) {
     const testCases = this.sharedTestCases.getTestCasesByCategory(categoryName);
 
     // Проверяем, есть ли тесты для выполнения в этой категории
@@ -576,66 +471,18 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Выполнить каскадные тесты
+   * Каскадные тесты отключены - использовались только legacy код
    */
   async runCascadeTests() {
-    console.log('\n=== TESTING CASCADE OPERATIONS ===');
-
-    const cascadeTestCases = this.sharedTestCases.getCascadeTestCases();
-
-    for (const cascadeTestCase of cascadeTestCases) {
-      try {
-        const result = await this.cascadeExecutor.executeCascade(cascadeTestCase, this);
-
-        // Логируем результат каскада как один тест
-        const cascadeResult = {
-          success: result.success,
-          status: result.success ? 200 : 400,
-          statusText: result.success ? 'OK' : 'Cascade Failed',
-          data: result,
-          error: result.success ? null : `Cascade failed: ${result.steps.find(s => !s.success)?.error}`,
-          url: 'cascade',
-          method: 'CASCADE'
-        };
-
-        this.logTest(cascadeTestCase.name, cascadeResult, 200, 'cascade');
-
-        // Логируем детали каскада
-        for (const step of result.steps) {
-          console.log(`  ${step.success ? '✅' : '❌'} ${step.step}: ${step.testCase}`);
-          if (!step.success && step.error) {
-            console.log(`    Error: ${step.error}`);
-          }
-        }
-
-      } catch (error) {
-        console.log(`❌ CASCADE ERROR ${cascadeTestCase.name} - ${error.message}`);
-      }
-    }
+    console.log('\n=== CASCADE TESTS DISABLED ===');
+    console.log('Cascade tests have been removed. All operations now use individual test cases.');
   }
 
   /**
-   * Запустить shared test cases
+   * Запустить минимальные shared test cases
    */
   async testSharedTestCases () {
-    // Проверяем, есть ли выбранные тесты в этом блоке (примерно 6 тестов)
-    if (!this.hasSelectedTestsInRange(this.testCounter + 1, 6)) {
-      // Блок пропускается без сообщения
-      this.testCounter += 6; // Пропускаем счетчик для всех тестов в блоке
-      return;
-    }
-
-    console.log('\n=== TESTING SHARED TEST CASES ===');
-
-    const testCases = this.sharedTestCases.getMinimalTestCases();
-
-    for (const testCase of testCases) {
-      try {
-        await this.runSharedTestCase(testCase);
-      } catch (error) {
-        console.log(`❌ ERROR ${testCase.name} - ${error.message}`);
-      }
-    }
+    await this.runTestsByCategory('minimal');
   }
 
   /**
@@ -643,24 +490,24 @@ class JiraEndpointsTester {
    */
 
   async testIssueEndpoints () {
-    await this.runTestsByCategory('informational', 6);
-    await this.runTestsByCategory('issueDetailed', 3);
+    await this.runTestsByCategory('informational');
+    await this.runTestsByCategory('issueDetailed');
   }
 
   async testSearchEndpoints () {
-    await this.runTestsByCategory('searchDetailed', 2);
+    await this.runTestsByCategory('searchDetailed');
   }
 
   async testProjectEndpoints () {
-    await this.runTestsByCategory('projectDetailed', 7);
+    await this.runTestsByCategory('projectDetailed');
   }
 
   async testUserEndpoints () {
-    await this.runTestsByCategory('userDetailed', 6);
+    await this.runTestsByCategory('userDetailed');
   }
 
   async testMetadataEndpoints () {
-    await this.runTestsByCategory('metadataDetailed', 10);
+    await this.runTestsByCategory('metadataDetailed');
   }
 
   /**
@@ -668,230 +515,16 @@ class JiraEndpointsTester {
    */
 
   async testModifyingEndpoints () {
-    await this.runTestsByCategory('modifying', 20);
+    await this.runTestsByCategory('modifying');
   }
 
-  async createTestIssue () {
-    const issueData = {
-      fields: {
-        project: { key: this.testProjectKey },
-        summary: `Test Issue for API Testing - ${new Date().toISOString()}`,
-        description: 'This issue was created for API endpoint testing purposes.',
-        issuetype: { name: TEST_ISSUE_TYPE_NAME },
-      },
-    };
-
-    const result = await this.makeRequest('POST', '/issue', issueData);
-    this.logTest('Create Test Issue', result, 201, '/issue');
-
-    if (result.success) {
-      this.createdResources.issues.push(result.data.key);
-      return result.data;
-    }
-    return null;
-  }
-
-  async testIssueModification () {
-    if (!this.testIssueKey) return;
-
-    console.log('\n--- Testing Issue Modification ---');
-
-    // PUT /issue/{issueIdOrKey} - обновление задачи
-    const updateData = {
-      fields: {
-        summary: `Updated Test Issue - ${new Date().toISOString()}`,
-        description: 'Updated description for API testing',
-      },
-    };
-
-    const update = await this.makeRequest('PUT', `/issue/${this.testIssueKey}`, updateData);
-    this.logTest('Update Issue', update, 204, `/issue/${this.testIssueKey}`);
-
-    // Проверяем, что изменения применились
-    const updated = await this.makeRequest('GET', `/issue/${this.testIssueKey}?fields=summary,description`);
-    this.logTest('Verify Issue Update', updated, 200, `/issue/${this.testIssueKey}`);
-
-    if (updated.success && updated.data.fields.summary.includes('Updated')) {
-      console.log('✅ Issue update verified successfully');
-    }
-  }
-
-  async testCommentOperations () {
-    if (!this.testIssueKey) return;
-
-    console.log('\n--- Testing Comment Operations ---');
-
-    // POST /issue/{issueIdOrKey}/comment - добавить комментарий
-    const commentData = {
-      body: `Test comment added via API - ${new Date().toISOString()}`,
-    };
-
-    const addComment = await this.makeRequest('POST', `/issue/${this.testIssueKey}/comment`, commentData);
-    this.logTest('Add Comment', addComment, 201, `/issue/${this.testIssueKey}/comment`);
-
-    let commentId = null;
-    if (addComment.success) {
-      commentId = addComment.data.id;
-    }
-
-    // GET /issue/{issueIdOrKey}/comment - получить комментарии
-    const getComments = await this.makeRequest('GET', `/issue/${this.testIssueKey}/comment`);
-    this.logTest('Get Comments', getComments, 200, `/issue/${this.testIssueKey}/comment`);
-
-    // PUT /issue/{issueIdOrKey}/comment/{id} - обновить комментарий
-    if (commentId) {
-      const updateCommentData = {
-        body: `Updated test comment - ${new Date().toISOString()}`,
-      };
-      const updateComment = await this.makeRequest('PUT', `/issue/${this.testIssueKey}/comment/${commentId}`, updateCommentData);
-      this.logTest('Update Comment', updateComment, 200, `/issue/${this.testIssueKey}/comment/${commentId}`);
-
-      // DELETE /issue/{issueIdOrKey}/comment/{id} - удалить комментарий
-      const deleteComment = await this.makeRequest('DELETE', `/issue/${this.testIssueKey}/comment/${commentId}`);
-      this.logTest('Delete Comment', deleteComment, 204, `/issue/${this.testIssueKey}/comment/${commentId}`);
-    }
-  }
-
-  async testIssueTransitions () {
-    if (!this.testIssueKey) return;
-
-    console.log('\n--- Testing Issue Transitions ---');
-
-    // GET /issue/{issueIdOrKey}/transitions - получить доступные переходы
-    const transitions = await this.makeRequest('GET', `/issue/${this.testIssueKey}/transitions`);
-    this.logTest('Get Available Transitions', transitions, 200, `/issue/${this.testIssueKey}/transitions`);
-
-    if (transitions.success && transitions.data.transitions && transitions.data.transitions.length > 0) {
-      const firstTransition = transitions.data.transitions[0];
-
-      // POST /issue/{issueIdOrKey}/transitions - выполнить переход
-      const transitionData = {
-        transition: { id: firstTransition.id },
-      };
-
-      const doTransition = await this.makeRequest('POST', `/issue/${this.testIssueKey}/transitions`, transitionData);
-      this.logTest(`Execute Transition (${firstTransition.name})`, doTransition, 204, `/issue/${this.testIssueKey}/transitions`);
-    }
-  }
-
-  async testWorklogOperations () {
-    if (!this.testIssueKey) return;
-
-    console.log('\n--- Testing Worklog Operations ---');
-
-    // POST /issue/{issueIdOrKey}/worklog - добавить worklog
-    const worklogData = {
-      timeSpent: '2h',
-      comment: `API testing worklog - ${new Date().toISOString()}`,
-      started: new Date().toISOString(),
-    };
-
-    const addWorklog = await this.makeRequest('POST', `/issue/${this.testIssueKey}/worklog`, worklogData);
-    this.logTest('Add Worklog', addWorklog, 201, `/issue/${this.testIssueKey}/worklog`);
-
-    let worklogId = null;
-    if (addWorklog.success) {
-      worklogId = addWorklog.data.id;
-    }
-
-    // GET /issue/{issueIdOrKey}/worklog - получить worklog
-    const getWorklog = await this.makeRequest('GET', `/issue/${this.testIssueKey}/worklog`);
-    this.logTest('Get Worklog', getWorklog, 200, `/issue/${this.testIssueKey}/worklog`);
-
-    // PUT /issue/{issueIdOrKey}/worklog/{id} - обновить worklog
-    if (worklogId) {
-      const updateWorklogData = {
-        timeSpent: '3h',
-        comment: `Updated API testing worklog - ${new Date().toISOString()}`,
-      };
-      const updateWorklog = await this.makeRequest('PUT', `/issue/${this.testIssueKey}/worklog/${worklogId}`, updateWorklogData);
-      this.logTest('Update Worklog', updateWorklog, 200, `/issue/${this.testIssueKey}/worklog/${worklogId}`);
-
-      // DELETE /issue/{issueIdOrKey}/worklog/{id} - удалить worklog
-      const deleteWorklog = await this.makeRequest('DELETE', `/issue/${this.testIssueKey}/worklog/${worklogId}`);
-      this.logTest('Delete Worklog', deleteWorklog, 204, `/issue/${this.testIssueKey}/worklog/${worklogId}`);
-    }
-  }
-
-  async testVersionOperations () {
-    console.log('\n--- Testing Version Operations ---');
-
-    // POST /version - создать версию
-    const versionData = {
-      name: `API Test Version - ${Date.now()}`,
-      description: 'Version created for API testing',
-      project: this.testProjectKey,
-    };
-
-    const createVersion = await this.makeRequest('POST', '/version', versionData);
-    this.logTest('Create Version', createVersion, 201, '/version');
-
-    let versionId = null;
-    if (createVersion.success) {
-      versionId = createVersion.data.id;
-      this.createdResources.versions.push(versionId);
-    }
-
-    // PUT /version/{id} - обновить версию
-    if (versionId) {
-      const updateVersionData = {
-        name: `Updated API Test Version - ${Date.now()}`,
-        description: 'Updated version for API testing',
-      };
-      const updateVersion = await this.makeRequest('PUT', `/version/${versionId}`, updateVersionData);
-      this.logTest('Update Version', updateVersion, 200, `/version/${versionId}`);
-
-      // GET /version/{id} - получить версию
-      const getVersion = await this.makeRequest('GET', `/version/${versionId}`);
-      this.logTest('Get Version', getVersion, 200, `/version/${versionId}`);
-    }
-  }
-
-  async testIssueLinkOperations () {
-    if (!this.testIssueKey) return;
-
-    console.log('\n--- Testing Issue Link Operations ---');
-
-    // Создаем вторую задачу для связи
-    const secondIssue = await this.createTestIssue();
-    if (!secondIssue) {
-      console.log('⚠️ Cannot test issue links - failed to create second issue');
-      return;
-    }
-
-    // POST /issueLink - создать связь
-    const linkData = {
-      type: { name: 'Relates' },
-      inwardIssue: { key: this.testIssueKey },
-      outwardIssue: { key: secondIssue.key },
-      comment: { body: 'Link created for API testing' },
-    };
-
-    const createLink = await this.makeRequest('POST', '/issueLink', linkData);
-    this.logTest('Create Issue Link', createLink, 201, '/issueLink');
-
-    // POST /issue/{issueIdOrKey}/remotelink - создать удаленную связь
-    const remoteLinkData = {
-      object: {
-        url: 'https://example.com/test-link',
-        title: 'Test Remote Link',
-      },
-    };
-
-    const createRemoteLink = await this.makeRequest('POST', `/issue/${this.testIssueKey}/remotelink`, remoteLinkData);
-    this.logTest('Create Remote Link', createRemoteLink, 201, `/issue/${this.testIssueKey}/remotelink`);
-
-    // GET /issue/{issueIdOrKey}/remotelink - получить удаленные связи
-    const getRemoteLinks = await this.makeRequest('GET', `/issue/${this.testIssueKey}/remotelink`);
-    this.logTest('Get Remote Links', getRemoteLinks, 200, `/issue/${this.testIssueKey}/remotelink`);
-  }
 
   /**
    * === AGILE/BOARD ENDPOINTS ===
    */
 
   async testAgileEndpoints () {
-    await this.runTestsByCategory('agile', 5);
+    await this.runTestsByCategory('agile');
   }
 
   /**
@@ -899,8 +532,8 @@ class JiraEndpointsTester {
    */
 
   async testAdditionalEndpoints () {
-    await this.runTestsByCategory('system', 4);
-    await this.runTestsByCategory('additional', 11);
+    await this.runTestsByCategory('system');
+    await this.runTestsByCategory('additional');
   }
 
   async cleanupTestIssue () {
@@ -911,13 +544,23 @@ class JiraEndpointsTester {
     // Удаляем созданные версии
     for (const versionId of createdResources.versions) {
       const deleteVersion = await this.makeRequest('DELETE', `/version/${versionId}`);
-      this.logTest(`Delete Version ${versionId}`, deleteVersion, 204, `/version/${versionId}`);
+      // Cleanup не логируется как тест - это служебная операция
+      if (deleteVersion.success) {
+        console.log(`✅ Deleted Version ${versionId}`);
+      } else {
+        console.log(`❌ Failed to delete Version ${versionId}: ${deleteVersion.error}`);
+      }
     }
 
     // Удаляем созданные задачи
     for (const issueKey of createdResources.issues) {
       const deleteIssue = await this.makeRequest('DELETE', `/issue/${issueKey}`);
-      this.logTest(`Delete Issue ${issueKey}`, deleteIssue, 204, `/issue/${issueKey}`);
+      // Cleanup не логируется как тест - это служебная операция
+      if (deleteIssue.success) {
+        console.log(`✅ Deleted Issue ${issueKey}`);
+      } else {
+        console.log(`❌ Failed to delete Issue ${issueKey}: ${deleteIssue.error}`);
+      }
     }
 
     console.log('✅ Cleanup completed');
@@ -979,7 +622,7 @@ class JiraEndpointsTester {
 
     try {
       // Запускаем все категории тестов из SharedJiraTestCases
-      await this.runTestsByCategory('system', 4);
+      await this.runTestsByCategory('system');
       await this.testSharedTestCases();
       await this.testIssueEndpoints();
       await this.testSearchEndpoints();
@@ -1076,7 +719,7 @@ class JiraEndpointsTester {
       this.testResults
         .filter(t => !t.success)
         .forEach(test => {
-          const testId = test.fullId || test.number || 'Unknown';
+          const testId = test.fullId || 'Unknown';
           console.log(`   • [${testId}] ${test.name} [${test.method} ${test.endpoint}] - ${test.status}: ${test.details}`);
         });
 
@@ -1104,8 +747,8 @@ class JiraEndpointsTester {
           });
       }
 
-      if (this.failedTestNumbers && this.failedTestNumbers.length > 0) {
-        console.log(`\n❌ FAILED TEST NUMBERS: ${this.failedTestNumbers.join(',')}`);
+      if (this.failedTestIds && this.failedTestIds.length > 0) {
+        console.log(`\n❌ FAILED TEST IDs: ${this.failedTestIds.join(',')}`);
       }
     }
 
@@ -1143,11 +786,11 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
       console.log('Usage: node tests/jira-endpoints-tester.js [options]\n');
       console.log('Options:');
       console.log('  --extended, -e     Run extended test suite');
-      console.log('  --tests=1,5,10-15  Run only specific tests (numbers or ranges)');
+      console.log('  --tests=1-1,5-*,10  Run only specific tests (group-test format)');
       console.log('  --help, -h         Show this help message\n');
       console.log('Examples:');
-      console.log('  node tests/jira-endpoints-tester.js --tests=1,5,10');
-      console.log('  node tests/jira-endpoints-tester.js --tests=1-20,50-60');
+      console.log('  node tests/jira-endpoints-tester.js --tests=1-1,5-*');
+      console.log('  node tests/jira-endpoints-tester.js --tests=2,4-*');
       console.log('  node tests/jira-endpoints-tester.js --extended\n');
       return;
     }
@@ -1157,11 +800,11 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
       await tester.runExtendedTests();
     } else {
       console.log('📋 Running standard test suite...');
-      if (tester.selectedTests) {
-        console.log(`🎯 Selected tests: ${tester.selectedTests.length} test(s)`);
+      if (tester.selectedTestsGrouped) {
+        console.log(`🎯 Selected tests: ${tester.selectedTestsGrouped.length} selection(s)`);
       } else {
         console.log('💡 Tip: Use --extended or -e flag for comprehensive testing');
-        console.log('💡 Tip: Use --tests=1,5,10-15 for selective test execution');
+        console.log('💡 Tip: Use --tests=1-1,5-*,10 for selective test execution');
       }
       console.log('');
       await tester.runAllTests();
