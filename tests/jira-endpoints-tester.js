@@ -476,16 +476,13 @@ class JiraEndpointsTester {
       result = await this.makeRequest(api.method, api.endpoint, api.data, { fullId: testCase.fullId });
     }
 
-    // Валидируем результат ПЕРЕД логированием только если нет ошибки сети
-    let validation = { success: true, message: null };
-    if (result.success !== false || !result.error) {
-      validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
+    // Валидируем результат ПЕРЕД логированием (всегда, даже при ошибках)
+    let validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
 
-      // Если валидация не прошла, помечаем тест как неуспешный
-      if (!validation.success) {
-        result.success = false;
-        result.error = validation.message;
-      }
+    // Если валидация не прошла, помечаем тест как неуспешный
+    if (!validation.success) {
+      result.success = false;
+      result.error = validation.message;
     }
 
     const expectedStatus = testCase.expectedStatus || 200;

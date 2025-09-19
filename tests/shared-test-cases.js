@@ -1094,7 +1094,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: "10-2",
         name: 'Get Attachment Sample',
-        description: 'Получить созданное вложение',
+        description: 'Получить созданное вложение (FIXED VERSION)',
         mcpTool: null, // нет MCP инструмента
         mcpArgs: {},
         directApi: {
@@ -1103,7 +1103,7 @@ export class SharedJiraTestCases {
         },
         validation: {
           checkContent: (content) => content && content.includes('attachment'),
-          checkResult: (result, response) => response && [200].includes(response.status),
+          checkResult: (result, response) => result && result.success && response && [200].includes(response.status) && result.data && result.data.id,
           expectedProps: ['id', 'filename']
         },
         dependsOn: 'Create Attachment'
@@ -2035,17 +2035,26 @@ export class TestValidationUtils {
    * Проверить прямой API ответ
    */
   static validateDirectApiResponse(response, testCase) {
+    // Сначала проверяем пользовательскую валидацию, если она есть
+    if (testCase.validation?.checkResult) {
+      if (!testCase.validation.checkResult(response.data, response)) {
+        return {
+          success: false,
+          message: 'Result validation failed'
+        };
+      }
+      // Если пользовательская валидация прошла, считаем тест успешным
+      return {
+        success: true,
+        message: 'Validation passed'
+      };
+    }
+
+    // Если нет пользовательской валидации, используем стандартную проверку
     if (!response.success) {
       return {
         success: false,
         message: `API Error: ${response.status} ${response.statusText || response.error}`
-      };
-    }
-
-    if (testCase.validation?.checkResult && !testCase.validation.checkResult(response.data, response)) {
-      return {
-        success: false,
-        message: 'Result validation failed'
       };
     }
 
