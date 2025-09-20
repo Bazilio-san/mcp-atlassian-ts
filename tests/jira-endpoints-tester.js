@@ -476,7 +476,6 @@ class JiraEndpointsTester {
           const scrumBoard = boardsResult.data.values.find(board => board.type === 'scrum');
           if (scrumBoard) {
             boardId = scrumBoard.id.toString();
-            console.log(`🎯 Found scrum board: ${scrumBoard.name} (ID: ${boardId})`);
           } else {
             console.log('⚠️ No scrum board found, using fallback ID: 1');
           }
@@ -590,7 +589,7 @@ class JiraEndpointsTester {
     let result;
     const options = {
       fullId: testCase.fullId,
-      testName: testCase.description || testCase.name,
+      testName: testCase.name,
     };
     if (api.endpoint.startsWith('/agile/')) {
       result = await this.makeAgileRequest(api.method, api.endpoint, api.data, options);
@@ -615,9 +614,8 @@ class JiraEndpointsTester {
     // Output result validation
     if (!validation.success) {
       console.log(`❌ VALIDATION FAIL ${testCase.name} [${testCase.fullId}] - ${validation.message}`);
-    } else {
-      console.log(`✅ VALIDATION PASS ${testCase.name} - ${testCase.description}`);
     }
+    // Для успешных тестов ничего не выводим
 
     // Execute cleanup if necessary - register created resources
     if (testCase.cleanup && result.success) {

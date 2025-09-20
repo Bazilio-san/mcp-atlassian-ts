@@ -288,7 +288,7 @@ class MCPTestRunner {
       // Execute MCP call with logging metadata
       const response = await this.client.callTool(testCase.mcpTool, testCase.mcpArgs, {
         fullId: testCase.fullId,
-        testName: testCase.description || testCase.name
+        testName: testCase.name
       });
 
       // Validate MCP response
@@ -302,7 +302,7 @@ class MCPTestRunner {
         testCase.cleanup(response.result);
       }
 
-      console.log(chalk.gray(`   ${testCase.description} - completed successfully`));
+      console.log(chalk.gray(`   ${testCase.name} - completed successfully`));
       return response.result;
     });
 
