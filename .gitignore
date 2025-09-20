@@ -41,7 +41,7 @@ coverage/
 # Misc
 Thumbs.db
 
-# Файлы, формируемые realtime
+# Files formed by Realtime
 /_files/
 /_logs/
 /_cache/
@@ -62,13 +62,12 @@ temp/
 # OS specific files
 .github
 
-# Частные исключения
+# Private exceptions
 /config/local.*
 local-*.*
 /t.*
 *.local.*
 *.private.*
-/config/__servers__/
 **/ignor.*
 **/ignore.*
 **/*.ignore/**

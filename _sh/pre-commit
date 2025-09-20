@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#=============== Обновление версии перед комитом: minor + 1 ==========================
+#=============== Version update before commit: minor + 1 ==========================
 
 #File: .git/hooks/pre-commit
 # Version 2020-08-22

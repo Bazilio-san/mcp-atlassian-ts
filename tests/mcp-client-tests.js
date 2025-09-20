@@ -31,7 +31,7 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Проверка здоровья сервера
+   * Server health check
    */
   async healthCheck () {
     const response = await this.client.get('/health');
@@ -39,7 +39,7 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Получить список доступных инструментов
+   * Get list of available tools
    */
   async listTools () {
     const request = {
@@ -53,7 +53,7 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Вызвать MCP инструмент
+   * Call MCP tool
    */
   async callTool (name, args = {}) {
     const request = {
@@ -71,7 +71,7 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Получить информацию об инструменте
+   * Get tool information
    */
   async getToolInfo (name) {
     const request = {
@@ -86,7 +86,7 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Проверить соединение с сервером
+   * Check server connection
    */
   async ping () {
     try {
@@ -98,25 +98,25 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Получить статистику кеша (если доступна)
+   * Get cache statistics (if available)
    */
   async getCacheStats () {
     try {
       const response = await this.client.get('/cache/stats');
       return response.data;
     } catch (error) {
-      // Игнорируем ошибки - эндпоинт может быть недоступен
+      // Ignore errors - endpoint may be unavailable
       return null;
     }
   }
 }
 
 /**
- * JIRA-специфичные методы
+ * JIRA-specific methods
  */
 class JiraTestClient extends MCPAtlassianClient {
   /**
-   * Получить задачу JIRA
+   * Get JIRA issue
    */
   async getIssue (issueKey, options = {}) {
     return this.callTool('jira_get_issue', {
@@ -126,7 +126,7 @@ class JiraTestClient extends MCPAtlassianClient {
   }
 
   /**
-   * Поиск задач JIRA
+   * Search JIRA issues
    */
   async searchIssues (jql, options = {}) {
     return this.callTool('jira_search_issues', {
@@ -138,21 +138,21 @@ class JiraTestClient extends MCPAtlassianClient {
   }
 
   /**
-   * Создать задачу JIRA
+   * Create JIRA issue
    */
   async createIssue (params) {
     return this.callTool('jira_create_issue', params);
   }
 
   /**
-   * Получить проекты
+   * Get projects
    */
   async getProjects () {
     return this.callTool('jira_get_projects', {});
   }
 
   /**
-   * Добавить комментарий к задаче
+   * Add comment to issue
    */
   async addComment (issueKey, body) {
     return this.callTool('jira_add_comment', {
@@ -162,7 +162,7 @@ class JiraTestClient extends MCPAtlassianClient {
   }
 
   /**
-   * Получить переходы статусов для задачи
+   * Get status transitions for issue
    */
   async getTransitions (issueKey) {
     return this.callTool('jira_get_transitions', {
@@ -172,7 +172,7 @@ class JiraTestClient extends MCPAtlassianClient {
 }
 
 /**
- * Test Runner для проверки интеграции MCP Atlassian сервера
+ * Test Runner for MCP Atlassian server integration testing
  */
 class MCPTestRunner {
   constructor (client) {
@@ -184,7 +184,7 @@ class MCPTestRunner {
   }
 
   /**
-   * Выполнить конкретный тест
+   * Execute specific test
    */
   async runTest (name, testFn) {
     const startTime = Date.now();
@@ -219,7 +219,7 @@ class MCPTestRunner {
   }
 
   /**
-   * Тест проверки подключения к MCP серверу
+   * MCP server connection test
    */
   async testConnection () {
     const result = await this.runTest('MCP Server Connection', async () => {
@@ -236,7 +236,7 @@ class MCPTestRunner {
   }
 
   /**
-   * Тест получения списка доступных инструментов
+   * Available tools list test
    */
   async testListTools () {
     const result = await this.runTest('List Available Tools', async () => {
@@ -259,26 +259,26 @@ class MCPTestRunner {
   }
 
   /**
-   * Выполнить тест-кейс из shared test cases
+   * Execute test case from shared test cases
    */
   async runSharedTestCase(testCase) {
-    // Пропускаем тесты без MCP инструмента
+    // Skip tests without MCP tool
     if (!testCase.mcpTool) {
       console.log(chalk.yellow(`⏭️  Skipping ${testCase.name} - no MCP tool available`));
       return { name: testCase.name, success: true, skipped: true };
     }
 
     const result = await this.runTest(testCase.name, async () => {
-      // Выполняем MCP вызов
+      // Execute MCP call
       const response = await this.client.callTool(testCase.mcpTool, testCase.mcpArgs);
 
-      // Валидируем MCP ответ
+      // Validate MCP response
       const validation = TestValidationUtils.validateMcpResponse(response, testCase);
       if (!validation.success) {
         throw new Error(validation.message);
       }
 
-      // Выполняем дополнительную валидацию если необходимо
+      // Execute additional validation if needed
       if (testCase.cleanup) {
         testCase.cleanup(response.result);
       }
@@ -292,7 +292,7 @@ class MCPTestRunner {
   }
 
   /**
-   * Выполнить тесты определенной категории
+   * Execute tests of specific category
    */
   async runTestsByCategory(categoryName) {
     const testCases = this.testCases.getTestCasesByCategory(categoryName);
@@ -315,32 +315,32 @@ class MCPTestRunner {
   }
 
   /**
-   * Выполнить каскадные тесты (если они поддерживаются в MCP)
+   * Execute cascade tests (if supported in MCP)
    */
   async runCascadeTests() {
     console.log(chalk.blue('\n🔄 Testing CASCADE operations...\n'));
 
-    // Пока каскадные операции работают только с прямыми API вызовами
-    // В будущем можно добавить поддержку каскадов через MCP
+    // Currently cascade operations work only with direct API calls
+    // Future support for cascades through MCP can be added
     console.log(chalk.yellow('⏭️  Cascade operations are not yet supported via MCP'));
   }
 
   /**
-   * Запустить все тесты
+   * Run all tests
    */
   async runAllTests () {
     console.log(chalk.yellow('🚀 Starting MCP Atlassian integration tests...\n'));
 
-    // Базовые тесты соединения
+    // Basic connection tests
     await this.testConnection();
     await this.testListTools();
 
-    // Получаем минимальный набор тест-кейсов для быстрого тестирования
+    // Get minimal test case set for quick testing
     const testCases = this.testCases.getMinimalTestCases();
 
     console.log(chalk.blue(`\n📋 Running ${testCases.length} shared test cases...\n`));
 
-    // Выполняем тест-кейсы
+    // Execute test cases
     for (const testCase of testCases) {
       try {
         await this.runSharedTestCase(testCase);
@@ -354,25 +354,25 @@ class MCPTestRunner {
   }
 
   /**
-   * Запустить расширенные тесты
+   * Run extended tests
    */
   async runExtendedTests() {
     console.log(chalk.yellow('🚀 Starting EXTENDED MCP Atlassian integration tests...\n'));
 
-    // Базовые тесты соединения
+    // Basic connection tests
     await this.testConnection();
     await this.testListTools();
 
-    // Получаем все доступные категории тестов
+    // Get all available test categories
     const allTestCases = this.testCases.getAllTestCasesByCategory();
 
-    // Подсчитываем общее количество тестов с MCP инструментами
+    // Count total tests with MCP tools
     const allTestCasesList = this.testCases.getAllTestCasesFlat();
     const mcpTestCases = allTestCasesList.filter(tc => tc.mcpTool);
 
     console.log(chalk.blue(`\n📋 Running ${mcpTestCases.length} comprehensive test cases from all categories...\n`));
 
-    // Выполняем тесты по категориям
+    // Execute tests by categories
     const categories = [
       'system',
       'informational',
@@ -391,14 +391,14 @@ class MCPTestRunner {
       await this.runTestsByCategory(category);
     }
 
-    // Попытка запуска каскадных тестов
+    // Attempt to run cascade tests
     await this.runCascadeTests();
 
     return this.results;
   }
 
   /**
-   * Показать итоговый отчет
+   * Show summary report
    */
   printSummary () {
     console.log('\n' + chalk.yellow('📊 Test Summary:'));
@@ -426,7 +426,7 @@ class MCPTestRunner {
   }
 
   /**
-   * Получить результаты тестов
+   * Get test results
    */
   getResults () {
     return this.results;

@@ -1,16 +1,16 @@
 Write-Host "Removing node_modules. It may take a while..."
 
-# Игнорирование ошибок, аналог set +e
+# Ignore errors, equivalent to set +e
 $ErrorActionPreference = "Continue"
 
-# Удаление директории node_modules
+# Remove node_modules directory
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules
 
 Write-Host "Do yarn ci..."
 
 yarn install --frozen-lockfile
 
-# Если передан аргумент, ожидать нажатие клавиши
+# If argument is passed, wait for key press
 if ($args.Count -gt 0) {
   Read-Host "Press Enter to resume ..."
 }

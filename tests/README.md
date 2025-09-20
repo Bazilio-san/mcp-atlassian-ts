@@ -1,4 +1,4 @@
-# Тестирование MCP Client массовой проверкой эндпоинтов
+# MCP Client Testing with Mass Endpoint Verification
 
 ```bash
 # Terminal 1: Start JIRA emulator (Standalone)
@@ -12,24 +12,24 @@ npm start
 node tests/mcp-client-tests.js
 ```
 
-# "Тестировщик эндпоинтов": JIRA REST API v2 Endpoints Tester - прямой тест эндпоинтов (без MCP)
+# "Endpoint Tester": JIRA REST API v2 Endpoints Tester - direct endpoint testing (without MCP)
 
-Комплексный модуль для тестирования всех эндпоинтов JIRA REST API v2 на ванильном JavaScript 
-без использования тестовых фреймворков.
+Comprehensive module for testing all JIRA REST API v2 endpoints in vanilla JavaScript 
+without using testing frameworks.
 
 
-## 🎯 Возможности
+## 🎯 Features
 
-- ✅ **Информационные эндпоинты** - тестирует чтением данных и проверяет наличие ожидаемых свойств
-- ✅ **Изменяющие эндпоинты** - создает тестовые задачи, модифицирует их, проверяет результаты и удаляет
-- ✅ **Полное покрытие** - тестирует все эндпоинты из `tests/jira-api-v2.http` + дополнительные из документации
-- ✅ **Валидация данных** - проверяет структуру ответов и наличие обязательных полей
-- ✅ **Автоматическая очистка** - удаляет созданные тестовые ресурсы
-- ✅ **Подробные отчеты** - генерирует статистику успешности тестов
+- ✅ **Informational endpoints** - tests by reading data and checks for expected properties
+- ✅ **Modifying endpoints** - creates test issues, modifies them, checks results and deletes
+- ✅ **Full coverage** - tests all endpoints from `tests/jira-api-v2.http` + additional from documentation
+- ✅ **Data validation** - checks response structure and required fields presence
+- ✅ **Automatic cleanup** - deletes created test resources
+- ✅ **Detailed reports** - generates test success statistics
 
-## 🧪 Покрываемые эндпоинты
+## 🧪 Covered endpoints
 
-### Информационные эндпоинты
+### Informational endpoints
 - **Issues**:
   - `GET /issue/{key}`
   - `GET /issue/{key}/editmeta`
@@ -66,7 +66,7 @@ node tests/mcp-client-tests.js
   - `GET /filter/favourite`
   - `GET /permissions`
 
-### Изменяющие эндпоинты
+### Modifying endpoints
 - **Issue Management**:
   - `POST /issue`
   - `PUT /issue/{key}`
@@ -89,17 +89,17 @@ node tests/mcp-client-tests.js
   - `POST /issueLink`
   - `POST /issue/{key}/remotelink`
 
-### Agile эндпоинты
+### Agile endpoints
 - **Boards**:
   - `GET /agile/1.0/board`
   - `GET /agile/1.0/board/{id}/sprint`
   - `GET /agile/1.0/board/{id}/issue`
 
-## 🚀 Использование
+## 🚀 Usage
 
-### Запуск "Тестировщика эндпоинтов" с эмулятором
+### Running "Endpoint Tester" with emulator
 
-Прописать в .env
+Set in .env
 
 ```dotenv
 JIRA_URL=http://localhost:8080
@@ -112,31 +112,31 @@ TEST_ADD_X_HEADER=x-user:vpupkin
 node tests/jira-endpoints-tester.js
 ```
 
-### Программное использование
+### Programmatic usage
 ```javascript
 const JiraEndpointsTester = require('./jira-endpoints-tester');
 
-// Создание экземпляра тестера
+// Creating tester instance
 const tester = new JiraEndpointsTester();
 
-// Запуск всех тестов
+// Running all tests
 const results = await tester.runAllTests();
 
-console.log(`Пройдено: ${results.passedTests}/${results.totalTests}`);
-console.log(`Процент успешности: ${results.passRate}%`);
+console.log(`Passed: ${results.passedTests}/${results.totalTests}`);
+console.log(`Success rate: ${results.passRate}%`);
 ```
 
-### Кастомная конфигурация
+### Custom configuration
 ```javascript
 const tester = new JiraEndpointsTester();
 
-// Тестирование только информационных эндпоинтов
+// Testing only informational endpoints
 await tester.testIssueEndpoints();
 await tester.testProjectEndpoints();
 await tester.testMetadataEndpoints();
 ```
 
-## 📊 Примеры вывода
+## 📊 Output examples
 
 ```
 🚀 Starting comprehensive JIRA REST API v2 endpoint tests...
@@ -167,54 +167,54 @@ await tester.testMetadataEndpoints();
 ===============================================================================
 ```
 
-## 🎛️ Конфигурация
+## 🎛️ Configuration
 
-### Параметры конструктора
+### Constructor parameters
 ```javascript
 const cfg = {
-    baseUrl: 'http://localhost:8080',  // URL JIRA сервера
+    baseUrl: 'http://localhost:8080',  // URL JIRA server
     auth: {
-        type: 'basic',      // 'basic' или 'token'
-        username: 'admin',  // для basic auth
-        password: 'admin',  // для basic auth  
-        token: 'api-token'  // для token auth
+        type: 'basic',      // 'basic' or 'token'
+        username: 'admin',  // for basic auth
+        password: 'admin',  // for basic auth  
+        token: 'api-token'  // for token auth
     }
 }
 ```
 
-### Внутренние настройки
-- `testProjectKey: 'TEST'` - ключ проекта для тестирования
-- Автоматическое создание/удаление тестовых ресурсов
-- Таймауты и повторные попытки для HTTP запросов
+### Internal settings
+- `testProjectKey: 'TEST'` - project key for testing
+- Automatic creation/deletion of test resources
+- Timeouts and retries for HTTP requests
 
-## 🧹 Управление ресурсами
+## 🧹 Resource management
 
-Тестер автоматически отслеживает созданные ресурсы:
-- **Issues** - тестовые задачи
-- **Versions** - версии проектов  
-- **Comments** - комментарии
-- **Worklogs** - записи времени
-- **Links** - связи между задачами
+Tester automatically tracks created resources:
+- **Issues** - test issues
+- **Versions** - project versions  
+- **Comments** - comments
+- **Worklogs** - time logs
+- **Links** - issue links
 
-Все созданные ресурсы удаляются в конце тестирования.
+All created resources are deleted at the end of testing.
 
-## 🔍 Валидация данных
+## 🔍 Data validation
 
-Для информационных эндпоинтов тестер проверяет:
-- HTTP статус коды (200, 201, 204, 404 и т.д.)
-- Наличие обязательных полей в ответах
-- Корректность структуры JSON
-- Соответствие типов данных
+For informational endpoints tester checks:
+- HTTP status codes (200, 201, 204, 404 etc.)
+- Presence of required fields in responses
+- JSON structure correctness
+- Data type compliance
 
-Для изменяющих эндпоинтов дополнительно:
-- Фактическое применение изменений
-- Консистентность данных после операций
-- Корректность создания/обновления/удаления
+For modifying endpoints additionally:
+- Actual application of changes
+- Data consistency after operations
+- Correctness of create/update/delete operations
 
-## 🚀 Интеграция с CI/CD
+## 🚀 CI/CD Integration
 
 ```bash
-# В pipeline можно использовать так:
+# In pipeline can be used like this:
 node jira-endpoints-tester.js > test-results.log
 if [ $? -eq 0 ]; then
     echo "API tests passed"
@@ -224,16 +224,16 @@ else
 fi
 ```
 
-## 🤝 Совместимость
+## 🤝 Compatibility
 
 - **JIRA Versions**: Server 7.x+, Cloud, Data Center
 - **Node.js**: 12+
-- **Browsers**: Modern browsers с fetch API
+- **Browsers**: Modern browsers with fetch API
 - **API Version**: REST API v2
 
-## 📝 Логи и отчеты
+## 📝 Logs and reports
 
-Результаты сохраняются в `tester.testResults`:
+Results are saved in `tester.testResults`:
 ```javascript
 const res = {
     name: 'Get Issue',
@@ -246,19 +246,19 @@ const res = {
 };
 ```
 
-## 🎯 Использование с эмулятором
+## 🎯 Usage with emulator
 
-Для работы с встроенным JIRA эмулятором:
+For working with built-in JIRA emulator:
 ```bash
-# Terminal 1 - запустить эмулятор
+# Terminal 1 - start emulator
 node tests/jira-emulator.js
 
-# Terminal 2 - запустить тесты
+# Terminal 2 - run tests
 node tests/jira-endpoints-tester.js
 ```
 
-Эмулятор предоставляет тестовые данные:
+Emulator provides test data:
 - Project: **TEST**  
 - Issues: **TEST-1**, **TEST-2**
 - User: **admin/admin**
-- Полный набор метаданных (приоритеты, статусы, типы задач)
+- Full set of metadata (priorities, statuses, issue types)

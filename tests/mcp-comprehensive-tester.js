@@ -60,16 +60,16 @@ class ComprehensiveMCPTester {
           const descriptions = selection.selections.map(sel => {
             if (sel.type === 'group') {
               const groupInfo = this.testCases.getGroupInfo(sel.groupNumber);
-              return `группа ${sel.groupNumber} (${groupInfo?.name || 'Unknown'})`;
+              return `group ${sel.groupNumber} (${groupInfo?.name || 'Unknown'})`;
             } else {
               const groupInfo = this.testCases.getGroupInfo(sel.groupNumber);
-              return `тест ${sel.fullId} из группы "${groupInfo?.name || 'Unknown'}"`;
+              return `test ${sel.fullId} from group "${groupInfo?.name || 'Unknown'}"`;
             }
           });
-          console.log(chalk.blue(`🎯 Селективное выполнение тестов: ${descriptions.join(', ')}\n`));
+          console.log(chalk.blue(`🎯 Selective test execution: ${descriptions.join(', ')}\n`));
         }
       } catch (error) {
-        console.warn(chalk.yellow('⚠️  Ошибка при парсинге --tests параметра:', error.message));
+        console.warn(chalk.yellow('⚠️  Error parsing --tests parameter:', error.message));
         this.selectedTests = null;
       }
     } else {

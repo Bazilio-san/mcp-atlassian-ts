@@ -4,7 +4,7 @@
  * JIRA REST API v2 Endpoints Tester
  */
 
-// Для Node.js версий без глобального fetch
+// For Node.js versions without global fetch
 import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { SharedJiraTestCases, TestValidationUtils, ResourceManager } from './shared-test-cases.js';
@@ -33,26 +33,26 @@ class JiraEndpointsTester {
     }
     this.testResults = [];
     this.testProjectKey = TEST_JIRA_PROJECT;
-    this.testProjectId = null; // Будет получен динамически
+    this.testProjectId = null; // Will be obtained dynamically
     this.testIssueKey = TEST_ISSUE_KEY;
     this.failedTestIds = [];
     this.resourceManager = new ResourceManager();
 
-    // Поддержка переменной окружения для добавления X-заголовков
+    // Support for environment variable to add X-headers
     this.customHeaders = this.parseTestXHeaders();
 
-    // Инициализируем shared test cases
+    // Initialize shared test cases
     this.sharedTestCases = new SharedJiraTestCases();
 
-    // Парсим селективные тесты из аргументов командной строки
+    // Parse selective tests from command line arguments
     this.parseSelectedTests();
   }
 
   /**
-   * Парсинг номеров тестов для селективного выполнения
-   * Новый формат: node tests/jira-endpoints-tester.js --tests=1-1,4-*,5
-   * N-M где N - номер группы, M - номер теста в группе (* для всей группы)
-   * Также поддерживается N (эквивалентно N-*)
+   * Parse test numbers for selective execution
+   * New format: node tests/jira-endpoints-tester.js --tests=1-1,4-*,5
+   * N-M where N - group number, M - test number in group (* for entire group)
+   * Also supports N (equivalent to N-*)
    */
   parseSelectedTests () {
     const args = process.argv.slice(2);
@@ -65,57 +65,57 @@ class JiraEndpointsTester {
 
     const testsString = testsArg.split('=')[1];
     if (!testsString || testsString.trim() === '') {
-      this.selectedTestsGrouped = null; // Пустое значение = все тесты
+      this.selectedTestsGrouped = null; // Empty value = all tests
       return;
     }
 
     try {
-      // Используем новый метод парсинга из SharedJiraTestCases
+      // Use new parsing method from SharedJiraTestCases
       const selection = this.sharedTestCases.parseTestSelection(testsString);
 
       if (selection.includeAll) {
         this.selectedTestsGrouped = null;
-        console.log('🎯 Выполнение всех тестов\n');
+        console.log('🎯 Executing all tests\n');
       } else {
         this.selectedTestsGrouped = selection.selections;
 
-        // Формируем человекочитаемое описание выбора
+        // Generate human-readable selection description
         const selectionDescriptions = selection.selections.map(sel => {
           if (sel.type === 'group') {
             const groupInfo = this.sharedTestCases.getGroupInfo(sel.groupNumber);
-            return `группа ${sel.groupNumber} (${groupInfo?.name || 'Unknown'})`;
+            return `group ${sel.groupNumber} (${groupInfo?.name || 'Unknown'})`;
           } else {
             const groupInfo = this.sharedTestCases.getGroupInfo(sel.groupNumber);
-            return `тест ${sel.fullId} из группы "${groupInfo?.name || 'Unknown'}"`;
+            return `test ${sel.fullId} from group "${groupInfo?.name || 'Unknown'}"`;
           }
         });
 
-        console.log(`🎯 Селективное выполнение тестов: ${selectionDescriptions.join(', ')}\n`);
+        console.log(`🎯 Selective test execution: ${selectionDescriptions.join(', ')}\n`);
       }
     } catch (error) {
-      console.warn('⚠️  Ошибка при парсинге --tests параметра:', error.message);
+      console.warn('⚠️  Error parsing --tests parameter:', error.message);
       this.selectedTestsGrouped = null;
     }
   }
 
   /**
-   * Проверить, нужно ли выполнять тест с данным fullId
+   * Check if test with given fullId should be executed
    */
   shouldRunTest (fullId) {
     if (this.selectedTestsGrouped === null) {
-      return true; // Выполнять все тесты
+      return true; // Execute all tests
     }
 
-    // Работаем только с тестами из SharedJiraTestCases с fullId
+    // Work only with tests from SharedJiraTestCases with fullId
     if (typeof fullId === 'string' && fullId.includes('-')) {
       const [groupNumber, testNumber] = fullId.split('-').map(n => parseInt(n));
 
       return this.selectedTestsGrouped.some(sel => {
         if (sel.type === 'group' && sel.groupNumber === groupNumber) {
-          return true; // Вся группа выбрана
+          return true; // Entire group selected
         }
         if (sel.type === 'test' && sel.groupNumber === groupNumber && sel.testNumber === testNumber) {
-          return true; // Конкретный тест выбран
+          return true; // Specific test selected
         }
         return false;
       });
@@ -125,8 +125,8 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Парсинг X-заголовков из переменной окружения TEST_ADD_X_HEADER
-   * Формат: "x-header-name:value" или "x-header1:value1,x-header2:value2"
+   * Parse X-headers from TEST_ADD_X_HEADER environment variable
+   * Format: "x-header-name:value" or "x-header1:value1,x-header2:value2"
    */
   parseTestXHeaders () {
     const testHeaders = process.env.TEST_ADD_X_HEADER;
@@ -136,35 +136,35 @@ class JiraEndpointsTester {
 
     const headers = {};
     try {
-      // Поддерживаем как одиночные заголовки, так и список через запятую
+      // Support both single headers and comma-separated list
       const headerPairs = testHeaders.split(',').map(h => h.trim());
 
       for (const pair of headerPairs) {
         const [name, ...valueParts] = pair.split(':');
         if (name && valueParts.length > 0) {
-          const value = valueParts.join(':').trim(); // На случай если в значении есть двоеточие
+          const value = valueParts.join(':').trim(); // In case value contains colon
           headers[name.trim()] = value;
         }
       }
 
       if (Object.keys(headers).length > 0) {
-        console.log('🔧 Добавляемые X-заголовки из TEST_ADD_X_HEADER:', headers);
+        console.log('🔧 Added X-headers from TEST_ADD_X_HEADER:', headers);
       }
     } catch (error) {
-      console.warn('⚠️  Ошибка при парсинге TEST_ADD_X_HEADER:', error.message);
+      console.warn('⚠️  Error parsing TEST_ADD_X_HEADER:', error.message);
     }
 
     return headers;
   }
 
   /**
-   * Получить заголовки авторизации
+   * Get authorization headers
    */
   getAuthHeaders () {
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...this.customHeaders, // Добавляем X-заголовки из переменной окружения
+      ...this.customHeaders, // Add X-headers from environment variable
     };
 
     if (this.auth.type === 'basic') {
@@ -178,7 +178,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Выполнить HTTP запрос
+   * Execute HTTP request
    */
   async makeRequest (method, endpoint, data = null, options = {}) {
     const url = `${this.baseUrl}/rest/api/2${endpoint}`;
@@ -186,14 +186,14 @@ class JiraEndpointsTester {
       method,
     };
 
-    // Для FormData не устанавливаем Content-Type, браузер сам добавит multipart/form-data
+    // For FormData do not set Content-Type, browser will add multipart/form-data
     if (data instanceof FormData) {
       config.headers = {
         ...this.getAuthHeaders(),
-        'X-Atlassian-Token': 'no-check', // Отключаем XSRF проверку для загрузки файлов
+        'X-Atlassian-Token': 'no-check', // Disable XSRF check for file uploads
         ...options.headers,
       };
-      // Удаляем Content-Type для FormData
+      // Remove Content-Type for FormData
       delete config.headers['Content-Type'];
       config.body = data;
     } else {
@@ -206,7 +206,7 @@ class JiraEndpointsTester {
     try {
       const response = await fetch(url, config);
 
-      // Проверяем, есть ли содержимое для парсинга (status 204 = No Content)
+      // Check if there is content to parse (status 204 = No Content)
       let responseData = null;
       if (response.status !== 204) {
         const contentLength = response.headers.get('content-length');
@@ -251,7 +251,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Выполнить HTTP запрос к Agile API
+   * Execute HTTP request to Agile API
    */
   async makeAgileRequest (method, endpoint, data = null, options = {}) {
     const url = `${this.baseUrl}/rest${endpoint}`;
@@ -266,7 +266,7 @@ class JiraEndpointsTester {
 
     try {
       const response = await fetch(url, config);
-      // Проверяем, есть ли содержимое для парсинга (status 204 = No Content)
+      // Check if there is content to parse (status 204 = No Content)
       let responseData = null;
       if (response.status !== 204) {
         const contentLength = response.headers.get('content-length');
@@ -311,18 +311,18 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Логирование результатов тестов
+   * Test result logging
    */
   logTest (testName, result, expectedStatus = null, endpoint = null, fullId = null) {
-    // Все тесты должны иметь fullId - если нет, пропускаем
+    // All tests must have fullId - skip if not
     if (!fullId) {
       console.warn(`⚠️ Test "${testName}" skipped - no fullId provided`);
       return false;
     }
 
-    // Проверяем селективное выполнение для групповых тестов
+    // Check selective execution for grouped tests
     if (!this.shouldRunTest(fullId)) {
-      return false; // Тест был пропущен
+      return false; // Test was skipped
     }
 
     const status = result.success ? '✅ PASS' : '❌ FAIL';
@@ -331,7 +331,7 @@ class JiraEndpointsTester {
       : ` - Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
-    // Для ошибок добавляем statusText и error в вывод
+    // For errors add statusText and error to output
     const errorInfo = !result.success && (result.statusText || result.error)
       ? ` (${result.statusText ? result.statusText : ''}${result.statusText && result.error ? ' - ' : ''}${result.error ? result.error : ''})`
       : '';
@@ -340,7 +340,7 @@ class JiraEndpointsTester {
 
     this.testResults.push({
       fullId: fullId,
-      testId: fullId, // testId теперь всегда равен fullId
+      testId: fullId, // testId is now always equal to fullId
       name: testName,
       success: result.success,
       status: result.status,
@@ -350,7 +350,7 @@ class JiraEndpointsTester {
       timestamp: new Date().toISOString(),
     });
 
-    // Сохраняем ID неудачных тестов
+    // Save failed test IDs
     if (!result.success) {
       if (!this.failedTestIds) {
         this.failedTestIds = [];
@@ -362,48 +362,48 @@ class JiraEndpointsTester {
       console.error(`      Error: ${result.error}`);
     }
 
-    return true; // Тест был выполнен
+    return true; // Test was executed
   }
 
   /**
-   * Заменить плейсхолдеры в endpoint на реальные значения
+   * Replace placeholders in endpoint with real values
    */
   async replacePlaceholders (endpoint) {
-    // Получаем созданные ресурсы
+    // Get created resources
     const createdResources = this.resourceManager.getCreatedResources();
 
-    // Заменяем плейсхолдеры на реальные значения
+    // Replace placeholders with real values
     let replacedEndpoint = endpoint;
 
     if (endpoint.includes('{versionId}')) {
-      // Используем созданный ресурс или fallback на наиболее вероятный ID
+      // Use created resource or fallback to most likely ID
       let versionId;
       if (createdResources.versions.length > 0) {
         versionId = createdResources.versions[0];
       } else {
-        // Fallback: эмулятор создает версии начиная с 10001
-        // Используем последнюю созданную версию (предположительно)
-        versionId = '10001'; // первая версия создается тестом 8-5
+        // Fallback: emulator creates versions starting from 10001
+        // Use last created version (presumably)
+        versionId = '10001'; // first version created by test 8-5
       }
       replacedEndpoint = replacedEndpoint.replace('{versionId}', versionId);
     }
 
     if (endpoint.includes('{issueKey}')) {
-      // Используем созданный ресурс или fallback на тестовую задачу
+      // Use created resource or fallback on test tasks
       const issueKey = createdResources.issues.length > 0
         ? createdResources.issues[0]
-        : this.testIssueKey; // fallback на TEST-1
+        : this.testIssueKey; // fallback to TEST-1
       replacedEndpoint = replacedEndpoint.replace('{issueKey}', issueKey);
     }
 
     if (endpoint.includes('{boardId}')) {
-      // Динамически ищем доску типа scrum
-      let boardId = '1'; // fallback значение
+      // Dynamically search for scrum type board
+      let boardId = '1'; // fallback value
 
       try {
         const boardsResult = await this.makeAgileRequest('GET', '/agile/1.0/board');
         if (boardsResult.success && boardsResult.data && boardsResult.data.values) {
-          // Ищем первую доску типа scrum
+          // Search for first scrum type board
           const scrumBoard = boardsResult.data.values.find(board => board.type === 'scrum');
           if (scrumBoard) {
             boardId = scrumBoard.id.toString();
@@ -420,7 +420,7 @@ class JiraEndpointsTester {
     }
 
     if (endpoint.includes('{attachmentId}')) {
-      // Используем созданный attachment или fallback
+      // Use created attachment or fallback
       const attachmentId = createdResources.attachments && createdResources.attachments.length > 0
         ? createdResources.attachments[0]
         : '10000'; // fallback ID
@@ -428,42 +428,42 @@ class JiraEndpointsTester {
     }
 
     if (endpoint.includes('{workflowSchemeId}')) {
-      // Для workflow scheme ID используем сохраненное значение из первого теста
+      // For workflow scheme ID use saved value from first test
       const workflowSchemeId = createdResources.workflowSchemes && createdResources.workflowSchemes.length > 0
         ? createdResources.workflowSchemes[0]
-        : '1'; // fallback ID для тестирования
+        : '1'; // fallback ID for testing
       replacedEndpoint = replacedEndpoint.replace('{workflowSchemeId}', workflowSchemeId);
     }
 
-    // Обработка {linkId} требует специальной логики - будет обработана в runTest
-    // так как требует асинхронного запроса для получения ID связи
+    // Processing {linkId} requires special logic - will be handled in runTest
+    // as it requires async request to get link ID
 
     return replacedEndpoint;
   }
 
   /**
-   * Выполнить тест-кейс из shared test cases через прямой API вызов
+   * Execute test case from shared test cases via direct API call
    */
   async runSharedTestCase (testCase) {
-    // Проверяем селективное выполнение используя новую групповую систему
+    // Check selective execution using new group system
     if (testCase.fullId && !this.shouldRunTest(testCase.fullId)) {
-      return null; // Пропускаем выполнение теста
+      return null; // Skip execution test
     }
 
     const api = testCase.directApi;
     const originalEndpoint = api.endpoint;
 
-    // Специальная обработка для тестов, требующих linkId
+    // Special handling for tests, requiring linkId
     if (originalEndpoint.includes('{linkId}')) {
       let linkReplacement = 'ISSUE_NOT_FOUND';
       try {
-        // Получаем информацию о задаче и её связях
-        const options = { fullId: testCase.fullId + '-link-lookup' }; // Это вспомогательный запрос, поэтому добавляем суяяикс
+        // Get information about tasks and their links
+        const options = { fullId: testCase.fullId + '-link-lookup' }; // This auxiliary request, therefore add suffix
         const issueResult = await this.makeRequest('GET', `/issue/${this.testIssueKey}`, null, options);
         const links = issueResult?.data?.fields?.issuelinks;
         if (issueResult.success && links?.length) {
           const linkKey = this.sharedTestCases.secondTestIssueKey;
-          // Ищем связь с типом TEST_ISSUE_LINK_TYPE и второй задачей
+          // Search for link with type TEST_ISSUE_LINK_TYPE and second tasks
           const targetLink = links.find(link =>
             (link.type?.name === linkKey) ||
             (link.outwardIssue?.key === linkKey) ||
@@ -476,7 +476,7 @@ class JiraEndpointsTester {
       }
       api.endpoint = originalEndpoint.replace('{linkId}', linkReplacement);
     } else if (originalEndpoint.includes('{workflowSchemeId}') && testCase.dependsOn === 'Get Project Workflow Scheme') {
-      // Специальная обработка для тестов workflow scheme - используем уже сохраненный ID
+      // Special handling for tests workflow scheme - use already saved ID
       let workflowSchemeId = null;
       try {
         const createdResources = this.resourceManager.getCreatedResources();
@@ -484,8 +484,8 @@ class JiraEndpointsTester {
         if (createdResources.workflowSchemes?.length) {
           workflowSchemeId = createdResources.workflowSchemes[0];
         } else {
-          // Если ID еще не получен, получаем его из первого теста
-          const options = { fullId: testCase.fullId + '-scheme-lookup' }; // Это вспомогательный запрос, поэтому добавляем суяяикс
+          // If ID still not received, get it from first test
+          const options = { fullId: testCase.fullId + '-scheme-lookup' }; // This auxiliary request, therefore add suffix
           const schemeResult = await this.makeRequest('GET', `/project/${this.testProjectKey}/workflowscheme`, null, options);
           workflowSchemeId = schemeResult?.data?.id;
           if (schemeResult.success && workflowSchemeId) {
@@ -494,7 +494,7 @@ class JiraEndpointsTester {
             workflowSchemeId = '1'; // fallback
           }
         }
-        // Заменяем остальные плейсхолдеры
+        // Replace remaining placeholders
         api.endpoint = await this.replacePlaceholders(api.endpoint);
       } catch (error) {
         workflowSchemeId = 'ERROR_GETTING_SCHEME';
@@ -502,13 +502,13 @@ class JiraEndpointsTester {
       api.endpoint = originalEndpoint.replace('{workflowSchemeId}', workflowSchemeId);
 
     } else {
-      // Заменяем плейсхолдеры в endpoint
+      // Replace placeholders in endpoint
       api.endpoint = await this.replacePlaceholders(originalEndpoint);
     }
 
-    // Специальная обработка для тестов, требующих файлы
+    // Special handling for tests, requiring files
     if (testCase.requiresFile && api.method === 'POST' && api.endpoint.includes('/attachments')) {
-      // Создаем тестовый файл для attachment
+      // Create test file for attachment
       const testFileContent = 'This is a test file for JIRA attachment testing.';
       const blob = new Blob([testFileContent], { type: 'text/plain' });
       const formData = new FormData();
@@ -517,7 +517,7 @@ class JiraEndpointsTester {
       api.data = formData;
     }
 
-    // Определяем метод запроса
+    // Determine request method
     let result;
     const options = { fullId: testCase.fullId };
     if (api.endpoint.startsWith('/agile/')) {
@@ -526,12 +526,12 @@ class JiraEndpointsTester {
       result = await this.makeRequest(api.method, api.endpoint, api.data, options);
     }
 
-    // Валидируем результат ТОЛЬКО если запрос был успешным
+    // Validate result ONLY if request was successful
     let validation = { success: true, message: null };
     if (result.success) {
       validation = TestValidationUtils.validateDirectApiResponse(result, testCase);
 
-      // Если валидация не прошла, помечаем тест как неуспешный
+      // If validation not passed, mark test as unsuccessful
       if (!validation.success) {
         result.success = false;
         result.error = validation.message;
@@ -540,19 +540,19 @@ class JiraEndpointsTester {
 
     this.logTest(testCase.name, result, testCase.expectedStatus, api.endpoint, testCase.fullId);
 
-    // Выводим результат валидации
+    // Output result validation
     if (!validation.success) {
       console.log(`❌ VALIDATION FAIL ${testCase.name} [${testCase.fullId}] - ${validation.message}`);
     } else {
       console.log(`✅ VALIDATION PASS ${testCase.name} - ${testCase.description}`);
     }
 
-    // Выполняем cleanup если необходимо - регистрируем созданные ресурсы
+    // Execute cleanup if necessary - register created resources
     if (testCase.cleanup && result.success) {
-      // Выполняем cleanup в контексте testCase, но также регистрируем в нашем ResourceManager
+      // Execute cleanup in specific testCase, but also register in our ResourceManager
       testCase.cleanup(result.data);
 
-      // Дополнительно регистрируем в нашем ResourceManager для плейсхолдеров
+      // Additionally register in our ResourceManager for placeholders
       if (testCase.name === 'Create Version' && result.data && result.data.id) {
         this.resourceManager.addResource('versions', result.data.id);
       }
@@ -564,7 +564,7 @@ class JiraEndpointsTester {
       }
     }
 
-    // Регистрируем важные ресурсы даже без cleanup
+    // Register important resources already without cleanup
     if (result.success) {
       if (testCase.name === 'Get Project Workflow Scheme' && result.data && result.data.id) {
         this.resourceManager.addResource('workflowSchemes', result.data.id);
@@ -576,26 +576,26 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Выполнить тесты определенной категории
+   * Execute tests of specific category
    */
   async runTestsByCategory (categoryName) {
     const testCases = this.sharedTestCases.getTestCasesByCategory(categoryName);
 
-    // Проверяем, есть ли тесты для выполнения в этой категории
+    // Check, is are tests for execution in this category
     if (this.selectedTestsGrouped !== null) {
-      // В режиме селективного выполнения проверяем, есть ли выбранные тесты в категории
+      // In mode selective execution check, is are selected tests in category
       const selectedTestsInCategory = testCases.filter(tc =>
         tc.fullId && this.shouldRunTest(tc.fullId),
       );
 
       if (selectedTestsInCategory.length === 0) {
-        // Категория пропускается полностью
+        // Category skipped completely
         return;
       }
 
       console.log(`\n=== TESTING ${categoryName.toUpperCase()} (${selectedTestsInCategory.length}/${testCases.length} tests selected) ===`);
     } else {
-      // Выполняем все тесты в категории
+      // Execute all tests in category
       console.log(`\n=== TESTING ${categoryName.toUpperCase()} (${testCases.length} tests) ===`);
     }
 
@@ -603,7 +603,7 @@ class JiraEndpointsTester {
       try {
         const result = await this.runSharedTestCase(testCase);
         if (result === null) {
-          // Тест был пропущен из-за селективного выполнения
+          // Test was skipped due to selective execution
           continue;
         }
       } catch (error) {
@@ -613,7 +613,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Каскадные тесты отключены - использовались только legacy код
+   * Cascade tests disabled - use only legacy code
    */
   async runCascadeTests () {
     console.log('\n=== CASCADE TESTS DISABLED ===');
@@ -621,14 +621,14 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Запустить минимальные shared test cases
+   * Run minimal shared test cases
    */
   async testSharedTestCases () {
     await this.runTestsByCategory('system');
   }
 
   /**
-   * === ИНФОРМАЦИОННЫЕ ЭНДПОИНТЫ ===
+   * === INFORMATIONAL ENDPOINTS ===
    */
 
 
@@ -654,7 +654,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * === ИЗМЕНЯЮЩИЕ ЭНДПОИНТЫ ===
+   * === MODIFYING ENDPOINTS ===
    */
 
   async testModifyingEndpoints () {
@@ -670,7 +670,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * === ДОПОЛНИТЕЛЬНЫЕ ЭНДПОИНТЫ ===
+   * === ADD ENDPOINTS ===
    */
 
   async testAdditionalEndpoints () {
@@ -683,17 +683,17 @@ class JiraEndpointsTester {
    */
 
   async testWorkflowSchemesEndpoints () {
-    // Сначала получаем project ID для TEST_JIRA_PROJECT
+    // First get project ID for TEST_JIRA_PROJECT
     await this.getProjectId();
     await this.runTestsByCategory('workflowSchemes');
   }
 
   /**
-   * Получить ID проекта по ключу
+   * Get ID project by key
    */
   async getProjectId () {
     if (this.testProjectId !== null) {
-      return this.testProjectId; // Уже получен
+      return this.testProjectId; // Already received
     }
 
     try {
@@ -724,10 +724,10 @@ class JiraEndpointsTester {
 
     const createdResources = this.resourceManager.getCreatedResources();
 
-    // Удаляем созданные версии
+    // Delete created versions
     for (const versionId of createdResources.versions) {
       const deleteVersion = await this.makeRequest('DELETE', `/version/${versionId}`);
-      // Cleanup не логируется как тест - это служебная операция
+      // Cleanup not logged as test - this service operation
       if (deleteVersion.success) {
         console.log(`✅ Deleted Version ${versionId}`);
       } else {
@@ -735,10 +735,10 @@ class JiraEndpointsTester {
       }
     }
 
-    // Удаляем созданные задачи
+    // Delete created tasks
     for (const issueKey of createdResources.issues) {
       const deleteIssue = await this.makeRequest('DELETE', `/issue/${issueKey}`);
-      // Cleanup не логируется как тест - это служебная операция
+      // Cleanup not logged as test - this service operation
       if (deleteIssue.success) {
         console.log(`✅ Deleted Issue ${issueKey}`);
       } else {
@@ -751,7 +751,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * === ОСНОВНОЙ МЕТОД ЗАПУСКА ВСЕХ ТЕСТОВ ===
+   * === MAIN METHOD LAUNCH ALL TESTS ===
    */
 
   async runAllTests () {
@@ -763,29 +763,29 @@ class JiraEndpointsTester {
     const startTime = Date.now();
 
     try {
-      // Сначала запускаем shared test cases для согласованности с MCP тестами
+      // First run shared test cases for consistency with MCP tests
       await this.testSharedTestCases();
 
-      // Тестируем информационные эндпоинты
+      // Test informational endpoints
       await this.testIssueEndpoints();
       await this.testSearchEndpoints();
       await this.testProjectEndpoints();
       await this.testUserEndpoints();
       await this.testMetadataEndpoints();
 
-      // Тестируем изменяющие эндпоинты
+      // Test modifying endpoints
       await this.testModifyingEndpoints();
 
-      // Тестируем Agile эндпоинты
+      // Test Agile endpoints
       await this.testAgileEndpoints();
 
-      // Тестируем дополнительные эндпоинты
+      // Test additional endpoints
       await this.testAdditionalEndpoints();
 
-      // Тестируем workflow schemes эндпоинты
+      // Test workflow schemes endpoints
       await this.testWorkflowSchemesEndpoints();
 
-      // Тестируем каскадные операции
+      // Test cascade operations
       await this.runCascadeTests();
 
     } catch (error) {
@@ -797,7 +797,7 @@ class JiraEndpointsTester {
   }
 
   /**
-   * Запустить расширенные тесты для всех эндпоинтов эмулятора
+   * Run extended tests for all endpoints emulator
    */
   async runExtendedTests () {
     console.log('🚀 Starting EXTENDED JIRA EMULATOR tests...');
@@ -807,7 +807,7 @@ class JiraEndpointsTester {
     const startTime = Date.now();
 
     try {
-      // Запускаем все категории тестов из SharedJiraTestCases
+      // Run all category tests from SharedJiraTestCases
       await this.runTestsByCategory('system');
       await this.testSharedTestCases();
       await this.testIssueEndpoints();
@@ -816,16 +816,16 @@ class JiraEndpointsTester {
       await this.testUserEndpoints();
       await this.testMetadataEndpoints();
 
-      // Тестируем изменяющие эндпоинты
+      // Test modifying endpoints
       await this.testModifyingEndpoints();
 
-      // Тестируем Agile эндпоинты
+      // Test Agile endpoints
       await this.testAgileEndpoints();
 
-      // Тестируем дополнительные эндпоинты
+      // Test additional endpoints
       await this.testAdditionalEndpoints();
 
-      // Тестируем каскадные операции
+      // Test cascade operations
       await this.runCascadeTests();
 
     } catch (error) {
@@ -855,13 +855,13 @@ class JiraEndpointsTester {
     console.log(`📈 Pass Rate: ${passRate}%`);
     console.log('='.repeat(80));
 
-    // Добавляем статистику по группам если есть тесты с fullId
+    // Add statistics by groups if is tests with fullId
     const groupedTests = this.testResults.filter(t => t.fullId);
     if (groupedTests.length > 0) {
       console.log('\n📋 STATISTICS BY TEST GROUPS:');
       console.log('-'.repeat(60));
 
-      // Получаем статистику по группам
+      // Get statistics by groups
       const groupStats = {};
       const allGroupInfo = this.sharedTestCases.getAllGroupInfo();
 
@@ -887,7 +887,7 @@ class JiraEndpointsTester {
         }
       });
 
-      // Выводим статистику по группам
+      // Output statistics by groups
       Object.keys(groupStats)
         .sort((a, b) => parseInt(a) - parseInt(b))
         .forEach(groupNumber => {
@@ -909,7 +909,7 @@ class JiraEndpointsTester {
           console.log(`   • [${testId}] ${test.name} [${test.method} ${test.endpoint}] - ${test.status}: ${test.details}`);
         });
 
-      // Показываем неудачные тесты по группам
+      // Show failed tests by groups
       const groupedFailedTests = this.testResults.filter(t => !t.success && t.fullId);
       if (groupedFailedTests.length > 0) {
         console.log('\n❌ FAILED TESTS BY GROUPS:');
@@ -941,7 +941,7 @@ class JiraEndpointsTester {
     console.log('\n📝 Detailed results saved to testResults array');
     console.log('🎯 All JIRA REST API v2 endpoints have been tested!');
 
-    // Возвращаем результаты для программного использования
+    // Return results for programmatic usage
     return {
       totalTests,
       passedTests,
@@ -954,15 +954,15 @@ class JiraEndpointsTester {
   }
 }
 
-// ES Modules экспорт
+// ES Modules export
 export default JiraEndpointsTester;
 
-// Автозапуск если файл запущен напрямую
+// Auto-run if file run directly
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   (async () => {
     const tester = new JiraEndpointsTester();
 
-    // Проверяем аргументы командной строки
+    // Check arguments command line
     const args = process.argv.slice(2);
     const isExtended = args.includes('--extended') || args.includes('-e');
     const showHelp = args.includes('--help') || args.includes('-h');

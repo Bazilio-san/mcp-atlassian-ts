@@ -1,7 +1,7 @@
 /**
  * Shared JIRA API Test Cases
- * Реализует общие тест-кейсы для проверки JIRA API, которые могут использоваться
- * как для прямого тестирования эмулятора, так и для тестирования MCP сервера
+ * Implements common test cases for JIRA API validation that can be used
+ * for both direct emulator testing and MCP server testing
  */
 
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
@@ -9,7 +9,7 @@ import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_
 import { incl, isObj, inclOneOf } from './utils.js';
 
 /**
- * Константы групп тестов
+ * Test group constants
  */
 export const TEST_GROUPS = {
   SYSTEM: 1,
@@ -28,32 +28,32 @@ export const TEST_GROUPS = {
 };
 
 /**
- * Информация о группах тестов
+ * Test groups information
  */
 export const GROUP_INFO = {
-  [TEST_GROUPS.SYSTEM]: { name: 'System', description: 'Системные эндпоинты' },
-  [TEST_GROUPS.INFORMATIONAL]: { name: 'Informational', description: 'Базовые информационные тесты' },
-  [TEST_GROUPS.ISSUE_DETAILED]: { name: 'IssueDetailed', description: 'Детальные тесты задач' },
-  [TEST_GROUPS.SEARCH_DETAILED]: { name: 'SearchDetailed', description: 'Детальные тесты поиска' },
-  [TEST_GROUPS.PROJECT_DETAILED]: { name: 'ProjectDetailed', description: 'Детальные тесты проектов' },
-  [TEST_GROUPS.USER_DETAILED]: { name: 'UserDetailed', description: 'Детальные тесты пользователей' },
-  [TEST_GROUPS.METADATA_DETAILED]: { name: 'MetadataDetailed', description: 'Детальные тесты метаданных' },
-  [TEST_GROUPS.MODIFYING]: { name: 'Modifying', description: 'Тесты изменения данных' },
-  [TEST_GROUPS.AGILE]: { name: 'Agile', description: 'Тесты Agile API' },
-  [TEST_GROUPS.ADDITIONAL]: { name: 'Additional', description: 'Дополнительные тесты' },
-  [TEST_GROUPS.WORKFLOW_SCHEMES]: { name: 'WorkflowSchemes', description: 'Тесты схем рабочих процессов' },
-  [TEST_GROUPS.EXTENDED]: { name: 'Extended', description: 'Расширенные тесты' },
-  [TEST_GROUPS.CASCADE]: { name: 'Cascade', description: 'Каскадные операции' },
+  [TEST_GROUPS.SYSTEM]: { name: 'System', description: 'System endpoints' },
+  [TEST_GROUPS.INFORMATIONAL]: { name: 'Informational', description: 'Basic informational tests' },
+  [TEST_GROUPS.ISSUE_DETAILED]: { name: 'IssueDetailed', description: 'Detailed issue tests' },
+  [TEST_GROUPS.SEARCH_DETAILED]: { name: 'SearchDetailed', description: 'Detailed search tests' },
+  [TEST_GROUPS.PROJECT_DETAILED]: { name: 'ProjectDetailed', description: 'Detailed project tests' },
+  [TEST_GROUPS.USER_DETAILED]: { name: 'UserDetailed', description: 'Detailed user tests' },
+  [TEST_GROUPS.METADATA_DETAILED]: { name: 'MetadataDetailed', description: 'Detailed metadata tests' },
+  [TEST_GROUPS.MODIFYING]: { name: 'Modifying', description: 'Data modification tests' },
+  [TEST_GROUPS.AGILE]: { name: 'Agile', description: 'Agile API tests' },
+  [TEST_GROUPS.ADDITIONAL]: { name: 'Additional', description: 'Additional tests' },
+  [TEST_GROUPS.WORKFLOW_SCHEMES]: { name: 'WorkflowSchemes', description: 'Workflow schemes tests' },
+  [TEST_GROUPS.EXTENDED]: { name: 'Extended', description: 'Extended tests' },
+  [TEST_GROUPS.CASCADE]: { name: 'Cascade', description: 'Cascade operations' },
 };
 
 /**
- * Определяет набор тест-кейсов для различных JIRA API эндпоинтов
- * Каждый тест-кейс содержит информацию о том, как вызвать API и как проверить результат
+ * Defines test cases for various JIRA API endpoints
+ * Each test case contains information on how to call API and validate results
  */
 export class SharedJiraTestCases {
   constructor () {
     this.testProjectKey = TEST_JIRA_PROJECT;
-    this.testProjectId = 10000; // Дефолтный ID проекта
+    this.testProjectId = 10000; // Default project ID
     this.testUsername = appConfig.jira.auth.basic.username;
     this.testIssueKey = TEST_ISSUE_KEY;
     this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY;
@@ -67,7 +67,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить системные тест-кейсы (serverInfo, configuration, permissions)
+   * Get system test cases (serverInfo, configuration, permissions)
    */
   getSystemTestCases () {
     return [
@@ -76,7 +76,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '1-1',
         name: 'Get Server Info',
-        description: 'Получить информацию о сервере JIRA',
+        description: 'Get JIRA server information',
         mcpTool: 'health_check',
         mcpArgs: { detailed: true },
         directApi: {
@@ -86,8 +86,8 @@ export class SharedJiraTestCases {
         expectedStatus: 200,
         validation: {
           checkContent: (c) => incl(c, 'status'),
-          checkResult: (result) => result?.status === 'ok',
-          expectedProps: ['status', 'service', 'version'],
+          checkResult: (result, response) => response.success,
+          expectedProps: ['deploymentType', 'version'],
         },
       },
       {
@@ -95,8 +95,8 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '1-2',
         name: 'Get Configuration',
-        description: 'Получить конфигурацию JIRA',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get JIRA configuration',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -114,8 +114,8 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '1-3',
         name: 'Get Permissions',
-        description: 'Получить разрешения JIRA',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get JIRA permissions',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -133,8 +133,8 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '1-4',
         name: 'Get Application Roles',
-        description: 'Получить роли приложений',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get application roles',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -151,8 +151,8 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить базовые информационные тест-кейсы
-   * Эти тесты проверяют получение данных без их изменения
+   * Get basic informational test cases
+   * These tests verify data retrieval without modification
    */
   getInformationalTestCases () {
     return [
@@ -161,7 +161,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '2-1',
         name: 'Get Issue',
-        description: 'Получить информацию о задаче',
+        description: 'Get issue information',
         mcpTool: 'jira_get_issue',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -183,7 +183,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '2-2',
         name: 'Search Issues',
-        description: 'Поиск задач по JQL',
+        description: 'Search issues by JQL',
         mcpTool: 'jira_search_issues',
         mcpArgs: {
           jql: `project = ${this.testProjectKey}`,
@@ -211,7 +211,7 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '2-3',
         name: 'Get Projects',
-        description: 'Получить список проектов',
+        description: 'Get projects list',
         mcpTool: 'jira_get_projects',
         mcpArgs: {},
         directApi: {
@@ -230,7 +230,7 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '2-4',
         name: 'Get Project Details',
-        description: 'Получить детальную информацию о проекте',
+        description: 'Get detailed project information',
         mcpTool: null, // No single project tool, use jira_get_projects
         mcpArgs: {
           projectKey: this.testProjectKey,
@@ -251,7 +251,7 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '2-5',
         name: 'Get Issue Transitions',
-        description: 'Получить доступные переходы статуса для задачи',
+        description: 'Get available status transitions for issue',
         mcpTool: 'jira_get_transitions',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -273,7 +273,7 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '2-6',
         name: 'Get Issue Comments',
-        description: 'Получить комментарии к задаче',
+        description: 'Get issue comments',
         mcpTool: null, // No separate comments tool
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -285,7 +285,7 @@ export class SharedJiraTestCases {
         expectedStatus: 200,
         validation: {
           checkContent: (c) => inclOneOf(c, 'comments', 'Comments'),
-          checkResult: (result) => result?.comments !== undefined, // VVQ
+          checkResult: (result) => result?.comments !== undefined, // Note
           expectedProps: ['comments'],
         },
       },
@@ -294,7 +294,7 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '2-7',
         name: 'Get User Info',
-        description: 'Получить информацию о пользователе',
+        description: 'Get user information',
         mcpTool: null, // Disabled due to cache issues with real server
         mcpArgs: {
           userIdOrEmail: this.testUsername,
@@ -305,7 +305,7 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'admin'), // VVQ эмулятор возвращает name:"admin"
+          checkContent: (c) => incl(c, 'admin'), // Note emulator returns name:"admin"
           checkResult: (result) => result?.name?.length,
           expectedProps: ['name', 'displayName', 'active'],
         },
@@ -315,7 +315,7 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '2-8',
         name: 'Get Current User',
-        description: 'Получить информацию о текущем пользователе',
+        description: 'Get current user information',
         mcpTool: null, // No current user tool
         mcpArgs: {},
         directApi: {
@@ -334,7 +334,7 @@ export class SharedJiraTestCases {
         testNumber: 9,
         fullId: '2-9',
         name: 'Get Priorities',
-        description: 'Получить список приоритетов',
+        description: 'Get priorities list',
         mcpTool: null, // No priorities tool
         mcpArgs: {},
         directApi: {
@@ -353,7 +353,7 @@ export class SharedJiraTestCases {
         testNumber: 10,
         fullId: '2-10',
         name: 'Get Statuses',
-        description: 'Получить список статусов',
+        description: 'Get statuses list',
         mcpTool: null, // No statuses tool
         mcpArgs: {},
         directApi: {
@@ -372,7 +372,7 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '2-11',
         name: 'Get Issue Types',
-        description: 'Получить список типов задач',
+        description: 'Get issue types list',
         mcpTool: null, // No issue types tool
         mcpArgs: {},
         directApi: {
@@ -390,7 +390,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить расширенные тест-кейсы для задач
+   * Get extended test cases for issues
    */
   getIssueDetailedTestCases () {
     return [
@@ -399,8 +399,8 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '3-1',
         name: 'Get Issue Edit Meta',
-        description: 'Получить метаданные для редактирования задачи',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get metadata for issue editing',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -418,7 +418,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '3-2',
         name: 'Get Issue Worklog',
-        description: 'Получить рабочие логи задачи',
+        description: 'Get issue worklogs',
         mcpTool: 'jira_get_worklog',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -439,7 +439,7 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '3-3',
         name: 'Get Create Meta',
-        description: 'Получить метаданные для создания задач',
+        description: 'Get metadata for issue creation',
         mcpTool: 'jira_get_create_meta',
         mcpArgs: {
           projectKeys: [this.testProjectKey],
@@ -459,7 +459,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить тест-кейсы для поиска
+   * Get test cases for search
    */
   getSearchDetailedTestCases () {
     return [
@@ -468,8 +468,8 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '4-1',
         name: 'JQL Search GET',
-        description: 'Поиск задач по JQL через GET запрос',
-        mcpTool: 'jira_search_issues', // используем тот же MCP инструмент
+        description: 'Search issues by JQL via GET request',
+        mcpTool: 'jira_search_issues', // using the same MCP tool
         mcpArgs: {
           jql: `project = ${this.testProjectKey}`,
           maxResults: 5,
@@ -489,7 +489,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить детальные тест-кейсы для проектов
+   * Get detailed test cases for projects
    */
   getProjectDetailedTestCases () {
     return [
@@ -498,7 +498,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '5-1',
         name: 'Get All Projects',
-        description: 'Получить список всех проектов',
+        description: 'Get list of all projects',
         mcpTool: 'jira_get_projects',
         mcpArgs: {},
         directApi: {
@@ -517,8 +517,8 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '5-2',
         name: 'Get Project Statuses',
-        description: 'Получить статусы проекта',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get project statuses',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -535,7 +535,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить детальные тест-кейсы для пользователей
+   * Get detailed test cases for users
    */
   getUserDetailedTestCases () {
     return [
@@ -544,7 +544,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '6-1',
         name: 'Get User by Username',
-        description: 'Получить пользователя по имени',
+        description: 'Get user by name',
         mcpTool: 'jira_get_user_profile',
         mcpArgs: {
           username: this.testUsername,
@@ -555,7 +555,7 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'admin'), // эмулятор возвращает name:"admin"
+          checkContent: (c) => incl(c, 'admin'), // emulator returns name:"admin"
           checkResult: (result) => result && result.name && result.name.length > 0,
           expectedProps: ['name', 'displayName', 'active'],
         },
@@ -565,7 +565,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '6-2',
         name: 'Search Users by Username',
-        description: 'Поиск пользователей по имени',
+        description: 'Search users by name',
         mcpTool: 'jira_search_users',
         mcpArgs: {
           username: this.testUsername,
@@ -586,8 +586,8 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '6-3',
         name: 'Get Assignable Users',
-        description: 'Получить назначаемых пользователей для проекта',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get assignable users for project',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -604,7 +604,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить детальные метаданные тест-кейсы
+   * Get detailed metadata test cases
    */
   getMetadataDetailedTestCases () {
     return [
@@ -613,7 +613,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '7-1',
         name: 'Get Fields',
-        description: 'Получить список полей JIRA',
+        description: 'Get JIRA fields list',
         mcpTool: 'jira_get_fields',
         mcpArgs: {},
         directApi: {
@@ -632,8 +632,8 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '7-2',
         name: 'Get Resolutions',
-        description: 'Получить список резолюций',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get resolutions list',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -651,8 +651,8 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '7-3',
         name: 'Get Project Roles',
-        description: 'Получить роли проекта',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get project roles',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -670,8 +670,8 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '7-4',
         name: 'Get Issue Link Types',
-        description: 'Получить типы связей задач',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get issue link types',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -688,8 +688,8 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить тест-кейсы для операций изменения данных
-   * Эти тесты создают, изменяют или удаляют данные
+   * Get test cases for data modification operations
+   * These tests create, modify or delete data
    */
   getModifyingTestCases () {
     return [
@@ -698,7 +698,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '8-1',
         name: 'Create Issue',
-        description: 'Создать новую задачу',
+        description: 'Create new issue',
         mcpTool: 'jira_create_issue',
         mcpArgs: {
           project: this.testProjectKey,
@@ -736,7 +736,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '8-2',
         name: 'Add Comment',
-        description: 'Добавить комментарий к задаче',
+        description: 'Add comment to issue',
         mcpTool: 'jira_add_comment',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -761,7 +761,7 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '8-3',
         name: 'Update Issue',
-        description: 'Обновить существующую задачу',
+        description: 'Update existing issue',
         mcpTool: 'jira_update_issue',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -781,7 +781,7 @@ export class SharedJiraTestCases {
         expectedStatus: 204,
         validation: {
           checkContent: (c) => inclOneOf(c, 'Successfully', 'Updated'),
-          checkResult: (result, response) => [204].includes(response?.status), // VVQ true
+          checkResult: (result, response) => [204].includes(response?.status), // Note true
         },
       },
       {
@@ -789,7 +789,7 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '8-4',
         name: 'Add Worklog',
-        description: 'Добавить рабочий лог к задаче',
+        description: 'Add worklog to issue',
         mcpTool: 'jira_add_worklog',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -813,7 +813,7 @@ export class SharedJiraTestCases {
         },
         cleanup: (result) => {
           if (result && result.id) {
-            // Worklog ID будет использован для удаления в каскадных операциях
+            // Worklog ID will be used for deletion in cascade operations
           }
         },
       },
@@ -822,8 +822,8 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '8-5',
         name: 'Create Version',
-        description: 'Создать версию проекта',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Create project version',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'POST',
@@ -851,12 +851,12 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '8-6',
         name: 'Update Version',
-        description: 'Обновить версию проекта',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Update project version',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'PUT',
-          endpoint: '/version/{versionId}', // будет заменено в runtime
+          endpoint: '/version/{versionId}', // will be replaced at runtime
           data: {
             name: `Updated API Test Version - ${Date.now()}`,
             description: 'Updated version for API testing',
@@ -865,21 +865,21 @@ export class SharedJiraTestCases {
         expectedStatus: 200,
         validation: {
           checkContent: (c) => incl(c, 'Successfully'),
-          checkResult: (result, response) => [200].includes(response?.status), // VVQ true
+          checkResult: (result, response) => [200].includes(response?.status), // Note true
         },
-        dependsOn: 'Create Version', // зависит от создания версии
+        dependsOn: 'Create Version', // depends on version creation
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 7,
         fullId: '8-7',
         name: 'Get Version',
-        description: 'Получить информацию о версии',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get version information',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/version/{versionId}', // будет заменено в runtime
+          endpoint: '/version/{versionId}', // will be replaced at runtime
         },
         expectedStatus: 200,
         validation: {
@@ -894,8 +894,8 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '8-8',
         name: 'Create Issue Link',
-        description: 'Создать связь между задачами',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Create issue link',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'POST',
@@ -910,10 +910,10 @@ export class SharedJiraTestCases {
         expectedStatus: 201,
         validation: {
           checkContent: (c) => incl(c, 'Successfully'),
-          checkResult: (result, response) => [201].includes(response?.status), // VVQ true
+          checkResult: (result, response) => [201].includes(response?.status), // Note true
         },
         cleanup: (result, testCase) => {
-          // Записываем информацию о созданной связи для последующего удаления
+          // Recording created link information for subsequent deletion
           if (result && result.success) {
             this.createdResources.links.push({
               inwardIssue: this.testIssueKey,
@@ -922,15 +922,15 @@ export class SharedJiraTestCases {
             });
           }
         },
-        dependsOn: 'Create Issue', // зависит от создания второй задачи
+        dependsOn: 'Create Issue', // depends on creating second issue
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 9,
         fullId: '8-9',
         name: 'Create Remote Link',
-        description: 'Создать удаленную связь для задачи',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Create remote link for issue',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'POST',
@@ -954,8 +954,8 @@ export class SharedJiraTestCases {
         testNumber: 10,
         fullId: '8-10',
         name: 'Get Remote Links',
-        description: 'Получить удаленные связи задачи',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get issue remote links',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -973,17 +973,17 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '8-11',
         name: 'Delete Issue',
-        description: 'Удалить задачу',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Delete issue',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/issue/{issueKey}', // будет заменено в runtime
+          endpoint: '/issue/{issueKey}', // will be replaced at runtime
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
+        expectedStatus: 204, // DELETE operations usually return 204
         validation: {
-          checkContent: (content) => true, // DELETE может возвращать пустой ответ
-          checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
+          checkContent: (content) => true, // DELETE may return empty response
+          checkResult: (result) => true, // For DELETE operations status 204 is considered successful
           expectedProps: [],
         },
       },
@@ -992,17 +992,17 @@ export class SharedJiraTestCases {
         testNumber: 12,
         fullId: '8-12',
         name: 'Delete Version',
-        description: 'Удалить версию',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Delete version',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/version/{versionId}', // будет заменено в runtime
+          endpoint: '/version/{versionId}', // will be replaced at runtime
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
+        expectedStatus: 204, // DELETE operations usually return 204
         validation: {
-          checkContent: (content) => true, // DELETE может возвращать пустой ответ
-          checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
+          checkContent: (content) => true, // DELETE may return empty response
+          checkResult: (result) => true, // For DELETE operations status 204 is considered successful
           expectedProps: [],
         },
       },
@@ -1011,17 +1011,17 @@ export class SharedJiraTestCases {
         testNumber: 13,
         fullId: '8-13',
         name: 'Delete Issue Link',
-        description: 'Удалить связь между задачами',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Delete issue link',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/issueLink/{linkId}', // будет заменено в runtime на фактический ID связи
+          endpoint: '/issueLink/{linkId}', // will be replaced at runtime with actual link ID
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
+        expectedStatus: 204, // DELETE operations usually return 204
         validation: {
-          checkContent: (content) => true, // DELETE может возвращать пустой ответ
-          checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
+          checkContent: (content) => true, // DELETE may return empty response
+          checkResult: (result) => true, // For DELETE operations status 204 is considered successful
           expectedProps: [],
         },
       },
@@ -1029,7 +1029,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить тест-кейсы для Agile/Board операций
+   * Get test cases for Agile/Board operations
    */
   getAgileTestCases () {
     return [
@@ -1038,8 +1038,8 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '9-1',
         name: 'Get Agile Boards',
-        description: 'Получить список Agile досок',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get Agile boards list',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1057,12 +1057,12 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '9-2',
         name: 'Get Board Sprints',
-        description: 'Получить спринты доски',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get board sprints',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board/{boardId}/sprint', // будет заменено в runtime
+          endpoint: '/agile/1.0/board/{boardId}/sprint', // will be replaced at runtime
         },
         expectedStatus: 200,
         validation: {
@@ -1077,12 +1077,12 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '9-3',
         name: 'Get Board Issues',
-        description: 'Получить задачи доски',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get board issues',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board/{boardId}/issue', // будет заменено в runtime
+          endpoint: '/agile/1.0/board/{boardId}/issue', // will be replaced at runtime
         },
         expectedStatus: 200,
         validation: {
@@ -1096,7 +1096,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить дополнительные тест-кейсы
+   * Get additional test cases
    */
   getAdditionalTestCases () {
     return [
@@ -1105,13 +1105,13 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '10-1',
         name: 'Create Attachment',
-        description: 'Создать вложение к задаче',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Create issue attachment',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/attachments`,
-          data: new FormData(), // Будет заполнено в runtime файлом
+          data: new FormData(), // Will be filled at runtime with file
         },
         expectedStatus: 200,
         validation: {
@@ -1121,30 +1121,30 @@ export class SharedJiraTestCases {
         },
         cleanup: (result) => {
           if (result?.length && result[0].id) {
-            // Сохраняем ID созданного attachment для использования в других тестах
+            // Saving created attachment ID for use in other tests
             this.createdResources.attachments = this.createdResources.attachments || [];
             this.createdResources.attachments.push(result[0].id);
           }
         },
-        requiresFile: true, // специальный флаг для создания тестового файла
+        requiresFile: true, // special flag for creating test file
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
         testNumber: 2,
         fullId: '10-2',
         name: 'Get Attachment Sample',
-        description: 'Получить созданное вложение (FIXED VERSION)',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get created attachment (FIXED VERSION)',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/attachment/{attachmentId}', // возвращает метаданные attachment
+          endpoint: '/attachment/{attachmentId}', // returns attachment metadata
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (content) => true, // GET attachment возвращает binary файл, не JSON
-          checkResult: () => true, // Для GET attachment проверяем только HTTP статус 200
-          expectedProps: [], // Нет JSON свойств для binary файла
+          checkContent: (content) => true, // GET attachment returns binary file, not JSON
+          checkResult: () => true, // For GET attachment check only HTTP status 200
+          expectedProps: [], // No JSON properties for binary file
         },
         dependsOn: 'Create Attachment',
       },
@@ -1153,16 +1153,16 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '10-3',
         name: 'Delete Attachment',
-        description: 'Удалить вложение',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Delete attachment',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/attachment/{attachmentId}', // будет заменено в runtime
+          endpoint: '/attachment/{attachmentId}', // will be replaced at runtime
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
+        expectedStatus: 204, // DELETE operations usually return 204
         validation: {
-          checkContent: (content) => true, // DELETE может возвращать пустой ответ
+          checkContent: (content) => true, // DELETE may return empty response
           checkResult: () => true,
           expectedProps: [],
         },
@@ -1173,8 +1173,8 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '10-4',
         name: 'Get Dashboards',
-        description: 'Получить панели управления',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get dashboards',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1192,8 +1192,8 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '10-3',
         name: 'Get Favourite Filters',
-        description: 'Получить избранные фильтры',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get favorite filters',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1211,8 +1211,8 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '10-4',
         name: 'Get Groups Picker',
-        description: 'Получить группы (picker)',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get groups (picker)',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1230,8 +1230,8 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '10-5',
         name: 'Get Notification Schemes',
-        description: 'Получить схемы уведомлений',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get notification schemes',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1249,8 +1249,8 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '10-6',
         name: 'Get Permission Schemes',
-        description: 'Получить схемы разрешений',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get permission schemes',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1268,8 +1268,8 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '10-7',
         name: 'Get Workflows',
-        description: 'Получить рабочие процессы',
-        mcpTool: null, // нет MCP инструмента
+        description: 'Get workflows',
+        mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'GET',
@@ -1286,7 +1286,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить тест-кейсы для схем рабочих процессов
+   * Get test cases for workflow schemes
    */
   getWorkflowSchemesTestCases () {
     return [
@@ -1295,7 +1295,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '11-1',
         name: 'Get Project Workflow Scheme',
-        description: 'Получить схему рабочих процессов проекта',
+        description: 'Get project workflow schemes',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1314,7 +1314,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '11-2',
         name: 'Get Workflow Scheme by ID',
-        description: 'Получить схему рабочих процессов по ID',
+        description: 'Get workflow schemes by ID',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1334,7 +1334,7 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '11-3',
         name: 'Get Workflow Scheme Default',
-        description: 'Получить дефолтный workflow схемы',
+        description: 'Get default workflow scheme',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1354,7 +1354,7 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '11-4',
         name: 'Create Workflow Scheme Draft',
-        description: 'Создать черновик схемы рабочих процессов',
+        description: 'Create workflow schemes draft',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1374,7 +1374,7 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '11-5',
         name: 'Get Workflow Scheme Draft',
-        description: 'Получить черновик схемы рабочих процессов',
+        description: 'Get workflow schemes draft',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1394,7 +1394,7 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '11-6',
         name: 'Delete Workflow Scheme Draft',
-        description: 'Удалить черновик схемы рабочих процессов',
+        description: 'Delete workflow schemes draft',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1413,7 +1413,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить каскадные тест-кейсы (сложные операции)
+   * Get cascade test cases (complex operations)
    */
   getCascadeTestCases () {
     return [
@@ -1422,7 +1422,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '12-1',
         name: 'Complete Issue Modification Workflow',
-        description: 'Полный цикл работы с задачей: создание, модификация, добавление комментария, worklog, cleanup',
+        description: 'Complete issue lifecycle: creation, modification, adding comment, worklog, cleanup',
         type: 'cascade',
         steps: [
           { action: 'create', testCase: 'Create Issue', storeAs: 'issueKey' },
@@ -1437,7 +1437,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '12-2',
         name: 'Version Management Workflow',
-        description: 'Создание, обновление и получение версии проекта',
+        description: 'Creating, updating and getting project version',
         type: 'cascade',
         steps: [
           { action: 'create', testCase: 'Create Version', storeAs: 'versionId' },
@@ -1451,7 +1451,7 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '12-3',
         name: 'Issue Linking Workflow',
-        description: 'Создание двух задач и связывание их между собой',
+        description: 'Creating two issues and linking them together',
         type: 'cascade',
         steps: [
           { action: 'create', testCase: 'Create Issue', storeAs: 'firstIssueKey' },
@@ -1465,8 +1465,8 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить расширенные тест-кейсы для полной проверки API
-   * Включает дополнительные эндпоинты и более сложные сценарии
+   * Get extended test cases for complete API validation
+   * Includes additional endpoints and more complex scenarios
    */
   getExtendedTestCases () {
     return [
@@ -1475,7 +1475,7 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '13-1',
         name: 'Get Server Info',
-        description: 'Получить информацию о сервере JIRA',
+        description: 'Get JIRA server information',
         mcpTool: 'health_check',
         mcpArgs: { detailed: true },
         directApi: {
@@ -1484,7 +1484,7 @@ export class SharedJiraTestCases {
         },
         validation: {
           checkContent: (c) => incl(c, 'status'),
-          checkResult: (result) => result?.status === 'ok',
+          checkResult: (result, response) => response.success,
           expectedProps: ['status', 'service', 'version'],
         },
       },
@@ -1493,7 +1493,7 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '13-2',
         name: 'Get Project Versions',
-        description: 'Получить версии проекта',
+        description: 'Get project versions',
         mcpTool: 'jira_get_project_versions',
         mcpArgs: {
           projectKey: this.testProjectKey,
@@ -1512,7 +1512,7 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '13-3',
         name: 'Get Project Components',
-        description: 'Получить компоненты проекта',
+        description: 'Get project components',
         mcpTool: 'jira_get_project_components',
         mcpArgs: {
           projectKey: this.testProjectKey,
@@ -1531,7 +1531,7 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '13-4',
         name: 'Search Users',
-        description: 'Поиск пользователей',
+        description: 'Search users',
         mcpTool: 'jira_search_users',
         mcpArgs: {
           username: this.testUsername,
@@ -1550,7 +1550,7 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '13-5',
         name: 'Get Fields',
-        description: 'Получить список полей JIRA',
+        description: 'Get JIRA fields list',
         mcpTool: 'jira_get_fields',
         mcpArgs: {},
         directApi: {
@@ -1567,7 +1567,7 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '13-6',
         name: 'Get Create Meta',
-        description: 'Получить метаданные для создания задач',
+        description: 'Get metadata for issue creation',
         mcpTool: 'jira_get_create_meta',
         mcpArgs: {
           projectKeys: [this.testProjectKey],
@@ -1586,7 +1586,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить все доступные тест-кейсы по категориям
+   * Get all available test cases by categories
    */
   getAllTestCasesByCategory () {
     return {
@@ -1601,13 +1601,13 @@ export class SharedJiraTestCases {
       agile: this.getAgileTestCases(),
       additional: this.getAdditionalTestCases(),
       workflowSchemes: this.getWorkflowSchemesTestCases(),
-      cascade: this.getCascadeTestCases(), // VVQ где запускается
-      extended: this.getExtendedTestCases(), // VVQ где запускается
+      cascade: this.getCascadeTestCases(), // Note where it runs
+      extended: this.getExtendedTestCases(), // Note where it runs
     };
   }
 
   /**
-   * Получить все доступные тест-кейсы (старый формат для совместимости)
+   * Get all available test cases (legacy format for compatibility)
    */
   getAllTestCases () {
     return {
@@ -1618,7 +1618,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить плоский список всех тест-кейсов
+   * Get flat list of all test cases
    */
   getAllTestCasesFlat () {
     const allTestCases = this.getAllTestCasesByCategory();
@@ -1634,13 +1634,13 @@ export class SharedJiraTestCases {
       ...allTestCases.agile,
       ...allTestCases.additional,
       ...allTestCases.workflowSchemes,
-      // cascade тесты обрабатываются отдельно
+      // cascade tests are handled separately
       ...allTestCases.extended,
     ];
   }
 
   /**
-   * Получить тест-кейсы по именам
+   * Get test cases by names
    */
   getTestCasesByNames (names) {
     const allTestCases = this.getAllTestCasesFlat();
@@ -1650,21 +1650,21 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить тест-кейсы для быстрого запуска (минимальный набор)
+   * Get test cases for quick run (minimal set)
    */
   getTestCasesForQuickRun () {
     return this.getMinimalTestCases();
   }
 
   /**
-   * Получить тест-кейсы для полного запуска (~62 теста)
+   * Get test cases for complete run (~62 tests)
    */
   getTestCasesForFullRun () {
     return this.getAllTestCasesFlat();
   }
 
   /**
-   * Получить тест-кейсы по категории
+   * Get test cases by category
    */
   getTestCasesByCategory (category) {
     const allTestCases = this.getAllTestCasesByCategory();
@@ -1672,7 +1672,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить минимальный набор тест-кейсов для быстрой проверки
+   * Get minimal set of test cases for quick validation
    */
   getMinimalTestCases () {
     const informational = this.getInformationalTestCases();
@@ -1689,14 +1689,14 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить созданные ресурсы для очистки
+   * Get created resources for cleanup
    */
   getCreatedResources () {
     return this.createdResources;
   }
 
   /**
-   * Очистить созданные ресурсы
+   * Clear created resources
    */
   clearCreatedResources () {
     this.createdResources = {
@@ -1709,7 +1709,7 @@ export class SharedJiraTestCases {
   // ========== GROUPED TEST MANAGEMENT METHODS ==========
 
   /**
-   * Получить тест по полному ID (формат N-M)
+   * Get test by full ID (format N-M)
    */
   getTestByFullId (fullId) {
     const allTestCases = this.getAllTestCasesFlat();
@@ -1717,7 +1717,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить все тесты в группе
+   * Get all tests in group
    */
   getTestsByGroup (groupNumber) {
     const allTestCases = this.getAllTestCasesFlat();
@@ -1725,28 +1725,28 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить информацию о группе
+   * Get group information
    */
   getGroupInfo (groupNumber) {
     return GROUP_INFO[groupNumber] || null;
   }
 
   /**
-   * Получить все группы с их информацией
+   * Get all groups with their information
    */
   getAllGroupInfo () {
     return GROUP_INFO;
   }
 
   /**
-   * Валидировать уникальность ID тестов
+   * Validate test ID uniqueness
    */
   validateTestIds () {
     const allTestCases = this.getAllTestCasesFlat();
     const idCounts = new Map();
     const duplicates = [];
 
-    // Подсчитываем встречаемость каждого ID
+    // Count occurrence of each ID
     allTestCases.forEach(tc => {
       if (tc.fullId) {
         const count = idCounts.get(tc.fullId) || 0;
@@ -1757,7 +1757,7 @@ export class SharedJiraTestCases {
       }
     });
 
-    // Проверяем также соответствие fullId формату N-M
+    // Also check fullId format compliance N-M
     const invalidFormats = allTestCases
       .filter(tc => tc.fullId && !/^\d+-\d+$/.test(tc.fullId))
       .map(tc => tc.fullId);
@@ -1772,7 +1772,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Парсинг команды выбора тестов (формат --tests=1-1,4-*,5)
+   * Parse test selection command (format --tests=1-1,4-*,5)
    */
   parseTestSelection (testsString) {
     if (!testsString) {
@@ -1792,7 +1792,7 @@ export class SharedJiraTestCases {
         }
 
         if (testStr === '*') {
-          // Вся группа: 4-*
+          // Entire group: 4-*
           selections.push({
             type: 'group',
             groupNumber,
@@ -1803,7 +1803,7 @@ export class SharedJiraTestCases {
           if (isNaN(testNumber)) {
             throw new Error(`Invalid test number: ${testStr}`);
           }
-          // Конкретный тест: 1-1
+          // Specific test: 1-1
           selections.push({
             type: 'test',
             groupNumber,
@@ -1812,7 +1812,7 @@ export class SharedJiraTestCases {
           });
         }
       } else {
-        // Только номер группы: 5 (эквивалентно 5-*)
+        // Only group number: 5 (equivalent to 5-*)
         const groupNumber = parseInt(part);
         if (isNaN(groupNumber)) {
           throw new Error(`Invalid group number: ${part}`);
@@ -1832,7 +1832,7 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Фильтрация тестов на основе выбора пользователя
+   * Filter tests based on user selection
    */
   getTestsBySelection (testsString) {
     const selection = this.parseTestSelection(testsString);
@@ -1846,11 +1846,11 @@ export class SharedJiraTestCases {
 
     for (const sel of selection.selections) {
       if (sel.type === 'group') {
-        // Добавляем все тесты из группы
+        // Adding all tests from group
         const groupTests = allTestCases.filter(tc => tc.groupNumber === sel.groupNumber);
         selectedTests.push(...groupTests);
       } else if (sel.type === 'test') {
-        // Добавляем конкретный тест
+        // Adding specific test
         const test = allTestCases.find(tc => tc.fullId === sel.fullId);
         if (test) {
           selectedTests.push(test);
@@ -1858,7 +1858,7 @@ export class SharedJiraTestCases {
       }
     }
 
-    // Удаляем дубликаты по fullId
+    // Remove duplicates by fullId
     const uniqueTests = selectedTests.filter((test, index, arr) =>
       arr.findIndex(t => t.fullId === test.fullId) === index,
     );
@@ -1867,13 +1867,13 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Получить статистику по группам
+   * Get statistics by groups
    */
   getGroupStatistics () {
     const allTestCases = this.getAllTestCasesFlat();
     const groupStats = {};
 
-    // Инициализируем статистику для всех групп
+    // Initialize statistics for all groups
     Object.keys(GROUP_INFO).forEach(groupNum => {
       groupStats[groupNum] = {
         groupNumber: parseInt(groupNum),
@@ -1884,7 +1884,7 @@ export class SharedJiraTestCases {
       };
     });
 
-    // Подсчитываем статистику
+    // Calculate statistics
     allTestCases.forEach(tc => {
       if (tc.groupNumber && groupStats[tc.groupNumber]) {
         groupStats[tc.groupNumber].totalTests++;
@@ -1902,7 +1902,7 @@ export class SharedJiraTestCases {
 }
 
 /**
- * Менеджер ресурсов для отслеживания созданных объектов и их очистки
+ * Resource manager for tracking created objects and their cleanup
  */
 export class ResourceManager {
   constructor () {
@@ -1916,11 +1916,11 @@ export class ResourceManager {
       attachments: [],
       workflowSchemes: [],
     };
-    this.resourceMap = new Map(); // для хранения связей между именами и ID
+    this.resourceMap = new Map(); // for storing relationships between names and IDs
   }
 
   /**
-   * Добавить ресурс для отслеживания
+   * Add resource for tracking
    */
   addResource (type, id, name = null) {
     if (this.resources[type]) {
@@ -1932,21 +1932,21 @@ export class ResourceManager {
   }
 
   /**
-   * Получить ресурс по имени
+   * Get resource by name
    */
   getResource (name) {
     return this.resourceMap.get(name);
   }
 
   /**
-   * Получить все ресурсы определенного типа
+   * Get all resources of specific type
    */
   getResourcesByType (type) {
     return this.resources[type] || [];
   }
 
   /**
-   * Очистить все ресурсы
+   * Clear all resources
    */
   clearAll () {
     this.resources = {
@@ -1962,7 +1962,7 @@ export class ResourceManager {
   }
 
   /**
-   * Получить созданные ресурсы для очистки (совместимость)
+   * Get created resources for cleanup (compatibility)
    */
   getCreatedResources () {
     return this.resources;
@@ -1970,7 +1970,7 @@ export class ResourceManager {
 }
 
 /**
- * Утилиты для выполнения каскадных операций
+ * Utilities for executing cascade operations
  */
 export class CascadeExecutor {
   constructor (resourceManager) {
@@ -1979,7 +1979,7 @@ export class CascadeExecutor {
   }
 
   /**
-   * Выполнить каскадную операцию
+   * Execute cascade operation
    */
   async executeCascade (cascadeTestCase, testRunner) {
     const results = [];
@@ -1991,13 +1991,13 @@ export class CascadeExecutor {
           throw new Error(`Test case '${step.testCase}' not found`);
         }
 
-        // Подготовить тест-кейс с подстановкой ресурсов
+        // Prepare test case with resource substitution
         const preparedTestCase = this.prepareTestCase(testCase, step);
 
-        // Выполнить тест
+        // Execute test
         const result = await testRunner.runTestCase(preparedTestCase);
 
-        // Сохранить результат
+        // Save result
         if (step.storeAs && result.success && result.data) {
           const resourceId = this.extractResourceId(result.data, step.testCase);
           this.resourceManager.addResource(
@@ -2021,7 +2021,7 @@ export class CascadeExecutor {
           success: false,
           error: error.message,
         });
-        break; // прерываем каскад при ошибке
+        break; // break cascade on error
       }
     }
 
@@ -2034,14 +2034,14 @@ export class CascadeExecutor {
   }
 
   /**
-   * Найти тест-кейс по имени
+   * Find test case by name
    */
   findTestCase (name, testRunner) {
     return testRunner.sharedTestCases.getTestCasesByNames([name])[0];
   }
 
   /**
-   * Подготовить тест-кейс с подстановкой ресурсов
+   * Prepare test case with resource substitution
    */
   prepareTestCase (testCase, step) {
     const prepared = JSON.parse(JSON.stringify(testCase)); // deep clone
@@ -2049,7 +2049,7 @@ export class CascadeExecutor {
     if (step.useResource) {
       const resource = this.resourceManager.getResource(step.useResource);
       if (resource) {
-        // Заменить плейсхолдеры в endpoint и data
+        // Replace placeholders in endpoint and data
         prepared.directApi.endpoint = prepared.directApi.endpoint
           .replace(`{${step.useResource}}`, resource.id)
           .replace(`{${resource.type}Id}`, resource.id);
@@ -2065,7 +2065,7 @@ export class CascadeExecutor {
     }
 
     if (step.useResources) {
-      // Для случаев с несколькими ресурсами (например, связывание задач)
+      // For cases with multiple resources (e.g., issue linking)
       step.useResources.forEach((resourceName, index) => {
         const resource = this.resourceManager.getResource(resourceName);
         if (resource) {
@@ -2082,7 +2082,7 @@ export class CascadeExecutor {
   }
 
   /**
-   * Заменить плейсхолдеры в объекте данных
+   * Replace placeholders in data object
    */
   replacePlaceholders (obj, resourceName, resourceId) {
     const jsonStr = JSON.stringify(obj);
@@ -2093,7 +2093,7 @@ export class CascadeExecutor {
   }
 
   /**
-   * Извлечь ID ресурса из результата
+   * Extract resource ID from result
    */
   extractResourceId (data, testCaseName) {
     if (testCaseName.includes('Issue')) {
@@ -2112,7 +2112,7 @@ export class CascadeExecutor {
   }
 
   /**
-   * Определить тип ресурса по имени тест-кейса
+   * Determine resource type by test case name
    */
   getResourceType (testCaseName) {
     if (testCaseName.includes('Issue')) return 'issues';
@@ -2120,16 +2120,16 @@ export class CascadeExecutor {
     if (testCaseName.includes('Comment')) return 'comments';
     if (testCaseName.includes('Worklog')) return 'worklogs';
     if (testCaseName.includes('Link')) return 'links';
-    return 'issues'; // по умолчанию
+    return 'issues'; // by default
   }
 }
 
 /**
- * Утилиты для валидации результатов тестов
+ * Utilities for test result validation
  */
 export class TestValidationUtils {
   /**
-   * Проверить наличие ожидаемых свойств в объекте
+   * Check for expected properties in object
    */
   static validateProperties (obj, expectedProps, testName, arrayElementProps = null) {
     if (!obj || typeof obj !== 'object') {
@@ -2147,7 +2147,7 @@ export class TestValidationUtils {
       };
     }
 
-    // Проверка свойств элементов массива, если указана
+    // Check array element properties if specified
     if (arrayElementProps) {
       const arrayPath = arrayElementProps.path;
       const arrayProps = arrayElementProps.props;
@@ -2172,7 +2172,7 @@ export class TestValidationUtils {
   }
 
   /**
-   * Проверить MCP ответ на соответствие ожидаемому формату
+   * Validate MCP response against expected format
    */
   static validateMcpResponse (response, testCase) {
     if (response.error) {
@@ -2212,10 +2212,10 @@ export class TestValidationUtils {
   }
 
   /**
-   * Проверить прямой API ответ
+   * Validate direct API response
    */
   static validateDirectApiResponse (response, testCase) {
-    // Сначала проверяем пользовательскую валидацию, если она есть
+    // First check custom validation if it exists
     if (testCase.validation?.checkResult) {
       if (!testCase.validation.checkResult(response.data, response)) {
         return {
@@ -2223,14 +2223,14 @@ export class TestValidationUtils {
           message: 'Result validation failed',
         };
       }
-      // Если пользовательская валидация прошла, считаем тест успешным
+      // If custom validation passed, consider test successful
       return {
         success: true,
         message: 'Validation passed',
       };
     }
 
-    // Если нет пользовательской валидации, используем стандартную проверку
+    // If no custom validation, use standard check
     if (!response.success) {
       return {
         success: false,
@@ -2239,9 +2239,9 @@ export class TestValidationUtils {
     }
 
     if (testCase.validation?.expectedProps && testCase.validation.expectedProps.length > 0) {
-      // Пропускаем проверку свойств для DELETE операций (обычно нет response.data)
+      // Skip property check for DELETE operations (usually no response.data)
       if (!response.data && response.status === 204) {
-        // DELETE операции обычно возвращают 204 без данных - это нормально
+        // DELETE operations usually return 204 without data - this is normal
         return {
           success: true,
           message: 'DELETE operation completed successfully',

@@ -2,14 +2,14 @@
 
 /**
  * JIRA API Emulator
- * Простой эмулятор JIRA REST API для тестирования MCP сервера
+ * Simple JIRA REST API emulator for MCP server testing
  */
 
 import express from 'express';
 import chalk from 'chalk';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 
-// Тестовые данные
+// Test data
 const MOCK_USER = {
   self: 'https://test.atlassian.net/rest/api/2/user/12345',
   accountId: '12345',
@@ -63,12 +63,12 @@ const MOCK_PRIORITY = {
 const MOCK_ISSUE_TYPE = {
   id: '10001',
   name: 'Task',
-  description: 'A task that needs to be completed',
+  description: 'A tasks that needs to be completed',
   iconUrl: 'https://test.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318',
-  subtask: false,
+  subtasks: false,
 };
 
-// База данных в памяти для эмулятора
+// In-memory database for emulator
 const issues = new Map();
 const comments = new Map();
 const versions = new Map();
@@ -94,35 +94,35 @@ let attachmentCounter = 1;
 let filterCounter = 1;
 let dashboardCounter = 1;
 
-// Дополнительные моковые данные
+// Additional mock data
 const MOCK_ISSUE_TYPES = [
   {
     id: '10001',
     name: 'Task',
-    description: 'A task that needs to be completed',
+    description: 'A tasks that needs to be completed',
     iconUrl: 'https://test.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318',
-    subtask: false,
+    subtasks: false,
   },
   {
     id: '10002',
     name: 'Bug',
     description: 'A problem that impairs or prevents the functions',
     iconUrl: 'https://test.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303',
-    subtask: false,
+    subtasks: false,
   },
   {
     id: '10003',
     name: 'Epic',
     description: 'A large user story',
     iconUrl: 'https://test.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307',
-    subtask: false,
+    subtasks: false,
   },
   {
     id: '10004',
-    name: 'Sub-task',
-    description: 'A subtask',
+    name: 'Sub-tasks',
+    description: 'A subtasks',
     iconUrl: 'https://test.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316',
-    subtask: true,
+    subtasks: true,
   },
 ];
 
@@ -203,7 +203,7 @@ const MOCK_LINK_TYPES = [
   },
 ];
 
-// Создание начальных тестовых задач
+// Creating initial test issues
 function initializeTestData() {
   const issue1 = {
     id: '10001',
@@ -254,7 +254,7 @@ function initializeTestData() {
   issues.set('10001', issue1);
   issues.set('10002', issue2);
 
-  // Добавить комментарии
+  // Add comments
   comments.set('10001', [
     {
       id: '10100',
@@ -267,7 +267,7 @@ function initializeTestData() {
 
   comments.set('10002', []);
 
-  // Добавить версии
+  // Add versions
   const version1 = {
     id: '10000',
     name: 'Version 1.0',
@@ -278,7 +278,7 @@ function initializeTestData() {
   };
   versions.set('10000', version1);
 
-  // Добавить компоненты
+  // Add components
   const component1 = {
     id: '10000',
     name: 'Backend',
@@ -289,7 +289,7 @@ function initializeTestData() {
   };
   components.set('10000', component1);
 
-  // Добавить доски Agile
+  // Add Agile boards
   const board1 = {
     id: 1,
     name: 'TEST Board',
@@ -303,7 +303,7 @@ function initializeTestData() {
   };
   boards.set('1', board1);
 
-  // Добавить спринты
+  // Add sprints
   const sprint1 = {
     id: 1,
     name: 'Sprint 1',
@@ -315,7 +315,7 @@ function initializeTestData() {
   };
   sprints.set('1', sprint1);
 
-  // Добавить фильтры
+  // Add filters
   const filter1 = {
     id: '10000',
     name: 'My Open Issues',
@@ -325,7 +325,7 @@ function initializeTestData() {
   };
   filters.set('10000', filter1);
 
-  // Добавить дашборды
+  // Add dashboards
   const dashboard1 = {
     id: '10000',
     name: 'System Dashboard',
@@ -341,7 +341,7 @@ function getPort(urlString) {
     const url = new URL(urlString.includes('://') ? urlString : `http://${urlString}`);
     return url.port ? Number(url.port) : 80;
   } catch {
-    // Если строка некорректная — используем порт 80
+    // If string is incorrect - use port 80
     return 80;
   }
 }
@@ -373,13 +373,13 @@ export class JiraEmulator {
       }
     });
 
-    // Логирование запросов
+    // Request logging
     this.app.use((req, res, next) => {
       console.log(chalk.blue(`[JIRA EMULATOR] ${req.method} ${req.path}`));
       next();
     });
 
-    // Простая аутентификация (принимаем любые credentials)
+    // Simple authentication (accept any credentials)
     this.app.use('/rest/api/2', (req, res, next) => {
       const auth = req.headers.authorization;
       if (!auth) {
@@ -635,13 +635,13 @@ export class JiraEmulator {
         return;
       }
 
-      // Обработка параметров expand и fields
+      // Process expand and fields parameters
       const expand = req.query.expand;
       const fields = req.query.fields;
 
       let responseIssue = { ...issue };
 
-      // Добавить комментарии если запрашиваются
+      // Add comments if requested
       if (expand && expand.includes('comment')) {
         const issueComments = comments.get(issue.id) || [];
         responseIssue.fields.comment = {
@@ -650,7 +650,7 @@ export class JiraEmulator {
         };
       }
 
-      // Фильтрация полей
+      // Field filtering
       if (fields) {
         const requestedFields = fields.split(',').map(f => f.trim());
         const filteredFields = {};
@@ -671,11 +671,11 @@ export class JiraEmulator {
 
       console.log(chalk.yellow(`[JIRA EMULATOR] Search JQL: ${jql}`));
 
-      // Простая имитация поиска - возвращаем все или фильтруем по проекту
+      // Simple search simulation - return all or filter by project
       let allIssues = Array.from(issues.values());
 
       if (jql.includes('TEST')) {
-        // Фильтруем по проекту TEST
+        // Filter by TEST project
         allIssues = allIssues.filter(issue => issue.key.startsWith('TEST'));
       }
 
@@ -979,7 +979,7 @@ export class JiraEmulator {
         return;
       }
 
-      // Защищаем базовые тестовые задачи от удаления
+      // Protect basic test issues from deletion
       if (issueKey === 'TEST-1' || issueKey === 'TEST-2') {
         console.log(chalk.yellow(`[JIRA EMULATOR] Protected issue ${issueKey} from deletion - returning success but not deleting`));
         res.status(204).send();
@@ -1649,7 +1649,7 @@ export class JiraEmulator {
       res.json(sprint);
     });
 
-    // Fallback для неподдерживаемых эндпоинтов
+    // Fallback for unsupported endpoints
     this.app.use((req, res) => {
       if (req.path.startsWith('/rest/api/2/')) {
         console.log(chalk.red(`[JIRA EMULATOR] Unsupported endpoint: ${req.method} ${req.path}`));
@@ -1696,7 +1696,7 @@ export class JiraEmulator {
   }
 }
 
-// Если запущен напрямую, запускаем эмулятор
+// If run directly, start emulator
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('jira-emulator.js')) {
   async function runStandaloneEmulator() {
     console.log('🚀 Starting JIRA Emulator...');

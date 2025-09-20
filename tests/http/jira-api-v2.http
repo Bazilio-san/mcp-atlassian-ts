@@ -1,22 +1,22 @@
-# 1. Задачи (Issues)
-#| Метод    | URL                             | Описание                      |
+# 1. Issues
+#| Method    | URL                             | Description                      |
 #| -------- | ------------------------------- | ----------------------------- |
-#| `GET`    | `/issue/{issueIdOrKey}`         | Получить полные данные задачи |
-#| `POST`   | `/issue`                        | Создать новую задачу          |
-#| `PUT`    | `/issue/{issueIdOrKey}`         | Изменить поля задачи          |
-#| `DELETE` | `/issue/{issueIdOrKey}`         | Удалить задачу                |
-#| `GET`    | `/search`                       | Поиск задач по JQL            |
-#| `POST`   | `/issue/{issueIdOrKey}/comment` | Добавить комментарий          |
-#| `GET`    | `/issue/{issueIdOrKey}/comment` | Получить список комментариев  |
+#| `GET`    | `/issue/{issueIdOrKey}`         | Get full issue data |
+#| `POST`   | `/issue`                        | Create new issue          |
+#| `PUT`    | `/issue/{issueIdOrKey}`         | Update issue fields          |
+#| `DELETE` | `/issue/{issueIdOrKey}`         | Delete issue                |
+#| `GET`    | `/search`                       | Search issues by JQL            |
+#| `POST`   | `/issue/{issueIdOrKey}/comment` | Add comment          |
+#| `GET`    | `/issue/{issueIdOrKey}/comment` | Get comment list  |
 #
 
-### Получить полные данные задачи
+### Get full issue data
 GET {{baseUrl}}/rest/api/2/issue/AITECH-379
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### Получить полные данные задачи
+### Get full issue data
 PUT {{baseUrl}}/rest/api/2/issue/AITECH-1
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -39,13 +39,13 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
   "started": "2025-09-19T15:00:00.000+0000"
 }
 
-### Узнать типы связей между задачами
+### Get issue link types
 GET {{baseUrl}}/rest/api/2/issueLinkType
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 Content-Type: application/json
 
 
-### Создать связь между задачами
+### Create issue link
 POST https://jira-dev.finam.ru/rest/api/2/issueLink
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -67,7 +67,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 
-### Пример создания задачи:
+### Issue creation example:
 POST {{baseUrl}}/rest/api/2/issue
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 Content-Type: application/json
@@ -79,9 +79,9 @@ Content-Type: application/json
     },
     "summary": "TEST-AITECH-2",
     "issuetype": {
-      "name": "Задача+"
+      "name": "Task+"
     },
-    "description": "Три девицы под окном\nПряли поздно вечерком",
+    "description": "Three maidens by the window\nSpinning late in the evening",
     "assignee": {
       "name": "vvmakarov"
     },
@@ -93,7 +93,7 @@ Content-Type: application/json
 }
 
 
-### Создать вложение к задаче
+### Create issue attachment
 POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/attachments
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 X-Atlassian-Token: no-check
@@ -114,14 +114,14 @@ Content-Type: text/plain
 
 ###
 
-# 2. Метаданные
+# 2. Metadata
 
-#| Метод | URL                              | Описание                                                                         |
+#| Method | URL                              | Description                                                                         |
 #| ----- | -------------------------------- | -------------------------------------------------------------------------------- |
-#| `GET` | `/issue/createmeta`              | Метаданные для создания задач (список проектов, типов задач, обязательных полей) |
-#| `GET` | `/issue/{issueIdOrKey}/editmeta` | Доступные поля для редактирования конкретной задачи                              |
-#| `GET` | `/priority`                      | Список приоритетов                                                               |
-#| `GET` | `/status`                        | Список всех статусов                                                             |
+#| `GET` | `/issue/createmeta`              | Metadata for creating issues (project list, issue types, required fields) |
+#| `GET` | `/issue/{issueIdOrKey}/editmeta` | Available fields for editing specific issue                              |
+#| `GET` | `/priority`                      | Priority list                                                               |
+#| `GET` | `/status`                        | All statuses list                                                             |
 
 ###
 GET {{baseUrl}}/rest/api/2/issue/createmeta
@@ -139,13 +139,13 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/2/status
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-# 3. Проекты
+# 3. Projects
 
-#| Метод | URL                                  | Описание                         |
+#| Method | URL                                  | Description                         |
 #| ----- | ------------------------------------ | -------------------------------- |
-#| `GET` | `/project`                           | Все проекты                      |
-#| `GET` | `/project/{projectIdOrKey}`          | Данные проекта                   |
-#| `GET` | `/project/{projectIdOrKey}/statuses` | Статусы по типам задач в проекте |
+#| `GET` | `/project`                           | All projects                      |
+#| `GET` | `/project/{projectIdOrKey}`          | Project data                   |
+#| `GET` | `/project/{projectIdOrKey}/statuses` | Statuses by issue types in project |
 
 
 ###
@@ -158,14 +158,14 @@ GET {{baseUrl}}/rest/api/2/project/AITECH
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-# 4. Переходы (Transitions)
+# 4. Transitions
 
-#| Метод  | URL                                 | Описание                         |
+#| Method  | URL                                 | Description                         |
 #| ------ | ----------------------------------- | -------------------------------- |
-#| `GET`  | `/issue/{issueIdOrKey}/transitions` | Возможные переходы задачи        |
-#| `POST` | `/issue/{issueIdOrKey}/transitions` | Перевести задачу в другой статус |
+#| `GET`  | `/issue/{issueIdOrKey}/transitions` | Possible issue transitions        |
+#| `POST` | `/issue/{issueIdOrKey}/transitions` | Change issue status |
 
-### Пример перевода задачи в статус:
+### Issue status change example:
 POST /rest/api/2/issue/TEST-1/transitions
 
 {
@@ -174,42 +174,42 @@ POST /rest/api/2/issue/TEST-1/transitions
 
 ###
 
-#5. Пользователи
+#5. Users
 
-#| Метод  | URL                             | Описание                              |
+#| Method  | URL                             | Description                              |
 #| ------ | ------------------------------- | ------------------------------------- |
-#| `GET`  | `/user?username={name}`         | Найти пользователя по имени           |
-#| `GET`  | `/user/search?username={query}` | Поиск пользователей                   |
-#| `POST` | `/user`                         | Создать пользователя (если разрешено) |
+#| `GET`  | `/user?username={name}`         | Find user by name           |
+#| `GET`  | `/user/search?username={query}` | Search users                   |
+#| `POST` | `/user`                         | Create user (if allowed) |
 
 ###
 GET {{baseUrl}}/rest/api/2/user?username=vvmakarov
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ###
-GET {{baseUrl}}/rest/api/2/user/search?username=Макаров
+GET {{baseUrl}}/rest/api/2/user/search?username=Makarov
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-#6. Рабочий лог (Worklog)
-#| Метод  | URL                             | Описание            |
+#6. Worklog
+#| Method  | URL                             | Description            |
 #| ------ | ------------------------------- | ------------------- |
-#| `GET`  | `/issue/{issueIdOrKey}/worklog` | Все логи работы     |
-#| `POST` | `/issue/{issueIdOrKey}/worklog` | Добавить лог работы |
+#| `GET`  | `/issue/{issueIdOrKey}/worklog` | All work logs     |
+#| `POST` | `/issue/{issueIdOrKey}/worklog` | Add work log |
 
 
-#7. Вложения
-#| Метод  | URL                                 | Описание                                             |
+#7. Attachments
+#| Method  | URL                                 | Description                                             |
 #| ------ | ----------------------------------- | ---------------------------------------------------- |
-#| `POST` | `/issue/{issueIdOrKey}/attachments` | Загрузить файл (нужен `X-Atlassian-Token: no-check`) |
-#| `GET`  | `/attachment/{id}`                  | Скачать вложение                                     |
+#| `POST` | `/issue/{issueIdOrKey}/attachments` | Upload file (requires `X-Atlassian-Token: no-check`) |
+#| `GET`  | `/attachment/{id}`                  | Download attachment                                     |
 #
 
-# Дополнительные возможности
-# Пагинация — параметры startAt и maxResults для /search и других списков.
-# Expand — параметр expand для загрузки вложенных данных (renderedFields, transitions, changelog).
-# JQL — мощный язык поиска задач.
-# Пример поиска по JQL:
+# Additional features
+# Pagination — startAt and maxResults parameters for /search and other lists.
+# Expand — expand parameter for loading nested data (renderedFields, transitions, changelog).
+# JQL — powerful issue search language.
+# JQL search example:
 
 ###
 POST {{baseUrl}}/rest/api/2/search
@@ -222,10 +222,10 @@ POST {{baseUrl}}/rest/api/2/search
 
 
 
-### АВТОЗАПОЛНЕНИЕ
+### AUTOMATION
 
 ### reporter
-GET {{baseUrl}}/rest/api/latest/user/search?username=Макаро
+GET {{baseUrl}}/rest/api/latest/user/search?username=Makaro
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### labels
@@ -236,12 +236,12 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=AITECH-845&query=CSB
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-### Наблюдатели
-GET {{baseUrl}}/rest/api/1.0/users/picker?fieldName=customfield_26803&query=Макаро
+### Watchers
+GET {{baseUrl}}/rest/api/1.0/users/picker?fieldName=customfield_26803&query=Makaro
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### assignee
-GET {{baseUrl}}/rest/api/latest/user/assignable/search?issueKey=AITECH-845&username=Макаро
+GET {{baseUrl}}/rest/api/latest/user/assignable/search?issueKey=AITECH-845&username=Makaro
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
