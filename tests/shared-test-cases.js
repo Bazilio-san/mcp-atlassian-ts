@@ -6,6 +6,7 @@
 
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT, TEST_ISSUE_LINK_TYPE } from './constants.js';
+import { incl, isObj, inclOneOf } from './utils.js';
 
 /**
  * Константы групп тестов
@@ -66,6 +67,90 @@ export class SharedJiraTestCases {
   }
 
   /**
+   * Получить системные тест-кейсы (serverInfo, configuration, permissions)
+   */
+  getSystemTestCases () {
+    return [
+      {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 1,
+        fullId: '1-1',
+        name: 'Get Server Info',
+        description: 'Получить информацию о сервере JIRA',
+        mcpTool: 'health_check',
+        mcpArgs: { detailed: true },
+        directApi: {
+          method: 'GET',
+          endpoint: '/serverInfo',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (c) => incl(c, 'status'),
+          checkResult: (result) => result?.status === 'ok',
+          expectedProps: ['status', 'service', 'version'],
+        },
+      },
+      {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 2,
+        fullId: '1-2',
+        name: 'Get Configuration',
+        description: 'Получить конфигурацию JIRA',
+        mcpTool: null, // нет MCP инструмента
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/configuration',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (c) => incl(c, 'config'),
+          checkResult: (result) => isObj(result),
+          expectedProps: [],
+        },
+      },
+      {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 3,
+        fullId: '1-3',
+        name: 'Get Permissions',
+        description: 'Получить разрешения JIRA',
+        mcpTool: null, // нет MCP инструмента
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/permissions',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (c) => incl(c, 'permissions'),
+          checkResult: (result) => isObj(result),
+          expectedProps: [],
+        },
+      },
+      {
+        groupNumber: TEST_GROUPS.SYSTEM,
+        testNumber: 4,
+        fullId: '1-4',
+        name: 'Get Application Roles',
+        description: 'Получить роли приложений',
+        mcpTool: null, // нет MCP инструмента
+        mcpArgs: {},
+        directApi: {
+          method: 'GET',
+          endpoint: '/applicationrole',
+        },
+        expectedStatus: 200,
+        validation: {
+          checkContent: (c) => incl(c, 'roles'),
+          checkResult: (result) => Array.isArray(result),
+          expectedProps: [],
+        },
+      },
+    ];
+  }
+
+  /**
    * Получить базовые информационные тест-кейсы
    * Эти тесты проверяют получение данных без их изменения
    */
@@ -86,9 +171,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes(this.testIssueKey),
-          checkResult: (result) => result && result.key === this.testIssueKey,
+          checkContent: (c) => incl(c, this.testIssueKey),
+          checkResult: (result) => result?.key === this.testIssueKey,
           expectedProps: ['key', 'fields'],
         },
       },
@@ -113,9 +199,10 @@ export class SharedJiraTestCases {
             fields: ['summary', 'status', 'assignee'],
           },
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('Search Results'),
-          checkResult: (result) => result && result.issues && Array.isArray(result.issues),
+          checkContent: (c) => incl(c, 'Search Results'),
+          checkResult: (result) => Array.isArray(result?.issues),
           expectedProps: ['issues', 'total'],
         },
       },
@@ -131,9 +218,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/project',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('Projects'),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => incl(c, 'Projects'),
+          checkResult: (result) => result?.length > 0,
           expectedProps: ['key', 'name', 'id'],
         },
       },
@@ -151,9 +239,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes(this.testProjectKey),
-          checkResult: (result) => result && result.key === this.testProjectKey,
+          checkContent: (c) => incl(c, this.testProjectKey),
+          checkResult: (result) => result?.key === this.testProjectKey,
           expectedProps: ['key', 'name', 'description'],
         },
       },
@@ -171,9 +260,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/transitions`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('Transitions'),
-          checkResult: (result) => result && result.transitions && Array.isArray(result.transitions),
+          checkContent: (c) => incl(c, 'Transitions'),
+          checkResult: (result) => Array.isArray(result?.transitions),
           expectedProps: ['transitions'],
           arrayElementProps: { path: 'transitions', props: ['id', 'name'] },
         },
@@ -192,9 +282,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/comment`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('comments') || content.includes('Comments')),
-          checkResult: (result) => result && result.comments !== undefined,
+          checkContent: (c) => inclOneOf(c, 'comments', 'Comments'),
+          checkResult: (result) => result?.comments !== undefined, // VVQ
           expectedProps: ['comments'],
         },
       },
@@ -212,9 +303,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/user?username=${this.testUsername}`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('admin'), // эмулятор возвращает name:"admin"
-          checkResult: (result) => result && result.name && result.name.length > 0,
+          checkContent: (c) => incl(c, 'admin'), // VVQ эмулятор возвращает name:"admin"
+          checkResult: (result) => result?.name?.length,
           expectedProps: ['name', 'displayName', 'active'],
         },
       },
@@ -230,9 +322,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/myself',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('Current user') || content.includes('User')),
-          checkResult: (result) => result && result.name,
+          checkContent: (c) => inclOneOf(c, 'Current user', 'User'),
+          checkResult: (result) => result?.name,
           expectedProps: ['name', 'displayName', 'active'],
         },
       },
@@ -248,9 +341,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/priority',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('priorities') || content.includes('Priority')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => inclOneOf(c, 'priorities', 'Priority'),
+          checkResult: (result) => result?.length,
           expectedProps: ['id', 'name'],
         },
       },
@@ -266,9 +360,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/status',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('statuses') || content.includes('Status')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => inclOneOf(c, 'statuses', 'Status'),
+          checkResult: (result) => result?.length,
           expectedProps: ['id', 'name', 'statusCategory'],
         },
       },
@@ -284,90 +379,11 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/issuetype',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('types') || content.includes('Type')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => inclOneOf(c, 'types', 'Type'),
+          checkResult: (result) => result?.length,
           expectedProps: ['id', 'name'],
-        },
-      },
-    ];
-  }
-
-  /**
-   * Получить системные тест-кейсы (serverInfo, configuration, permissions)
-   */
-  getSystemTestCases () {
-    return [
-      {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 1,
-        fullId: '1-1',
-        name: 'Get Server Info',
-        description: 'Получить информацию о сервере JIRA',
-        mcpTool: 'health_check',
-        mcpArgs: { detailed: true },
-        directApi: {
-          method: 'GET',
-          endpoint: '/serverInfo',
-        },
-        validation: {
-          checkContent: (content) => content && content.includes('status'),
-          checkResult: (result) => result && result.status === 'ok',
-          expectedProps: ['status', 'service', 'version'],
-        },
-      },
-      {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 2,
-        fullId: '1-2',
-        name: 'Get Configuration',
-        description: 'Получить конфигурацию JIRA',
-        mcpTool: null, // нет MCP инструмента
-        mcpArgs: {},
-        directApi: {
-          method: 'GET',
-          endpoint: '/configuration',
-        },
-        validation: {
-          checkContent: (content) => content && content.includes('config'),
-          checkResult: (result) => result && typeof result === 'object',
-          expectedProps: [],
-        },
-      },
-      {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 3,
-        fullId: '1-3',
-        name: 'Get Permissions',
-        description: 'Получить разрешения JIRA',
-        mcpTool: null, // нет MCP инструмента
-        mcpArgs: {},
-        directApi: {
-          method: 'GET',
-          endpoint: '/permissions',
-        },
-        validation: {
-          checkContent: (content) => content && content.includes('permissions'),
-          checkResult: (result) => result && typeof result === 'object',
-          expectedProps: [],
-        },
-      },
-      {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 4,
-        fullId: '1-4',
-        name: 'Get Application Roles',
-        description: 'Получить роли приложений',
-        mcpTool: null, // нет MCP инструмента
-        mcpArgs: {},
-        directApi: {
-          method: 'GET',
-          endpoint: '/applicationrole',
-        },
-        validation: {
-          checkContent: (content) => content && content.includes('roles'),
-          checkResult: (result) => result && Array.isArray(result),
-          expectedProps: [],
         },
       },
     ];
@@ -390,8 +406,9 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/editmeta`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('fields'),
+          checkContent: (c) => incl(c, 'fields'),
           checkResult: (result) => result && result.fields,
           expectedProps: ['fields'],
         },
@@ -410,8 +427,9 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/worklog`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('worklog'),
+          checkContent: (c) => incl(c, 'worklog'),
           checkResult: (result) => result && result.worklogs !== undefined,
           expectedProps: ['worklogs'],
         },
@@ -430,8 +448,9 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/issue/createmeta',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('projects'),
+          checkContent: (c) => incl(c, 'projects'),
           checkResult: (result) => result && result.projects,
           expectedProps: ['projects'],
         },
@@ -459,8 +478,9 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/search?jql=project=${this.testProjectKey}&maxResults=5`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('Search Results'),
+          checkContent: (c) => incl(c, 'Search Results'),
           checkResult: (result) => result && result.issues && Array.isArray(result.issues),
           expectedProps: ['issues', 'total'],
         },
@@ -485,9 +505,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/project',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('Projects'),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => incl(c, 'Projects'),
+          checkResult: (result) => result?.length,
           expectedProps: ['key', 'name', 'id'],
         },
       },
@@ -503,9 +524,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}/statuses`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('status'),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, 'status'),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: [],
         },
       },
@@ -531,8 +553,9 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/user?username=${this.testUsername}`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('admin'), // эмулятор возвращает name:"admin"
+          checkContent: (c) => incl(c, 'admin'), // эмулятор возвращает name:"admin"
           checkResult: (result) => result && result.name && result.name.length > 0,
           expectedProps: ['name', 'displayName', 'active'],
         },
@@ -551,9 +574,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/user/search?username=${this.testUsername}`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes(this.testUsername),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, this.testUsername),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: [],
         },
       },
@@ -569,9 +593,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/user/assignable/search?project=${this.testProjectKey}&username=${this.testUsername}`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('user'),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, 'user'),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: [],
         },
       },
@@ -595,9 +620,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/field',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('fields') || content.includes('Field')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => inclOneOf(c, 'fields', 'Field'),
+          checkResult: (result) => result?.length,
           expectedProps: [],
         },
       },
@@ -613,9 +639,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/resolution',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('resolution'),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, 'resolution'),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: ['id', 'name'],
         },
       },
@@ -631,9 +658,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/role',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('role'),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, 'role'),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: [],
         },
       },
@@ -649,9 +677,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/issueLinkType',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('link'),
-          checkResult: (result) => result && result.issueLinkTypes && Array.isArray(result.issueLinkTypes),
+          checkContent: (c) => incl(c, 'link'),
+          checkResult: (result) => Array.isArray(result?.issueLinkTypes),
           expectedProps: ['issueLinkTypes'],
         },
       },
@@ -692,8 +721,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result) => result && result.key && result.key.startsWith(this.testProjectKey),
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result) => (result?.key || '').startsWith(this.testProjectKey),
           expectedProps: ['key', 'id'],
         },
         cleanup: (result) => {
@@ -722,8 +751,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result) => result && result.id,
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result) => result?.id,
           expectedProps: ['id', 'body'],
         },
       },
@@ -751,8 +780,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 204,
         validation: {
-          checkContent: (content) => content && (content.includes('Successfully') || content.includes('Updated')),
-          checkResult: (result, response) => response && response.status && [200, 204].includes(response.status),
+          checkContent: (c) => inclOneOf(c, 'Successfully', 'Updated'),
+          checkResult: (result, response) => [204].includes(response?.status), // VVQ true
         },
       },
       {
@@ -778,8 +807,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result) => result && result.id,
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result) => result?.id,
           expectedProps: ['id', 'timeSpent'],
         },
         cleanup: (result) => {
@@ -805,9 +834,10 @@ export class SharedJiraTestCases {
             project: this.testProjectKey,
           },
         },
+        expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result) => result && result.id,
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result) => result?.id,
           expectedProps: ['id', 'name'],
         },
         cleanup: (result) => {
@@ -832,9 +862,10 @@ export class SharedJiraTestCases {
             description: 'Updated version for API testing',
           },
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result, response) => response && response.status && [200, 204].includes(response.status),
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result, response) => [200].includes(response?.status), // VVQ true
         },
         dependsOn: 'Create Version', // зависит от создания версии
       },
@@ -850,9 +881,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/version/{versionId}', // будет заменено в runtime
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('version'),
-          checkResult: (result) => result && result.id,
+          checkContent: (c) => incl(c, 'version'),
+          checkResult: (result) => result?.id,
           expectedProps: ['id', 'name'],
         },
         dependsOn: 'Create Version',
@@ -877,8 +909,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result, response) => response && response.status && [201, 204].includes(response.status),
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result, response) => [201].includes(response?.status), // VVQ true
         },
         cleanup: (result, testCase) => {
           // Записываем информацию о созданной связи для последующего удаления
@@ -912,8 +944,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && content.includes('Successfully'),
-          checkResult: (result) => result && result.id,
+          checkContent: (c) => incl(c, 'Successfully'),
+          checkResult: (result) => result?.id,
           expectedProps: ['id'],
         },
       },
@@ -929,9 +961,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/remotelink`,
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('links'),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, 'links'),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: [],
         },
       },
@@ -947,12 +980,12 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/issue/{issueKey}', // будет заменено в runtime
         },
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
           checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
           expectedProps: [],
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
@@ -966,12 +999,12 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/version/{versionId}', // будет заменено в runtime
         },
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
           checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
           expectedProps: [],
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
@@ -985,12 +1018,12 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/issueLink/{linkId}', // будет заменено в runtime на фактический ID связи
         },
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
           checkResult: (result) => true, // Для DELETE операций статус 204 считается успешным
           expectedProps: [],
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
       },
     ];
   }
@@ -1012,8 +1045,9 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/agile/1.0/board',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('boards'),
+          checkContent: (c) => incl(c, 'boards'),
           checkResult: (result) => result && result.values && Array.isArray(result.values),
           expectedProps: ['values'],
         },
@@ -1030,9 +1064,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/agile/1.0/board/{boardId}/sprint', // будет заменено в runtime
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('sprints'),
-          checkResult: (result) => result && result.values && Array.isArray(result.values),
+          checkContent: (c) => incl(c, 'sprints'),
+          checkResult: (result) => Array.isArray(result?.values),
           expectedProps: ['values'],
         },
         dependsOn: 'Get Agile Boards',
@@ -1049,9 +1084,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/agile/1.0/board/{boardId}/issue', // будет заменено в runtime
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('issues'),
-          checkResult: (result) => result && result.issues && Array.isArray(result.issues),
+          checkContent: (c) => incl(c, 'issues'),
+          checkResult: (result) => Array.isArray(result?.issues),
           expectedProps: ['issues'],
         },
         dependsOn: 'Get Agile Boards',
@@ -1077,14 +1113,14 @@ export class SharedJiraTestCases {
           endpoint: `/issue/${this.testIssueKey}/attachments`,
           data: new FormData(), // Будет заполнено в runtime файлом
         },
-        expectedStatus: 201,
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('Successfully') || content.includes('attachment')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0 && result[0].id,
+          checkContent: (c) => inclOneOf(c, 'Successfully', 'attachment'),
+          checkResult: (result) => result?.[0]?.id,
           expectedProps: ['id', 'filename'],
         },
         cleanup: (result) => {
-          if (result && Array.isArray(result) && result.length > 0 && result[0].id) {
+          if (result?.length && result[0].id) {
             // Сохраняем ID созданного attachment для использования в других тестах
             this.createdResources.attachments = this.createdResources.attachments || [];
             this.createdResources.attachments.push(result[0].id);
@@ -1104,12 +1140,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/attachment/{attachmentId}', // возвращает метаданные attachment
         },
+        expectedStatus: 200,
         validation: {
           checkContent: (content) => true, // GET attachment возвращает binary файл, не JSON
-          checkResult: (result, response) => {
-            // Для GET attachment проверяем только HTTP статус 200
-            return response && [200].includes(response.status);
-          },
+          checkResult: () => true, // Для GET attachment проверяем только HTTP статус 200
           expectedProps: [], // Нет JSON свойств для binary файла
         },
         dependsOn: 'Create Attachment',
@@ -1126,12 +1160,12 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/attachment/{attachmentId}', // будет заменено в runtime
         },
+        expectedStatus: 204, // DELETE операции обычно возвращают 204
         validation: {
           checkContent: (content) => true, // DELETE может возвращать пустой ответ
-          checkResult: (result, response) => response && [204].includes(response.status),
+          checkResult: () => true,
           expectedProps: [],
         },
-        expectedStatus: 204, // DELETE операции обычно возвращают 204
         dependsOn: 'Get Attachment Sample',
       },
       {
@@ -1146,9 +1180,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/dashboard',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('dashboard'),
-          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          checkContent: (c) => incl(c, 'dashboard'),
+          checkResult: () => true,
           expectedProps: [],
         },
       },
@@ -1164,9 +1199,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/filter/favourite',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('filter'),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, 'filter'),
+          checkResult: (result) => Array.isArray(result),
           expectedProps: [],
         },
       },
@@ -1182,9 +1218,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/groups/picker',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('groups'),
-          checkResult: (result, response) => response && [200, 403].includes(response.status),
+          checkContent: (c) => incl(c, 'groups'),
+          checkResult: () => true,
           expectedProps: [],
         },
       },
@@ -1200,9 +1237,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/notificationscheme',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('scheme'),
-          checkResult: (result, response) => response && [200, 403].includes(response.status),
+          checkContent: (c) => incl(c, 'scheme'),
+          checkResult: () => true,
           expectedProps: [],
         },
       },
@@ -1218,9 +1256,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/permissionscheme',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('scheme'),
-          checkResult: (result, response) => response && [200, 403].includes(response.status),
+          checkContent: (c) => incl(c, 'scheme'),
+          checkResult: () => true,
           expectedProps: [],
         },
       },
@@ -1236,9 +1275,10 @@ export class SharedJiraTestCases {
           method: 'GET',
           endpoint: '/workflow',
         },
+        expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('workflow'),
-          checkResult: (result, response) => response && [200, 403].includes(response.status),
+          checkContent: (c) => incl(c, 'workflow'),
+          checkResult: () => true,
           expectedProps: [],
         },
       },
@@ -1264,8 +1304,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('scheme') || content.includes('workflow')),
-          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          checkContent: (c) => inclOneOf(c, 'scheme', 'workflow'),
+          checkResult: () => true,
           expectedProps: ['id', 'name'],
         },
       },
@@ -1283,8 +1323,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('scheme') || content.includes('workflow')),
-          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          checkContent: (c) => inclOneOf(c, 'scheme', 'workflow'),
+          checkResult: () => true,
           expectedProps: ['id', 'name'],
         },
         dependsOn: 'Get Project Workflow Scheme',
@@ -1303,8 +1343,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && content.includes('workflow'),
-          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          checkContent: (c) => incl(c, 'workflow'),
+          checkResult: () => true,
           expectedProps: [],
         },
         dependsOn: 'Get Project Workflow Scheme',
@@ -1323,8 +1363,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 201,
         validation: {
-          checkContent: (content) => content && (content.includes('draft') || content.includes('scheme')),
-          checkResult: (result, response) => response && [201, 409].includes(response.status),
+          checkContent: (c) => inclOneOf(c, 'draft', 'scheme'),
+          checkResult: () => true,
           expectedProps: [],
         },
         dependsOn: 'Get Project Workflow Scheme',
@@ -1343,8 +1383,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (content) => content && (content.includes('draft') || content.includes('scheme')),
-          checkResult: (result, response) => response && [200, 404].includes(response.status),
+          checkContent: (c) => inclOneOf(c, 'draft', 'scheme'),
+          checkResult: () => true,
           expectedProps: ['id', 'name'],
         },
         dependsOn: 'Create Workflow Scheme Draft',
@@ -1364,7 +1404,7 @@ export class SharedJiraTestCases {
         expectedStatus: 204,
         validation: {
           checkContent: (content) => true,
-          checkResult: (result, response) => response && [204, 404].includes(response.status),
+          checkResult: () => true,
           expectedProps: [],
         },
         dependsOn: 'Get Workflow Scheme Draft',
@@ -1433,7 +1473,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 1,
-        fullId: '11-1',
+        fullId: '13-1',
         name: 'Get Server Info',
         description: 'Получить информацию о сервере JIRA',
         mcpTool: 'health_check',
@@ -1443,15 +1483,15 @@ export class SharedJiraTestCases {
           endpoint: '/serverInfo',
         },
         validation: {
-          checkContent: (content) => content && content.includes('status'),
-          checkResult: (result) => result && result.status === 'ok',
+          checkContent: (c) => incl(c, 'status'),
+          checkResult: (result) => result?.status === 'ok',
           expectedProps: ['status', 'service', 'version'],
         },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 2,
-        fullId: '11-2',
+        fullId: '13-2',
         name: 'Get Project Versions',
         description: 'Получить версии проекта',
         mcpTool: 'jira_get_project_versions',
@@ -1463,14 +1503,14 @@ export class SharedJiraTestCases {
           endpoint: `/project/${this.testProjectKey}/versions`,
         },
         validation: {
-          checkContent: (content) => content && (content.includes('versions') || content.includes('Version')),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => inclOneOf(c, 'versions', 'Version'),
+          checkResult: (result) => Array.isArray(result),
         },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 3,
-        fullId: '11-3',
+        fullId: '13-3',
         name: 'Get Project Components',
         description: 'Получить компоненты проекта',
         mcpTool: 'jira_get_project_components',
@@ -1482,14 +1522,14 @@ export class SharedJiraTestCases {
           endpoint: `/project/${this.testProjectKey}/components`,
         },
         validation: {
-          checkContent: (content) => content && (content.includes('components') || content.includes('Component')),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => inclOneOf(c, 'components', 'Component'),
+          checkResult: (result) => Array.isArray(result),
         },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 4,
-        fullId: '11-4',
+        fullId: '13-4',
         name: 'Search Users',
         description: 'Поиск пользователей',
         mcpTool: 'jira_search_users',
@@ -1501,14 +1541,14 @@ export class SharedJiraTestCases {
           endpoint: `/user/search?username=${this.testUsername}`,
         },
         validation: {
-          checkContent: (content) => content && content.includes(this.testUsername),
-          checkResult: (result) => result && Array.isArray(result),
+          checkContent: (c) => incl(c, this.testUsername),
+          checkResult: (result) => Array.isArray(result),
         },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 5,
-        fullId: '11-5',
+        fullId: '13-5',
         name: 'Get Fields',
         description: 'Получить список полей JIRA',
         mcpTool: 'jira_get_fields',
@@ -1518,14 +1558,14 @@ export class SharedJiraTestCases {
           endpoint: '/field',
         },
         validation: {
-          checkContent: (content) => content && (content.includes('fields') || content.includes('Field')),
-          checkResult: (result) => result && Array.isArray(result) && result.length > 0,
+          checkContent: (c) => inclOneOf(c, 'fields', 'Field'),
+          checkResult: (result) => result?.length,
         },
       },
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 6,
-        fullId: '11-6',
+        fullId: '13-6',
         name: 'Get Create Meta',
         description: 'Получить метаданные для создания задач',
         mcpTool: 'jira_get_create_meta',
@@ -1537,8 +1577,8 @@ export class SharedJiraTestCases {
           endpoint: '/issue/createmeta',
         },
         validation: {
-          checkContent: (content) => content && content.includes('projects'),
-          checkResult: (result) => result && result.projects,
+          checkContent: (c) => incl(c, 'projects'),
+          checkResult: (result) => result?.projects,
           expectedProps: ['projects'],
         },
       },
@@ -1561,8 +1601,8 @@ export class SharedJiraTestCases {
       agile: this.getAgileTestCases(),
       additional: this.getAdditionalTestCases(),
       workflowSchemes: this.getWorkflowSchemesTestCases(),
-      cascade: this.getCascadeTestCases(),
-      extended: this.getExtendedTestCases(),
+      cascade: this.getCascadeTestCases(), // VVQ где запускается
+      extended: this.getExtendedTestCases(), // VVQ где запускается
     };
   }
 

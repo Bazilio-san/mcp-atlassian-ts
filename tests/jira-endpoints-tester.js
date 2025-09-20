@@ -313,7 +313,7 @@ class JiraEndpointsTester {
   /**
    * Логирование результатов тестов
    */
-  logTest (testName, result, expected = null, endpoint = null, fullId = null) {
+  logTest (testName, result, expectedStatus = null, endpoint = null, fullId = null) {
     // Все тесты должны иметь fullId - если нет, пропускаем
     if (!fullId) {
       console.warn(`⚠️ Test "${testName}" skipped - no fullId provided`);
@@ -326,8 +326,8 @@ class JiraEndpointsTester {
     }
 
     const status = result.success ? '✅ PASS' : '❌ FAIL';
-    const details = expected
-      ? (expected === result.status ? '' : ` - Expected: ${expected}, Got: ${result.status}`)
+    const details = expectedStatus
+      ? (expectedStatus === result.status ? '' : ` - Expected: ${expectedStatus}, Got: ${result.status}`)
       : ` - Status: ${result.status}`;
     const endpointInfo = endpoint ? ` [${result.method} ${endpoint}]` : '';
 
@@ -538,8 +538,7 @@ class JiraEndpointsTester {
       }
     }
 
-    const expectedStatus = testCase.expectedStatus || 200;
-    this.logTest(testCase.name, result, expectedStatus, api.endpoint, testCase.fullId);
+    this.logTest(testCase.name, result, testCase.expectedStatus, api.endpoint, testCase.fullId);
 
     // Выводим результат валидации
     if (!validation.success) {
@@ -625,12 +624,13 @@ class JiraEndpointsTester {
    * Запустить минимальные shared test cases
    */
   async testSharedTestCases () {
-    await this.runTestsByCategory('minimal');
+    await this.runTestsByCategory('system');
   }
 
   /**
    * === ИНФОРМАЦИОННЫЕ ЭНДПОИНТЫ ===
    */
+
 
   async testIssueEndpoints () {
     await this.runTestsByCategory('informational');
