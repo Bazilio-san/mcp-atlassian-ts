@@ -2,39 +2,89 @@
 // noinspection UnnecessaryLocalVariableJS
 
 /**
- * MCP Client for testing MCP Atlassian server over network
+ * MCP Client for testing MCP Atlassian server - Refactored
+ * Extends BaseTestExecutor for unified testing infrastructure
  */
 
 import axios from 'axios';
 import chalk from 'chalk';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import { SharedJiraTestCases, TestValidationUtils, ResourceManager, CascadeExecutor } from './shared-test-cases.js';
+import BaseTestExecutor from './core/base-test-executor.js';
+import ResourceManager from './core/resource-manager.js';
+import { SharedJiraTestCases, TestValidationUtils, CascadeExecutor } from './shared-test-cases.js';
+import { getMcpCoverageStats, getUniqueMcpTools, getMcpToolConfig } from './definitions/mcp-tool-mappings.js';
 import { apiResponseLogger } from './api-response-logger.js';
 
 const { host = 'localhost', port = 3000 } = appConfig.server;
 const DEFAULT_MCP_SERVER_URL = `http://localhost:${port}`;
 
 /**
- * MCP Atlassian Test Client
- * JavaScript client for testing MCP Atlassian server functionality
+ * MCP Test Executor
+ * Extends BaseTestExecutor for consistent test execution
  */
-class MCPAtlassianClient {
-  constructor (serverUrl, timeout = 30000) {
-    this.serverUrl = serverUrl;
+class McpTestExecutor extends BaseTestExecutor {
+  constructor(config = {}) {
+    super(config);
+
+    // MCP-specific configuration
+    this.serverUrl = config.serverUrl || DEFAULT_MCP_SERVER_URL;
     this.requestId = 1;
+    this.timeout = config.timeout || 30000;
+
+    // Initialize HTTP client
     this.client = axios.create({
-      baseURL: serverUrl,
-      timeout,
+      baseURL: this.serverUrl,
+      timeout: this.timeout,
       headers: {
         'Content-Type': 'application/json',
       },
     });
+
+    // Initialize shared test cases
+    this.sharedTestCases = new SharedJiraTestCases();
+
+    // Resource tracking
+    this.resourceManager = new ResourceManager({ source: 'mcp', verbose: config.verbose });
+    this.setResourceManager(this.resourceManager);
+
+    // Available tools cache
+    this.availableTools = new Set();
+    this.toolsLoaded = false;
+
+    // Track created resources
+    this.createdResources = {
+      issues: [],
+      versions: [],
+      links: [],
+      attachments: [],
+      workflowSchemes: [],
+    };
+  }
+
+  /**
+   * Load available tools from MCP server
+   */
+  async loadAvailableTools() {
+    if (this.toolsLoaded) return;
+
+    try {
+      const response = await this.listTools();
+      if (response.result && response.result.tools) {
+        response.result.tools.forEach(tool => {
+          this.availableTools.add(tool.name);
+        });
+        this.toolsLoaded = true;
+        console.log(`📦 Loaded ${this.availableTools.size} MCP tools`);
+      }
+    } catch (error) {
+      console.warn('⚠️  Failed to load MCP tools:', error.message);
+    }
   }
 
   /**
    * Server health check
    */
-  async healthCheck () {
+  async healthCheck() {
     const response = await this.client.get('/health');
     return response.data;
   }
@@ -42,7 +92,7 @@ class MCPAtlassianClient {
   /**
    * Get list of available tools
    */
-  async listTools () {
+  async listTools() {
     const request = {
       jsonrpc: '2.0',
       id: this.requestId++,
@@ -56,7 +106,7 @@ class MCPAtlassianClient {
   /**
    * Call MCP tool
    */
-  async callTool (name, args = {}, options = {}) {
+  async callTool(name, args = {}, options = {}) {
     const request = {
       jsonrpc: '2.0',
       id: this.requestId++,
@@ -70,7 +120,7 @@ class MCPAtlassianClient {
     const response = await this.client.post('/mcp', request);
     const responseData = response.data;
 
-    // Log MCP response if enabled and test metadata is provided
+    // Log MCP response if enabled
     if (options.fullId && apiResponseLogger.isEnabled()) {
       const testName = options.testName || `MCP-${name}`;
       apiResponseLogger.logMcpResponse(
@@ -87,451 +137,334 @@ class MCPAtlassianClient {
   }
 
   /**
-   * Get tool information
+   * Execute a test case (implementation of abstract method)
    */
-  async getToolInfo (name) {
-    const request = {
-      jsonrpc: '2.0',
-      id: this.requestId++,
-      method: 'tools/info',
-      params: { name },
-    };
+  async executeTestCase(testCase) {
+    // Get MCP tool configuration from mappings
+    const mcpConfig = getMcpToolConfig(testCase.fullId || testCase.id);
 
-    const response = await this.client.post('/mcp', request);
-    return response.data;
+    // If no mapping in new system, fallback to testCase.mcpTool
+    const mcpTool = mcpConfig?.tool || testCase.mcpTool;
+    const mcpArgs = mcpConfig ? mcpConfig.args(testCase) : (testCase.mcpArgs || {});
+
+    // Check if MCP tool is available for this test
+    if (!mcpTool) {
+      return {
+        skipped: true,
+        reason: 'No MCP tool mapped for this test',
+      };
+    }
+
+    // Check if tool is available on the server
+    if (!this.availableTools.has(mcpTool)) {
+      return {
+        skipped: true,
+        reason: `MCP tool '${mcpTool}' not available`,
+      };
+    }
+
+    try {
+      // Call the MCP tool
+      const response = await this.callTool(
+        mcpTool,
+        mcpArgs,
+        {
+          fullId: testCase.fullId || testCase.id,
+          testName: testCase.name,
+        }
+      );
+
+      // Handle MCP error responses
+      if (response.error) {
+        throw new Error(`MCP error: ${response.error.message || JSON.stringify(response.error)}`);
+      }
+
+      // Track created resources
+      this.trackCreatedResource(testCase, response.result);
+
+      // Return normalized response
+      return {
+        result: response.result,
+        status: 200, // MCP doesn't return HTTP status codes
+      };
+    } catch (error) {
+      // Check if it's a network error (server not running)
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('MCP server is not running. Please start it first.');
+      }
+      throw error;
+    }
   }
 
   /**
-   * Check server connection
+   * Track created resources for cleanup
    */
-  async ping () {
+  trackCreatedResource(testCase, result) {
+    if (!result || !testCase.fullId) return;
+
+    // Track based on test case and MCP tool
+    if (testCase.mcpTool === 'jira_create_issue' && result.key) {
+      this.createdResources.issues.push(result.key);
+      this.resourceManager.trackIssue(result.key, result.fields?.project?.key);
+    } else if (testCase.mcpTool === 'jira_create_version' && result.id) {
+      this.createdResources.versions.push(result.id);
+      this.resourceManager.trackVersion(result.id, result.projectId);
+    } else if (testCase.mcpTool === 'jira_link_issues' && result.id) {
+      this.createdResources.links.push(result.id);
+      this.resourceManager.trackLink(result.id);
+    }
+  }
+
+  /**
+   * Get source type (implementation of abstract method)
+   */
+  getSourceType() {
+    return 'mcp';
+  }
+
+  /**
+   * Check server connectivity
+   */
+  async checkServerConnection() {
     try {
       const health = await this.healthCheck();
-      return health.status === 'ok';
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Get cache statistics (if available)
-   */
-  async getCacheStats () {
-    try {
-      const response = await this.client.get('/cache/stats');
-      return response.data;
+      console.log('✅ MCP server is running');
+      console.log(`   Version: ${health.version || 'unknown'}`);
+      console.log(`   Status: ${health.status}`);
+      return true;
     } catch (error) {
-      // Ignore errors - endpoint may be unavailable
-      return null;
+      if (error.code === 'ECONNREFUSED') {
+        console.error(`❌ Cannot connect to MCP server at ${this.serverUrl}`);
+        console.error('   Please ensure the MCP server is running:');
+        console.error('   npm start');
+        return false;
+      }
+      throw error;
     }
-  }
-}
-
-/**
- * JIRA-specific methods
- */
-class JiraTestClient extends MCPAtlassianClient {
-  /**
-   * Get JIRA issue
-   */
-  async getIssue (issueKey, options = {}) {
-    return this.callTool('jira_get_issue', {
-      issueKey,
-      ...options,
-    });
-  }
-
-  /**
-   * Search JIRA issues
-   */
-  async searchIssues (jql, options = {}) {
-    return this.callTool('jira_search_issues', {
-      jql,
-      startAt: options.startAt || 0,
-      maxResults: options.maxResults || 50,
-      fields: options.fields,
-    });
-  }
-
-  /**
-   * Create JIRA issue
-   */
-  async createIssue (params) {
-    return this.callTool('jira_create_issue', params);
-  }
-
-  /**
-   * Get projects
-   */
-  async getProjects () {
-    return this.callTool('jira_get_projects', {});
-  }
-
-  /**
-   * Add comment to issue
-   */
-  async addComment (issueKey, body) {
-    return this.callTool('jira_add_comment', {
-      issueKey,
-      body,
-    });
-  }
-
-  /**
-   * Get status transitions for issue
-   */
-  async getTransitions (issueKey) {
-    return this.callTool('jira_get_transitions', {
-      issueKey,
-    });
-  }
-}
-
-/**
- * Test Runner for MCP Atlassian server integration testing
- */
-class MCPTestRunner {
-  constructor (client) {
-    this.client = client;
-    this.results = [];
-    this.testCases = new SharedJiraTestCases();
-    this.resourceManager = new ResourceManager();
-    this.cascadeExecutor = new CascadeExecutor(this.resourceManager);
-  }
-
-  /**
-   * Execute specific test
-   */
-  async runTest (name, testFn) {
-    const startTime = Date.now();
-
-    try {
-      console.log(chalk.blue(`🧪 Running test: ${name}`));
-      const data = await testFn();
-      const duration = Date.now() - startTime;
-
-      console.log(chalk.green(`✅ Test passed: ${name} (${duration}ms)`));
-
-      return {
-        name,
-        success: true,
-        duration,
-        data,
-      };
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : String(error);
-
-      console.log(chalk.red(`❌ Test failed: ${name} (${duration}ms)`));
-      console.log(chalk.red(`   Error: ${errorMessage}`));
-
-      return {
-        name,
-        success: false,
-        duration,
-        error: errorMessage,
-      };
-    }
-  }
-
-  /**
-   * MCP server connection test
-   */
-  async testConnection () {
-    const result = await this.runTest('MCP Server Connection', async () => {
-      const isConnected = await this.client.ping();
-      if (!isConnected) {
-        throw new Error('Cannot connect to MCP server');
-      }
-
-      const health = await this.client.healthCheck();
-      return health;
-    });
-
-    this.results.push(result);
-  }
-
-  /**
-   * Available tools list test
-   */
-  async testListTools () {
-    const result = await this.runTest('List Available Tools', async () => {
-      const response = await this.client.listTools();
-
-      if (response.error) {
-        throw new Error(`MCP Error: ${response.error.message}`);
-      }
-
-      const tools = response.result?.tools || [];
-      if (tools.length === 0) {
-        throw new Error('No tools available');
-      }
-
-      console.log(chalk.gray(`   Found ${tools.length} tools`));
-      return tools;
-    });
-
-    this.results.push(result);
-  }
-
-  /**
-   * Execute test case from shared test cases
-   */
-  async runSharedTestCase(testCase) {
-    // Skip tests without MCP tool
-    if (!testCase.mcpTool) {
-      console.log(chalk.yellow(`⏭️  Skipping ${testCase.name} - no MCP tool available`));
-      return { name: testCase.name, success: true, skipped: true };
-    }
-
-    const result = await this.runTest(testCase.name, async () => {
-      // Execute MCP call with logging metadata
-      const response = await this.client.callTool(testCase.mcpTool, testCase.mcpArgs, {
-        fullId: testCase.fullId,
-        testName: testCase.name
-      });
-
-      // Validate MCP response
-      const validation = TestValidationUtils.validateMcpResponse(response, testCase);
-      if (!validation.success) {
-        throw new Error(validation.message);
-      }
-
-      // Execute additional validation if needed
-      if (testCase.cleanup) {
-        testCase.cleanup(response.result);
-      }
-
-      console.log(chalk.gray(`   ${testCase.name} - completed successfully`));
-      return response.result;
-    });
-
-    this.results.push(result);
-    return result;
-  }
-
-  /**
-   * Execute tests of specific category
-   */
-  async runTestsByCategory(categoryName) {
-    const testCases = this.testCases.getTestCasesByCategory(categoryName);
-
-    if (testCases.length === 0) {
-      console.log(chalk.yellow(`⏭️  No tests found for category: ${categoryName}`));
-      return;
-    }
-
-    console.log(chalk.blue(`\n📋 Running ${categoryName} tests (${testCases.length} tests)...\n`));
-
-    for (const testCase of testCases) {
-      try {
-        await this.runSharedTestCase(testCase);
-      } catch (error) {
-        console.log(chalk.red(`❌ Test case failed: ${testCase.name}`));
-        console.log(chalk.red(`   Error: ${error.message}`));
-      }
-    }
-  }
-
-  /**
-   * Execute cascade tests (if supported in MCP)
-   */
-  async runCascadeTests() {
-    console.log(chalk.blue('\n🔄 Testing CASCADE operations...\n'));
-
-    // Currently cascade operations work only with direct API calls
-    // Future support for cascades through MCP can be added
-    console.log(chalk.yellow('⏭️  Cascade operations are not yet supported via MCP'));
   }
 
   /**
    * Run all tests
    */
-  async runAllTests () {
-    console.log(chalk.yellow('🚀 Starting MCP Atlassian integration tests...\n'));
+  async runTests() {
+    console.log(`\n🔗 MCP Server URL: ${this.serverUrl}`);
 
-    // Basic connection tests
-    await this.testConnection();
-    await this.testListTools();
+    // Check server connection
+    if (!await this.checkServerConnection()) {
+      process.exit(1);
+    }
 
-    // Get minimal test case set for quick testing
-    const testCases = this.testCases.getMinimalTestCases();
+    // Load available tools
+    await this.loadAvailableTools();
 
-    console.log(chalk.blue(`\n📋 Running ${testCases.length} shared test cases...\n`));
+    // Get all test cases and add categories
+    const allTestCases = [
+      ...this.sharedTestCases.getSystemTestCases().map(t => ({...t, category: t.category || 'System'})),
+      ...this.sharedTestCases.getInformationalTestCases().map(t => ({...t, category: t.category || 'Informational'})),
+      ...this.sharedTestCases.getIssueDetailedTestCases().map(t => ({...t, category: t.category || 'IssueDetailed'})),
+      ...this.sharedTestCases.getSearchDetailedTestCases().map(t => ({...t, category: t.category || 'SearchDetailed'})),
+      ...this.sharedTestCases.getProjectDetailedTestCases().map(t => ({...t, category: t.category || 'ProjectDetailed'})),
+      ...this.sharedTestCases.getUserDetailedTestCases().map(t => ({...t, category: t.category || 'UserDetailed'})),
+      ...this.sharedTestCases.getMetadataDetailedTestCases().map(t => ({...t, category: t.category || 'MetadataDetailed'})),
+      ...this.sharedTestCases.getModifyingTestCases().map(t => ({...t, category: t.category || 'Modifying'})),
+      ...this.sharedTestCases.getAgileTestCases().map(t => ({...t, category: t.category || 'Agile'})),
+      ...this.sharedTestCases.getAdditionalTestCases().map(t => ({...t, category: t.category || 'Additional'})),
+      ...this.sharedTestCases.getWorkflowSchemesTestCases().map(t => ({...t, category: t.category || 'WorkflowSchemes'})),
+      ...this.sharedTestCases.getExtendedTestCases().map(t => ({...t, category: t.category || 'Extended'})),
+    ];
 
-    // Execute test cases
-    for (const testCase of testCases) {
-      try {
-        await this.runSharedTestCase(testCase);
-      } catch (error) {
-        console.log(chalk.red(`❌ Test case failed: ${testCase.name}`));
-        console.log(chalk.red(`   Error: ${error.message}`));
+    // Apply test filter if specified
+    let testCases = allTestCases;
+    if (this.testFilter) {
+      const selectedTests = this.parseTestFilter(this.testFilter);
+      testCases = allTestCases.filter(tc =>
+        selectedTests.some(sel => this.matchesSelection(tc, sel))
+      );
+      console.log(`🎯 Running ${testCases.length} of ${allTestCases.length} tests based on filter: ${this.testFilter}\n`);
+    }
+
+    // Run tests using base executor
+    const result = await this.runAllTests(testCases);
+
+    // Show MCP coverage statistics
+    this.displayMcpCoverage();
+
+    // Additional cleanup for MCP-specific resources
+    if (this.createdResources.issues.length > 0) {
+      console.log(`\n📝 Created issues during tests: ${this.createdResources.issues.join(', ')}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Display MCP tool coverage statistics
+   */
+  displayMcpCoverage() {
+    const stats = getMcpCoverageStats();
+    const tools = getUniqueMcpTools();
+
+    console.log('\n📊 MCP Tool Coverage Statistics:');
+    console.log('═'.repeat(50));
+    console.log(`Total test cases: ${stats.total}`);
+    console.log(`Tests with MCP tools: ${stats.withTools} (${stats.coverage})`);
+    console.log(`Tests without MCP tools: ${stats.withoutTools}`);
+    console.log(`Unique MCP tools used: ${tools.length}`);
+
+    if (this.verbose && tools.length > 0) {
+      console.log('\n🛠️  MCP Tools in use:');
+      tools.forEach(tool => {
+        const available = this.availableTools.has(tool);
+        const symbol = available ? '✅' : '❌';
+        console.log(`  ${symbol} ${tool}`);
+      });
+    }
+  }
+
+  /**
+   * Parse test filter string
+   */
+  parseTestFilter(filterString) {
+    const selections = [];
+    const parts = filterString.split(',');
+
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed === '*') {
+        return [{ type: 'all' }];
+      }
+
+      if (trimmed.includes('-')) {
+        const [group, test] = trimmed.split('-');
+        if (test === '*') {
+          selections.push({ type: 'group', groupNumber: parseInt(group) });
+        } else {
+          selections.push({
+            type: 'test',
+            groupNumber: parseInt(group),
+            testNumber: parseInt(test),
+            fullId: trimmed
+          });
+        }
+      } else {
+        // Single number = entire group
+        selections.push({ type: 'group', groupNumber: parseInt(trimmed) });
       }
     }
 
-    return this.results;
+    return selections;
   }
 
   /**
-   * Run extended tests
+   * Check if test case matches selection
    */
-  async runExtendedTests() {
-    console.log(chalk.yellow('🚀 Starting EXTENDED MCP Atlassian integration tests...\n'));
-
-    // Basic connection tests
-    await this.testConnection();
-    await this.testListTools();
-
-    // Get all available test categories
-    const allTestCases = this.testCases.getAllTestCasesByCategory();
-
-    // Count total tests with MCP tools
-    const allTestCasesList = this.testCases.getAllTestCasesFlat();
-    const mcpTestCases = allTestCasesList.filter(tc => tc.mcpTool);
-
-    console.log(chalk.blue(`\n📋 Running ${mcpTestCases.length} comprehensive test cases from all categories...\n`));
-
-    // Execute tests by categories
-    const categories = [
-      'system',
-      'informational',
-      'issueDetailed',
-      'searchDetailed',
-      'projectDetailed',
-      'userDetailed',
-      'metadataDetailed',
-      'modifying',
-      'agile',
-      'additional',
-      'extended'
-    ];
-
-    for (const category of categories) {
-      await this.runTestsByCategory(category);
+  matchesSelection(testCase, selection) {
+    if (selection.type === 'all') return true;
+    if (selection.type === 'group') {
+      return testCase.groupNumber === selection.groupNumber;
     }
-
-    // Attempt to run cascade tests
-    await this.runCascadeTests();
-
-    return this.results;
-  }
-
-  /**
-   * Show summary report
-   */
-  printSummary () {
-    console.log('\n' + chalk.yellow('📊 Test Summary:'));
-    console.log('='.repeat(50));
-
-    const passed = this.results.filter(r => r.success).length;
-    const failed = this.results.filter(r => !r.success).length;
-    const totalTime = this.results.reduce((sum, r) => sum + r.duration, 0);
-
-    console.log(chalk.green(`✅ Passed: ${passed}`));
-    console.log(chalk.red(`❌ Failed: ${failed}`));
-    console.log(chalk.blue(`⏱️  Total time: ${totalTime}ms`));
-
-    if (failed > 0) {
-      console.log(chalk.red('\n🔍 Failed tests:'));
-      this.results
-        .filter(r => !r.success)
-        .forEach(r => {
-          console.log(chalk.red(`  • ${r.name}: ${r.error}`));
-        });
+    if (selection.type === 'test') {
+      return testCase.fullId === selection.fullId;
     }
-
-    console.log('\n' + chalk.yellow('✨ Test execution completed!'));
-    console.log('='.repeat(50));
+    return false;
   }
 
   /**
-   * Get test results
+   * Run cascade tests (special MCP workflow tests)
    */
-  getResults () {
-    return this.results;
+  async runCascadeTests() {
+    console.log('\n🔄 Running MCP Cascade Tests');
+    console.log('─'.repeat(50));
+
+    const cascadeExecutor = new CascadeExecutor(
+      this.sharedTestCases,
+      async (testCase) => await this.executeTestCase(testCase),
+      this.resourceManager
+    );
+
+    const cascadeResults = await cascadeExecutor.runCascade();
+
+    // Add cascade results to our results
+    cascadeResults.results.forEach(result => {
+      this.results.push({
+        ...result,
+        category: 'Cascade',
+        source: 'mcp',
+      });
+
+      this.stats.total++;
+      if (result.status === 'passed') this.stats.passed++;
+      else if (result.status === 'failed') this.stats.failed++;
+      else if (result.status === 'skipped') this.stats.skipped++;
+    });
+
+    return cascadeResults;
   }
 }
 
-async function main () {
+/**
+ * Main execution
+ */
+async function main() {
+  // Parse command line arguments
   const args = process.argv.slice(2);
-  const command = args[0] || 'test';
-  const isExtended = args.includes('--extended') || args.includes('-e');
+  const config = {
+    verbose: args.includes('--verbose') || args.includes('-v'),
+    testFilter: null,
+  };
 
-  switch (command) {
-    case 'test':
-      await runTests(isExtended);
-      break;
-
-    case 'help':
-    default:
-      showHelp();
-      break;
+  // Parse server URL
+  const urlArg = args.find(arg => arg.startsWith('--url='));
+  if (urlArg) {
+    config.serverUrl = urlArg.split('=')[1];
   }
-}
 
-async function runTests (isExtended = false) {
-  const testType = isExtended ? 'EXTENDED MCP client tests' : 'MCP client tests';
-  console.log(`🧪 Running ${testType} against running MCP server...`);
-  console.log('📍 MCP Server URL:', DEFAULT_MCP_SERVER_URL);
-  console.log('⚠️  Make sure MCP server is running and JIRA emulator is available\n');
+  // Parse test filter
+  const testsArg = args.find(arg => arg.startsWith('--tests='));
+  if (testsArg) {
+    config.testFilter = testsArg.split('=')[1];
+  }
 
-  const client = new JiraTestClient(DEFAULT_MCP_SERVER_URL);
-  const runner = new MCPTestRunner(client);
+  // Parse timeout
+  const timeoutArg = args.find(arg => arg.startsWith('--timeout='));
+  if (timeoutArg) {
+    config.timeout = parseInt(timeoutArg.split('=')[1]);
+  }
+
+  // Enable API response logging
+  const logArg = args.find(arg => arg.startsWith('--log='));
+  if (logArg) {
+    const logFile = logArg.split('=')[1];
+    apiResponseLogger.enable(logFile);
+  }
 
   try {
-    if (isExtended) {
-      await runner.runExtendedTests();
-    } else {
-      await runner.runAllTests();
+    const executor = new McpTestExecutor(config);
+
+    // Run main tests
+    const result = await executor.runTests();
+
+    // Run cascade tests if not filtered out
+    if (!config.testFilter || config.testFilter.includes('13')) {
+      await executor.runCascadeTests();
     }
 
-    runner.printSummary();
-
-    const results = runner.getResults();
-    const failed = results.filter(r => !r.success).length;
-
-    process.exit(failed > 0 ? 1 : 0);
+    // Exit with appropriate code
+    process.exit(result.success ? 0 : 1);
   } catch (error) {
-    console.error('❌ Test execution failed:', error.message);
+    console.error('Fatal error:', error);
     process.exit(1);
   }
 }
 
-function showHelp () {
-  console.log(`
-MCP Atlassian Network Test Client
+// Run if executed directly
+const isMainModule = process.argv[1] && (
+  import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`
+);
 
-Usage:
-  node tests/mcp-client-tests.js [command] [options]
-
-Commands:
-  test        Run MCP client tests against running MCP server (default)
-  help        Show this help
-
-Options:
-  --extended, -e    Run extended comprehensive test suite
-
-Examples:
-  node tests/mcp-client-tests.js                 # Run standard tests
-  node tests/mcp-client-tests.js --extended      # Run extended tests
-  node tests/mcp-client-tests.js test -e         # Run extended tests
-
-Prerequisites:
-  1. Start JIRA emulator:
-     node tests/jira-emulator.js
-  
-  2. Start MCP server with:
-     ATLASSIAN_URL=http://localhost:8080 TRANSPORT_TYPE=http npm start
-
-Notes:
-  - This client tests a running MCP server over HTTP
-  - MCP server should be running on port 3000 (or configured port)
-  - JIRA emulator should be running on port 8080
-  - Uses shared test cases from tests/shared-test-cases.js
-`);
+if (isMainModule) {
+  main();
 }
 
-main().catch(error => {
-  console.error('❌ Error:', error.message);
-  process.exit(1);
-});
+export default McpTestExecutor;

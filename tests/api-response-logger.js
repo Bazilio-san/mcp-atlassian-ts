@@ -80,6 +80,32 @@ class ApiResponseLogger {
   }
 
   /**
+   * Log Direct API response to file
+   * @param {string} testId - Test ID
+   * @param {string} testName - Test name
+   * @param {string} method - HTTP method
+   * @param {string} endpoint - API endpoint
+   * @param {number} httpStatusCode - HTTP status code
+   * @param {object} responseBody - Response body
+   */
+  logDirectApiResponse(testId, testName, method, endpoint, httpStatusCode, responseBody) {
+    if (!this.enabled) {
+      return;
+    }
+
+    const url = `/rest/api/2${endpoint}`;
+    this.logResponse(
+      testId,
+      testName,
+      url,
+      null,
+      httpStatusCode,
+      responseBody,
+      method
+    );
+  }
+
+  /**
    * Log MCP response to file
    * @param {string} testId - Test ID
    * @param {string} testName - Test name
