@@ -10,6 +10,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { SharedJiraTestCases, TestValidationUtils, ResourceManager, CascadeExecutor } from './shared-test-cases.js';
+import { apiResponseLogger } from './api-response-logger.js';
 
 const { host = 'localhost', port = 3000 } = appConfig.server;
 const DEFAULT_MCP_SERVER_URL = `http://localhost:${port}`;
@@ -119,7 +120,7 @@ class ComprehensiveMCPTester {
   /**
    * Call MCP tool
    */
-  async callTool(name, args = {}) {
+  async callTool(name, args = {}, options = {}) {
     const request = {
       jsonrpc: '2.0',
       id: this.requestId++,
@@ -131,7 +132,22 @@ class ComprehensiveMCPTester {
     };
 
     const response = await this.client.post('/mcp', request);
-    return response.data;
+    const responseData = response.data;
+
+    // Log MCP response if enabled and test metadata is provided
+    if (options.fullId && apiResponseLogger.isEnabled()) {
+      const testName = options.testName || `MCP-${name}`;
+      apiResponseLogger.logMcpResponse(
+        options.fullId,
+        testName,
+        name,
+        args,
+        response.status,
+        responseData
+      );
+    }
+
+    return responseData;
   }
 
   /**
@@ -198,8 +214,11 @@ class ComprehensiveMCPTester {
     }
 
     const result = await this.runTest(testCase.name, async () => {
-      // Execute MCP call
-      const response = await this.callTool(testCase.mcpTool, testCase.mcpArgs);
+      // Execute MCP call with logging metadata
+      const response = await this.callTool(testCase.mcpTool, testCase.mcpArgs, {
+        fullId: testCase.fullId,
+        testName: testCase.description || testCase.name
+      });
 
       // Validate MCP response
       const validation = TestValidationUtils.validateMcpResponse(response, testCase);

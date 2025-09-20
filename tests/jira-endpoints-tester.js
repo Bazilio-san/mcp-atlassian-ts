@@ -9,6 +9,7 @@ import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import { SharedJiraTestCases, TestValidationUtils, ResourceManager } from './shared-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT } from './constants.js';
+import { apiResponseLogger } from './api-response-logger.js';
 
 const {
   jira: {
@@ -229,7 +230,7 @@ class JiraEndpointsTester {
         }
       }
 
-      return {
+      const result = {
         success: response.ok,
         status: response.status,
         statusText: response.statusText,
@@ -238,8 +239,25 @@ class JiraEndpointsTester {
         url,
         method,
       };
+
+      // Log API response if test ID is available in options
+      if (options.fullId && apiResponseLogger.isEnabled()) {
+        const testName = options.testName || `API-${method}-${endpoint.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        apiResponseLogger.logResponse(
+          options.fullId,
+          testName,
+          url,
+          data,
+          response.status,
+          responseData,
+          method,
+          config.headers,
+        );
+      }
+
+      return result;
     } catch (error) {
-      return {
+      const result = {
         success: false,
         status: 0,
         statusText: 'Network Error',
@@ -247,6 +265,23 @@ class JiraEndpointsTester {
         url,
         method,
       };
+
+      // Log error response if test ID is available in options
+      if (options.fullId && apiResponseLogger.isEnabled()) {
+        const testName = options.testName || `API-${method}-${endpoint.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        apiResponseLogger.logResponse(
+          options.fullId,
+          testName,
+          url,
+          data,
+          0,
+          { error: error.message },
+          method,
+          config.headers,
+        );
+      }
+
+      return result;
     }
   }
 
@@ -289,7 +324,7 @@ class JiraEndpointsTester {
         }
       }
 
-      return {
+      const result = {
         success: response.ok,
         status: response.status,
         statusText: response.statusText,
@@ -298,8 +333,25 @@ class JiraEndpointsTester {
         url,
         method,
       };
+
+      // Log API response if test ID is available in options
+      if (options.fullId && apiResponseLogger.isEnabled()) {
+        const testName = options.testName || `AGILE-${method}-${endpoint.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        apiResponseLogger.logResponse(
+          options.fullId,
+          testName,
+          url,
+          data,
+          response.status,
+          responseData,
+          method,
+          config.headers,
+        );
+      }
+
+      return result;
     } catch (error) {
-      return {
+      const result = {
         success: false,
         status: 0,
         statusText: 'Network Error',
@@ -307,6 +359,23 @@ class JiraEndpointsTester {
         url,
         method,
       };
+
+      // Log error response if test ID is available in options
+      if (options.fullId && apiResponseLogger.isEnabled()) {
+        const testName = options.testName || `AGILE-${method}-${endpoint.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        apiResponseLogger.logResponse(
+          options.fullId,
+          testName,
+          url,
+          data,
+          0,
+          { error: error.message },
+          method,
+          config.headers,
+        );
+      }
+
+      return result;
     }
   }
 
@@ -519,7 +588,10 @@ class JiraEndpointsTester {
 
     // Determine request method
     let result;
-    const options = { fullId: testCase.fullId };
+    const options = {
+      fullId: testCase.fullId,
+      testName: testCase.description || testCase.name,
+    };
     if (api.endpoint.startsWith('/agile/')) {
       result = await this.makeAgileRequest(api.method, api.endpoint, api.data, options);
     } else {

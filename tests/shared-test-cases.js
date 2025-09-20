@@ -76,7 +76,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '1-1',
         name: 'Get Server Info',
-        description: 'Get JIRA server information',
         mcpTool: 'health_check',
         mcpArgs: { detailed: true },
         directApi: {
@@ -95,7 +94,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '1-2',
         name: 'Get Configuration',
-        description: 'Get JIRA configuration',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -114,7 +112,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '1-3',
         name: 'Get Permissions',
-        description: 'Get JIRA permissions',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -133,7 +130,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '1-4',
         name: 'Get Application Roles',
-        description: 'Get application roles',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -161,7 +157,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '2-1',
         name: 'Get Issue',
-        description: 'Get issue information',
         mcpTool: 'jira_get_issue',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -183,7 +178,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '2-2',
         name: 'Search Issues',
-        description: 'Search issues by JQL',
         mcpTool: 'jira_search_issues',
         mcpArgs: {
           jql: `project = ${this.testProjectKey}`,
@@ -211,7 +205,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '2-3',
         name: 'Get Projects',
-        description: 'Get projects list',
         mcpTool: 'jira_get_projects',
         mcpArgs: {},
         directApi: {
@@ -230,7 +223,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '2-4',
         name: 'Get Project Details',
-        description: 'Get detailed project information',
         mcpTool: null, // No single project tool, use jira_get_projects
         mcpArgs: {
           projectKey: this.testProjectKey,
@@ -251,7 +243,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '2-5',
         name: 'Get Issue Transitions',
-        description: 'Get available status transitions for issue',
         mcpTool: 'jira_get_transitions',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -273,7 +264,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '2-6',
         name: 'Get Issue Comments',
-        description: 'Get issue comments',
         mcpTool: null, // No separate comments tool
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -294,7 +284,6 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '2-7',
         name: 'Get User Info',
-        description: 'Get user information',
         mcpTool: null, // Disabled due to cache issues with real server
         mcpArgs: {
           userIdOrEmail: this.testUsername,
@@ -315,7 +304,6 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '2-8',
         name: 'Get Current User',
-        description: 'Get current user information',
         mcpTool: null, // No current user tool
         mcpArgs: {},
         directApi: {
@@ -334,7 +322,6 @@ export class SharedJiraTestCases {
         testNumber: 9,
         fullId: '2-9',
         name: 'Get Priorities',
-        description: 'Get priorities list',
         mcpTool: null, // No priorities tool
         mcpArgs: {},
         directApi: {
@@ -353,7 +340,6 @@ export class SharedJiraTestCases {
         testNumber: 10,
         fullId: '2-10',
         name: 'Get Statuses',
-        description: 'Get statuses list',
         mcpTool: null, // No statuses tool
         mcpArgs: {},
         directApi: {
@@ -372,7 +358,6 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '2-11',
         name: 'Get Issue Types',
-        description: 'Get issue types list',
         mcpTool: null, // No issue types tool
         mcpArgs: {},
         directApi: {
@@ -399,7 +384,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '3-1',
         name: 'Get Issue Edit Meta',
-        description: 'Get metadata for issue editing',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -418,7 +402,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '3-2',
         name: 'Get Issue Worklog',
-        description: 'Get issue worklogs',
         mcpTool: 'jira_get_worklog',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -439,7 +422,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '3-3',
         name: 'Get Create Meta',
-        description: 'Get metadata for issue creation',
         mcpTool: 'jira_get_create_meta',
         mcpArgs: {
           projectKeys: [this.testProjectKey],
@@ -468,7 +450,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '4-1',
         name: 'JQL Search GET',
-        description: 'Search issues by JQL via GET request',
         mcpTool: 'jira_search_issues', // using the same MCP tool
         mcpArgs: {
           jql: `project = ${this.testProjectKey}`,
@@ -498,7 +479,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '5-1',
         name: 'Get All Projects',
-        description: 'Get list of all projects',
         mcpTool: 'jira_get_projects',
         mcpArgs: {},
         directApi: {
@@ -517,7 +497,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '5-2',
         name: 'Get Project Statuses',
-        description: 'Get project statuses',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -544,7 +523,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '6-1',
         name: 'Get User by Username',
-        description: 'Get user by name',
         mcpTool: 'jira_get_user_profile',
         mcpArgs: {
           username: this.testUsername,
@@ -565,7 +543,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '6-2',
         name: 'Search Users by Username',
-        description: 'Search users by name',
         mcpTool: 'jira_search_users',
         mcpArgs: {
           username: this.testUsername,
@@ -586,7 +563,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '6-3',
         name: 'Get Assignable Users',
-        description: 'Get assignable users for project',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -613,7 +589,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '7-1',
         name: 'Get Fields',
-        description: 'Get JIRA fields list',
         mcpTool: 'jira_get_fields',
         mcpArgs: {},
         directApi: {
@@ -632,7 +607,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '7-2',
         name: 'Get Resolutions',
-        description: 'Get resolutions list',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -651,7 +625,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '7-3',
         name: 'Get Project Roles',
-        description: 'Get project roles',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -670,7 +643,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '7-4',
         name: 'Get Issue Link Types',
-        description: 'Get issue link types',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -698,7 +670,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '8-1',
         name: 'Create Issue',
-        description: 'Create new issue',
         mcpTool: 'jira_create_issue',
         mcpArgs: {
           project: this.testProjectKey,
@@ -736,7 +707,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '8-2',
         name: 'Add Comment',
-        description: 'Add comment to issue',
         mcpTool: 'jira_add_comment',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -761,7 +731,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '8-3',
         name: 'Update Issue',
-        description: 'Update existing issue',
         mcpTool: 'jira_update_issue',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -789,7 +758,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '8-4',
         name: 'Add Worklog',
-        description: 'Add worklog to issue',
         mcpTool: 'jira_add_worklog',
         mcpArgs: {
           issueKey: this.testIssueKey,
@@ -822,7 +790,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '8-5',
         name: 'Create Version',
-        description: 'Create project version',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -851,7 +818,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '8-6',
         name: 'Update Version',
-        description: 'Update project version',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -874,7 +840,6 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '8-7',
         name: 'Get Version',
-        description: 'Get version information',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -894,7 +859,6 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '8-8',
         name: 'Create Issue Link',
-        description: 'Create issue link',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -929,7 +893,6 @@ export class SharedJiraTestCases {
         testNumber: 9,
         fullId: '8-9',
         name: 'Create Remote Link',
-        description: 'Create remote link for issue',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -954,7 +917,6 @@ export class SharedJiraTestCases {
         testNumber: 10,
         fullId: '8-10',
         name: 'Get Remote Links',
-        description: 'Get issue remote links',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -973,7 +935,6 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '8-11',
         name: 'Delete Issue',
-        description: 'Delete issue',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -992,7 +953,6 @@ export class SharedJiraTestCases {
         testNumber: 12,
         fullId: '8-12',
         name: 'Delete Version',
-        description: 'Delete version',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1011,7 +971,6 @@ export class SharedJiraTestCases {
         testNumber: 13,
         fullId: '8-13',
         name: 'Delete Issue Link',
-        description: 'Delete issue link',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1038,7 +997,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '9-1',
         name: 'Get Agile Boards',
-        description: 'Get Agile boards list',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1057,7 +1015,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '9-2',
         name: 'Get Board Sprints',
-        description: 'Get board sprints',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1077,7 +1034,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '9-3',
         name: 'Get Board Issues',
-        description: 'Get board issues',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1105,7 +1061,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '10-1',
         name: 'Create Attachment',
-        description: 'Create issue attachment',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1133,7 +1088,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '10-2',
         name: 'Get Attachment Sample',
-        description: 'Get created attachment (FIXED VERSION)',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1153,7 +1107,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '10-3',
         name: 'Delete Attachment',
-        description: 'Delete attachment',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1173,7 +1126,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '10-4',
         name: 'Get Dashboards',
-        description: 'Get dashboards',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1192,7 +1144,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '10-3',
         name: 'Get Favourite Filters',
-        description: 'Get favorite filters',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1211,7 +1162,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '10-4',
         name: 'Get Groups Picker',
-        description: 'Get groups (picker)',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1230,7 +1180,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '10-5',
         name: 'Get Notification Schemes',
-        description: 'Get notification schemes',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1249,7 +1198,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '10-6',
         name: 'Get Permission Schemes',
-        description: 'Get permission schemes',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1268,7 +1216,6 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '10-7',
         name: 'Get Workflows',
-        description: 'Get workflows',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
@@ -1295,7 +1242,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '11-1',
         name: 'Get Project Workflow Scheme',
-        description: 'Get project workflow schemes',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1314,7 +1260,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '11-2',
         name: 'Get Workflow Scheme by ID',
-        description: 'Get workflow schemes by ID',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1334,7 +1279,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '11-3',
         name: 'Get Workflow Scheme Default',
-        description: 'Get default workflow scheme',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1354,7 +1298,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '11-4',
         name: 'Create Workflow Scheme Draft',
-        description: 'Create workflow schemes draft',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1374,7 +1317,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '11-5',
         name: 'Get Workflow Scheme Draft',
-        description: 'Get workflow schemes draft',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1394,7 +1336,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '11-6',
         name: 'Delete Workflow Scheme Draft',
-        description: 'Delete workflow schemes draft',
         mcpTool: null,
         mcpArgs: {},
         directApi: {
@@ -1475,7 +1416,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '13-1',
         name: 'Get Server Info',
-        description: 'Get JIRA server information',
         mcpTool: 'health_check',
         mcpArgs: { detailed: true },
         directApi: {
@@ -1493,7 +1433,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '13-2',
         name: 'Get Project Versions',
-        description: 'Get project versions',
         mcpTool: 'jira_get_project_versions',
         mcpArgs: {
           projectKey: this.testProjectKey,
@@ -1512,7 +1451,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '13-3',
         name: 'Get Project Components',
-        description: 'Get project components',
         mcpTool: 'jira_get_project_components',
         mcpArgs: {
           projectKey: this.testProjectKey,
@@ -1531,7 +1469,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '13-4',
         name: 'Search Users',
-        description: 'Search users',
         mcpTool: 'jira_search_users',
         mcpArgs: {
           username: this.testUsername,
@@ -1550,7 +1487,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '13-5',
         name: 'Get Fields',
-        description: 'Get JIRA fields list',
         mcpTool: 'jira_get_fields',
         mcpArgs: {},
         directApi: {
@@ -1567,7 +1503,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '13-6',
         name: 'Get Create Meta',
-        description: 'Get metadata for issue creation',
         mcpTool: 'jira_get_create_meta',
         mcpArgs: {
           projectKeys: [this.testProjectKey],
