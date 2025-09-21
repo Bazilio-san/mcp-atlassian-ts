@@ -63,12 +63,9 @@ class ApiResponseLogger {
       const sanitizedHeaders = this.sanitizeHeaders(headers);
 
       // Format as Markdown
-      let mdContent = `---SOF---\n\n`;
-      mdContent += `**testId**: ${testId}\n`;
-      mdContent += `**testName**: ${testName}\n`;
-      mdContent += `**timestamp**: ${new Date().toISOString()}\n\n`;
-      mdContent += `**method**: ${method}\n`;
-      mdContent += `**url**: ${url}\n\n`;
+      let mdContent = ``;
+      mdContent += `${new Date().toISOString()}\n\n**test**: ${testId} / ${testName} \n`;
+      mdContent += `${method} ${url}\n\n`;
       mdContent += `**httpStatusCode**: ${httpStatusCode}\n\n`;
 
       mdContent += `**data**: \n\`\`\`json\n`;
@@ -82,7 +79,6 @@ class ApiResponseLogger {
       mdContent += `headers: \n\`\`\`json\n`;
       mdContent += sanitizedHeaders ? JSON.stringify(sanitizedHeaders, null, 4) : '';
       mdContent += `\n\`\`\`\n`;
-      mdContent += `---EOF---\n`;
 
       const filename = this.generateFilename(testId, testName);
       const filepath = path.join(this.logDir, filename);
