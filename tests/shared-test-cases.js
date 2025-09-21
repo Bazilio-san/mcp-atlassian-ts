@@ -76,7 +76,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '1-1',
         name: 'Get Server Info',
-        category: 'System',
         mcpTool: 'health_check',
         mcpArgs: { detailed: true },
         directApi: {

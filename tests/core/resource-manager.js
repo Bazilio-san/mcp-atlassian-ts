@@ -201,7 +201,7 @@ class ResourceManager {
 
     if (totalResources === 0 && totalFunctions === 0) {
       if (this.verbose) {
-        console.log('✨ No resources to clean up');
+        console.log('✨  No resources to clean up');
       }
       return { cleaned: 0, errors: [] };
     }

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * API Response Logger
+ * API Response Logger (Markdown format)
  * Logs API responses during testing when TEST_LOG_API_RESPONSES=true
  */
 class ApiResponseLogger {
@@ -38,7 +38,7 @@ class ApiResponseLogger {
       .toLowerCase()
       .substring(0, 50); // Limit length
 
-    return `${testId}-${cleanName}.json`;
+    return `${testId}-${cleanName}.md`;
   }
 
   /**
@@ -58,22 +58,36 @@ class ApiResponseLogger {
     }
 
     try {
-      const logData = {
-        testId,
-        testName,
-        timestamp: new Date().toISOString(),
-        url,
-        method,
-        data: this.sanitizeData(data),
-        httpStatusCode,
-        responseBody: this.sanitizeResponseBody(responseBody),
-        headers: this.sanitizeHeaders(headers),
-      };
+      const sanitizedData = this.sanitizeData(data);
+      const sanitizedResponse = this.sanitizeResponseBody(responseBody);
+      const sanitizedHeaders = this.sanitizeHeaders(headers);
+
+      // Format as Markdown
+      let mdContent = `---SOF---\n\n`;
+      mdContent += `**testId**: ${testId}\n`;
+      mdContent += `**testName**: ${testName}\n`;
+      mdContent += `**timestamp**: ${new Date().toISOString()}\n\n`;
+      mdContent += `**method**: ${method}\n`;
+      mdContent += `**url**: ${url}\n\n`;
+      mdContent += `**httpStatusCode**: ${httpStatusCode}\n\n`;
+
+      mdContent += `**data**: \n\`\`\`json\n`;
+      mdContent += sanitizedData ? JSON.stringify(sanitizedData, null, 4) : '';
+      mdContent += `\n\`\`\`\n\n`;
+
+      mdContent += `responseBody:\n\`\`\`json\n`;
+      mdContent += sanitizedResponse ? JSON.stringify(sanitizedResponse, null, 4) : '';
+      mdContent += `\n\`\`\`\n\n`;
+
+      mdContent += `headers: \n\`\`\`json\n`;
+      mdContent += sanitizedHeaders ? JSON.stringify(sanitizedHeaders, null, 4) : '';
+      mdContent += `\n\`\`\`\n`;
+      mdContent += `---EOF---\n`;
 
       const filename = this.generateFilename(testId, testName);
       const filepath = path.join(this.logDir, filename);
 
-      fs.writeFileSync(filepath, JSON.stringify(logData, null, 2), 'utf8');
+      fs.writeFileSync(filepath, mdContent, 'utf8');
     } catch (error) {
       console.error(`❌ Failed to log API response for test ${testId}:`, error.message);
     }
@@ -87,8 +101,9 @@ class ApiResponseLogger {
    * @param {string} endpoint - API endpoint
    * @param {number} httpStatusCode - HTTP status code
    * @param {object} responseBody - Response body
+   * @param {object} headers - Request headers (optional)
    */
-  logDirectApiResponse(testId, testName, method, endpoint, httpStatusCode, responseBody) {
+  logDirectApiResponse(testId, testName, method, endpoint, httpStatusCode, responseBody, headers = {}) {
     if (!this.enabled) {
       return;
     }
@@ -101,7 +116,8 @@ class ApiResponseLogger {
       null,
       httpStatusCode,
       responseBody,
-      method
+      method,
+      headers
     );
   }
 
@@ -259,7 +275,7 @@ class ApiResponseLogger {
       if (fs.existsSync(this.logDir)) {
         const files = fs.readdirSync(this.logDir);
         files.forEach(file => {
-          if (file.endsWith('.json')) {
+          if (file.endsWith('.md')) {
             fs.unlinkSync(path.join(this.logDir, file));
           }
         });
@@ -281,7 +297,7 @@ class ApiResponseLogger {
 
     try {
       const files = fs.readdirSync(this.logDir);
-      return files.filter(file => file.endsWith('.json')).length;
+      return files.filter(file => file.endsWith('.md')).length;
     } catch (error) {
       console.error('❌ Failed to count API response logs:', error.message);
       return 0;
@@ -294,6 +310,16 @@ class ApiResponseLogger {
    */
   isEnabled () {
     return this.enabled;
+  }
+
+  /**
+   * Enable logging
+   * @param {string} logFile - Optional log file name (not used in current implementation)
+   */
+  enable (logFile) {
+    this.enabled = true;
+    this.ensureLogDirectory();
+    console.log(`📝 API response logging enabled to ${this.logDir}`);
   }
 }
 

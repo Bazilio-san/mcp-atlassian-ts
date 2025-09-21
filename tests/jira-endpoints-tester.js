@@ -13,6 +13,7 @@ import ResourceManager from './core/resource-manager.js';
 import { SharedJiraTestCases, TestValidationUtils, CascadeExecutor } from './shared-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT } from './constants.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
+import { isObj } from './utils.js';
 
 const {
   jira: {
@@ -72,29 +73,20 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
    */
   parseTestXHeaders() {
     const headers = {};
-    const envValue = process.env.JIRA_TEST_X_HEADERS;
-
-    if (envValue) {
-      try {
-        const parsed = JSON.parse(envValue);
-        Object.entries(parsed).forEach(([key, value]) => {
-          if (key.toLowerCase().startsWith('x-')) {
-            headers[key] = value;
-          }
-        });
-      } catch (e) {
-        console.error('Failed to parse JIRA_TEST_X_HEADERS:', e.message);
-      }
-    }
-
     // Parse TEST_ADD_X_HEADER (key:value format)
     const testAddHeader = process.env.TEST_ADD_X_HEADER;
     if (testAddHeader) {
       const [key, value] = testAddHeader.split(":");
       if (key && value && key.toLowerCase().startsWith("x-")) {
         headers[key] = value;
+        console.log(`📝 Added custom header: ${key}: ${value}`);
       }
     }
+
+    if (Object.keys(headers).length > 0) {
+      console.log(`🔧 Custom headers configured:`, headers);
+    }
+
     return headers;
   }
 
@@ -141,16 +133,27 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     const url = `${this.baseUrl}/rest/api/2${finalEndpoint}`;
 
+    const finalHeaders = {
+      ...this.getHeaders(),
+      ...additionalHeaders,
+    };
+
     const options = {
       method,
-      headers: {
-        ...this.getHeaders(),
-        ...additionalHeaders,
-      },
+      headers: finalHeaders,
     };
 
     if (body) {
       options.body = JSON.stringify(body);
+    }
+
+    // Debug: Log headers being sent (excluding Authorization)
+    if (this.verbose && Object.keys(this.customHeaders).length > 0) {
+      const debugHeaders = { ...finalHeaders };
+      if (debugHeaders.Authorization) {
+        debugHeaders.Authorization = '[REDACTED]';
+      }
+      console.log(`  🔍 Sending headers:`, debugHeaders);
     }
 
     try {
@@ -159,10 +162,10 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
       let data = null;
       if (contentType.includes('application/json')) {
-        const text = await response.text();
-        if (text) {
+        data = await response.text();
+        if (data) {
           try {
-            data = JSON.parse(text);
+            data = JSON.parse(data);
           } catch (err) {
             //
           }
@@ -177,7 +180,8 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
           method,
           finalEndpoint,
           response.status,
-          data
+          data,
+          finalHeaders
         );
       }
 
@@ -198,7 +202,9 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
    * Track created resources for cleanup
    */
   trackCreatedResource(testCase, responseData) {
-    if (!responseData || !testCase.fullId) return;
+    if (!isObj(responseData) || !testCase.fullId) {
+      return;
+    }
 
     // Track based on test case
     if (testCase.fullId === '8-1' && responseData.key) {
@@ -237,20 +243,21 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
     console.log(`\n🔗 JIRA API URL: ${this.baseUrl}`);
     console.log(`📦 Authentication: ${this.auth.type}`);
 
-    // Get all test cases and add categories
+    // Get all test cases
+    const o = this.sharedTestCases;
     const allTestCases = [
-      ...this.sharedTestCases.getSystemTestCases().map(t => ({...t, category: t.category || 'System'})),
-      ...this.sharedTestCases.getInformationalTestCases().map(t => ({...t, category: t.category || 'Informational'})),
-      ...this.sharedTestCases.getIssueDetailedTestCases().map(t => ({...t, category: t.category || 'IssueDetailed'})),
-      ...this.sharedTestCases.getSearchDetailedTestCases().map(t => ({...t, category: t.category || 'SearchDetailed'})),
-      ...this.sharedTestCases.getProjectDetailedTestCases().map(t => ({...t, category: t.category || 'ProjectDetailed'})),
-      ...this.sharedTestCases.getUserDetailedTestCases().map(t => ({...t, category: t.category || 'UserDetailed'})),
-      ...this.sharedTestCases.getMetadataDetailedTestCases().map(t => ({...t, category: t.category || 'MetadataDetailed'})),
-      ...this.sharedTestCases.getModifyingTestCases().map(t => ({...t, category: t.category || 'Modifying'})),
-      ...this.sharedTestCases.getAgileTestCases().map(t => ({...t, category: t.category || 'Agile'})),
-      ...this.sharedTestCases.getAdditionalTestCases().map(t => ({...t, category: t.category || 'Additional'})),
-      ...this.sharedTestCases.getWorkflowSchemesTestCases().map(t => ({...t, category: t.category || 'WorkflowSchemes'})),
-      ...this.sharedTestCases.getExtendedTestCases().map(t => ({...t, category: t.category || 'Extended'})),
+      ...o.getSystemTestCases(),
+      ...o.getInformationalTestCases(),
+      ...o.getIssueDetailedTestCases(),
+      ...o.getSearchDetailedTestCases(),
+      ...o.getProjectDetailedTestCases(),
+      ...o.getUserDetailedTestCases(),
+      ...o.getMetadataDetailedTestCases(),
+      ...o.getModifyingTestCases(),
+      ...o.getAgileTestCases(),
+      ...o.getAdditionalTestCases(),
+      ...o.getWorkflowSchemesTestCases(),
+      ...o.getExtendedTestCases(),
     ];
 
     // Apply test filter if specified

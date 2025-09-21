@@ -18,7 +18,7 @@ class TestReporter {
   /**
    * Generate summary report
    */
-  static generateSummary(data) {
+  static generateSummary (data) {
     const { results, stats, source } = data;
     const successRate = stats.total > 0 ? ((stats.passed / stats.total) * 100).toFixed(2) : 0;
     const duration = this.formatDuration(stats.duration || 0);
@@ -33,10 +33,13 @@ class TestReporter {
     // Stats table
     lines.push('\n📈 Statistics:');
     lines.push(`  Total Tests:    ${stats.total}`);
-    lines.push(`  ✅ Passed:      ${this.colorize(stats.passed, 'green')} (${((stats.passed / stats.total) * 100).toFixed(1)}%)`);
-    lines.push(`  ❌ Failed:      ${this.colorize(stats.failed, stats.failed > 0 ? 'red' : 'white')} (${((stats.failed / stats.total) * 100).toFixed(1)}%)`);
-    lines.push(`  ⏭️  Skipped:     ${this.colorize(stats.skipped, 'yellow')} (${((stats.skipped / stats.total) * 100).toFixed(1)}%)`);
-
+    lines.push(`  ✅  Passed:      ${this.colorize(stats.passed, 'green')} (${((stats.passed / stats.total) * 100).toFixed(1)}%)`);
+    if (stats.failed) {
+      lines.push(`  ❌  Failed:      ${this.colorize(stats.failed, stats.failed > 0 ? 'red' : 'white')} (${((stats.failed / stats.total) * 100).toFixed(1)}%)`);
+    }
+    if (stats.skipped) {
+      lines.push(`  ⏭️  Skipped:     ${this.colorize(stats.skipped, 'yellow')} (${((stats.skipped / stats.total) * 100).toFixed(1)}%)`);
+    }
     // Success indicator
     lines.push('\n📊 Success Rate: ' + this.getSuccessBar(successRate) + ` ${successRate}%`);
 
@@ -46,7 +49,7 @@ class TestReporter {
     // Overall status
     lines.push('\n' + '─'.repeat(60));
     if (stats.failed === 0 && stats.passed > 0) {
-      lines.push(this.colorize('✨ All tests passed successfully!', 'green'));
+      lines.push(this.colorize('✨  All tests passed successfully!', 'green'));
     } else if (stats.failed > 0) {
       lines.push(this.colorize(`⚠️  ${stats.failed} test(s) failed. Review the details above.`, 'red'));
     } else if (stats.skipped === stats.total) {
@@ -59,7 +62,7 @@ class TestReporter {
   /**
    * Print detailed results
    */
-  static printDetailedResults(results) {
+  static printDetailedResults (results) {
     const lines = [];
 
     lines.push('\n' + '═'.repeat(60));
@@ -76,13 +79,13 @@ class TestReporter {
       for (const test of tests) {
         const statusIcon =
           test.status === 'passed' ? '✅' :
-          test.status === 'failed' ? '❌' :
-          '⏭️';
+            test.status === 'failed' ? '❌' :
+              '⏭️';
 
         const statusColor =
           test.status === 'passed' ? 'green' :
-          test.status === 'failed' ? 'red' :
-          'yellow';
+            test.status === 'failed' ? 'red' :
+              'yellow';
 
         lines.push(`  ${statusIcon} ${test.testId}: ${test.name}`);
         lines.push(`     Status: ${this.colorize(test.status.toUpperCase(), statusColor)}`);
@@ -107,7 +110,7 @@ class TestReporter {
   /**
    * Generate JSON report
    */
-  static generateJsonReport(data) {
+  static generateJsonReport (data) {
     const { results, stats, source } = data;
 
     return {
@@ -128,7 +131,7 @@ class TestReporter {
   /**
    * Generate CSV report
    */
-  static generateCsvReport(results) {
+  static generateCsvReport (results) {
     const lines = [];
 
     // Header
@@ -146,7 +149,7 @@ class TestReporter {
   /**
    * Generate HTML report
    */
-  static generateHtmlReport(data) {
+  static generateHtmlReport (data) {
     const { results, stats, source } = data;
     const successRate = stats.total > 0 ? ((stats.passed / stats.total) * 100).toFixed(2) : 0;
 
@@ -218,7 +221,7 @@ class TestReporter {
   /**
    * Helper: Format duration
    */
-  static formatDuration(ms) {
+  static formatDuration (ms) {
     if (ms < 1000) {
       return `${ms}ms`;
     } else if (ms < 60000) {
@@ -233,7 +236,7 @@ class TestReporter {
   /**
    * Helper: Get success bar visualization
    */
-  static getSuccessBar(percentage) {
+  static getSuccessBar (percentage) {
     const filled = Math.round(percentage / 5); // 20 segments total
     const empty = 20 - filled;
     const bar = '█'.repeat(filled) + '░'.repeat(empty);
@@ -250,7 +253,7 @@ class TestReporter {
   /**
    * Helper: Colorize text
    */
-  static colorize(text, color) {
+  static colorize (text, color) {
     const colorCode = colors[color] || '';
     return colorCode + text + colors.reset;
   }
@@ -258,7 +261,7 @@ class TestReporter {
   /**
    * Helper: Get category statistics
    */
-  static getCategoryStats(results) {
+  static getCategoryStats (results) {
     const stats = {};
 
     for (const test of results) {
@@ -281,7 +284,7 @@ class TestReporter {
   /**
    * Helper: Group results by category
    */
-  static groupByCategory(results) {
+  static groupByCategory (results) {
     const grouped = {};
 
     for (const test of results) {
