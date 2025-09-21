@@ -110,10 +110,6 @@ class BaseTestExecutor {
       // Always show test info when running single test or in verbose mode
       const showDetails = this.verbose || categoryTests.length === 1;
 
-      if (showDetails) {
-        console.log(`▶ ${testCase.fullId || testCase.id}: ${testCase.name}`);
-      }
-
       const result = await this.runSharedTestCase(testCase);
 
       // Print result inline
@@ -122,10 +118,13 @@ class BaseTestExecutor {
         result.status === 'failed' ? '❌' :
         '⏭️';
 
+      if (showDetails) {
+        console.log(`${statusSymbol}  ${testCase.fullId || testCase.id}: ${testCase.name}`);
+      }
+
       if (!showDetails) {
         process.stdout.write(statusSymbol + '  ');
       } else {
-        console.log(`  ${statusSymbol}  ${result.status} (${result.duration}ms)`);
         if (result.status === 'failed' && result.error) {
           console.log(`    └─ Error: ${result.error}`);
         }
@@ -234,7 +233,6 @@ class BaseTestExecutor {
 
     // Clean up resources if resource manager is set
     if (this.resourceManager) {
-      console.log('\n🧹 Cleaning up resources...');
       await this.resourceManager.cleanup();
     }
 

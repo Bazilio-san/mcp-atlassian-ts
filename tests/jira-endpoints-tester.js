@@ -87,6 +87,14 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
       }
     }
 
+    // Parse TEST_ADD_X_HEADER (key:value format)
+    const testAddHeader = process.env.TEST_ADD_X_HEADER;
+    if (testAddHeader) {
+      const [key, value] = testAddHeader.split(":");
+      if (key && value && key.toLowerCase().startsWith("x-")) {
+        headers[key] = value;
+      }
+    }
     return headers;
   }
 
@@ -147,13 +155,17 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     try {
       const response = await fetch(url, options);
-      const contentType = response.headers.get('content-type');
+      const contentType = response.headers.get('content-type') || '';
 
       let data = null;
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType.includes('application/json')) {
         const text = await response.text();
         if (text) {
-          data = JSON.parse(text);
+          try {
+            data = JSON.parse(text);
+          } catch (err) {
+            //
+          }
         }
       }
 
@@ -317,27 +329,36 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
     console.log('\n🔄 Running Cascade Tests');
     console.log('─'.repeat(50));
 
-    const cascadeExecutor = new CascadeExecutor(
-      this.sharedTestCases,
-      async (testCase) => await this.executeTestCase(testCase),
-      this.resourceManager
+    const cascadeExecutor = new CascadeExecutor(this.resourceManager);
+
+    // Get cascade test case from shared test cases
+    const cascadeTestCase = this.sharedTestCases.getCascadeTestCases()[0];
+
+    const cascadeResults = await cascadeExecutor.executeCascade(
+      cascadeTestCase,
+      this.sharedTestCases
     );
 
-    const cascadeResults = await cascadeExecutor.runCascade();
-
     // Add cascade results to our results
-    cascadeResults.results.forEach(result => {
-      this.results.push({
-        ...result,
-        category: 'Cascade',
-        source: 'direct',
-      });
+    // Add cascade results to our results
+    if (cascadeResults && cascadeResults.steps) {
+      cascadeResults.steps.forEach(step => {
+        this.results.push({
+          testId: `cascade-${step.testCase}`,
+          name: `${step.step}: ${step.testCase}`,
+          category: "Cascade",
+          source: "direct",
+          status: step.success ? "passed" : "failed",
+          error: step.error || null,
+          response: step.result || null,
+          duration: 0,
+        });
 
-      this.stats.total++;
-      if (result.status === 'passed') this.stats.passed++;
-      else if (result.status === 'failed') this.stats.failed++;
-      else if (result.status === 'skipped') this.stats.skipped++;
-    });
+        this.stats.total++;
+        if (step.success) this.stats.passed++;
+        else this.stats.failed++;
+      });
+    }
 
     return cascadeResults;
   }

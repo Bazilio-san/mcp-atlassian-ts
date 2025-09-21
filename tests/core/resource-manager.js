@@ -172,7 +172,7 @@ class ResourceManager {
     if (this.resources[type]) {
       const count = this.resources[type].length;
       this.resources[type] = [];
-      if (this.verbose) {
+      if (this.verbose && count) {
         console.log(`🗑️ Cleared ${count} ${type} resources`);
       }
       return count;
@@ -252,8 +252,6 @@ class ResourceManager {
 
     // Clear tracked resources
     const cleared = this.clearAll();
-
-    console.log(`✅ Cleanup complete: ${cleaned} functions executed, ${cleared} resources cleared`);
 
     if (errors.length > 0) {
       console.log(`⚠️  ${errors.length} cleanup errors occurred`);
