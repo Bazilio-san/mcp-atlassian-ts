@@ -30,8 +30,31 @@ class ValidationEngine {
     // Check HTTP status code
     if (testCase.expectedStatus && response.status !== testCase.expectedStatus) {
       result.passed = false;
-      result.error = `Status mismatch: expected ${testCase.expectedStatus}, got ${response.status}`;
+      let errorMsg = `Status mismatch: expected ${testCase.expectedStatus}, got ${response.status}`;
+
+      // Check for JIRA API error messages in error responses
+      if (response.data && response.data.errorMessages && Array.isArray(response.data.errorMessages) && response.data.errorMessages.length > 0) {
+        errorMsg += ` - ${response.data.errorMessages.join(', ')}`;
+        result.details.errorMessages = response.data.errorMessages;
+        if (response.data.errors) {
+          result.details.errors = response.data.errors;
+        }
+      }
+
+      result.error = errorMsg;
       result.details.statusMismatch = true;
+      return result;
+    }
+
+    // Check for JIRA API error messages even in successful responses
+    if (response.data && response.data.errorMessages && Array.isArray(response.data.errorMessages) && response.data.errorMessages.length > 0) {
+      result.passed = false;
+      result.error = `JIRA API Error: ${response.data.errorMessages.join(', ')}`;
+      result.details.apiError = true;
+      result.details.errorMessages = response.data.errorMessages;
+      if (response.data.errors) {
+        result.details.errors = response.data.errors;
+      }
       return result;
     }
 
