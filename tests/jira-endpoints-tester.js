@@ -11,7 +11,7 @@ import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import BaseTestExecutor from './core/base-test-executor.js';
 import ResourceManager from './core/resource-manager.js';
 import { SharedJiraTestCases, TestValidationUtils, CascadeExecutor } from './shared-test-cases.js';
-import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT } from './constants.js';
+import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME } from './constants.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
 import { isObj } from './utils.js';
 
@@ -91,6 +91,56 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
   }
 
   /**
+   * Create temporary issue for testing deletion
+   */
+  async createTemporaryIssue() {
+    const createIssueBody = {
+      fields: {
+        project: { key: this.testProjectKey },
+        summary: `Temporary test issue for deletion ${Date.now()}`,
+        description: 'This issue will be deleted by test 8-11',
+        issuetype: { id: '1' }, // Try standard Task ID
+        customfield_10304: 'TEST', // Environment/Contour field for Finam JIRA
+      },
+    };
+
+    const url = `${this.baseUrl}/rest/api/2/issue`;
+    const options = {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(createIssueBody),
+    };
+
+    try {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let data = {};
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          // Silent parse error
+        }
+      }
+
+      if (response.status === 201 && data.key) {
+        // Track for cleanup
+        this.createdResources.issues.push(data.key);
+        this.resourceManager.trackIssue(data.key, this.testProjectKey);
+        return { success: true, key: data.key };
+      }
+
+      const errorMsg = data.errorMessages ? data.errorMessages.join(', ') :
+                       (data.errors ? JSON.stringify(data.errors) :
+                       (typeof data === 'string' ? data : 'Unknown error'));
+      return { success: false, error: errorMsg };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Get headers for API request
    */
   getHeaders() {
@@ -122,16 +172,144 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
       };
     }
 
-    const { method, endpoint, body, headers: additionalHeaders = {} } = testCase.directApi;
+    // Handle tests that require setup (like Delete Issue)
+    let tempIssueKey = null;
+    if (testCase.requiresSetup && testCase.fullId === '8-11') {
+      // If we have any created issues from previous tests, use the last one
+      if (this.createdResources.issues.length > 0) {
+        tempIssueKey = this.createdResources.issues[this.createdResources.issues.length - 1];
+        // Remove from array as we're going to delete it
+        this.createdResources.issues.pop();
+      } else {
+        // Try to create a temporary issue for deletion test (silently)
+        const createResult = await this.createTemporaryIssue();
+        if (!createResult.success) {
+          // Return as failed test, not skipped
+          return {
+            status: 400,
+            data: { errorMessages: [createResult.error || 'Failed to create temporary issue for delete test'] },
+          };
+        }
+        tempIssueKey = createResult.key;
+      }
+      // Continue to delete the created issue
+    }
+
+    const { method, endpoint, data: body, headers: additionalHeaders = {} } = testCase.directApi;
+
+    // Handle tests that require version ID (Update Version, Get Version, Delete Version)
+    let versionId = null;
+    if (endpoint && endpoint.includes('{versionId}')) {
+      // Use the last created version ID if available
+      if (this.createdResources.versions.length > 0) {
+        versionId = this.createdResources.versions[this.createdResources.versions.length - 1];
+        // If this is a delete operation, remove from tracking
+        if (testCase.fullId === '8-12' && testCase.directApi.method === 'DELETE') {
+          this.createdResources.versions.pop();
+        }
+      } else {
+        // Return as failed test if no version available
+        return {
+          status: 400,
+          data: { errorMessages: [`No version available for ${testCase.name || 'version'} test. Run test 8-5 (Create Version) first.`] },
+        };
+      }
+    }
+
+    // Handle tests that require link ID (Delete Issue Link)
+    let linkId = null;
+    if (endpoint && endpoint.includes('{linkId}')) {
+      // For link deletion, we need to fetch the actual link ID
+      // Since JIRA doesn't return link ID on creation, we need to query for it
+      if (testCase.fullId === '8-13') {
+        // Try to get issue links and find the one we created
+        try {
+          const getLinksUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}?fields=issuelinks`;
+          const getLinksOptions = {
+            method: 'GET',
+            headers: this.getHeaders(),
+          };
+          const linksResponse = await fetch(getLinksUrl, getLinksOptions);
+          if (linksResponse.ok) {
+            const linksData = await linksResponse.json();
+            if (linksData.fields && linksData.fields.issuelinks && linksData.fields.issuelinks.length > 0) {
+              // Use the first link found
+              linkId = linksData.fields.issuelinks[0].id;
+            }
+          }
+        } catch (err) {
+          // Silent error - will fail with no link available message
+        }
+      }
+
+      if (!linkId) {
+        // Return as failed test if no link available
+        return {
+          status: 400,
+          data: { errorMessages: [`No issue link available for ${testCase.name || 'link'} test. Could not find any links for issue ${this.testIssueKey}.`] },
+        };
+      }
+    }
+
+    // Handle tests that require attachment ID
+    let attachmentId = null;
+    if (endpoint && endpoint.includes('{attachmentId}')) {
+      // Use the last created attachment ID if available
+      if (this.createdResources.attachments.length > 0) {
+        attachmentId = this.createdResources.attachments[this.createdResources.attachments.length - 1];
+        // If this is a delete operation, remove from tracking
+        if (testCase.fullId === '10-3' && testCase.directApi.method === 'DELETE') {
+          this.createdResources.attachments.pop();
+        }
+      } else {
+        // Return as failed test if no attachment available
+        return {
+          status: 400,
+          data: { errorMessages: [`No attachment available for ${testCase.name || 'attachment'} test. Run test 10-1 (Create Attachment) first.`] },
+        };
+      }
+    }
+
+    // Handle tests that require workflow scheme ID
+    let workflowSchemeId = null;
+    if (endpoint && endpoint.includes('{workflowSchemeId}')) {
+      // Use the last created workflow scheme ID if available
+      if (this.createdResources.workflowSchemes.length > 0) {
+        const lastScheme = this.createdResources.workflowSchemes[this.createdResources.workflowSchemes.length - 1];
+        workflowSchemeId = typeof lastScheme === 'object' ? lastScheme.id : lastScheme;
+      } else {
+        // Try to get from project
+        // For now, just return error
+        return {
+          status: 400,
+          data: { errorMessages: [`No workflow scheme available for ${testCase.name || 'workflow scheme'} test.`] },
+        };
+      }
+    }
+
+    // Handle tests that require board ID for Agile
+    let boardId = null;
+    if (endpoint && endpoint.includes('{boardId}')) {
+      // For now, use a default board ID (typically 1 or fetch dynamically)
+      boardId = '1'; // Most JIRA instances have a board with ID 1
+      // In a real scenario, you would fetch available boards first
+    }
 
     // Replace placeholders in endpoint
     let finalEndpoint = endpoint
       .replace('{projectKey}', this.testProjectKey)
       .replace('{issueKey}', this.testIssueKey)
+      .replace('{tempIssueKey}', tempIssueKey || this.testIssueKey)
       .replace('{projectId}', this.testProjectId || '10000')
-      .replace('{username}', this.sharedTestCases.testUsername);
+      .replace('{username}', this.sharedTestCases.testUsername)
+      .replace('{versionId}', versionId || '')
+      .replace('{linkId}', linkId || '')
+      .replace('{attachmentId}', attachmentId || '')
+      .replace('{workflowSchemeId}', workflowSchemeId || '')
+      .replace('{boardId}', boardId || '');
 
     const url = `${this.baseUrl}/rest/api/2${finalEndpoint}`;
+    testCase.url = url;
 
     const finalHeaders = {
       ...this.getHeaders(),
@@ -145,15 +323,6 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     if (body) {
       options.body = JSON.stringify(body);
-    }
-
-    // Debug: Log headers being sent (excluding Authorization)
-    if (this.verbose && Object.keys(this.customHeaders).length > 0) {
-      const debugHeaders = { ...finalHeaders };
-      if (debugHeaders.Authorization) {
-        debugHeaders.Authorization = '[REDACTED]';
-      }
-      console.log(`  🔍 Sending headers:`, debugHeaders);
     }
 
     try {
@@ -215,10 +384,22 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
       // Created version
       this.createdResources.versions.push(responseData.id);
       this.resourceManager.trackVersion(responseData.id, this.testProjectKey);
+    } else if (testCase.fullId === '8-8') {
+      // Created issue link - for 8-8 the response is typically empty (201 with no body)
+      // We need to extract the link ID from the Location header or use a placeholder
+      // For now, use a placeholder since JIRA doesn't return the link ID directly
+      this.createdResources.links.push('created-link-id');
+      this.resourceManager.trackLink('created-link-id');
     } else if (testCase.fullId === '8-9' && responseData.id) {
-      // Created issue link
+      // Created remote link
       this.createdResources.links.push(responseData.id);
       this.resourceManager.trackLink(responseData.id);
+    } else if (testCase.fullId === '10-1') {
+      // Created attachment - response is array
+      if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].id) {
+        this.createdResources.attachments.push(responseData[0].id);
+        this.resourceManager.trackAttachment(responseData[0].id);
+      }
     } else if (testCase.fullId === '11-1' && responseData.id) {
       // Created workflow scheme
       this.createdResources.workflowSchemes.push({
@@ -234,6 +415,21 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
    */
   getSourceType() {
     return 'direct';
+  }
+
+  /**
+   * Run single test case (for cascade executor)
+   */
+  async runTestCase(testCase) {
+    const result = await this.executeTestCase(testCase);
+
+    // Convert to format expected by cascade executor
+    return {
+      success: !result.skipped && (result.status === 200 || result.status === 201 || result.status === 204),
+      data: result.data,
+      status: result.status,
+      error: result.error || result.reason
+    };
   }
 
   /**
@@ -330,6 +526,15 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
   }
 
   /**
+   * Override shouldRunTest to disable base class filtering
+   * (we handle filtering in runTests method)
+   */
+  shouldRunTest(testCase) {
+    // Always return true - we handle filtering at a higher level
+    return true;
+  }
+
+  /**
    * Run cascade tests (special JIRA workflow tests)
    */
   async runCascadeTests() {
@@ -343,7 +548,7 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     const cascadeResults = await cascadeExecutor.executeCascade(
       cascadeTestCase,
-      this.sharedTestCases
+      this
     );
 
     // Add cascade results to our results

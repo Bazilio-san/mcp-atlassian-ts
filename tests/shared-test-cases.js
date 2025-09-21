@@ -935,11 +935,13 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '8-11',
         name: 'Delete Issue',
+        requiresSetup: true, // ВАЖНО: Требует создания временной задачи!
+        setupNote: 'This test requires creating a temporary issue first',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
         directApi: {
           method: 'DELETE',
-          endpoint: '/issue/{issueKey}', // will be replaced at runtime
+          endpoint: '/issue/{tempIssueKey}', // will be replaced with created issue key
         },
         expectedStatus: 204, // DELETE operations usually return 204
         validation: {
@@ -1921,6 +1923,7 @@ export class CascadeExecutor {
 
     for (const step of cascadeTestCase.steps) {
       try {
+        console.log(`  🔄 Executing step: ${step.action} - ${step.testCase}`);
         const testCase = this.findTestCase(step.testCase, testRunner);
         if (!testCase) {
           throw new Error(`Test case '${step.testCase}' not found`);
@@ -1931,15 +1934,19 @@ export class CascadeExecutor {
 
         // Execute test
         const result = await testRunner.runTestCase(preparedTestCase);
+        console.log(`    → Result: status=${result.status}, success=${result.success}`);
 
         // Save result
         if (step.storeAs && result.success && result.data) {
           const resourceId = this.extractResourceId(result.data, step.testCase);
+          console.log(`    → Storing resource: ${step.storeAs} = ${resourceId}`);
           this.resourceManager.addResource(
             this.getResourceType(step.testCase),
             resourceId,
             step.storeAs,
           );
+        } else if (step.storeAs) {
+          console.log(`    → Failed to store resource: ${step.storeAs}, success=${result.success}, has data=${!!result.data}`);
         }
 
         results.push({
@@ -1987,7 +1994,9 @@ export class CascadeExecutor {
         // Replace placeholders in endpoint and data
         prepared.directApi.endpoint = prepared.directApi.endpoint
           .replace(`{${step.useResource}}`, resource.id)
-          .replace(`{${resource.type}Id}`, resource.id);
+          .replace(`{${resource.type}Id}`, resource.id)
+          .replace('{issueKey}', resource.id)
+          .replace('{linkId}', resource.id);
 
         if (prepared.directApi.data) {
           prepared.directApi.data = this.replacePlaceholders(

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TEST JIRA ENDPOINTS - SELECT" type="NodeJSConfigurationType" application-parameters="--tests=2-1 --verbose" path-to-js-file="tests/jira-endpoints-tester.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="TEST JIRA ENDPOINTS - SELECT" type="NodeJSConfigurationType" application-parameters="--tests=8,9,10,11,12,13 --verbose" path-to-js-file="tests/jira-endpoints-tester.js" working-dir="$PROJECT_DIR$">
     <envs>
       <env name="NODE_NO_WARNINGS" value="1" />
     </envs>

@@ -119,7 +119,7 @@ class BaseTestExecutor {
         '⏭️';
 
       if (showDetails) {
-        console.log(`${statusSymbol}  ${testCase.fullId || testCase.id}: ${testCase.name}`);
+        console.log(`${statusSymbol}  ${testCase.fullId || testCase.id}: ${testCase.name} / ${testCase.url}`);
       }
 
       if (!showDetails) {
