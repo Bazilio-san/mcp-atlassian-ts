@@ -43,17 +43,6 @@ class TestReporter {
     // Timing
     lines.push(`\n⏱️  Execution Time: ${duration}`);
 
-    // Category breakdown
-    const categoryStats = this.getCategoryStats(results);
-    if (Object.keys(categoryStats).length > 1) {
-      lines.push('\n📂 Category Breakdown:');
-      for (const [category, catStats] of Object.entries(categoryStats)) {
-        const catSuccessRate = ((catStats.passed / catStats.total) * 100).toFixed(1);
-        lines.push(`  ${category}:`);
-        lines.push(`    Total: ${catStats.total} | ✅ ${catStats.passed} | ❌ ${catStats.failed} | ⏭️  ${catStats.skipped} | Success: ${catSuccessRate}%`);
-      }
-    }
-
     // Overall status
     lines.push('\n' + '─'.repeat(60));
     if (stats.failed === 0 && stats.passed > 0) {

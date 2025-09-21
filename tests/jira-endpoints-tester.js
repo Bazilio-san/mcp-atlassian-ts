@@ -12,7 +12,7 @@ import BaseTestExecutor from './core/base-test-executor.js';
 import ResourceManager from './core/resource-manager.js';
 import { SharedJiraTestCases, TestValidationUtils, CascadeExecutor } from './shared-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT } from './constants.js';
-import { apiResponseLogger } from './api-response-logger.js';
+import { apiResponseLogger } from './core/api-response-logger.js';
 
 const {
   jira: {

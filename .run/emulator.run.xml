@@ -1,7 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="emulator"
-                 type="NodeJSConfigurationType"
-                 path-to-js-file="tests/jira-emulator.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="emulator" type="NodeJSConfigurationType" path-to-js-file="tests/jira-emulator.js" working-dir="$PROJECT_DIR$">
+    <envs>
+      <env name="NODE_NO_WARNINGS" value="1" />
+    </envs>
     <method v="2" />
   </configuration>
 </component>

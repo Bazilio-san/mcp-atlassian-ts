@@ -15,6 +15,8 @@ class ResourceManager {
       users: [],
       pages: [],
       spaces: [],
+      links: [],
+      workflowSchemes: [],
       other: [],
     };
     this.cleanupFunctions = [];
@@ -74,6 +76,27 @@ class ResourceManager {
    */
   trackBoard(boardId, projectKey = null) {
     return this.track('boards', boardId, { projectKey });
+  }
+
+  /**
+   * Track a version
+   */
+  trackVersion(versionId, projectId = null) {
+    return this.track('versions', versionId, { projectId });
+  }
+
+  /**
+   * Track an issue link
+   */
+  trackLink(linkId) {
+    return this.track('links', linkId);
+  }
+
+  /**
+   * Track a workflow scheme
+   */
+  trackWorkflowScheme(schemeId, schemeName = null) {
+    return this.track('workflowSchemes', schemeId, { schemeName });
   }
 
   /**

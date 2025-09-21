@@ -38,7 +38,7 @@ class BaseTestExecutor {
   async runSharedTestCase(testCase) {
     const startTime = Date.now();
     let result = {
-      testId: testCase.id,
+      testId: testCase.fullId || testCase.id,
       name: testCase.name,
       category: testCase.category,
       source: this.getSourceType(),
@@ -107,8 +107,11 @@ class BaseTestExecutor {
     console.log('─'.repeat(50));
 
     for (const testCase of categoryTests) {
-      if (this.verbose) {
-        console.log(`  ▶ ${testCase.id}: ${testCase.name}`);
+      // Always show test info when running single test or in verbose mode
+      const showDetails = this.verbose || categoryTests.length === 1;
+
+      if (showDetails) {
+        console.log(`▶ ${testCase.fullId || testCase.id}: ${testCase.name}`);
       }
 
       const result = await this.runSharedTestCase(testCase);
@@ -119,10 +122,10 @@ class BaseTestExecutor {
         result.status === 'failed' ? '❌' :
         '⏭️';
 
-      if (!this.verbose) {
-        process.stdout.write(statusSymbol + ' ');
+      if (!showDetails) {
+        process.stdout.write(statusSymbol + '  ');
       } else {
-        console.log(`    ${statusSymbol} ${result.status} (${result.duration}ms)`);
+        console.log(`  ${statusSymbol}  ${result.status} (${result.duration}ms)`);
         if (result.status === 'failed' && result.error) {
           console.log(`    └─ Error: ${result.error}`);
         }
@@ -130,9 +133,14 @@ class BaseTestExecutor {
           console.log(`    └─ Reason: ${result.reason}`);
         }
       }
+
+      // For failed tests in non-verbose mode, show minimal error info
+      if (!this.verbose && result.status === 'failed' && categoryTests.length > 1) {
+        console.log(`\n    ❌ ${testCase.fullId || testCase.id}: ${testCase.name} - ${result.error}`);
+      }
     }
 
-    if (!this.verbose) {
+    if (!this.verbose && categoryTests.length > 1) {
       console.log(); // New line after status symbols
     }
   }
@@ -181,28 +189,6 @@ class BaseTestExecutor {
   }
 
   /**
-   * Print detailed results for failed tests
-   */
-  printFailedTests() {
-    const failedTests = this.results.filter(r => r.status === 'failed');
-
-    if (failedTests.length > 0) {
-      console.log('\n❌ Failed Tests Details:');
-      console.log('═'.repeat(50));
-
-      failedTests.forEach((test, index) => {
-        console.log(`\n${index + 1}. ${test.testId}: ${test.name}`);
-        console.log(`   Category: ${test.category}`);
-        console.log(`   Error: ${test.error}`);
-
-        if (test.validationDetails) {
-          console.log(`   Validation: ${JSON.stringify(test.validationDetails, null, 2)}`);
-        }
-      });
-    }
-  }
-
-  /**
    * Abstract method - must be implemented by subclasses
    * Execute a single test case
    */
@@ -222,6 +208,9 @@ class BaseTestExecutor {
    * Run all tests with provided test cases
    */
   async runAllTests(testCases) {
+    // Small delay first to let Node.js warnings appear
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     console.log(`\n🚀 Starting ${this.getSourceType().toUpperCase()} Test Execution`);
     console.log('═'.repeat(60));
 
@@ -240,9 +229,8 @@ class BaseTestExecutor {
     console.log(report);
 
     // Print failed test details if any
-    if (this.stats.failed > 0 && this.verbose) {
-      this.printFailedTests();
-    }
+    // Always show details for failed tests when running single test
+    const totalTests = this.stats.total;
 
     // Clean up resources if resource manager is set
     if (this.resourceManager) {
