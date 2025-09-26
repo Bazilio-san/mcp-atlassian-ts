@@ -119,7 +119,10 @@ class BaseTestExecutor {
         '⏭️';
 
       if (showDetails) {
-        console.log(`${statusSymbol}  ${testCase.fullId || testCase.id}: ${testCase.name} / ${testCase.url}`);
+        // Format test name with fixed width of 50 characters
+        const testId = testCase.fullId || testCase.id;
+        const paddedIdName = `${testId}: ${testCase.name}`.padEnd(45, ' ');
+        console.log(`${statusSymbol}  ${paddedIdName} 🔗 ${testCase.httpMethod} ${testCase.url}`);
       }
 
       if (!showDetails) {
@@ -135,7 +138,8 @@ class BaseTestExecutor {
 
       // For failed tests in non-verbose mode, show minimal error info
       if (!this.verbose && result.status === 'failed' && categoryTests.length > 1) {
-        console.log(`\n    ❌ ${testCase.fullId || testCase.id}: ${testCase.name} - ${result.error}`);
+        const testId = testCase.fullId || testCase.id;
+        console.log(`\n    ❌ ${testId}: ${testCase.name} - ${result.error}`);
       }
     }
 

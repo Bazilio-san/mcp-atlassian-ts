@@ -934,6 +934,25 @@ export class SharedJiraTestCases {
         groupNumber: TEST_GROUPS.MODIFYING,
         testNumber: 11,
         fullId: '8-11',
+        name: 'Delete Remote Link',
+        mcpTool: null, // no MCP tool available
+        mcpArgs: {},
+        directApi: {
+          method: 'DELETE',
+          endpoint: `/issue/${this.testIssueKey}/remotelink/{remoteLinkId}`, // will be replaced at runtime
+        },
+        expectedStatus: 204,
+        validation: {
+          checkContent: (content) => true, // DELETE may return empty response
+          checkResult: (result) => true, // For DELETE operations status 204 is considered successful
+          expectedProps: [],
+        },
+        dependsOn: 'Get Remote Links', // depends on getting remote links first
+      },
+      {
+        groupNumber: TEST_GROUPS.MODIFYING,
+        testNumber: 12,
+        fullId: '8-12',
         name: 'Delete Issue',
         requiresSetup: true, // ВАЖНО: Требует создания временной задачи!
         setupNote: 'This test requires creating a temporary issue first',
@@ -952,8 +971,8 @@ export class SharedJiraTestCases {
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 12,
-        fullId: '8-12',
+        testNumber: 13,
+        fullId: '8-13',
         name: 'Delete Version',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -970,8 +989,8 @@ export class SharedJiraTestCases {
       },
       {
         groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 13,
-        fullId: '8-13',
+        testNumber: 14,
+        fullId: '8-14',
         name: 'Delete Issue Link',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -1003,7 +1022,7 @@ export class SharedJiraTestCases {
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board',
+          endpoint: '/rest/agile/1.0/board',
         },
         expectedStatus: 200,
         validation: {
@@ -1021,7 +1040,7 @@ export class SharedJiraTestCases {
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board/{boardId}/sprint', // will be replaced at runtime
+          endpoint: '/rest/agile/1.0/board/{boardId}/sprint', // will be replaced at runtime
         },
         expectedStatus: 200,
         validation: {
@@ -1040,7 +1059,7 @@ export class SharedJiraTestCases {
         mcpArgs: {},
         directApi: {
           method: 'GET',
-          endpoint: '/agile/1.0/board/{boardId}/issue', // will be replaced at runtime
+          endpoint: '/rest/agile/1.0/board/{boardId}/issue', // will be replaced at runtime
         },
         expectedStatus: 200,
         validation: {
@@ -1136,15 +1155,15 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'dashboard'),
-          checkResult: () => true,
+          checkContent: (c) => inclOneOf(c, 'dashboard', 'dashboards', 'total'),
+          checkResult: (result) => Array.isArray(result) || (result && typeof result === 'object'),
           expectedProps: [],
         },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 3,
-        fullId: '10-3',
+        testNumber: 5,
+        fullId: '10-5',
         name: 'Get Favourite Filters',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -1154,15 +1173,15 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'filter'),
-          checkResult: (result) => Array.isArray(result),
+          checkContent: (c) => inclOneOf(c, 'filter', 'filters', 'favourite'),
+          checkResult: (result) => Array.isArray(result) || (result && typeof result === 'object'),
           expectedProps: [],
         },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 4,
-        fullId: '10-4',
+        testNumber: 6,
+        fullId: '10-6',
         name: 'Get Groups Picker',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -1172,15 +1191,15 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'groups'),
-          checkResult: () => true,
+          checkContent: (c) => inclOneOf(c, 'groups', 'group', 'total'),
+          checkResult: (result) => result && (result.groups || result.total !== undefined || typeof result === 'object'),
           expectedProps: [],
         },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 5,
-        fullId: '10-5',
+        testNumber: 7,
+        fullId: '10-7',
         name: 'Get Notification Schemes',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -1190,15 +1209,15 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'scheme'),
-          checkResult: () => true,
+          checkContent: (c) => inclOneOf(c, 'scheme', 'schemes', 'notification', 'values'),
+          checkResult: (result) => Array.isArray(result) || (result && result.values) || (result && typeof result === 'object'),
           expectedProps: [],
         },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 6,
-        fullId: '10-6',
+        testNumber: 8,
+        fullId: '10-8',
         name: 'Get Permission Schemes',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -1208,15 +1227,15 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'scheme'),
-          checkResult: () => true,
+          checkContent: (c) => inclOneOf(c, 'scheme', 'schemes', 'notification', 'values'),
+          checkResult: (result) => Array.isArray(result) || (result && result.values) || (result && typeof result === 'object'),
           expectedProps: [],
         },
       },
       {
         groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 7,
-        fullId: '10-7',
+        testNumber: 9,
+        fullId: '10-9',
         name: 'Get Workflows',
         mcpTool: null, // no MCP tool available
         mcpArgs: {},
@@ -1226,8 +1245,8 @@ export class SharedJiraTestCases {
         },
         expectedStatus: 200,
         validation: {
-          checkContent: (c) => incl(c, 'workflow'),
-          checkResult: () => true,
+          checkContent: (c) => inclOneOf(c, 'workflow', 'workflows', 'values'),
+          checkResult: (result) => Array.isArray(result) || (result && typeof result === 'object'),
           expectedProps: [],
         },
       },

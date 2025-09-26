@@ -11,7 +11,7 @@ import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import BaseTestExecutor from './core/base-test-executor.js';
 import ResourceManager from './core/resource-manager.js';
 import { SharedJiraTestCases, TestValidationUtils, CascadeExecutor } from './shared-test-cases.js';
-import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME } from './constants.js';
+import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
 import { isObj } from './utils.js';
 
@@ -141,6 +141,223 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
   }
 
   /**
+   * Create test attachment for issue
+   */
+  async createTestAttachment(issueKey) {
+    // Create multipart form data with boundary
+    const boundary = '----FormBoundary' + Math.random().toString(36).substring(7);
+
+    // Build multipart body
+    const body = [
+      `------${boundary}`,
+      'Content-Disposition: form-data; name="file"; filename="test.txt"',
+      'Content-Type: text/plain',
+      '',
+      'This is a test file content for JIRA attachment testing',
+      `------${boundary}--`
+    ].join('\r\n');
+
+    const url = `${this.baseUrl}/rest/api/2/issue/${issueKey}/attachments`;
+    const headers = {
+      ...this.getHeaders(),
+      'Content-Type': `multipart/form-data; boundary=----${boundary}`,
+      'X-Atlassian-Token': 'no-check'
+    };
+
+    // Remove the default Content-Type header that was set to application/json
+    delete headers['Accept'];
+    headers['Accept'] = '*/*';
+
+    const options = {
+      method: 'POST',
+      headers,
+      body
+    };
+
+    try {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let data = null;
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          // Silent parse error
+        }
+      }
+
+      if (response.status === 200 && data && data.length > 0) {
+        // Track for cleanup
+        const attachmentId = data[0].id;
+        this.createdResources.attachments = this.createdResources.attachments || [];
+        this.createdResources.attachments.push(attachmentId);
+        return { success: true, attachmentId, data };
+      }
+
+      return {
+        success: false,
+        status: response.status,
+        error: data?.errorMessages?.join(', ') || `Status ${response.status}`
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get remote links for issue and return first link ID
+   */
+  async getRemoteLinkId(issueKey) {
+    const url = `${this.baseUrl}/rest/api/2/issue/${issueKey}/remotelink`;
+    const headers = this.getHeaders();
+
+    const options = {
+      method: 'GET',
+      headers
+    };
+
+    try {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let data = null;
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          // Silent parse error
+        }
+      }
+
+      if (response.status === 200 && Array.isArray(data) && data.length > 0) {
+        // Return the ID of the first remote link
+        return data[0].id;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Failed to get remote links:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Clean up remote links for test issue, keeping only one
+   */
+  async cleanupRemoteLinks() {
+    try {
+      // Get all remote links for the test issue
+      const url = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/remotelink`;
+      const headers = this.getHeaders();
+
+      const getOptions = {
+        method: 'GET',
+        headers
+      };
+
+      const response = await fetch(url, getOptions);
+      const text = await response.text();
+      let remoteLinks = null;
+
+      if (text) {
+        try {
+          remoteLinks = JSON.parse(text);
+        } catch (e) {
+          // Silent parse error
+        }
+      }
+
+      if (response.status === 200 && Array.isArray(remoteLinks) && remoteLinks.length > 1) {
+        console.log(`\n🔗 Cleaning up remote links for ${this.testIssueKey} (found ${remoteLinks.length}, keeping 1)`);
+
+        // Delete all remote links except the first one
+        const linksToDelete = remoteLinks.slice(1); // Keep the first one, delete the rest
+        let deletedCount = 0;
+
+        for (const link of linksToDelete) {
+          try {
+            const deleteUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/remotelink/${link.id}`;
+            const deleteOptions = {
+              method: 'DELETE',
+              headers
+            };
+
+            const deleteResponse = await fetch(deleteUrl, deleteOptions);
+            if (deleteResponse.status === 204 || deleteResponse.status === 200) {
+              deletedCount++;
+            } else {
+              console.error(`  ❌ Failed to delete remote link ${link.id}: Status ${deleteResponse.status}`);
+            }
+          } catch (err) {
+            console.error(`  ❌ Error deleting remote link ${link.id}:`, err.message);
+          }
+        }
+
+        if (deletedCount > 0) {
+          console.log(`  ✅ Deleted ${deletedCount} remote links, kept 1`);
+        }
+        return deletedCount;
+      } else if (remoteLinks && remoteLinks.length === 1) {
+        console.log(`  ℹ️  Only one remote link found, keeping it`);
+        return 0;
+      } else if (remoteLinks && remoteLinks.length === 0) {
+        console.log(`  ℹ️  No remote links found to clean up`);
+        return 0;
+      }
+
+      return 0;
+    } catch (error) {
+      console.error('❌ Failed to cleanup remote links:', error.message);
+      return 0;
+    }
+  }
+
+  /**
+   * Get Scrum board ID from available boards
+   */
+  async getScrumBoardId() {
+    const url = `${this.baseUrl}/rest/agile/1.0/board`;
+    const headers = this.getHeaders();
+
+    const options = {
+      method: 'GET',
+      headers
+    };
+
+    try {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let data = null;
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          // Silent parse error
+        }
+      }
+
+      if (response.status === 200 && data?.values) {
+        // Find first Scrum board
+        const scrumBoard = data.values.find(board => board.type === 'scrum');
+        if (scrumBoard) {
+          return scrumBoard.id;
+        }
+        // If no Scrum board found, try to find any board
+        if (data.values.length > 0) {
+          return data.values[0].id;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Failed to get Scrum board:', error.message);
+      return null;
+    }
+  }
+
+  /**
    * Get headers for API request
    */
   getHeaders() {
@@ -174,7 +391,7 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     // Handle tests that require setup (like Delete Issue)
     let tempIssueKey = null;
-    if (testCase.requiresSetup && testCase.fullId === '8-11') {
+    if (testCase.requiresSetup && testCase.fullId === '8-12') {
       // If we have any created issues from previous tests, use the last one
       if (this.createdResources.issues.length > 0) {
         tempIssueKey = this.createdResources.issues[this.createdResources.issues.length - 1];
@@ -197,6 +414,32 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     const { method, endpoint, data: body, headers: additionalHeaders = {} } = testCase.directApi;
 
+    // Special handling for attachment creation test with requiresFile flag
+    if (testCase.requiresFile && testCase.fullId === '10-1') {
+      // Set URL and HTTP method for diagnostics
+      testCase.url = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/attachments`;
+      testCase.httpMethod = 'POST';
+
+      const result = await this.createTestAttachment(this.testIssueKey);
+      if (result.success) {
+        // Track the created attachment
+        if (result.data && result.data.length > 0) {
+          this.trackCreatedResource(testCase, result.data[0]);
+        }
+        return {
+          status: 200,
+          data: result.data,
+          headers: {},
+        };
+      } else {
+        return {
+          status: result.status || 415,
+          data: { errorMessages: [result.error || 'Failed to create attachment'] },
+          headers: {},
+        };
+      }
+    }
+
     // Handle tests that require version ID (Update Version, Get Version, Delete Version)
     let versionId = null;
     if (endpoint && endpoint.includes('{versionId}')) {
@@ -204,7 +447,7 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
       if (this.createdResources.versions.length > 0) {
         versionId = this.createdResources.versions[this.createdResources.versions.length - 1];
         // If this is a delete operation, remove from tracking
-        if (testCase.fullId === '8-12' && testCase.directApi.method === 'DELETE') {
+        if (testCase.fullId === '8-13' && testCase.directApi.method === 'DELETE') {
           this.createdResources.versions.pop();
         }
       } else {
@@ -221,7 +464,7 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
     if (endpoint && endpoint.includes('{linkId}')) {
       // For link deletion, we need to fetch the actual link ID
       // Since JIRA doesn't return link ID on creation, we need to query for it
-      if (testCase.fullId === '8-13') {
+      if (testCase.fullId === '8-14') {
         // Try to get issue links and find the one we created
         try {
           const getLinksUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}?fields=issuelinks`;
@@ -248,6 +491,22 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
           status: 400,
           data: { errorMessages: [`No issue link available for ${testCase.name || 'link'} test. Could not find any links for issue ${this.testIssueKey}.`] },
         };
+      }
+    }
+
+    // Handle tests that require remote link ID (Delete Remote Link)
+    let remoteLinkId = null;
+    if (endpoint && endpoint.includes('{remoteLinkId}')) {
+      // For test 8-11, get remote link ID
+      if (testCase.fullId === '8-11') {
+        remoteLinkId = await this.getRemoteLinkId(this.testIssueKey);
+        if (!remoteLinkId) {
+          // Return as failed test if no remote link available
+          return {
+            status: 400,
+            data: { errorMessages: [`No remote link available for deletion. Run test 8-9 (Create Remote Link) first.`] },
+          };
+        }
       }
     }
 
@@ -290,9 +549,32 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
     // Handle tests that require board ID for Agile
     let boardId = null;
     if (endpoint && endpoint.includes('{boardId}')) {
-      // For now, use a default board ID (typically 1 or fetch dynamically)
-      boardId = '1'; // Most JIRA instances have a board with ID 1
-      // In a real scenario, you would fetch available boards first
+      // Initialize board ID for all Agile tests
+      if (!this.cachedBoardId) {
+        // Cache the board ID to avoid repeated fetches
+        this.cachedBoardId = '1'; // Default fallback
+      }
+
+      // For test 9-2 (Get Board Sprints), fetch a Scrum board ID
+      if (testCase.fullId === '9-2') {
+        const scrumBoardId = await this.getScrumBoardId();
+        if (scrumBoardId) {
+          boardId = scrumBoardId.toString();
+          this.cachedBoardId = boardId; // Cache for future use
+        } else {
+          // Return early if no Scrum board found
+          return {
+            status: 400,
+            data: { errorMessages: ['No Scrum board found in the system'] },
+          };
+        }
+      } else if (testCase.fullId === '9-3') {
+        // For Get Board Issues, use the cached board ID from 9-1 or 9-2
+        boardId = this.cachedBoardId || '1';
+      } else {
+        // For other tests (9-1), the board ID will be determined from the Get Boards response
+        boardId = '1'; // This will be replaced if Get Boards succeeds
+      }
     }
 
     // Replace placeholders in endpoint
@@ -304,13 +586,22 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
       .replace('{username}', this.sharedTestCases.testUsername)
       .replace('{versionId}', versionId || '')
       .replace('{linkId}', linkId || '')
+      .replace('{remoteLinkId}', remoteLinkId || '')
       .replace('{attachmentId}', attachmentId || '')
       .replace('{workflowSchemeId}', workflowSchemeId || '')
       .replace('{boardId}', boardId || '');
 
-    const url = `${this.baseUrl}/rest/api/2${finalEndpoint}`;
+    // Special handling for Agile API endpoints
+    let url;
+    if (finalEndpoint.startsWith('/rest/agile/')) {
+      // For Agile API, use the path as-is without adding /rest/api/2
+      url = `${this.baseUrl}${finalEndpoint}`;
+    } else {
+      // For regular JIRA API endpoints, add /rest/api/2
+      url = `${this.baseUrl}/rest/api/2${finalEndpoint}`;
+    }
     testCase.url = url;
-
+    testCase.httpMethod = method;
     const finalHeaders = {
       ...this.getHeaders(),
       ...additionalHeaders,
@@ -438,6 +729,9 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
   async runTests() {
     console.log(`\n🔗 JIRA API URL: ${this.baseUrl}`);
     console.log(`📦 Authentication: ${this.auth.type}`);
+    console.log(`📦 Test Project Key: ${this.testProjectKey}`);
+    console.log(`📦 Test Issue Key: ${this.testIssueKey}`);
+    console.log(`📦 Test Second Issue Key: ${TEST_SECOND_ISSUE_KEY}`);
 
     // Get all test cases
     const o = this.sharedTestCases;
@@ -468,6 +762,9 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
 
     // Run tests using base executor
     const result = await this.runAllTests(testCases);
+
+    // Cleanup remote links for the test issue (keep only one)
+    await this.cleanupRemoteLinks();
 
     // Additional cleanup for JIRA-specific resources
     if (this.createdResources.issues.length > 0) {

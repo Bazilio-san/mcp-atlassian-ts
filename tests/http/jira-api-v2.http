@@ -44,9 +44,32 @@ GET {{baseUrl}}/rest/api/2/issueLinkType
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 Content-Type: application/json
 
+### Create remote link
+POST {{baseUrl}}/rest/api/2/issue/AITECH-4/remotelink
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+{
+  "object" : {
+    "url" : "https://example.com/test-link",
+    "title" : "Test Remote Link"
+  }
+}
+
+### Create remote link
+GET {{baseUrl}}/rest/api/2/issue/AITECH-4/remotelink
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
 
 ### Create issue link
-POST https://jira-dev.finam.ru/rest/api/2/issueLink
+GET {{baseUrl}}/rest/api/2/issue/AITECH-4?fields=issuelinks
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+
+### Create issue link
+POST {{baseUrl}}/rest/api/2/issueLink
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -94,7 +117,7 @@ Content-Type: application/json
 
 
 ### Create issue attachment
-POST https://jira-dev.finam.ru/rest/api/2/issue/AITECH-1/attachments
+POST {{baseUrl}}/rest/api/2/issue/AITECH-1/attachments
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 X-Atlassian-Token: no-check
 Content-Type: multipart/form-data; boundary=WebAppBoundary
