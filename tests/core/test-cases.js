@@ -1389,23 +1389,6 @@ export class SharedJiraTestCases {
       allTestCases.find(tc => tc.name === name),
     ).filter(Boolean);
   }
-
-  /**
-   * Get minimal set of test cases for quick validation
-   */
-  getMinimalTestCases () {
-    const informational = this.getInformationalTestCases();
-    const modifying = this.getModifyingTestCases();
-
-    return [
-      informational.find(tc => tc.name === 'Get Issue'),
-      informational.find(tc => tc.name === 'Search Issues'),
-      informational.find(tc => tc.name === 'Get Projects'),
-      informational.find(tc => tc.name === 'Get Issue Transitions'),
-      modifying.find(tc => tc.name === 'Create Issue'),
-      modifying.find(tc => tc.name === 'Add Comment'),
-    ].filter(Boolean);
-  }
 }
 
 export default SharedJiraTestCases;
