@@ -1,0 +1,13 @@
+{
+  "name": "atlassian-mcp-fetcher",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Fetch and save Atlassian MCP server tools specification",
+  "scripts": {
+    "fetch-tools": "node fetch-mcp-tools.js",
+    "fetch-with-client": "node atlassian-mcp-client.js"
+  },
+  "dependencies": {
+    "eventsource": "^2.0.2"
+  }
+}
