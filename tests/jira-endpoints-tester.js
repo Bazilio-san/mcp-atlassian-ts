@@ -7,7 +7,6 @@
  */
 
 import fetch from 'node-fetch';
-import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import ResourceManager from './core/resource-manager.js';
 import CascadeExecutor from './core/cascade-executor.js';
 import ValidationEngine from './core/validation-engine.js';
@@ -16,6 +15,7 @@ import { apiResponseLogger } from './core/response-logger/api-response-logger.js
 import SharedJiraTestCases from './core/test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
 import { isObj } from './core/utils.js';
+import { appConfig } from "../dist/src/bootstrap/init-config.js";
 
 const {
   jira: {

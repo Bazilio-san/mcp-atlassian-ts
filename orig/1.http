@@ -1,5 +1,5 @@
 ### GET request to example server
-GET mcp.atlassian.com/v1/sse
+GET https://mcp.atlassian.com/v1/sse
 Accept: text/event-stream
 Authorization: Bearer {{token}}
 Cache-Control: no-cache

@@ -1,96 +1,66 @@
-# Atlassian MCP Tools Fetcher
+# Atlassian MCP Tools Export
 
-This directory contains JavaScript modules to connect to the Atlassian MCP server and retrieve the complete specification of available tools.
+Скрипт для подключения к Atlassian MCP серверу и экспорта полной спецификации инструментов.
 
-## Prerequisites
-
-The Atlassian MCP server requires authentication. You'll need one of the following:
-- An Atlassian API token
-- OAuth2 credentials
-- An active Atlassian account
-
-## Files
-
-- `fetch-mcp-tools.js` - Basic SSE client (no auth)
-- `fetch-with-auth.js` - SSE client with authentication support
-- `atlassian-mcp-client.js` - Full MCP protocol client with EventSource
-
-## Installation
+## Быстрый старт
 
 ```bash
-cd orig
+# Установить зависимости
 npm install
+
+# Запустить экспорт
+node export-atlassian-mcp-info.js
 ```
 
-## Usage
+## Настройка авторизации
 
-### With Authentication (Recommended)
+### Вариант 1: OAuth 2.0 с PKCE (РЕКОМЕНДУЕТСЯ для MCP)
 
-```bash
-# Set your access token as environment variable
-export ATLASSIAN_ACCESS_TOKEN=your_token_here
+1. В [Developer Console](https://developer.atlassian.com/console/myapps/) создайте приложение
+2. Включите OAuth 2.0 (3LO) в разделе Authorization
+3. Укажите Callback URL: `http://localhost:3000/callback`
+4. Скопируйте Client ID и добавьте в файл `orig/.env`:
+```
+ATL_CLIENT_ID=ваш_client_id_здесь
+```
+5. Запустите скрипт - откроется браузер для авторизации
 
-# Run the authenticated fetcher
-node fetch-with-auth.js
+### Вариант 2: Готовый Access Token
+
+Если у вас уже есть access token (например, из другого OAuth флоу), добавьте в `orig/.env`:
+```
+ATLASSIAN_ACCESS_TOKEN=ваш_access_token_здесь
 ```
 
-Or run interactively (will prompt for token):
-```bash
-node fetch-with-auth.js
+### Вариант 3: Personal Access Token (может не работать с MCP)
+
+1. Перейдите на https://id.atlassian.com/manage-profile/security/api-tokens
+2. Создайте новый API токен
+3. Сохраните токен в файле `orig/.env`:
+```
+ATLASSIAN_ACCESS_TOKEN=ваш_api_token_здесь
 ```
 
-### Getting an Access Token
+**Важно:** PAT часто не работает с MCP сервером. Используйте OAuth 2.0!
 
-1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
-2. Click "Create API token"
-3. Give it a name and copy the token
-4. Use this token as your ATLASSIAN_ACCESS_TOKEN
+## Результат
 
-### Output Files
+После успешного запуска скрипт создаст:
+- `atlassian-mcp-tools-YYYY-MM-DD.json` - полная спецификация всех инструментов
+- `atlassian-mcp-tools-summary-YYYY-MM-DD.md` - читаемая сводка по категориям
 
-The fetcher will generate three files:
+Спецификация включает:
+- Полное описание каждого инструмента
+- Все параметры с типами и описаниями
+- Обязательные/опциональные параметры
+- Примеры использования (если доступны)
+- Категоризацию по сервисам (JIRA, Confluence, Bitbucket и т.д.)
 
-1. **`atlassian-mcp-tools-[date].json`** - Complete JSON specification with all tool details
-2. **`atlassian-mcp-tools-[date].md`** - Markdown documentation with categorized tools
-3. **`atlassian-mcp-tools-[date].d.ts`** - TypeScript type definitions for the tools
+## Проблемы с авторизацией
 
-## Authentication Methods
+Если получаете ошибку 401:
+1. Проверьте правильность токена
+2. Убедитесь, что у вас есть доступ к Atlassian организации
+3. Для MCP сервера может требоваться OAuth авторизация вместо PAT
 
-The Atlassian MCP server supports multiple authentication methods:
-
-### API Token (Simplest)
-```bash
-export ATLASSIAN_ACCESS_TOKEN=your_api_token
-```
-
-### OAuth2 Flow
-For production applications, use the OAuth2 flow as described in:
-https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/
-
-## Server Information
-
-- **URL**: https://mcp.atlassian.com/v1/sse
-- **Protocol**: Server-Sent Events (SSE) with MCP protocol
-- **Authentication**: Bearer token (API token or OAuth2 access token)
-
-## Troubleshooting
-
-### 401 Unauthorized Error
-- Ensure you have a valid API token
-- Check that the token is correctly set in the environment variable
-- Verify your Atlassian account has the necessary permissions
-
-### No Tools Retrieved
-- The server might be rate-limiting requests
-- Your organization might have specific access controls
-- Try again after a few minutes
-
-### Connection Timeouts
-- Check your network connection
-- Verify firewall settings allow HTTPS connections to mcp.atlassian.com
-
-## References
-
-- [Getting Started with Atlassian Remote MCP Server](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/)
-- [Setting up Claude AI](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/setting-up-claude-ai/)
-- [Using with MCP Clients](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/using-with-other-supported-mcp-clients/)
+Подробная документация по OAuth: https://developer.atlassian.com/cloud/oauth/getting-started/
