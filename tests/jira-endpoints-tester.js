@@ -10,9 +10,11 @@ import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import BaseTestExecutor from './core/base-test-executor.js';
 import ResourceManager from './core/resource-manager.js';
-import { SharedJiraTestCases, TestValidationUtils, CascadeExecutor } from './shared-test-cases.js';
-import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
+import CascadeExecutor from './core/cascade-executor.js';
+import TestValidationUtils from './core/test-validation-utils.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
+import SharedJiraTestCases from './shared-test-cases.js';
+import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
 import { isObj } from './utils.js';
 
 const {
