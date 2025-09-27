@@ -11,41 +11,22 @@ import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_
 import { incl, isObj, inclOneOf } from './utils.js';
 
 /**
- * Test group constants
- */
-export const TEST_GROUPS = {
-  SYSTEM: 1,
-  INFORMATIONAL: 2,
-  ISSUE_DETAILED: 3,
-  SEARCH_DETAILED: 4,
-  PROJECT_DETAILED: 5,
-  USER_DETAILED: 6,
-  METADATA_DETAILED: 7,
-  MODIFYING: 8,
-  AGILE: 9,
-  ADDITIONAL: 10,
-  WORKFLOW_SCHEMES: 11,
-  EXTENDED: 12,
-  CASCADE: 13,
-};
-
-/**
  * Test groups information
  */
 export const GROUP_INFO = {
-  [TEST_GROUPS.SYSTEM]: { name: 'System', description: 'System endpoints' },
-  [TEST_GROUPS.INFORMATIONAL]: { name: 'Informational', description: 'Basic informational tests' },
-  [TEST_GROUPS.ISSUE_DETAILED]: { name: 'IssueDetailed', description: 'Detailed issue tests' },
-  [TEST_GROUPS.SEARCH_DETAILED]: { name: 'SearchDetailed', description: 'Detailed search tests' },
-  [TEST_GROUPS.PROJECT_DETAILED]: { name: 'ProjectDetailed', description: 'Detailed project tests' },
-  [TEST_GROUPS.USER_DETAILED]: { name: 'UserDetailed', description: 'Detailed user tests' },
-  [TEST_GROUPS.METADATA_DETAILED]: { name: 'MetadataDetailed', description: 'Detailed metadata tests' },
-  [TEST_GROUPS.MODIFYING]: { name: 'Modifying', description: 'Data modification tests' },
-  [TEST_GROUPS.AGILE]: { name: 'Agile', description: 'Agile API tests' },
-  [TEST_GROUPS.ADDITIONAL]: { name: 'Additional', description: 'Additional tests' },
-  [TEST_GROUPS.WORKFLOW_SCHEMES]: { name: 'WorkflowSchemes', description: 'Workflow schemes tests' },
-  [TEST_GROUPS.EXTENDED]: { name: 'Extended', description: 'Extended tests' },
-  [TEST_GROUPS.CASCADE]: { name: 'Cascade', description: 'Cascade operations' },
+  1: { name: 'System', description: 'System endpoints' },
+  2: { name: 'Informational', description: 'Basic informational tests' },
+  3: { name: 'IssueDetailed', description: 'Detailed issue tests' },
+  4: { name: 'SearchDetailed', description: 'Detailed search tests' },
+  5: { name: 'ProjectDetailed', description: 'Detailed project tests' },
+  6: { name: 'UserDetailed', description: 'Detailed user tests' },
+  7: { name: 'MetadataDetailed', description: 'Detailed metadata tests' },
+  8: { name: 'Modifying', description: 'Data modification tests' },
+  9: { name: 'Agile', description: 'Agile API tests' },
+  10: { name: 'Additional', description: 'Additional tests' },
+  11: { name: 'WorkflowSchemes', description: 'Workflow schemes tests' },
+  12: { name: 'Extended', description: 'Extended tests' },
+  13: { name: 'Cascade', description: 'Cascade operations' },
 };
 
 /**
@@ -68,13 +49,64 @@ export class SharedJiraTestCases {
   }
 
   /**
+   * Transform test case to add getters for groupNumber and testNumber based on fullId
+   * @param {Object} testCase - The test case object
+   * @returns {Object} - Test case with getters
+   */
+  transformTestCase (testCase) {
+    // Create a new object with getters
+    const transformed = Object.create(null);
+
+    // Copy all properties except groupNumber and testNumber
+    Object.keys(testCase).forEach(key => {
+      if (key !== 'groupNumber' && key !== 'testNumber') {
+        transformed[key] = testCase[key];
+      }
+    });
+
+    // Add getters for groupNumber and testNumber based on fullId
+    Object.defineProperty(transformed, 'groupNumber', {
+      get() {
+        return this.fullId ? parseInt(this.fullId.split('-')[0], 10) : undefined;
+      },
+      enumerable: true,
+      configurable: true
+    });
+
+    Object.defineProperty(transformed, 'testNumber', {
+      get() {
+        return this.fullId ? parseInt(this.fullId.split('-')[1], 10) : undefined;
+      },
+      enumerable: true,
+      configurable: true
+    });
+
+    Object.defineProperty(transformed, 'category', {
+      get() {
+        return GROUP_INFO[this.groupNumber]?.name;
+      },
+      enumerable: true,
+      configurable: true
+    });
+
+    return transformed;
+  }
+
+  /**
+   * Transform an array of test cases
+   * @param {Array} testCases - Array of test cases
+   * @returns {Array} - Array of transformed test cases
+   */
+  transformTestCases (testCases) {
+    return testCases.map(tc => this.transformTestCase(tc));
+  }
+
+  /**
    * Get system test cases (serverInfo, configuration, permissions)
    */
   getSystemTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 1,
         fullId: '1-1',
         name: 'Get Server Info',
         directApi: {
@@ -89,8 +121,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 2,
         fullId: '1-2',
         name: 'Get Configuration',
         directApi: {
@@ -105,8 +135,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 3,
         fullId: '1-3',
         name: 'Get Permissions',
         directApi: {
@@ -121,8 +149,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.SYSTEM,
-        testNumber: 4,
         fullId: '1-4',
         name: 'Get Application Roles',
         directApi: {
@@ -136,7 +162,7 @@ export class SharedJiraTestCases {
           expectedProps: [],
         },
       },
-    ];
+    ]);
   }
 
   /**
@@ -144,10 +170,8 @@ export class SharedJiraTestCases {
    * These tests verify data retrieval without modification
    */
   getInformationalTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 1,
         fullId: '2-1',
         name: 'Get Issue',
         directApi: {
@@ -162,8 +186,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 2,
         fullId: '2-2',
         name: 'Search Issues',
         directApi: {
@@ -183,8 +205,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 3,
         fullId: '2-3',
         name: 'Get Projects',
         directApi: {
@@ -199,8 +219,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 4,
         fullId: '2-4',
         name: 'Get Project Details',
         directApi: {
@@ -215,8 +233,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 5,
         fullId: '2-5',
         name: 'Get Issue Transitions',
         directApi: {
@@ -232,8 +248,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 6,
         fullId: '2-6',
         name: 'Get Issue Comments',
         directApi: {
@@ -248,8 +262,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 7,
         fullId: '2-7',
         name: 'Get User Info',
         directApi: {
@@ -264,8 +276,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 8,
         fullId: '2-8',
         name: 'Get Current User',
         directApi: {
@@ -280,8 +290,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 9,
         fullId: '2-9',
         name: 'Get Priorities',
         directApi: {
@@ -296,8 +304,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 10,
         fullId: '2-10',
         name: 'Get Statuses',
         directApi: {
@@ -312,8 +318,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.INFORMATIONAL,
-        testNumber: 11,
         fullId: '2-11',
         name: 'Get Issue Types',
         directApi: {
@@ -327,17 +331,15 @@ export class SharedJiraTestCases {
           expectedProps: ['id', 'name'],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get extended test cases for issues
    */
   getIssueDetailedTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.ISSUE_DETAILED,
-        testNumber: 1,
         fullId: '3-1',
         name: 'Get Issue Edit Meta',
         directApi: {
@@ -352,8 +354,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ISSUE_DETAILED,
-        testNumber: 2,
         fullId: '3-2',
         name: 'Get Issue Worklog',
         directApi: {
@@ -368,8 +368,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ISSUE_DETAILED,
-        testNumber: 3,
         fullId: '3-3',
         name: 'Get Create Meta',
         directApi: {
@@ -383,17 +381,15 @@ export class SharedJiraTestCases {
           expectedProps: ['projects'],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get test cases for search
    */
   getSearchDetailedTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.SEARCH_DETAILED,
-        testNumber: 1,
         fullId: '4-1',
         name: 'JQL Search GET',
         directApi: {
@@ -407,17 +403,15 @@ export class SharedJiraTestCases {
           expectedProps: ['issues', 'total'],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get detailed test cases for projects
    */
   getProjectDetailedTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.PROJECT_DETAILED,
-        testNumber: 1,
         fullId: '5-1',
         name: 'Get All Projects',
         directApi: {
@@ -432,8 +426,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.PROJECT_DETAILED,
-        testNumber: 2,
         fullId: '5-2',
         name: 'Get Project Statuses',
         directApi: {
@@ -447,17 +439,15 @@ export class SharedJiraTestCases {
           expectedProps: [],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get detailed test cases for users
    */
   getUserDetailedTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.USER_DETAILED,
-        testNumber: 1,
         fullId: '6-1',
         name: 'Get User by Username',
         directApi: {
@@ -472,8 +462,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.USER_DETAILED,
-        testNumber: 2,
         fullId: '6-2',
         name: 'Search Users by Username',
         directApi: {
@@ -488,8 +476,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.USER_DETAILED,
-        testNumber: 3,
         fullId: '6-3',
         name: 'Get Assignable Users',
         directApi: {
@@ -503,17 +489,15 @@ export class SharedJiraTestCases {
           expectedProps: [],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get detailed metadata test cases
    */
   getMetadataDetailedTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.METADATA_DETAILED,
-        testNumber: 1,
         fullId: '7-1',
         name: 'Get Fields',
         directApi: {
@@ -528,8 +512,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.METADATA_DETAILED,
-        testNumber: 2,
         fullId: '7-2',
         name: 'Get Resolutions',
         directApi: {
@@ -544,8 +526,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.METADATA_DETAILED,
-        testNumber: 3,
         fullId: '7-3',
         name: 'Get Project Roles',
         directApi: {
@@ -560,8 +540,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.METADATA_DETAILED,
-        testNumber: 4,
         fullId: '7-4',
         name: 'Get Issue Link Types',
         directApi: {
@@ -575,7 +553,7 @@ export class SharedJiraTestCases {
           expectedProps: ['issueLinkTypes'],
         },
       },
-    ];
+    ]);
   }
 
   /**
@@ -583,10 +561,8 @@ export class SharedJiraTestCases {
    * These tests create, modify or delete data
    */
   getModifyingTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 1,
         fullId: '8-1',
         name: 'Create Issue',
         directApi: {
@@ -614,8 +590,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 2,
         fullId: '8-2',
         name: 'Add Comment',
         directApi: {
@@ -633,8 +607,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 3,
         fullId: '8-3',
         name: 'Update Issue',
         directApi: {
@@ -654,8 +626,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 4,
         fullId: '8-4',
         name: 'Add Worklog',
         directApi: {
@@ -680,8 +650,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 5,
         fullId: '8-5',
         name: 'Create Version',
         directApi: {
@@ -706,8 +674,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 6,
         fullId: '8-6',
         name: 'Update Version',
         directApi: {
@@ -726,8 +692,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Version', // depends on version creation
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 7,
         fullId: '8-7',
         name: 'Get Version',
         directApi: {
@@ -743,8 +707,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Version',
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 8,
         fullId: '8-8',
         name: 'Create Issue Link',
         directApi: {
@@ -775,8 +737,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Issue', // depends on creating second issue
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 9,
         fullId: '8-9',
         name: 'Create Remote Link',
         directApi: {
@@ -797,8 +757,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 10,
         fullId: '8-10',
         name: 'Get Remote Links',
         directApi: {
@@ -813,8 +771,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 11,
         fullId: '8-11',
         name: 'Delete Remote Link',
         directApi: {
@@ -830,8 +786,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Remote Links', // depends on getting remote links first
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 12,
         fullId: '8-12',
         name: 'Delete Issue',
         requiresSetup: true, // ВАЖНО: Требует создания временной задачи!
@@ -848,8 +802,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 13,
         fullId: '8-13',
         name: 'Delete Version',
         directApi: {
@@ -864,8 +816,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.MODIFYING,
-        testNumber: 14,
         fullId: '8-14',
         name: 'Delete Issue Link',
         directApi: {
@@ -879,17 +829,15 @@ export class SharedJiraTestCases {
           expectedProps: [],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get test cases for Agile/Board operations
    */
   getAgileTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.AGILE,
-        testNumber: 1,
         fullId: '9-1',
         name: 'Get Agile Boards',
         directApi: {
@@ -904,8 +852,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.AGILE,
-        testNumber: 2,
         fullId: '9-2',
         name: 'Get Board Sprints',
         directApi: {
@@ -921,8 +867,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Agile Boards',
       },
       {
-        groupNumber: TEST_GROUPS.AGILE,
-        testNumber: 3,
         fullId: '9-3',
         name: 'Get Board Issues',
         directApi: {
@@ -937,17 +881,15 @@ export class SharedJiraTestCases {
         },
         dependsOn: 'Get Agile Boards',
       },
-    ];
+    ]);
   }
 
   /**
    * Get additional test cases
    */
   getAdditionalTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 1,
         fullId: '10-1',
         name: 'Create Attachment',
         directApi: {
@@ -971,8 +913,6 @@ export class SharedJiraTestCases {
         requiresFile: true, // special flag for creating test file
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 2,
         fullId: '10-2',
         name: 'Get Attachment Sample',
         directApi: {
@@ -988,8 +928,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Attachment',
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 3,
         fullId: '10-3',
         name: 'Delete Attachment',
         directApi: {
@@ -1005,8 +943,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Attachment Sample',
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 4,
         fullId: '10-4',
         name: 'Get Dashboards',
         directApi: {
@@ -1021,8 +957,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 5,
         fullId: '10-5',
         name: 'Get Favourite Filters',
         directApi: {
@@ -1037,8 +971,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 6,
         fullId: '10-6',
         name: 'Get Groups Picker',
         directApi: {
@@ -1053,8 +985,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 7,
         fullId: '10-7',
         name: 'Get Notification Schemes',
         directApi: {
@@ -1069,8 +999,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 8,
         fullId: '10-8',
         name: 'Get Permission Schemes',
         directApi: {
@@ -1085,8 +1013,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.ADDITIONAL,
-        testNumber: 9,
         fullId: '10-9',
         name: 'Get Workflows',
         directApi: {
@@ -1100,17 +1026,15 @@ export class SharedJiraTestCases {
           expectedProps: [],
         },
       },
-    ];
+    ]);
   }
 
   /**
    * Get test cases for workflow schemes
    */
   getWorkflowSchemesTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
-        testNumber: 1,
         fullId: '11-1',
         name: 'Get Project Workflow Scheme',
         directApi: {
@@ -1125,8 +1049,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
-        testNumber: 2,
         fullId: '11-2',
         name: 'Get Workflow Scheme by ID',
         directApi: {
@@ -1142,8 +1064,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Project Workflow Scheme',
       },
       {
-        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
-        testNumber: 3,
         fullId: '11-3',
         name: 'Get Workflow Scheme Default',
         directApi: {
@@ -1159,8 +1079,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Project Workflow Scheme',
       },
       {
-        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
-        testNumber: 4,
         fullId: '11-4',
         name: 'Create Workflow Scheme Draft',
         directApi: {
@@ -1176,8 +1094,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Get Project Workflow Scheme',
       },
       {
-        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
-        testNumber: 5,
         fullId: '11-5',
         name: 'Get Workflow Scheme Draft',
         directApi: {
@@ -1193,8 +1109,6 @@ export class SharedJiraTestCases {
         dependsOn: 'Create Workflow Scheme Draft',
       },
       {
-        groupNumber: TEST_GROUPS.WORKFLOW_SCHEMES,
-        testNumber: 6,
         fullId: '11-6',
         name: 'Delete Workflow Scheme Draft',
         directApi: {
@@ -1209,17 +1123,15 @@ export class SharedJiraTestCases {
         },
         dependsOn: 'Get Workflow Scheme Draft',
       },
-    ];
+    ]);
   }
 
   /**
    * Get cascade test cases (complex operations)
    */
   getCascadeTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.CASCADE,
-        testNumber: 1,
         fullId: '13-1',
         name: 'Complete Issue Modification Workflow',
         description: 'Complete issue lifecycle: creation, modification, adding comment, worklog, cleanup',
@@ -1233,8 +1145,6 @@ export class SharedJiraTestCases {
         ],
       },
       {
-        groupNumber: TEST_GROUPS.CASCADE,
-        testNumber: 2,
         fullId: '13-2',
         name: 'Version Management Workflow',
         description: 'Creating, updating and getting project version',
@@ -1247,8 +1157,6 @@ export class SharedJiraTestCases {
         ],
       },
       {
-        groupNumber: TEST_GROUPS.CASCADE,
-        testNumber: 3,
         fullId: '13-3',
         name: 'Issue Linking Workflow',
         description: 'Creating two issues and linking them together',
@@ -1261,7 +1169,7 @@ export class SharedJiraTestCases {
           { action: 'cleanup', testCase: 'Delete Issue', useResource: 'secondIssueKey' },
         ],
       },
-    ];
+    ]);
   }
 
   /**
@@ -1269,10 +1177,8 @@ export class SharedJiraTestCases {
    * Includes additional endpoints and more complex scenarios
    */
   getExtendedTestCases () {
-    return [
+    return this.transformTestCases([
       {
-        groupNumber: TEST_GROUPS.EXTENDED,
-        testNumber: 1,
         fullId: '12-1',
         name: 'Get Server Info',
         directApi: {
@@ -1286,8 +1192,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.EXTENDED,
-        testNumber: 2,
         fullId: '12-2',
         name: 'Get Project Versions',
         directApi: {
@@ -1300,8 +1204,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.EXTENDED,
-        testNumber: 3,
         fullId: '12-3',
         name: 'Get Project Components',
         directApi: {
@@ -1314,8 +1216,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.EXTENDED,
-        testNumber: 4,
         fullId: '12-4',
         name: 'Search Users',
         directApi: {
@@ -1328,8 +1228,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.EXTENDED,
-        testNumber: 5,
         fullId: '12-5',
         name: 'Get Fields',
         directApi: {
@@ -1342,8 +1240,6 @@ export class SharedJiraTestCases {
         },
       },
       {
-        groupNumber: TEST_GROUPS.EXTENDED,
-        testNumber: 6,
         fullId: '12-6',
         name: 'Get Create Meta',
         directApi: {
@@ -1356,7 +1252,7 @@ export class SharedJiraTestCases {
           expectedProps: ['projects'],
         },
       },
-    ];
+    ]);
   }
 
   /**
