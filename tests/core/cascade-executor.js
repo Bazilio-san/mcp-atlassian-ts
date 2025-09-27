@@ -199,7 +199,7 @@ class CascadeExecutor {
 
     for (const cascadeCase of cascadeTestCases) {
       console.log(`\n📊 Starting cascade: ${cascadeCase.name}`);
-      console.log('─'.repeat(50));
+      console.log('─'.repeat(80));
 
       const result = await this.executeCascade(cascadeCase, testRunner);
       results.push(result);

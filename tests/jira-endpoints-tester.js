@@ -11,7 +11,7 @@ import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import ResourceManager from './core/resource-manager.js';
 import CascadeExecutor from './core/cascade-executor.js';
 import ValidationEngine from './core/validation-engine.js';
-import { TestReporter } from './core/test-reporter.js';
+import { dLine, eqLine, TestReporter } from './core/test-reporter.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
 import SharedJiraTestCases from './core/test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
@@ -84,8 +84,31 @@ class JiraDirectApiExecutor {
   }
 
   /**
+   * Parse JSON response safely
+   */
+  async parseResponse (response) {
+    const text = await response.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Extract error message from response data
+   */
+  getErrorMessage (data) {
+    if (!data) return 'Unknown error';
+    if (data.errorMessages) return data.errorMessages.join(', ');
+    if (data.errors) return JSON.stringify(data.errors);
+    if (typeof data === 'string') return data;
+    return 'Unknown error';
+  }
+
+  /**
    * Common execution logic for shared test cases
-   * (copied from BaseTestExecutor)
    */
   async runSharedTestCase (testCase) {
     const startTime = Date.now();
@@ -153,7 +176,7 @@ class JiraDirectApiExecutor {
     const categoryTests = testCases.filter(test => test.category === category);
 
     console.log(`\n📂 Running ${category} tests (${categoryTests.length} tests)`);
-    console.log('─'.repeat(50));
+    console.log(dLine);
 
     for (const testCase of categoryTests) {
       // Always show test info when running single test or in verbose mode
@@ -219,7 +242,7 @@ class JiraDirectApiExecutor {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     console.log(`\n🚀 Starting Test Execution`);
-    console.log('═'.repeat(60));
+    console.log(eqLine);
 
     this.stats.startTime = Date.now();
 
@@ -292,16 +315,7 @@ class JiraDirectApiExecutor {
 
     try {
       const response = await fetch(url, options);
-      const text = await response.text();
-      let data = {};
-
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          // Silent parse error
-        }
-      }
+      const data = await this.parseResponse(response) || {};
 
       if (response.status === 201 && data.key) {
         // Track for cleanup
@@ -310,10 +324,7 @@ class JiraDirectApiExecutor {
         return { success: true, key: data.key };
       }
 
-      const errorMsg = data.errorMessages ? data.errorMessages.join(', ') :
-        (data.errors ? JSON.stringify(data.errors) :
-          (typeof data === 'string' ? data : 'Unknown error'));
-      return { success: false, error: errorMsg };
+      return { success: false, error: this.getErrorMessage(data) };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -355,16 +366,7 @@ class JiraDirectApiExecutor {
 
     try {
       const response = await fetch(url, options);
-      const text = await response.text();
-      let data = null;
-
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          // Silent parse error
-        }
-      }
+      const data = await this.parseResponse(response);
 
       if (response.status === 200 && data && data.length > 0) {
         // Track for cleanup
@@ -398,16 +400,7 @@ class JiraDirectApiExecutor {
 
     try {
       const response = await fetch(url, options);
-      const text = await response.text();
-      let data = null;
-
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          // Silent parse error
-        }
-      }
+      const data = await this.parseResponse(response);
 
       if (response.status === 200 && Array.isArray(data) && data.length > 0) {
         // Return the ID of the first remote link
@@ -436,16 +429,7 @@ class JiraDirectApiExecutor {
       };
 
       const response = await fetch(url, getOptions);
-      const text = await response.text();
-      let remoteLinks = null;
-
-      if (text) {
-        try {
-          remoteLinks = JSON.parse(text);
-        } catch (e) {
-          // Silent parse error
-        }
-      }
+      const remoteLinks = await this.parseResponse(response);
 
       if (response.status === 200 && Array.isArray(remoteLinks) && remoteLinks.length > 1) {
         console.log(`\n🔗 Cleaning up remote links for ${this.testIssueKey} (found ${remoteLinks.length}, keeping 1)`);
@@ -506,16 +490,7 @@ class JiraDirectApiExecutor {
 
     try {
       const response = await fetch(url, options);
-      const text = await response.text();
-      let data = null;
-
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          // Silent parse error
-        }
-      }
+      const data = await this.parseResponse(response);
 
       if (response.status === 200 && data?.values) {
         // Find first Scrum board
@@ -951,7 +926,7 @@ class JiraDirectApiExecutor {
    */
   async runCascadeTests () {
     console.log('\n🔄 Running Cascade Tests');
-    console.log('─'.repeat(50));
+    console.log(dLine);
 
     const cascadeExecutor = new CascadeExecutor(this.resourceManager);
 

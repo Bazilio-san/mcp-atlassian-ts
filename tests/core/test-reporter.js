@@ -5,6 +5,9 @@
 
 import chalk from 'chalk';
 
+export const eqLine = '═'.repeat(80);
+export const dLine = '-'.repeat(80);
+
 export class TestReporter {
   /**
    * Helper: Format duration
@@ -49,9 +52,9 @@ export class TestReporter {
     const lines = [];
 
     // Header
-    lines.push('\n' + '═'.repeat(60));
+    lines.push('\n' + eqLine);
     lines.push(`📊 Test Results Summary`);
-    lines.push('═'.repeat(60));
+    lines.push(eqLine);
 
     // Stats table
     lines.push('\n📈 Statistics:');
@@ -70,7 +73,7 @@ export class TestReporter {
     lines.push(`\n⏱️  Execution Time: ${duration}`);
 
     // Overall status
-    lines.push('\n' + '─'.repeat(60));
+    lines.push('\n' + dLine);
     if (stats.failed === 0 && stats.passed > 0) {
       lines.push(chalk.green('✨  All tests passed successfully!'));
     } else if (stats.failed > 0) {
