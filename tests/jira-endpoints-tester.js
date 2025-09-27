@@ -2,16 +2,17 @@
 // noinspection UnnecessaryLocalVariableJS
 
 /**
- * JIRA REST API v2 Endpoints Tester - Refactored
- * Extends BaseTestExecutor for unified testing infrastructure
+ * JIRA REST API v2 Endpoints Tester - Simplified
+ * Direct implementation without inheritance for cleaner, more maintainable code
  */
 
 import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import BaseTestExecutor from './core/base-test-executor.js';
 import ResourceManager from './core/resource-manager.js';
 import CascadeExecutor from './core/cascade-executor.js';
 import TestValidationUtils from './core/test-validation-utils.js';
+import ValidationEngine from './core/validation-engine.js';
+import TestReporter from './core/test-reporter.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
 import SharedJiraTestCases from './core/test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
@@ -32,11 +33,25 @@ const {
 
 /**
  * JIRA Direct API Test Executor
- * Extends BaseTestExecutor for consistent test execution
+ * Self-contained class for testing JIRA API endpoints
  */
-class JiraDirectApiExecutor extends BaseTestExecutor {
+class JiraDirectApiExecutor {
   constructor(config = {}) {
-    super(config);
+    // Initialize base properties (copied from BaseTestExecutor)
+    this.config = config;
+    this.results = [];
+    this.stats = {
+      total: 0,
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      startTime: null,
+      endTime: null,
+      duration: 0,
+    };
+    this.resourceManager = null;
+    this.testFilter = config.testFilter || null;
+    this.verbose = config.verbose || false;
 
     // JIRA-specific configuration
     this.baseUrl = url || 'http://localhost:8080';
@@ -67,6 +82,186 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
       links: [],
       attachments: [],
       workflowSchemes: [],
+    };
+  }
+
+  /**
+   * Set resource manager for tracking created resources
+   * (copied from BaseTestExecutor)
+   */
+  setResourceManager(resourceManager) {
+    this.resourceManager = resourceManager;
+  }
+
+  /**
+   * Common execution logic for shared test cases
+   * (copied from BaseTestExecutor)
+   */
+  async runSharedTestCase(testCase) {
+    const startTime = Date.now();
+    let result = {
+      testId: testCase.fullId || testCase.id,
+      name: testCase.name,
+      category: testCase.category,
+      source: this.getSourceType(),
+      status: 'pending',
+      duration: 0,
+      error: null,
+      response: null,
+    };
+
+    try {
+      // Check if test should be skipped based on filter
+      if (!this.shouldRunTest(testCase)) {
+        result.status = 'skipped';
+        result.reason = 'Filtered out';
+        this.stats.skipped++;
+        return result;
+      }
+
+      // Execute the test case
+      const response = await this.executeTestCase(testCase);
+
+      // Handle skipped tests (e.g., unavailable MCP tools)
+      if (response && response.skipped) {
+        result.status = 'skipped';
+        result.reason = response.reason || 'Tool not available';
+        this.stats.skipped++;
+      } else {
+        // Validate the response
+        const validation = ValidationEngine.validateResponse(
+          response,
+          testCase,
+          this.getSourceType()
+        );
+
+        result.status = validation.passed ? 'passed' : 'failed';
+        result.response = response;
+        result.validationDetails = validation.details;
+
+        if (validation.passed) {
+          this.stats.passed++;
+        } else {
+          this.stats.failed++;
+          result.error = validation.error;
+        }
+      }
+    } catch (error) {
+      result.status = 'failed';
+      result.error = error.message || error;
+      this.stats.failed++;
+    } finally {
+      result.duration = Date.now() - startTime;
+      this.stats.total++;
+      this.results.push(result);
+    }
+
+    return result;
+  }
+
+  /**
+   * Run tests by category
+   * (copied from BaseTestExecutor)
+   */
+  async runTestsByCategory(category, testCases) {
+    const categoryTests = testCases.filter(test => test.category === category);
+
+    console.log(`\n📂 Running ${category} tests (${categoryTests.length} tests)`);
+    console.log('─'.repeat(50));
+
+    for (const testCase of categoryTests) {
+      // Always show test info when running single test or in verbose mode
+      const showDetails = this.verbose || categoryTests.length === 1;
+
+      const result = await this.runSharedTestCase(testCase);
+
+      // Print result inline
+      const statusSymbol =
+        result.status === 'passed' ? '✅' :
+        result.status === 'failed' ? '❌' :
+        '⏭️';
+
+      if (showDetails) {
+        // Format test name with fixed width of 50 characters
+        const testId = testCase.fullId || testCase.id;
+        const paddedIdName = `${testId}: ${testCase.name}`.padEnd(45, ' ');
+        console.log(`${statusSymbol}  ${paddedIdName} 🔗 ${testCase.httpMethod} ${testCase.url}`);
+      }
+
+      if (!showDetails) {
+        process.stdout.write(statusSymbol + '  ');
+      } else {
+        if (result.status === 'failed' && result.error) {
+          console.log(`    └─ Error: ${result.error}`);
+        }
+        if (result.status === 'skipped' && result.reason) {
+          console.log(`    └─ Reason: ${result.reason}`);
+        }
+      }
+
+      // For failed tests in non-verbose mode, show minimal error info
+      if (!this.verbose && result.status === 'failed' && categoryTests.length > 1) {
+        const testId = testCase.fullId || testCase.id;
+        console.log(`\n    ❌ ${testId}: ${testCase.name} - ${result.error}`);
+      }
+    }
+
+    if (!this.verbose && categoryTests.length > 1) {
+      console.log(); // New line after status symbols
+    }
+  }
+
+  /**
+   * Generate final report
+   * (copied from BaseTestExecutor)
+   */
+  generateReport() {
+    this.stats.endTime = Date.now();
+    if (this.stats.startTime) {
+      this.stats.duration = this.stats.endTime - this.stats.startTime;
+    }
+
+    return TestReporter.generateSummary({
+      results: this.results,
+      stats: this.stats,
+      source: this.getSourceType(),
+    });
+  }
+
+  /**
+   * Run all tests with provided test cases
+   * (copied from BaseTestExecutor)
+   */
+  async runAllTests(testCases) {
+    // Small delay first to let Node.js warnings appear
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    console.log(`\n🚀 Starting ${this.getSourceType().toUpperCase()} Test Execution`);
+    console.log('═'.repeat(60));
+
+    this.stats.startTime = Date.now();
+
+    // Get unique categories
+    const categories = [...new Set(testCases.map(t => t.category))];
+
+    // Run tests by category
+    for (const category of categories) {
+      await this.runTestsByCategory(category, testCases);
+    }
+
+    // Generate and print report
+    const report = this.generateReport();
+    console.log(report);
+
+    // Clean up resources if resource manager is set
+    if (this.resourceManager) {
+      await this.resourceManager.cleanup();
+    }
+
+    return {
+      success: this.stats.failed === 0,
+      stats: this.stats,
+      results: this.results,
     };
   }
 
@@ -738,18 +933,8 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
     // Get all test cases using the centralized method
     const allTestCases = this.sharedTestCases.getAllTestCasesFlat();
 
-    // Apply test filter if specified
-    let testCases = allTestCases;
-    if (this.testFilter) {
-      const selectedTests = this.parseTestFilter(this.testFilter);
-      testCases = allTestCases.filter(tc =>
-        selectedTests.some(sel => this.matchesSelection(tc, sel))
-      );
-      console.log(`🎯 Running ${testCases.length} of ${allTestCases.length} tests based on filter: ${this.testFilter}\n`);
-    }
-
-    // Run tests using base executor
-    const result = await this.runAllTests(testCases);
+    // Run tests using runAllTests method (filtering handled by shouldRunTest)
+    const result = await this.runAllTests(allTestCases);
 
     // Cleanup remote links for the test issue (keep only one)
     await this.cleanupRemoteLinks();
@@ -763,60 +948,31 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
   }
 
   /**
-   * Parse test filter string
-   */
-  parseTestFilter(filterString) {
-    const selections = [];
-    const parts = filterString.split(',');
-
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (trimmed === '*') {
-        return [{ type: 'all' }];
-      }
-
-      if (trimmed.includes('-')) {
-        const [group, test] = trimmed.split('-');
-        if (test === '*') {
-          selections.push({ type: 'group', groupNumber: parseInt(group) });
-        } else {
-          selections.push({
-            type: 'test',
-            groupNumber: parseInt(group),
-            testNumber: parseInt(test),
-            fullId: trimmed
-          });
-        }
-      } else {
-        // Single number = entire group
-        selections.push({ type: 'group', groupNumber: parseInt(trimmed) });
-      }
-    }
-
-    return selections;
-  }
-
-  /**
-   * Check if test case matches selection
-   */
-  matchesSelection(testCase, selection) {
-    if (selection.type === 'all') return true;
-    if (selection.type === 'group') {
-      return testCase.groupNumber === selection.groupNumber;
-    }
-    if (selection.type === 'test') {
-      return testCase.fullId === selection.fullId;
-    }
-    return false;
-  }
-
-  /**
-   * Override shouldRunTest to disable base class filtering
-   * (we handle filtering in runTests method)
+   * Check if test should run based on filter
+   * (copied from BaseTestExecutor)
    */
   shouldRunTest(testCase) {
-    // Always return true - we handle filtering at a higher level
-    return true;
+    if (!this.testFilter) return true;
+
+    // Support multiple filter formats
+    // Format: "1-1,2-*,3-5"
+    const filters = this.testFilter.split(',');
+
+    // Use fullId or id for matching
+    const testId = testCase.fullId || testCase.id;
+
+    for (const filter of filters) {
+      if (filter.includes('*')) {
+        // Wildcard matching (e.g., "2-*")
+        const prefix = filter.replace('*', '');
+        if (testId.startsWith(prefix)) return true;
+      } else {
+        // Exact match
+        if (testId === filter) return true;
+      }
+    }
+
+    return false;
   }
 
   /**
