@@ -157,11 +157,6 @@ class TestValidationUtils {
       errors.push('Test case must have an id or fullId');
     }
 
-    // Either MCP or direct API info should be present
-    if (!testCase.mcpTool && !testCase.directApi) {
-      errors.push('Test case must have either mcpTool or directApi configuration');
-    }
-
     // Direct API validation
     if (testCase.directApi) {
       if (!testCase.directApi.method) {
@@ -170,11 +165,6 @@ class TestValidationUtils {
       if (!testCase.directApi.endpoint) {
         errors.push('Direct API must have an endpoint');
       }
-    }
-
-    // MCP tool validation
-    if (testCase.mcpTool && !testCase.mcpArgs) {
-      errors.push('MCP tool must have args');
     }
 
     return {

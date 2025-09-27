@@ -13,9 +13,9 @@ import ResourceManager from './core/resource-manager.js';
 import CascadeExecutor from './core/cascade-executor.js';
 import TestValidationUtils from './core/test-validation-utils.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
-import SharedJiraTestCases from './shared-test-cases.js';
+import SharedJiraTestCases from './core/test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
-import { isObj } from './utils.js';
+import { isObj } from './core/utils.js';
 
 const {
   jira: {

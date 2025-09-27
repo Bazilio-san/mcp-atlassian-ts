@@ -6,8 +6,8 @@
  * for both direct emulator testing and MCP server testing
  */
 
-import { appConfig } from '../dist/src/bootstrap/init-config.js';
-import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT, TEST_ISSUE_LINK_TYPE } from './constants.js';
+import { appConfig } from '../../dist/src/bootstrap/init-config.js';
+import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT, TEST_ISSUE_LINK_TYPE } from '../constants.js';
 import { incl, isObj, inclOneOf } from './utils.js';
 
 /**
@@ -55,7 +55,6 @@ export const GROUP_INFO = {
 export class SharedJiraTestCases {
   constructor () {
     this.testProjectKey = TEST_JIRA_PROJECT;
-    this.testProjectId = 10000; // Default project ID
     this.testUsername = appConfig.jira.auth.basic.username;
     this.testIssueKey = TEST_ISSUE_KEY;
     this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY;
@@ -78,8 +77,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '1-1',
         name: 'Get Server Info',
-        mcpTool: 'health_check',
-        mcpArgs: { detailed: true },
         directApi: {
           method: 'GET',
           endpoint: '/serverInfo',
@@ -96,8 +93,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '1-2',
         name: 'Get Configuration',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/configuration',
@@ -114,8 +109,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '1-3',
         name: 'Get Permissions',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/permissions',
@@ -132,8 +125,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '1-4',
         name: 'Get Application Roles',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/applicationrole',
@@ -159,11 +150,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '2-1',
         name: 'Get Issue',
-        mcpTool: 'jira_get_issue',
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-          expand: ['comment'],
-        },
         directApi: {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}`,
@@ -180,12 +166,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '2-2',
         name: 'Search Issues',
-        mcpTool: 'jira_search_issues',
-        mcpArgs: {
-          jql: `project = ${this.testProjectKey}`,
-          maxResults: 10,
-          fields: ['summary', 'status', 'assignee'],
-        },
         directApi: {
           method: 'POST',
           endpoint: '/search',
@@ -207,8 +187,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '2-3',
         name: 'Get Projects',
-        mcpTool: 'jira_get_projects',
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/project',
@@ -225,10 +203,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '2-4',
         name: 'Get Project Details',
-        mcpTool: null, // No single project tool, use jira_get_projects
-        mcpArgs: {
-          projectKey: this.testProjectKey,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}`,
@@ -245,10 +219,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '2-5',
         name: 'Get Issue Transitions',
-        mcpTool: 'jira_get_transitions',
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/transitions`,
@@ -266,10 +236,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '2-6',
         name: 'Get Issue Comments',
-        mcpTool: null, // No separate comments tool
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/comment`,
@@ -286,10 +252,6 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '2-7',
         name: 'Get User Info',
-        mcpTool: null, // Disabled due to cache issues with real server
-        mcpArgs: {
-          userIdOrEmail: this.testUsername,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/user?username=${this.testUsername}`,
@@ -306,8 +268,6 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '2-8',
         name: 'Get Current User',
-        mcpTool: null, // No current user tool
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/myself',
@@ -324,8 +284,6 @@ export class SharedJiraTestCases {
         testNumber: 9,
         fullId: '2-9',
         name: 'Get Priorities',
-        mcpTool: null, // No priorities tool
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/priority',
@@ -342,8 +300,6 @@ export class SharedJiraTestCases {
         testNumber: 10,
         fullId: '2-10',
         name: 'Get Statuses',
-        mcpTool: null, // No statuses tool
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/status',
@@ -360,8 +316,6 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '2-11',
         name: 'Get Issue Types',
-        mcpTool: null, // No issue types tool
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/issuetype',
@@ -386,8 +340,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '3-1',
         name: 'Get Issue Edit Meta',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/editmeta`,
@@ -404,10 +356,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '3-2',
         name: 'Get Issue Worklog',
-        mcpTool: 'jira_get_worklog',
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/worklog`,
@@ -424,10 +372,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '3-3',
         name: 'Get Create Meta',
-        mcpTool: 'jira_get_create_meta',
-        mcpArgs: {
-          projectKeys: [this.testProjectKey],
-        },
         directApi: {
           method: 'GET',
           endpoint: '/issue/createmeta',
@@ -452,11 +396,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '4-1',
         name: 'JQL Search GET',
-        mcpTool: 'jira_search_issues', // using the same MCP tool
-        mcpArgs: {
-          jql: `project = ${this.testProjectKey}`,
-          maxResults: 5,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/search?jql=project=${this.testProjectKey}&maxResults=5`,
@@ -481,8 +420,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '5-1',
         name: 'Get All Projects',
-        mcpTool: 'jira_get_projects',
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/project',
@@ -499,8 +436,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '5-2',
         name: 'Get Project Statuses',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}/statuses`,
@@ -525,10 +460,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '6-1',
         name: 'Get User by Username',
-        mcpTool: 'jira_get_user_profile',
-        mcpArgs: {
-          username: this.testUsername,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/user?username=${this.testUsername}`,
@@ -545,10 +476,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '6-2',
         name: 'Search Users by Username',
-        mcpTool: 'jira_search_users',
-        mcpArgs: {
-          username: this.testUsername,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/user/search?username=${this.testUsername}`,
@@ -565,8 +492,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '6-3',
         name: 'Get Assignable Users',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: `/user/assignable/search?project=${this.testProjectKey}&username=${this.testUsername}`,
@@ -591,8 +516,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '7-1',
         name: 'Get Fields',
-        mcpTool: 'jira_get_fields',
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/field',
@@ -609,8 +532,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '7-2',
         name: 'Get Resolutions',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/resolution',
@@ -627,8 +548,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '7-3',
         name: 'Get Project Roles',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/role',
@@ -645,8 +564,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '7-4',
         name: 'Get Issue Link Types',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/issueLinkType',
@@ -672,14 +589,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '8-1',
         name: 'Create Issue',
-        mcpTool: 'jira_create_issue',
-        mcpArgs: {
-          project: this.testProjectKey,
-          issueType: TEST_ISSUE_TYPE_NAME,
-          summary: 'Test Issue Created by MCP Client',
-          description: 'This issue was created during MCP integration testing',
-          labels: ['mcp-test', 'automated'],
-        },
         directApi: {
           method: 'POST',
           endpoint: '/issue',
@@ -709,11 +618,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '8-2',
         name: 'Add Comment',
-        mcpTool: 'jira_add_comment',
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-          body: 'This comment was added by MCP test client',
-        },
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/comment`,
@@ -733,12 +637,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '8-3',
         name: 'Update Issue',
-        mcpTool: 'jira_update_issue',
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-          summary: `Updated Test Issue - ${new Date().toISOString()}`,
-          description: 'Updated description for MCP testing',
-        },
         directApi: {
           method: 'PUT',
           endpoint: `/issue/${this.testIssueKey}`,
@@ -760,12 +658,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '8-4',
         name: 'Add Worklog',
-        mcpTool: 'jira_add_worklog',
-        mcpArgs: {
-          issueKey: this.testIssueKey,
-          timeSpent: '2h',
-          comment: 'MCP test worklog entry',
-        },
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/worklog`,
@@ -792,8 +684,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '8-5',
         name: 'Create Version',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'POST',
           endpoint: '/version',
@@ -820,8 +710,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '8-6',
         name: 'Update Version',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'PUT',
           endpoint: '/version/{versionId}', // will be replaced at runtime
@@ -842,8 +730,6 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '8-7',
         name: 'Get Version',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/version/{versionId}', // will be replaced at runtime
@@ -861,8 +747,6 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '8-8',
         name: 'Create Issue Link',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'POST',
           endpoint: '/issueLink',
@@ -895,8 +779,6 @@ export class SharedJiraTestCases {
         testNumber: 9,
         fullId: '8-9',
         name: 'Create Remote Link',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/remotelink`,
@@ -919,8 +801,6 @@ export class SharedJiraTestCases {
         testNumber: 10,
         fullId: '8-10',
         name: 'Get Remote Links',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: `/issue/${this.testIssueKey}/remotelink`,
@@ -937,8 +817,6 @@ export class SharedJiraTestCases {
         testNumber: 11,
         fullId: '8-11',
         name: 'Delete Remote Link',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'DELETE',
           endpoint: `/issue/${this.testIssueKey}/remotelink/{remoteLinkId}`, // will be replaced at runtime
@@ -958,8 +836,6 @@ export class SharedJiraTestCases {
         name: 'Delete Issue',
         requiresSetup: true, // ВАЖНО: Требует создания временной задачи!
         setupNote: 'This test requires creating a temporary issue first',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'DELETE',
           endpoint: '/issue/{tempIssueKey}', // will be replaced with created issue key
@@ -976,8 +852,6 @@ export class SharedJiraTestCases {
         testNumber: 13,
         fullId: '8-13',
         name: 'Delete Version',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'DELETE',
           endpoint: '/version/{versionId}', // will be replaced at runtime
@@ -994,8 +868,6 @@ export class SharedJiraTestCases {
         testNumber: 14,
         fullId: '8-14',
         name: 'Delete Issue Link',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'DELETE',
           endpoint: '/issueLink/{linkId}', // will be replaced at runtime with actual link ID
@@ -1020,8 +892,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '9-1',
         name: 'Get Agile Boards',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/rest/agile/1.0/board',
@@ -1038,8 +908,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '9-2',
         name: 'Get Board Sprints',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/rest/agile/1.0/board/{boardId}/sprint', // will be replaced at runtime
@@ -1057,8 +925,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '9-3',
         name: 'Get Board Issues',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/rest/agile/1.0/board/{boardId}/issue', // will be replaced at runtime
@@ -1084,8 +950,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '10-1',
         name: 'Create Attachment',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'POST',
           endpoint: `/issue/${this.testIssueKey}/attachments`,
@@ -1111,8 +975,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '10-2',
         name: 'Get Attachment Sample',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/attachment/{attachmentId}', // returns attachment metadata
@@ -1130,8 +992,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '10-3',
         name: 'Delete Attachment',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'DELETE',
           endpoint: '/attachment/{attachmentId}', // will be replaced at runtime
@@ -1149,8 +1009,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '10-4',
         name: 'Get Dashboards',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/dashboard',
@@ -1167,8 +1025,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '10-5',
         name: 'Get Favourite Filters',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/filter/favourite',
@@ -1185,8 +1041,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '10-6',
         name: 'Get Groups Picker',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/groups/picker',
@@ -1203,8 +1057,6 @@ export class SharedJiraTestCases {
         testNumber: 7,
         fullId: '10-7',
         name: 'Get Notification Schemes',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/notificationscheme',
@@ -1221,8 +1073,6 @@ export class SharedJiraTestCases {
         testNumber: 8,
         fullId: '10-8',
         name: 'Get Permission Schemes',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/permissionscheme',
@@ -1239,8 +1089,6 @@ export class SharedJiraTestCases {
         testNumber: 9,
         fullId: '10-9',
         name: 'Get Workflows',
-        mcpTool: null, // no MCP tool available
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/workflow',
@@ -1265,8 +1113,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '11-1',
         name: 'Get Project Workflow Scheme',
-        mcpTool: null,
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}/workflowscheme`,
@@ -1283,8 +1129,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '11-2',
         name: 'Get Workflow Scheme by ID',
-        mcpTool: null,
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/workflowscheme/{workflowSchemeId}',
@@ -1302,8 +1146,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '11-3',
         name: 'Get Workflow Scheme Default',
-        mcpTool: null,
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/workflowscheme/{workflowSchemeId}/default',
@@ -1321,8 +1163,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '11-4',
         name: 'Create Workflow Scheme Draft',
-        mcpTool: null,
-        mcpArgs: {},
         directApi: {
           method: 'POST',
           endpoint: '/workflowscheme/{workflowSchemeId}/createdraft',
@@ -1340,8 +1180,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '11-5',
         name: 'Get Workflow Scheme Draft',
-        mcpTool: null,
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/workflowscheme/{workflowSchemeId}/draft',
@@ -1359,8 +1197,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '11-6',
         name: 'Delete Workflow Scheme Draft',
-        mcpTool: null,
-        mcpArgs: {},
         directApi: {
           method: 'DELETE',
           endpoint: '/workflowscheme/{workflowSchemeId}/draft',
@@ -1439,8 +1275,6 @@ export class SharedJiraTestCases {
         testNumber: 1,
         fullId: '13-1',
         name: 'Get Server Info',
-        mcpTool: 'health_check',
-        mcpArgs: { detailed: true },
         directApi: {
           method: 'GET',
           endpoint: '/serverInfo',
@@ -1456,10 +1290,6 @@ export class SharedJiraTestCases {
         testNumber: 2,
         fullId: '13-2',
         name: 'Get Project Versions',
-        mcpTool: 'jira_get_project_versions',
-        mcpArgs: {
-          projectKey: this.testProjectKey,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}/versions`,
@@ -1474,10 +1304,6 @@ export class SharedJiraTestCases {
         testNumber: 3,
         fullId: '13-3',
         name: 'Get Project Components',
-        mcpTool: 'jira_get_project_components',
-        mcpArgs: {
-          projectKey: this.testProjectKey,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/project/${this.testProjectKey}/components`,
@@ -1492,10 +1318,6 @@ export class SharedJiraTestCases {
         testNumber: 4,
         fullId: '13-4',
         name: 'Search Users',
-        mcpTool: 'jira_search_users',
-        mcpArgs: {
-          username: this.testUsername,
-        },
         directApi: {
           method: 'GET',
           endpoint: `/user/search?username=${this.testUsername}`,
@@ -1510,8 +1332,6 @@ export class SharedJiraTestCases {
         testNumber: 5,
         fullId: '13-5',
         name: 'Get Fields',
-        mcpTool: 'jira_get_fields',
-        mcpArgs: {},
         directApi: {
           method: 'GET',
           endpoint: '/field',
@@ -1526,10 +1346,6 @@ export class SharedJiraTestCases {
         testNumber: 6,
         fullId: '13-6',
         name: 'Get Create Meta',
-        mcpTool: 'jira_get_create_meta',
-        mcpArgs: {
-          projectKeys: [this.testProjectKey],
-        },
         directApi: {
           method: 'GET',
           endpoint: '/issue/createmeta',
@@ -1544,56 +1360,23 @@ export class SharedJiraTestCases {
   }
 
   /**
-   * Get all available test cases by categories
-   */
-  getAllTestCasesByCategory () {
-    return {
-      system: this.getSystemTestCases(),
-      informational: this.getInformationalTestCases(),
-      issueDetailed: this.getIssueDetailedTestCases(),
-      searchDetailed: this.getSearchDetailedTestCases(),
-      projectDetailed: this.getProjectDetailedTestCases(),
-      userDetailed: this.getUserDetailedTestCases(),
-      metadataDetailed: this.getMetadataDetailedTestCases(),
-      modifying: this.getModifyingTestCases(),
-      agile: this.getAgileTestCases(),
-      additional: this.getAdditionalTestCases(),
-      workflowSchemes: this.getWorkflowSchemesTestCases(),
-      cascade: this.getCascadeTestCases(), // Note where it runs
-      extended: this.getExtendedTestCases(), // Note where it runs
-    };
-  }
-
-  /**
-   * Get all available test cases (legacy format for compatibility)
-   */
-  getAllTestCases () {
-    return {
-      informational: this.getInformationalTestCases(),
-      modifying: this.getModifyingTestCases(),
-      extended: this.getExtendedTestCases(),
-    };
-  }
-
-  /**
    * Get flat list of all test cases
    */
   getAllTestCasesFlat () {
-    const allTestCases = this.getAllTestCasesByCategory();
     return [
-      ...allTestCases.system,
-      ...allTestCases.informational,
-      ...allTestCases.issueDetailed,
-      ...allTestCases.searchDetailed,
-      ...allTestCases.projectDetailed,
-      ...allTestCases.userDetailed,
-      ...allTestCases.metadataDetailed,
-      ...allTestCases.modifying,
-      ...allTestCases.agile,
-      ...allTestCases.additional,
-      ...allTestCases.workflowSchemes,
+      ...this.getSystemTestCases(),
+      ...this.getInformationalTestCases(),
+      ...this.getIssueDetailedTestCases(),
+      ...this.getSearchDetailedTestCases(),
+      ...this.getProjectDetailedTestCases(),
+      ...this.getUserDetailedTestCases(),
+      ...this.getMetadataDetailedTestCases(),
+      ...this.getModifyingTestCases(),
+      ...this.getAgileTestCases(),
+      ...this.getAdditionalTestCases(),
+      ...this.getWorkflowSchemesTestCases(),
       // cascade tests are handled separately
-      ...allTestCases.extended,
+      ...this.getExtendedTestCases(),
     ];
   }
 
@@ -1605,28 +1388,6 @@ export class SharedJiraTestCases {
     return names.map(name =>
       allTestCases.find(tc => tc.name === name),
     ).filter(Boolean);
-  }
-
-  /**
-   * Get test cases for quick run (minimal set)
-   */
-  getTestCasesForQuickRun () {
-    return this.getMinimalTestCases();
-  }
-
-  /**
-   * Get test cases for complete run (~62 tests)
-   */
-  getTestCasesForFullRun () {
-    return this.getAllTestCasesFlat();
-  }
-
-  /**
-   * Get test cases by category
-   */
-  getTestCasesByCategory (category) {
-    const allTestCases = this.getAllTestCasesByCategory();
-    return allTestCases[category] || [];
   }
 
   /**
@@ -1645,221 +1406,6 @@ export class SharedJiraTestCases {
       modifying.find(tc => tc.name === 'Add Comment'),
     ].filter(Boolean);
   }
-
-  /**
-   * Get created resources for cleanup
-   */
-  getCreatedResources () {
-    return this.createdResources;
-  }
-
-  /**
-   * Clear created resources
-   */
-  clearCreatedResources () {
-    this.createdResources = {
-      issues: [],
-      versions: [],
-      links: [],
-    };
-  }
-
-  // ========== GROUPED TEST MANAGEMENT METHODS ==========
-
-  /**
-   * Get test by full ID (format N-M)
-   */
-  getTestByFullId (fullId) {
-    const allTestCases = this.getAllTestCasesFlat();
-    return allTestCases.find(tc => tc.fullId === fullId);
-  }
-
-  /**
-   * Get all tests in group
-   */
-  getTestsByGroup (groupNumber) {
-    const allTestCases = this.getAllTestCasesFlat();
-    return allTestCases.filter(tc => tc.groupNumber === groupNumber);
-  }
-
-  /**
-   * Get group information
-   */
-  getGroupInfo (groupNumber) {
-    return GROUP_INFO[groupNumber] || null;
-  }
-
-  /**
-   * Get all groups with their information
-   */
-  getAllGroupInfo () {
-    return GROUP_INFO;
-  }
-
-  /**
-   * Validate test ID uniqueness
-   */
-  validateTestIds () {
-    const allTestCases = this.getAllTestCasesFlat();
-    const idCounts = new Map();
-    const duplicates = [];
-
-    // Count occurrence of each ID
-    allTestCases.forEach(tc => {
-      if (tc.fullId) {
-        const count = idCounts.get(tc.fullId) || 0;
-        idCounts.set(tc.fullId, count + 1);
-        if (count === 1) {
-          duplicates.push(tc.fullId);
-        }
-      }
-    });
-
-    // Also check fullId format compliance N-M
-    const invalidFormats = allTestCases
-      .filter(tc => tc.fullId && !/^\d+-\d+$/.test(tc.fullId))
-      .map(tc => tc.fullId);
-
-    return {
-      isValid: duplicates.length === 0 && invalidFormats.length === 0,
-      duplicates,
-      invalidFormats,
-      totalTests: allTestCases.length,
-      testsWithIds: allTestCases.filter(tc => tc.fullId).length,
-    };
-  }
-
-  /**
-   * Parse test selection command (format --tests=1-1,4-*,5)
-   */
-  parseTestSelection (testsString) {
-    if (!testsString) {
-      return { includeAll: true, selections: [] };
-    }
-
-    const selections = [];
-    const parts = testsString.split(',').map(s => s.trim()).filter(Boolean);
-
-    for (const part of parts) {
-      if (part.includes('-')) {
-        const [groupStr, testStr] = part.split('-', 2);
-        const groupNumber = parseInt(groupStr);
-
-        if (isNaN(groupNumber)) {
-          throw new Error(`Invalid group number: ${groupStr}`);
-        }
-
-        if (testStr === '*') {
-          // Entire group: 4-*
-          selections.push({
-            type: 'group',
-            groupNumber,
-            testNumber: null,
-          });
-        } else {
-          const testNumber = parseInt(testStr);
-          if (isNaN(testNumber)) {
-            throw new Error(`Invalid test number: ${testStr}`);
-          }
-          // Specific test: 1-1
-          selections.push({
-            type: 'test',
-            groupNumber,
-            testNumber,
-            fullId: `${groupNumber}-${testNumber}`,
-          });
-        }
-      } else {
-        // Only group number: 5 (equivalent to 5-*)
-        const groupNumber = parseInt(part);
-        if (isNaN(groupNumber)) {
-          throw new Error(`Invalid group number: ${part}`);
-        }
-        selections.push({
-          type: 'group',
-          groupNumber,
-          testNumber: null,
-        });
-      }
-    }
-
-    return {
-      includeAll: false,
-      selections,
-    };
-  }
-
-  /**
-   * Filter tests based on user selection
-   */
-  getTestsBySelection (testsString) {
-    const selection = this.parseTestSelection(testsString);
-
-    if (selection.includeAll) {
-      return this.getAllTestCasesFlat();
-    }
-
-    const allTestCases = this.getAllTestCasesFlat();
-    const selectedTests = [];
-
-    for (const sel of selection.selections) {
-      if (sel.type === 'group') {
-        // Adding all tests from group
-        const groupTests = allTestCases.filter(tc => tc.groupNumber === sel.groupNumber);
-        selectedTests.push(...groupTests);
-      } else if (sel.type === 'test') {
-        // Adding specific test
-        const test = allTestCases.find(tc => tc.fullId === sel.fullId);
-        if (test) {
-          selectedTests.push(test);
-        }
-      }
-    }
-
-    // Remove duplicates by fullId
-    const uniqueTests = selectedTests.filter((test, index, arr) =>
-      arr.findIndex(t => t.fullId === test.fullId) === index,
-    );
-
-    return uniqueTests;
-  }
-
-  /**
-   * Get statistics by groups
-   */
-  getGroupStatistics () {
-    const allTestCases = this.getAllTestCasesFlat();
-    const groupStats = {};
-
-    // Initialize statistics for all groups
-    Object.keys(GROUP_INFO).forEach(groupNum => {
-      groupStats[groupNum] = {
-        groupNumber: parseInt(groupNum),
-        groupName: GROUP_INFO[groupNum].name,
-        totalTests: 0,
-        testsWithMcp: 0,
-        testsWithDirectApi: 0,
-      };
-    });
-
-    // Calculate statistics
-    allTestCases.forEach(tc => {
-      if (tc.groupNumber && groupStats[tc.groupNumber]) {
-        groupStats[tc.groupNumber].totalTests++;
-        if (tc.mcpTool) {
-          groupStats[tc.groupNumber].testsWithMcp++;
-        }
-        if (tc.directApi) {
-          groupStats[tc.groupNumber].testsWithDirectApi++;
-        }
-      }
-    });
-
-    return groupStats;
-  }
 }
-
-
-
 
 export default SharedJiraTestCases;
