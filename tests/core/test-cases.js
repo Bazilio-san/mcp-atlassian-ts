@@ -1220,7 +1220,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.CASCADE,
         testNumber: 1,
-        fullId: '12-1',
+        fullId: '13-1',
         name: 'Complete Issue Modification Workflow',
         description: 'Complete issue lifecycle: creation, modification, adding comment, worklog, cleanup',
         type: 'cascade',
@@ -1235,7 +1235,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.CASCADE,
         testNumber: 2,
-        fullId: '12-2',
+        fullId: '13-2',
         name: 'Version Management Workflow',
         description: 'Creating, updating and getting project version',
         type: 'cascade',
@@ -1249,7 +1249,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.CASCADE,
         testNumber: 3,
-        fullId: '12-3',
+        fullId: '13-3',
         name: 'Issue Linking Workflow',
         description: 'Creating two issues and linking them together',
         type: 'cascade',
@@ -1273,7 +1273,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 1,
-        fullId: '13-1',
+        fullId: '12-1',
         name: 'Get Server Info',
         directApi: {
           method: 'GET',
@@ -1288,7 +1288,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 2,
-        fullId: '13-2',
+        fullId: '12-2',
         name: 'Get Project Versions',
         directApi: {
           method: 'GET',
@@ -1302,7 +1302,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 3,
-        fullId: '13-3',
+        fullId: '12-3',
         name: 'Get Project Components',
         directApi: {
           method: 'GET',
@@ -1316,7 +1316,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 4,
-        fullId: '13-4',
+        fullId: '12-4',
         name: 'Search Users',
         directApi: {
           method: 'GET',
@@ -1330,7 +1330,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 5,
-        fullId: '13-5',
+        fullId: '12-5',
         name: 'Get Fields',
         directApi: {
           method: 'GET',
@@ -1344,7 +1344,7 @@ export class SharedJiraTestCases {
       {
         groupNumber: TEST_GROUPS.EXTENDED,
         testNumber: 6,
-        fullId: '13-6',
+        fullId: '12-6',
         name: 'Get Create Meta',
         directApi: {
           method: 'GET',

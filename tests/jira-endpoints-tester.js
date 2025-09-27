@@ -735,22 +735,8 @@ class JiraDirectApiExecutor extends BaseTestExecutor {
     console.log(`📦 Test Issue Key: ${this.testIssueKey}`);
     console.log(`📦 Test Second Issue Key: ${TEST_SECOND_ISSUE_KEY}`);
 
-    // Get all test cases
-    const o = this.sharedTestCases;
-    const allTestCases = [
-      ...o.getSystemTestCases(),
-      ...o.getInformationalTestCases(),
-      ...o.getIssueDetailedTestCases(),
-      ...o.getSearchDetailedTestCases(),
-      ...o.getProjectDetailedTestCases(),
-      ...o.getUserDetailedTestCases(),
-      ...o.getMetadataDetailedTestCases(),
-      ...o.getModifyingTestCases(),
-      ...o.getAgileTestCases(),
-      ...o.getAdditionalTestCases(),
-      ...o.getWorkflowSchemesTestCases(),
-      ...o.getExtendedTestCases(),
-    ];
+    // Get all test cases using the centralized method
+    const allTestCases = this.sharedTestCases.getAllTestCasesFlat();
 
     // Apply test filter if specified
     let testCases = allTestCases;
