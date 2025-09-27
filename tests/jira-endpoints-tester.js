@@ -10,9 +10,8 @@ import fetch from 'node-fetch';
 import { appConfig } from '../dist/src/bootstrap/init-config.js';
 import ResourceManager from './core/resource-manager.js';
 import CascadeExecutor from './core/cascade-executor.js';
-import TestValidationUtils from './core/test-validation-utils.js';
 import ValidationEngine from './core/validation-engine.js';
-import TestReporter from './core/test-reporter.js';
+import { TestReporter } from './core/test-reporter.js';
 import { apiResponseLogger } from './core/api-response-logger.js';
 import SharedJiraTestCases from './core/test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
@@ -36,7 +35,7 @@ const {
  * Self-contained class for testing JIRA API endpoints
  */
 class JiraDirectApiExecutor {
-  constructor(config = {}) {
+  constructor (config = {}) {
     // Initialize base properties (copied from BaseTestExecutor)
     this.config = config;
     this.results = [];
@@ -89,7 +88,7 @@ class JiraDirectApiExecutor {
    * Set resource manager for tracking created resources
    * (copied from BaseTestExecutor)
    */
-  setResourceManager(resourceManager) {
+  setResourceManager (resourceManager) {
     this.resourceManager = resourceManager;
   }
 
@@ -97,13 +96,13 @@ class JiraDirectApiExecutor {
    * Common execution logic for shared test cases
    * (copied from BaseTestExecutor)
    */
-  async runSharedTestCase(testCase) {
+  async runSharedTestCase (testCase) {
     const startTime = Date.now();
     let result = {
       testId: testCase.fullId || testCase.id,
       name: testCase.name,
       category: testCase.category,
-      source: this.getSourceType(),
+      source: 'direct',
       status: 'pending',
       duration: 0,
       error: null,
@@ -129,11 +128,7 @@ class JiraDirectApiExecutor {
         this.stats.skipped++;
       } else {
         // Validate the response
-        const validation = ValidationEngine.validateResponse(
-          response,
-          testCase,
-          this.getSourceType()
-        );
+        const validation = ValidationEngine.validateDirectApiResponse(response, testCase);
 
         result.status = validation.passed ? 'passed' : 'failed';
         result.response = response;
@@ -163,7 +158,7 @@ class JiraDirectApiExecutor {
    * Run tests by category
    * (copied from BaseTestExecutor)
    */
-  async runTestsByCategory(category, testCases) {
+  async runTestsByCategory (category, testCases) {
     const categoryTests = testCases.filter(test => test.category === category);
 
     console.log(`\n📂 Running ${category} tests (${categoryTests.length} tests)`);
@@ -178,8 +173,8 @@ class JiraDirectApiExecutor {
       // Print result inline
       const statusSymbol =
         result.status === 'passed' ? '✅' :
-        result.status === 'failed' ? '❌' :
-        '⏭️';
+          result.status === 'failed' ? '❌' :
+            '⏭️';
 
       if (showDetails) {
         // Format test name with fixed width of 50 characters
@@ -215,28 +210,24 @@ class JiraDirectApiExecutor {
    * Generate final report
    * (copied from BaseTestExecutor)
    */
-  generateReport() {
+  generateReport () {
     this.stats.endTime = Date.now();
     if (this.stats.startTime) {
       this.stats.duration = this.stats.endTime - this.stats.startTime;
     }
 
-    return TestReporter.generateSummary({
-      results: this.results,
-      stats: this.stats,
-      source: this.getSourceType(),
-    });
+    return TestReporter.generateSummary({ results: this.results, stats: this.stats });
   }
 
   /**
    * Run all tests with provided test cases
    * (copied from BaseTestExecutor)
    */
-  async runAllTests(testCases) {
+  async runAllTests (testCases) {
     // Small delay first to let Node.js warnings appear
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    console.log(`\n🚀 Starting ${this.getSourceType().toUpperCase()} Test Execution`);
+    console.log(`\n🚀 Starting Test Execution`);
     console.log('═'.repeat(60));
 
     this.stats.startTime = Date.now();
@@ -268,13 +259,13 @@ class JiraDirectApiExecutor {
   /**
    * Parse X-Headers from environment
    */
-  parseTestXHeaders() {
+  parseTestXHeaders () {
     const headers = {};
     // Parse TEST_ADD_X_HEADER (key:value format)
     const testAddHeader = process.env.TEST_ADD_X_HEADER;
     if (testAddHeader) {
-      const [key, value] = testAddHeader.split(":");
-      if (key && value && key.toLowerCase().startsWith("x-")) {
+      const [key, value] = testAddHeader.split(':');
+      if (key && value && key.toLowerCase().startsWith('x-')) {
         headers[key] = value;
         console.log(`📝 Added custom header: ${key}: ${value}`);
       }
@@ -290,7 +281,7 @@ class JiraDirectApiExecutor {
   /**
    * Create temporary issue for testing deletion
    */
-  async createTemporaryIssue() {
+  async createTemporaryIssue () {
     const createIssueBody = {
       fields: {
         project: { key: this.testProjectKey },
@@ -329,8 +320,8 @@ class JiraDirectApiExecutor {
       }
 
       const errorMsg = data.errorMessages ? data.errorMessages.join(', ') :
-                       (data.errors ? JSON.stringify(data.errors) :
-                       (typeof data === 'string' ? data : 'Unknown error'));
+        (data.errors ? JSON.stringify(data.errors) :
+          (typeof data === 'string' ? data : 'Unknown error'));
       return { success: false, error: errorMsg };
     } catch (error) {
       return { success: false, error: error.message };
@@ -340,7 +331,7 @@ class JiraDirectApiExecutor {
   /**
    * Create test attachment for issue
    */
-  async createTestAttachment(issueKey) {
+  async createTestAttachment (issueKey) {
     // Create multipart form data with boundary
     const boundary = '----FormBoundary' + Math.random().toString(36).substring(7);
 
@@ -351,14 +342,14 @@ class JiraDirectApiExecutor {
       'Content-Type: text/plain',
       '',
       'This is a test file content for JIRA attachment testing',
-      `------${boundary}--`
+      `------${boundary}--`,
     ].join('\r\n');
 
     const url = `${this.baseUrl}/rest/api/2/issue/${issueKey}/attachments`;
     const headers = {
       ...this.getHeaders(),
       'Content-Type': `multipart/form-data; boundary=----${boundary}`,
-      'X-Atlassian-Token': 'no-check'
+      'X-Atlassian-Token': 'no-check',
     };
 
     // Remove the default Content-Type header that was set to application/json
@@ -368,7 +359,7 @@ class JiraDirectApiExecutor {
     const options = {
       method: 'POST',
       headers,
-      body
+      body,
     };
 
     try {
@@ -395,7 +386,7 @@ class JiraDirectApiExecutor {
       return {
         success: false,
         status: response.status,
-        error: data?.errorMessages?.join(', ') || `Status ${response.status}`
+        error: data?.errorMessages?.join(', ') || `Status ${response.status}`,
       };
     } catch (error) {
       return { success: false, error: error.message };
@@ -405,13 +396,13 @@ class JiraDirectApiExecutor {
   /**
    * Get remote links for issue and return first link ID
    */
-  async getRemoteLinkId(issueKey) {
+  async getRemoteLinkId (issueKey) {
     const url = `${this.baseUrl}/rest/api/2/issue/${issueKey}/remotelink`;
     const headers = this.getHeaders();
 
     const options = {
       method: 'GET',
-      headers
+      headers,
     };
 
     try {
@@ -442,7 +433,7 @@ class JiraDirectApiExecutor {
   /**
    * Clean up remote links for test issue, keeping only one
    */
-  async cleanupRemoteLinks() {
+  async cleanupRemoteLinks () {
     try {
       // Get all remote links for the test issue
       const url = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/remotelink`;
@@ -450,7 +441,7 @@ class JiraDirectApiExecutor {
 
       const getOptions = {
         method: 'GET',
-        headers
+        headers,
       };
 
       const response = await fetch(url, getOptions);
@@ -477,7 +468,7 @@ class JiraDirectApiExecutor {
             const deleteUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/remotelink/${link.id}`;
             const deleteOptions = {
               method: 'DELETE',
-              headers
+              headers,
             };
 
             const deleteResponse = await fetch(deleteUrl, deleteOptions);
@@ -513,13 +504,13 @@ class JiraDirectApiExecutor {
   /**
    * Get Scrum board ID from available boards
    */
-  async getScrumBoardId() {
+  async getScrumBoardId () {
     const url = `${this.baseUrl}/rest/agile/1.0/board`;
     const headers = this.getHeaders();
 
     const options = {
       method: 'GET',
-      headers
+      headers,
     };
 
     try {
@@ -557,7 +548,7 @@ class JiraDirectApiExecutor {
   /**
    * Get headers for API request
    */
-  getHeaders() {
+  getHeaders () {
     const headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -577,7 +568,7 @@ class JiraDirectApiExecutor {
   /**
    * Execute a test case (implementation of abstract method)
    */
-  async executeTestCase(testCase) {
+  async executeTestCase (testCase) {
     // Skip tests without direct API configuration
     if (!testCase.directApi) {
       return {
@@ -838,7 +829,7 @@ class JiraDirectApiExecutor {
           finalEndpoint,
           response.status,
           data,
-          finalHeaders
+          finalHeaders,
         );
       }
 
@@ -858,7 +849,7 @@ class JiraDirectApiExecutor {
   /**
    * Track created resources for cleanup
    */
-  trackCreatedResource(testCase, responseData) {
+  trackCreatedResource (testCase, responseData) {
     if (!isObj(responseData) || !testCase.fullId) {
       return;
     }
@@ -892,23 +883,16 @@ class JiraDirectApiExecutor {
       // Created workflow scheme
       this.createdResources.workflowSchemes.push({
         id: responseData.id,
-        name: responseData.name
+        name: responseData.name,
       });
       this.resourceManager.trackWorkflowScheme(responseData.id, responseData.name);
     }
   }
 
   /**
-   * Get source type (implementation of abstract method)
-   */
-  getSourceType() {
-    return 'direct';
-  }
-
-  /**
    * Run single test case (for cascade executor)
    */
-  async runTestCase(testCase) {
+  async runTestCase (testCase) {
     const result = await this.executeTestCase(testCase);
 
     // Convert to format expected by cascade executor
@@ -916,14 +900,14 @@ class JiraDirectApiExecutor {
       success: !result.skipped && (result.status === 200 || result.status === 201 || result.status === 204),
       data: result.data,
       status: result.status,
-      error: result.error || result.reason
+      error: result.error || result.reason,
     };
   }
 
   /**
    * Run all tests
    */
-  async runTests() {
+  async runTests () {
     console.log(`\n🔗 JIRA API URL: ${this.baseUrl}`);
     console.log(`📦 Authentication: ${this.auth.type}`);
     console.log(`📦 Test Project Key: ${this.testProjectKey}`);
@@ -951,7 +935,7 @@ class JiraDirectApiExecutor {
    * Check if test should run based on filter
    * (copied from BaseTestExecutor)
    */
-  shouldRunTest(testCase) {
+  shouldRunTest (testCase) {
     if (!this.testFilter) return true;
 
     // Support multiple filter formats
@@ -978,7 +962,7 @@ class JiraDirectApiExecutor {
   /**
    * Run cascade tests (special JIRA workflow tests)
    */
-  async runCascadeTests() {
+  async runCascadeTests () {
     console.log('\n🔄 Running Cascade Tests');
     console.log('─'.repeat(50));
 
@@ -989,7 +973,7 @@ class JiraDirectApiExecutor {
 
     const cascadeResults = await cascadeExecutor.executeCascade(
       cascadeTestCase,
-      this
+      this,
     );
 
     // Add cascade results to our results
@@ -999,17 +983,20 @@ class JiraDirectApiExecutor {
         this.results.push({
           testId: `cascade-${step.testCase}`,
           name: `${step.step}: ${step.testCase}`,
-          category: "Cascade",
-          source: "direct",
-          status: step.success ? "passed" : "failed",
+          category: 'Cascade',
+          source: 'direct',
+          status: step.success ? 'passed' : 'failed',
           error: step.error || null,
           response: step.result || null,
           duration: 0,
         });
 
         this.stats.total++;
-        if (step.success) this.stats.passed++;
-        else this.stats.failed++;
+        if (step.success) {
+          this.stats.passed++;
+        } else {
+          this.stats.failed++;
+        }
       });
     }
 
@@ -1020,7 +1007,7 @@ class JiraDirectApiExecutor {
 /**
  * Main execution
  */
-async function main() {
+async function main () {
   // Parse command line arguments
   const args = process.argv.slice(2);
   const config = {

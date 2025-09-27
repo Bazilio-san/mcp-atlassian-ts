@@ -7,14 +7,8 @@ class ValidationEngine {
   /**
    * Validate response based on source type
    */
-  static validateResponse(response, testCase, source) {
-    if (source === 'mcp') {
-      return this.validateMcpResponse(response, testCase);
-    } else if (source === 'direct' || source === 'test') {
-      return this.validateDirectApiResponse(response, testCase);
-    } else {
-      throw new Error(`Unknown source type: ${source}`);
-    }
+  static validateResponse(response, testCase) {
+    return this.validateDirectApiResponse(response, testCase);
   }
 
   /**
@@ -199,17 +193,6 @@ class ValidationEngine {
       }
     }
 
-    // MCP-specific validations
-    if (testCase.mcpValidation) {
-      const mcpValidation = this.validateMcpSpecific(data, testCase.mcpValidation);
-      if (!mcpValidation.valid) {
-        result.passed = false;
-        result.error = mcpValidation.error;
-        result.details.mcpSpecific = mcpValidation;
-        return result;
-      }
-    }
-
     return result;
   }
 
@@ -273,114 +256,6 @@ class ValidationEngine {
     }
 
     return result;
-  }
-
-  /**
-   * MCP-specific validation
-   */
-  static validateMcpSpecific(data, mcpValidation) {
-    const result = {
-      valid: true,
-      error: null,
-    };
-
-    // Validate tool response format
-    if (mcpValidation.toolResponseFormat) {
-      if (!data || typeof data !== 'object') {
-        result.valid = false;
-        result.error = 'Invalid MCP tool response format';
-        return result;
-      }
-    }
-
-    // Validate pagination
-    if (mcpValidation.pagination) {
-      if ('startAt' in data && typeof data.startAt !== 'number') {
-        result.valid = false;
-        result.error = 'Invalid pagination: startAt must be a number';
-        return result;
-      }
-      if ('maxResults' in data && typeof data.maxResults !== 'number') {
-        result.valid = false;
-        result.error = 'Invalid pagination: maxResults must be a number';
-        return result;
-      }
-    }
-
-    // Validate resource identifiers
-    if (mcpValidation.resourceId) {
-      const idField = mcpValidation.resourceId;
-      if (!data[idField]) {
-        result.valid = false;
-        result.error = `Missing resource identifier: ${idField}`;
-        return result;
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Compare responses between Direct API and MCP
-   */
-  static compareResponses(directResponse, mcpResponse, comparisonRules = {}) {
-    const comparison = {
-      equivalent: true,
-      differences: [],
-      details: {},
-    };
-
-    // Extract data from responses
-    const directData = directResponse.data || directResponse;
-    const mcpData = mcpResponse.result || mcpResponse;
-
-    // Compare basic structure
-    if (comparisonRules.structure) {
-      const directKeys = Object.keys(directData).sort();
-      const mcpKeys = Object.keys(mcpData).sort();
-
-      if (JSON.stringify(directKeys) !== JSON.stringify(mcpKeys)) {
-        comparison.equivalent = false;
-        comparison.differences.push('Different object structure');
-        comparison.details.structureDiff = {
-          direct: directKeys,
-          mcp: mcpKeys,
-        };
-      }
-    }
-
-    // Compare values
-    if (comparisonRules.values) {
-      for (const key of comparisonRules.values) {
-        if (directData[key] !== mcpData[key]) {
-          comparison.equivalent = false;
-          comparison.differences.push(`Value mismatch for ${key}`);
-          comparison.details[key] = {
-            direct: directData[key],
-            mcp: mcpData[key],
-          };
-        }
-      }
-    }
-
-    // Compare array lengths
-    if (comparisonRules.arrayLength) {
-      const directArray = directData.items || directData.results || directData;
-      const mcpArray = mcpData.items || mcpData.results || mcpData;
-
-      if (Array.isArray(directArray) && Array.isArray(mcpArray)) {
-        if (directArray.length !== mcpArray.length) {
-          comparison.equivalent = false;
-          comparison.differences.push('Different array lengths');
-          comparison.details.arrayLength = {
-            direct: directArray.length,
-            mcp: mcpArray.length,
-          };
-        }
-      }
-    }
-
-    return comparison;
   }
 }
 

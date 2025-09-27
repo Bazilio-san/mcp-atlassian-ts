@@ -1,3 +1,5 @@
+// noinspection UnnecessaryLocalVariableJS
+
 /**
  * Cascade Executor
  * Utilities for executing cascade operations (multi-step test workflows)
