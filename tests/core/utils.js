@@ -7,3 +7,4 @@ export const inclOneOf = (text, ...searches) => {
 
 export const isObj = (v) => v && typeof v === 'object';
 
+export const SJ = (s) => JSON.stringify(s, null, 2);

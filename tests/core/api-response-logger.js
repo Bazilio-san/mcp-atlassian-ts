@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { SJ } from './utils.js';
 
 /**
  * API Response Logger (Markdown format)
@@ -58,27 +59,32 @@ class ApiResponseLogger {
     }
 
     try {
-      const sanitizedData = this.sanitizeData(data);
-      const sanitizedResponse = this.sanitizeResponseBody(responseBody);
       const sanitizedHeaders = this.sanitizeHeaders(headers);
-
+      const triQ = '```';
       // Format as Markdown
-      let mdContent = ``;
-      mdContent += `${new Date().toISOString()}\n\n**test**: ${testId} / ${testName} \n`;
-      mdContent += `${method} ${url}\n\n`;
-      mdContent += `**httpStatusCode**: ${httpStatusCode}\n\n`;
+      const mdContent = `
+${new Date().toISOString()}
 
-      mdContent += `**data**: \n\`\`\`json\n`;
-      mdContent += sanitizedData ? JSON.stringify(sanitizedData, null, 4) : '';
-      mdContent += `\n\`\`\`\n\n`;
+**test**: ${testId} / ${testName}  
+${method} ${url}  
 
-      mdContent += `responseBody:\n\`\`\`json\n`;
-      mdContent += sanitizedResponse ? JSON.stringify(sanitizedResponse, null, 4) : '';
-      mdContent += `\n\`\`\`\n\n`;
+**httpStatusCode**: ${httpStatusCode}  
 
-      mdContent += `headers: \n\`\`\`json\n`;
-      mdContent += sanitizedHeaders ? JSON.stringify(sanitizedHeaders, null, 4) : '';
-      mdContent += `\n\`\`\`\n`;
+**headers**:
+${triQ}json
+${this.sanitizeHeaders(headers)}
+${triQ}
+
+**data**:   
+${triQ}json
+${this.sanitizeData(data)}
+${triQ}
+
+**responseBody**:
+${triQ}json
+${this.sanitizeResponseBody(responseBody)}
+${triQ}
+`;
 
       const filename = this.generateFilename(testId, testName);
       const filepath = path.join(this.logDir, filename);
@@ -158,10 +164,10 @@ class ApiResponseLogger {
       // Create a copy and remove sensitive fields
       const sanitized = JSON.parse(JSON.stringify(data));
       this.removeSensitiveFields(sanitized);
-      return sanitized;
+      return SJ(sanitized);
     }
 
-    return data;
+    return SJ(data);
   }
 
   /**
@@ -171,15 +177,14 @@ class ApiResponseLogger {
    */
   sanitizeResponseBody (responseBody) {
     if (!responseBody) {
-      return null;
+      return SJ(null);
     }
 
     if (typeof responseBody === 'string') {
       try {
         // Try to parse as JSON
         const parsed = JSON.parse(responseBody);
-        this.removeSensitiveFields(parsed);
-        return parsed;
+        return SJ(parsed);
       } catch {
         // Return as string if not JSON
         return responseBody;
@@ -188,11 +193,10 @@ class ApiResponseLogger {
 
     if (typeof responseBody === 'object') {
       const sanitized = JSON.parse(JSON.stringify(responseBody));
-      this.removeSensitiveFields(sanitized);
-      return sanitized;
+      return SJ(sanitized);
     }
 
-    return responseBody;
+    return SJ(responseBody);
   }
 
   /**
@@ -202,30 +206,9 @@ class ApiResponseLogger {
    */
   sanitizeHeaders (headers) {
     if (!headers || typeof headers !== 'object') {
-      return {};
+      return '{}';
     }
-
-    const sanitized = { ...headers };
-
-    // Remove sensitive headers
-    const sensitiveHeaders = [
-      'authorization',
-      'cookie',
-      'x-api-key',
-      'x-auth-token',
-      'x-access-token',
-    ];
-
-    sensitiveHeaders.forEach(header => {
-      const lowerHeader = header.toLowerCase();
-      Object.keys(sanitized).forEach(key => {
-        if (key.toLowerCase() === lowerHeader) {
-          sanitized[key] = '[REDACTED]';
-        }
-      });
-    });
-
-    return sanitized;
+    return SJ(headers);
   }
 
   /**

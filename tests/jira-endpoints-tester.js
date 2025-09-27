@@ -72,7 +72,6 @@ class JiraDirectApiExecutor {
 
     // Resource tracking
     this.resourceManager = new ResourceManager({ source: 'direct', verbose: config.verbose });
-    this.setResourceManager(this.resourceManager);
 
     // Track created resources
     this.createdResources = {
@@ -82,14 +81,6 @@ class JiraDirectApiExecutor {
       attachments: [],
       workflowSchemes: [],
     };
-  }
-
-  /**
-   * Set resource manager for tracking created resources
-   * (copied from BaseTestExecutor)
-   */
-  setResourceManager (resourceManager) {
-    this.resourceManager = resourceManager;
   }
 
   /**
@@ -579,7 +570,7 @@ class JiraDirectApiExecutor {
 
     // Handle tests that require setup (like Delete Issue)
     let tempIssueKey = null;
-    if (testCase.requiresSetup && testCase.fullId === '8-12') {
+    if (testCase.requiresSetup) {
       // If we have any created issues from previous tests, use the last one
       if (this.createdResources.issues.length > 0) {
         tempIssueKey = this.createdResources.issues[this.createdResources.issues.length - 1];
@@ -603,7 +594,7 @@ class JiraDirectApiExecutor {
     const { method, endpoint, data: body, headers: additionalHeaders = {} } = testCase.directApi;
 
     // Special handling for attachment creation test with requiresFile flag
-    if (testCase.requiresFile && testCase.fullId === '10-1') {
+    if (testCase.requiresFile) {
       // Set URL and HTTP method for diagnostics
       testCase.url = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/attachments`;
       testCase.httpMethod = 'POST';
@@ -635,7 +626,7 @@ class JiraDirectApiExecutor {
       if (this.createdResources.versions.length > 0) {
         versionId = this.createdResources.versions[this.createdResources.versions.length - 1];
         // If this is a delete operation, remove from tracking
-        if (testCase.fullId === '8-13' && testCase.directApi.method === 'DELETE') {
+        if (testCase.directApi.method === 'DELETE') {
           this.createdResources.versions.pop();
         }
       } else {
@@ -652,25 +643,23 @@ class JiraDirectApiExecutor {
     if (endpoint && endpoint.includes('{linkId}')) {
       // For link deletion, we need to fetch the actual link ID
       // Since JIRA doesn't return link ID on creation, we need to query for it
-      if (testCase.fullId === '8-14') {
-        // Try to get issue links and find the one we created
-        try {
-          const getLinksUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}?fields=issuelinks`;
-          const getLinksOptions = {
-            method: 'GET',
-            headers: this.getHeaders(),
-          };
-          const linksResponse = await fetch(getLinksUrl, getLinksOptions);
-          if (linksResponse.ok) {
-            const linksData = await linksResponse.json();
-            if (linksData.fields && linksData.fields.issuelinks && linksData.fields.issuelinks.length > 0) {
-              // Use the first link found
-              linkId = linksData.fields.issuelinks[0].id;
-            }
+      // Try to get issue links and find the one we created
+      try {
+        const getLinksUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}?fields=issuelinks`;
+        const getLinksOptions = {
+          method: 'GET',
+          headers: this.getHeaders(),
+        };
+        const linksResponse = await fetch(getLinksUrl, getLinksOptions);
+        if (linksResponse.ok) {
+          const linksData = await linksResponse.json();
+          if (linksData.fields && linksData.fields.issuelinks && linksData.fields.issuelinks.length > 0) {
+            // Use the first link found
+            linkId = linksData.fields.issuelinks[0].id;
           }
-        } catch (err) {
-          // Silent error - will fail with no link available message
         }
+      } catch (err) {
+        // Silent error - will fail with no link available message
       }
 
       if (!linkId) {
@@ -686,15 +675,13 @@ class JiraDirectApiExecutor {
     let remoteLinkId = null;
     if (endpoint && endpoint.includes('{remoteLinkId}')) {
       // For test 8-11, get remote link ID
-      if (testCase.fullId === '8-11') {
-        remoteLinkId = await this.getRemoteLinkId(this.testIssueKey);
-        if (!remoteLinkId) {
-          // Return as failed test if no remote link available
-          return {
-            status: 400,
-            data: { errorMessages: [`No remote link available for deletion. Run test 8-9 (Create Remote Link) first.`] },
-          };
-        }
+      remoteLinkId = await this.getRemoteLinkId(this.testIssueKey);
+      if (!remoteLinkId) {
+        // Return as failed test if no remote link available
+        return {
+          status: 400,
+          data: { errorMessages: [`No remote link available for deletion. Run test 8-9 (Create Remote Link) first.`] },
+        };
       }
     }
 
