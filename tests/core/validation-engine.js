@@ -1,6 +1,5 @@
 /**
  * Unified Validation Engine
- * Combines validation logic for Direct API and MCP responses
  */
 
 class ValidationEngine {
@@ -104,90 +103,6 @@ class ValidationEngine {
       if (response.data.length < testCase.minArrayLength) {
         result.passed = false;
         result.error = `Array length ${response.data.length} is less than minimum ${testCase.minArrayLength}`;
-        result.details.arrayLengthInsufficient = true;
-        return result;
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Validate MCP response
-   */
-  static validateMcpResponse(response, testCase) {
-    const result = {
-      passed: true,
-      details: {},
-      error: null,
-    };
-
-    // Check for MCP error
-    if (response && response.error) {
-      result.passed = false;
-      result.error = `MCP error: ${response.error}`;
-      result.details.mcpError = response.error;
-      return result;
-    }
-
-    // Extract result from MCP response structure
-    const data = response && response.result ? response.result : response;
-
-    // Check if response has required content
-    if (testCase.requiresData && !data) {
-      result.passed = false;
-      result.error = 'MCP response has no result';
-      result.details.noResult = true;
-      return result;
-    }
-
-    // Validate response structure
-    if (testCase.expectedProperties) {
-      const validation = this.validateProperties(data, testCase.expectedProperties);
-      if (!validation.valid) {
-        result.passed = false;
-        result.error = validation.error;
-        result.details.propertyValidation = validation;
-        return result;
-      }
-    }
-
-    // Custom validation function
-    if (testCase.validate && typeof testCase.validate === 'function') {
-      try {
-        const customValidation = testCase.validate(data);
-        if (!customValidation) {
-          result.passed = false;
-          result.error = 'Custom validation failed';
-          result.details.customValidation = false;
-        } else if (typeof customValidation === 'object') {
-          result.passed = customValidation.valid !== false;
-          result.error = customValidation.error;
-          result.details.customValidation = customValidation;
-        }
-      } catch (error) {
-        result.passed = false;
-        result.error = `Custom validation error: ${error.message}`;
-        result.details.customValidationError = error.message;
-      }
-    }
-
-    // Array validation for MCP responses
-    if (testCase.isArray) {
-      // MCP might wrap arrays in a result object
-      const arrayData = data.items || data.results || data;
-
-      if (!Array.isArray(arrayData)) {
-        result.passed = false;
-        result.error = 'Expected array in MCP response';
-        result.details.notArray = true;
-        return result;
-      }
-
-      // Minimum array length validation
-      if (testCase.minArrayLength && arrayData.length < testCase.minArrayLength) {
-        result.passed = false;
-        result.error = `Array length ${arrayData.length} is less than minimum ${testCase.minArrayLength}`;
         result.details.arrayLengthInsufficient = true;
         return result;
       }

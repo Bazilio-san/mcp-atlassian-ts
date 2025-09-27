@@ -1,6 +1,6 @@
 /**
  * Enhanced Resource Manager
- * Tracks and cleans up test resources for both Direct API and MCP testing
+ * Tracks and cleans up test resources
  */
 
 class ResourceManager {

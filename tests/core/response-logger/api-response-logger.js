@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SJ } from './utils.js';
+import { SJ } from '../utils.js';
 
 /**
  * API Response Logger (Markdown format)
@@ -120,33 +120,6 @@ ${triQ}
       responseBody,
       method,
       headers
-    );
-  }
-
-  /**
-   * Log MCP response to file
-   * @param {string} testId - Test ID
-   * @param {string} testName - Test name
-   * @param {string} toolName - MCP tool name
-   * @param {object} toolArgs - Tool arguments
-   * @param {number} httpStatusCode - HTTP status code
-   * @param {object} mcpResponse - MCP response
-   */
-  logMcpResponse (testId, testName, toolName, toolArgs, httpStatusCode, mcpResponse) {
-    if (!this.enabled) {
-      return;
-    }
-
-    const url = `/mcp/call/${toolName}`;
-    this.logResponse(
-      testId,
-      testName,
-      url,
-      { tool: toolName, arguments: toolArgs },
-      httpStatusCode,
-      mcpResponse,
-      'POST',
-      { 'Content-Type': 'application/json' },
     );
   }
 

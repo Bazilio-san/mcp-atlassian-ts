@@ -21,21 +21,6 @@ node tests/jira-endpoints-tester.js --tests=1-1,2-*,9
 node tests/jira-endpoints-tester.js --verbose
 ```
 
-### 2. Тесты MCP сервера
-```bash
-# Сначала запустить MCP сервер
-npm start
-
-# В другом терминале запустить тесты
-node tests/mcp-client-tests.js
-
-# С выборочными тестами
-node tests/mcp-client-tests.js --tests=1-*,2-1
-
-# С другим URL сервера
-node tests/mcp-client-tests.js --url=http://localhost:4000
-```
-
 ## Параметры
 - `--tests=X-Y` - запуск конкретных тестов (X - группа, Y - номер теста)
 - `--tests=X-*` - запуск всех тестов группы X

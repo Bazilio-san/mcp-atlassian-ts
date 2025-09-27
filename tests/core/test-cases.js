@@ -2,8 +2,7 @@
 
 /**
  * Shared JIRA API Test Cases
- * Implements common test cases for JIRA API validation that can be used
- * for both direct emulator testing and MCP server testing
+ * Implements common test cases for JIRA API validation
  */
 
 import { appConfig } from '../../dist/src/bootstrap/init-config.js';

@@ -2,7 +2,7 @@
 
 /**
  * JIRA API Emulator
- * Simple JIRA REST API emulator for MCP server testing
+ * Simple JIRA REST API emulator
  */
 
 import express from 'express';
