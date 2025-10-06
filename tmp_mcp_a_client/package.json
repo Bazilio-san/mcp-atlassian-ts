@@ -1,0 +1,19 @@
+{
+  "name": "mcp-atlassian-client",
+  "version": "1.0.0",
+  "description": "Client for connecting to MCP Atlassian server and extracting tool signatures",
+  "type": "module",
+  "main": "mcp-atlassian-client.js",
+  "scripts": {
+    "start": "node mcp-atlassian-client.js",
+    "extract": "node mcp-atlassian-extractor.js"
+  },
+  "dependencies": {
+    "eventsource": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {},
+  "author": "",
+  "license": "MIT"
+}

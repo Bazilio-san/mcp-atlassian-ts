@@ -1,0 +1,145 @@
+import { extractMCPMetadata } from './mcp-client.js';
+
+/**
+ * Test configuration for Atlassian MCP Server
+ * Uses SSE transport for connection
+ */
+const atlassianConfig = {
+  name: 'atlassian',
+  sse: {
+    url: 'https://mcp.atlassian.com/v1/sse',
+    // OAuth authentication will be handled by mcp-remote proxy
+    headers: {}
+  }
+};
+
+/**
+ * Test configuration for FINAM Trade API MCP Server
+ * Uses SSE transport for connection
+ */
+const finamConfig = {
+  name: 'finam-trade-api',
+  sse: {
+    url: 'https://mcp-finam-trade-api.bazilio.ru/sse',
+    headers: {
+      // Add your credentials here if needed
+      // 'Authorization': 'Bearer YOUR_SECRET_TOKEN',
+      // 'X-Finam-Account-Id': 'YOUR_ACCOUNT_ID'
+    }
+  }
+};
+
+/**
+ * Alternative: Using STDIO transport with npx mcp-remote proxy
+ * This configuration uses the mcp-remote proxy tool to handle authentication
+ */
+const atlassianStdioConfig = {
+  name: 'atlassian-stdio',
+  stdio: {
+    command: 'npx',
+    args: ['-y', 'mcp-remote', 'https://mcp.atlassian.com/v1/sse'],
+    env: {}
+  }
+};
+
+/**
+ * Test local Atlassian MCP server using STDIO
+ * Uses the built server from the main project
+ */
+const localAtlassianConfig = {
+  name: 'local-atlassian',
+  stdio: {
+    command: 'node',
+    args: ['../dist/src/index.js'],
+    env: {
+      ...process.env,
+      JIRA_URL: 'http://localhost:80',
+      JIRA_USERNAME: 'admin',
+      JIRA_PASSWORD: 'admin',
+      MCP_SERVICE: 'jira',
+      TRANSPORT_TYPE: 'stdio',
+      LOG_LEVEL: 'error',
+      SUPPRESS_NO_CONFIG_WARNING: 'true',
+      NODE_CONFIG_DIR: '../config'
+    }
+  }
+};
+
+/**
+ * Run metadata extraction for multiple servers
+ */
+async function runTests () {
+  console.log('🚀 Starting MCP metadata extraction tests\n');
+  console.log('='.repeat(60));
+
+  const results = [];
+
+  // Test 1: Atlassian MCP via SSE (requires OAuth - skipped)
+  console.log('\n📡 Test 1: Atlassian MCP Server (SSE)');
+  console.log('-'.repeat(60));
+  try {
+    const result = await extractMCPMetadata(atlassianConfig);
+    results.push({ name: 'Atlassian (SSE)', success: true, ...result });
+  } catch (error) {
+    console.error(`❌ Failed: ${error.message}`);
+    results.push({ name: 'Atlassian (SSE)', success: false, error: error.message });
+  }
+
+  // Test 2: FINAM Trade API via SSE (requires credentials - skipped)
+  console.log('\n📡 Test 2: FINAM Trade API MCP Server (SSE)');
+  console.log('-'.repeat(60));
+  try {
+    const result = await extractMCPMetadata(finamConfig);
+    results.push({ name: 'FINAM (SSE)', success: true, ...result });
+  } catch (error) {
+    console.error(`❌ Failed: ${error.message}`);
+    results.push({ name: 'FINAM (SSE)', success: false, error: error.message });
+  }
+
+  // Test 3: Local Atlassian MCP Server via STDIO
+  /*
+    console.log('\n📡 Test 3: Local Atlassian MCP Server (STDIO)');
+    console.log('-'.repeat(60));
+    try {
+      const result = await extractMCPMetadata(localAtlassianConfig);
+      results.push({ name: 'Local Atlassian (STDIO)', success: true, ...result });
+    } catch (error) {
+      console.error(`❌ Failed: ${error.message}`);
+      results.push({ name: 'Local Atlassian (STDIO)', success: false, error: error.message });
+    }
+  */
+
+  // Print summary
+  console.log('\n' + '='.repeat(60));
+  console.log('📊 Test Summary');
+  console.log('='.repeat(60));
+
+  results.forEach((result, index) => {
+    const status = result.success ? '✅' : '❌';
+    console.log(`${index + 1}. ${status} ${result.name}`);
+
+    if (result.success) {
+      console.log(`   📄 Metadata file: ${result.filePath}`);
+      console.log(`   📦 Tools: ${result.metadata.tools?.length || 0}`);
+      console.log(`   📝 Prompts: ${result.metadata.prompts?.length || 0}`);
+      console.log(`   📂 Resources: ${result.metadata.resources?.length || 0}`);
+    } else {
+      console.log(`   ❌ Error: ${result.error}`);
+    }
+  });
+
+  const successCount = results.filter(r => r.success).length;
+  const totalCount = results.length;
+
+  console.log('\n' + '='.repeat(60));
+  console.log(`✨ Completed: ${successCount}/${totalCount} tests passed`);
+  console.log('='.repeat(60) + '\n');
+}
+
+// Run tests
+runTests().then(() => {
+  process.exit(0);
+}).catch(error => {
+  console.error('💥 Fatal error:', error);
+  process.exit(1);
+});
