@@ -1,9 +1,0 @@
-# Development environment configuration overrides
-
-logger:
-  level: debug   # More verbose logging in development
-  pretty: true   # Pretty-print logs for readability
-
-cache:
-  ttlSeconds: 60    # Shorter cache TTL for development (1 minute)
-  maxItems: 100     # Smaller cache size for development

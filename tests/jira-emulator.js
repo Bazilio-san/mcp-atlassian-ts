@@ -7,7 +7,6 @@
 
 import express from 'express';
 import chalk from 'chalk';
-import { appConfig } from '../dist/src/bootstrap/init-config.js';
 
 // Test data
 const MOCK_USER = {
@@ -348,7 +347,7 @@ function getPort(urlString) {
 
 export class JiraEmulator {
   constructor(port) {
-    this.port = port || getPort(appConfig.jira.url);
+    this.port = port || 80;
     this.app = express();
     this.server = null;
     this.setupMiddleware();

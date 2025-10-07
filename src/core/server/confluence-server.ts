@@ -34,12 +34,17 @@ export class ConfluenceServer extends McpAtlassianServer {
       server: {
         port,
         transportType,
-        environment,
       },
       rateLimit,
     } = config;
 
-    const serverConfig: ServerConfig = { port, environment, logLevel, transportType, rateLimit, cache };
+    const serverConfig: ServerConfig = {
+      port,
+      logLevel,
+      transportType,
+      rateLimit,
+      cache
+    };
 
     // Build auth config from Confluence config
     let auth: any;

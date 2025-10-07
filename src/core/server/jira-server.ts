@@ -34,12 +34,17 @@ export class JiraServer extends McpAtlassianServer {
       server: {
         port,
         transportType,
-        environment,
       },
       rateLimit,
     } = config;
 
-    const serverConfig: ServerConfig = { port, environment, logLevel, transportType, rateLimit, cache };
+    const serverConfig: ServerConfig = {
+      port,
+      logLevel,
+      transportType,
+      rateLimit,
+      cache
+    };
 
     // Build auth config from JIRA config - prioritize Basic auth
     let auth: any;

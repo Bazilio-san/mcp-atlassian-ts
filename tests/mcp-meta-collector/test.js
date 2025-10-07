@@ -52,7 +52,7 @@ const localAtlassianConfig = {
   name: 'local-atlassian',
   stdio: {
     command: 'node',
-    args: ['./dist/src/index.js'],
+    args: ['../../dist/src/index.js'],
     env: {
       ...process.env,
       JIRA_URL: 'http://localhost:80',
@@ -60,9 +60,7 @@ const localAtlassianConfig = {
       JIRA_PASSWORD: 'admin',
       MCP_SERVICE: 'jira',
       TRANSPORT_TYPE: 'stdio',
-      LOG_LEVEL: 'error',
-      SUPPRESS_NO_CONFIG_WARNING: 'true',
-      NODE_CONFIG_DIR: '../config'
+      LOG_LEVEL: 'error'
     }
   }
 };
@@ -75,7 +73,7 @@ async function runTests () {
   console.log('='.repeat(60));
 
   const results = [];
-
+  /*
   // Test 1: Atlassian MCP via STDIO (using mcp-remote proxy)
   console.log('\n📡 Test 1: Atlassian MCP Server (STDIO with mcp-remote)');
   console.log('-'.repeat(60));
@@ -97,18 +95,18 @@ async function runTests () {
     console.error(`❌ Failed: ${error.message}`);
     results.push({ name: 'FINAM (SSE)', success: false, error: error.message });
   }
-
+  */
   // Test 3: Local Atlassian MCP Server via STDIO
 
-  // console.log('\n📡 Test 3: Local Atlassian MCP Server (STDIO)');
-  // console.log('-'.repeat(60));
-  // try {
-  //   const result = await extractMCPMetadata(localAtlassianConfig);
-  //   results.push({ name: 'Local Atlassian (STDIO)', success: true, ...result });
-  // } catch (error) {
-  //   console.error(`❌ Failed: ${error.message}`);
-  //   results.push({ name: 'Local Atlassian (STDIO)', success: false, error: error.message });
-  // }
+  console.log('\n📡 Test 3: Local Atlassian MCP Server (STDIO)');
+  console.log('-'.repeat(60));
+  try {
+    const result = await extractMCPMetadata(localAtlassianConfig);
+    results.push({ name: 'Local Atlassian (STDIO)', success: true, ...result });
+  } catch (error) {
+    console.error(`❌ Failed: ${error.message}`);
+    results.push({ name: 'Local Atlassian (STDIO)', success: false, error: error.message });
+  }
 
   // Print summary
   console.log('\n' + '='.repeat(60));

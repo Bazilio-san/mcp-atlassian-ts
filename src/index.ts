@@ -125,12 +125,12 @@ async function main (cliServiceMode?: ServiceMode) {
     logger.info('Starting MCP Atlassian TypeScript Server v2.0.0', { serviceMode });
 
     // Configuration is already loaded and validated in init-config.ts
-    const { server: { environment, transportType, port }, jira, confluence, cache } = appConfig;
+    const { server: { transportType, port }, jira, confluence, cache } = appConfig;
 
     // Override service mode in config for the server
     (appConfig.server as any).serviceMode = serviceMode;
 
-    logger.info('Configuration loaded', { environment, transportType, serviceMode, jira });
+    logger.info('Configuration loaded', { transportType, serviceMode, jira });
 
     // Initialize cache
     initializeCache(cache);
