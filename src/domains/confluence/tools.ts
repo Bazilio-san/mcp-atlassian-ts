@@ -74,6 +74,13 @@ export class ConfluenceToolsManager {
           required: ['cql'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Search Confluence content using CQL',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'confluence_get_page',
@@ -99,6 +106,13 @@ export class ConfluenceToolsManager {
           required: ['pageId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve Confluence page by ID',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'confluence_get_page_by_title',
@@ -123,6 +137,13 @@ export class ConfluenceToolsManager {
           },
           required: ['spaceKey', 'title'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve Confluence page by space and title',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
       {
@@ -163,6 +184,13 @@ export class ConfluenceToolsManager {
           required: ['spaceKey', 'title', 'body'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Create new Confluence page',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
       {
         name: 'confluence_update_page',
@@ -201,6 +229,13 @@ export class ConfluenceToolsManager {
           required: ['pageId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Update existing Confluence page',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'confluence_get_spaces',
@@ -233,6 +268,13 @@ export class ConfluenceToolsManager {
           },
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve all Confluence spaces',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'confluence_get_space',
@@ -253,6 +295,13 @@ export class ConfluenceToolsManager {
           },
           required: ['spaceKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve specific Confluence space',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
       {
@@ -292,6 +341,13 @@ export class ConfluenceToolsManager {
           required: ['spaceKey'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve content from Confluence space',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'confluence_add_comment',
@@ -315,6 +371,13 @@ export class ConfluenceToolsManager {
           required: ['pageId', 'body'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Add comment to Confluence page',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       // === User Management ===
@@ -336,6 +399,13 @@ export class ConfluenceToolsManager {
           },
           required: ['query'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Search Confluence users by name or email',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -364,6 +434,13 @@ export class ConfluenceToolsManager {
           required: ['pageId', 'label'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Add label to Confluence page',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       {
@@ -388,6 +465,13 @@ export class ConfluenceToolsManager {
           },
           required: ['pageId'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve labels from Confluence page',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -420,6 +504,13 @@ export class ConfluenceToolsManager {
           required: ['label'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve pages with specific label',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
 
       // === Page Management Extended ===
@@ -447,6 +538,13 @@ export class ConfluenceToolsManager {
           },
           required: ['pageId'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve child pages of Confluence page',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -480,6 +578,13 @@ export class ConfluenceToolsManager {
           required: ['pageId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve comments from Confluence page',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
 
       {
@@ -500,6 +605,13 @@ export class ConfluenceToolsManager {
           },
           required: ['pageId'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Delete Confluence page permanently or move to trash',
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -528,6 +640,13 @@ export class ConfluenceToolsManager {
           },
           required: ['pageId'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve version history of Confluence page',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
     ];

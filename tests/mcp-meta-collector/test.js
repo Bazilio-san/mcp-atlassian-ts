@@ -1,4 +1,12 @@
 import { extractMCPMetadata } from './mcp-client.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get absolute path to the MCP server
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..', '..');
+const serverPath = path.join(projectRoot, 'dist', 'src', 'index.js');
 
 /**
  * Test configuration for Atlassian MCP Server
@@ -52,7 +60,7 @@ const localAtlassianConfig = {
   name: 'local-atlassian',
   stdio: {
     command: 'node',
-    args: ['../../dist/src/index.js'],
+    args: [serverPath],
     env: {
       ...process.env,
       JIRA_URL: 'http://localhost:80',

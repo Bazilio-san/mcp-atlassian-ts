@@ -63,6 +63,13 @@ export class JiraToolsManager {
           required: ['issueKey'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve JIRA issue',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'jira_search_issues',
@@ -98,6 +105,13 @@ export class JiraToolsManager {
           },
           required: ['jql'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Search JIRA issues using JQL',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
       {
@@ -151,6 +165,13 @@ export class JiraToolsManager {
           required: ['project', 'issueType', 'summary'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Create new JIRA issue',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
       {
         name: 'jira_update_issue',
@@ -192,6 +213,13 @@ export class JiraToolsManager {
           required: ['issueKey'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Update existing JIRA issue',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'jira_add_comment',
@@ -225,6 +253,13 @@ export class JiraToolsManager {
           required: ['issueKey', 'body'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Add comment to JIRA issue',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
       {
         name: 'jira_get_transitions',
@@ -239,6 +274,13 @@ export class JiraToolsManager {
           },
           required: ['issueKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve available JIRA issue transitions',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
       {
@@ -268,6 +310,13 @@ export class JiraToolsManager {
           required: ['issueKey', 'transitionId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Transition JIRA issue to new status',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       {
         name: 'jira_get_projects',
@@ -288,6 +337,13 @@ export class JiraToolsManager {
           },
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve all JIRA projects',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
 
       // === User Management ===
@@ -304,6 +360,13 @@ export class JiraToolsManager {
           },
           required: ['userIdOrEmail'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve JIRA user profile',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -326,6 +389,13 @@ export class JiraToolsManager {
           },
           required: ['issueKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Delete JIRA issue permanently',
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -357,6 +427,13 @@ export class JiraToolsManager {
           required: ['issues'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Create multiple JIRA issues in batch',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       // === Fields and Metadata ===
@@ -372,6 +449,13 @@ export class JiraToolsManager {
             },
           },
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Search JIRA fields including custom fields',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -389,6 +473,13 @@ export class JiraToolsManager {
           },
           required: ['projectKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve JIRA project versions',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -432,6 +523,13 @@ export class JiraToolsManager {
           required: ['projectId', 'name'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Create new JIRA project version',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       {
@@ -459,6 +557,13 @@ export class JiraToolsManager {
           required: ['versions'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Create multiple JIRA versions in batch',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       // === Issue Links ===
@@ -468,6 +573,13 @@ export class JiraToolsManager {
         inputSchema: {
           type: 'object',
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve all JIRA issue link types',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -496,6 +608,13 @@ export class JiraToolsManager {
           },
           required: ['linkType', 'inwardIssue', 'outwardIssue'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Create link between two JIRA issues',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
         },
       },
 
@@ -529,6 +648,13 @@ export class JiraToolsManager {
           required: ['issueKey', 'url', 'title'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Create remote link to external URL',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       {
@@ -544,6 +670,13 @@ export class JiraToolsManager {
           },
           required: ['linkId'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Remove link between JIRA issues',
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -565,6 +698,13 @@ export class JiraToolsManager {
           },
           required: ['issueKey', 'epicKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Link JIRA issue to epic',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
         },
       },
 
@@ -592,6 +732,13 @@ export class JiraToolsManager {
           },
           required: ['issueKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve JIRA issue worklog entries',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -634,6 +781,13 @@ export class JiraToolsManager {
           required: ['issueKey', 'timeSpent'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Add worklog entry to JIRA issue',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
 
       // === Attachments ===
@@ -650,6 +804,13 @@ export class JiraToolsManager {
           },
           required: ['issueKey'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve JIRA issue attachments metadata',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -684,6 +845,13 @@ export class JiraToolsManager {
             },
           },
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve all agile boards',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -720,6 +888,13 @@ export class JiraToolsManager {
           required: ['boardId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve issues from agile board',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
 
       {
@@ -750,6 +925,13 @@ export class JiraToolsManager {
           },
           required: ['boardId'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve sprints from agile board',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
 
@@ -786,6 +968,13 @@ export class JiraToolsManager {
           required: ['sprintId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Retrieve issues from specific sprint',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
 
       {
@@ -817,6 +1006,13 @@ export class JiraToolsManager {
           },
           required: ['boardId', 'name'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Create new sprint on agile board',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
         },
       },
 
@@ -855,6 +1051,13 @@ export class JiraToolsManager {
           required: ['sprintId'],
           additionalProperties: false,
         },
+        annotations: {
+          title: 'Update existing sprint',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
 
       // === Bulk Operations ===
@@ -872,6 +1075,13 @@ export class JiraToolsManager {
           },
           required: ['issueKeys'],
           additionalProperties: false,
+        },
+        annotations: {
+          title: 'Retrieve changelogs for multiple issues',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
         },
       },
     ];

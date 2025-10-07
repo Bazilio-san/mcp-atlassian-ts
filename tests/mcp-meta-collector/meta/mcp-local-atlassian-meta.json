@@ -34,6 +34,13 @@
           "issueKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve JIRA issue",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -76,6 +83,13 @@
           "jql"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search JIRA issues using JQL",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -136,6 +150,13 @@
           "summary"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create new JIRA issue",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -181,6 +202,13 @@
           "issueKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Update existing JIRA issue",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -220,6 +248,13 @@
           "body"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Add comment to JIRA issue",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -237,6 +272,13 @@
           "issueKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve available JIRA issue transitions",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -268,6 +310,13 @@
           "transitionId"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Transition JIRA issue to new status",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -290,6 +339,13 @@
           }
         },
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve all JIRA projects",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -307,6 +363,13 @@
           "userIdOrEmail"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve JIRA user profile",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -329,6 +392,13 @@
           "issueKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Delete JIRA issue permanently",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -383,6 +453,13 @@
           "issues"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create multiple JIRA issues in batch",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -397,6 +474,13 @@
           }
         },
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search JIRA fields including custom fields",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -414,6 +498,13 @@
           "projectKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve JIRA project versions",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -458,6 +549,13 @@
           "name"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create new JIRA project version",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -499,6 +597,13 @@
           "versions"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create multiple JIRA versions in batch",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -507,6 +612,13 @@
       "inputSchema": {
         "type": "object",
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve all JIRA issue link types",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -538,6 +650,13 @@
           "outwardIssue"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create link between two JIRA issues",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -573,6 +692,13 @@
           "title"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create remote link to external URL",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -590,6 +716,13 @@
           "linkId"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Remove link between JIRA issues",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -612,6 +745,13 @@
           "epicKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Link JIRA issue to epic",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -639,6 +779,13 @@
           "issueKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve JIRA issue worklog entries",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -685,6 +832,13 @@
           "timeSpent"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Add worklog entry to JIRA issue",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -702,6 +856,13 @@
           "issueKey"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve JIRA issue attachments metadata",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -734,6 +895,13 @@
           }
         },
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve all agile boards",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -772,6 +940,13 @@
           "boardId"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve issues from agile board",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -808,6 +983,13 @@
           "boardId"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve sprints from agile board",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -846,6 +1028,13 @@
           "sprintId"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve issues from specific sprint",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -880,6 +1069,13 @@
           "name"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create new sprint on agile board",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
@@ -922,6 +1118,13 @@
           "sprintId"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Update existing sprint",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -942,6 +1145,13 @@
           "issueKeys"
         ],
         "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Retrieve changelogs for multiple issues",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     },
     {
@@ -998,5 +1208,5 @@
       "mimeType": "application/json"
     }
   ],
-  "extractedAt": "2025-10-07T01:31:17.758Z"
+  "extractedAt": "2025-10-07T11:38:36.830Z"
 }
