@@ -5,7 +5,6 @@ logger:
   pretty: false  # JSON logs for production monitoring tools
 
 server:
-  environment: production
   host: '0.0.0.0'  # Listen on all interfaces in production
 
 rateLimit:

@@ -28,7 +28,6 @@ export type IAuthConfig = IBasicAuth | IPatAuth | IOAuth2Auth;
 export interface IServerConfig {
   port: number;
   host: string;
-  environment: 'development' | 'production' | 'test';
   transportType: 'stdio' | 'http' | 'sse';
   serviceMode?: 'jira' | 'confluence';
 }

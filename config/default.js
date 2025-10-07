@@ -18,7 +18,6 @@ const defaultConfig = {
   server: {
     port: 3000,                  // HTTP server port (default: 3000, range: 1024-65535)
     host: '0.0.0.0',            // Server bind address ('0.0.0.0' for all interfaces, 'localhost' for local only)
-    environment: 'development',  // Environment: development, production, test
     transportType: 'http',       // Transport type: stdio, http, sse
     serviceMode: null            // Service mode: jira or confluence (required)
   },

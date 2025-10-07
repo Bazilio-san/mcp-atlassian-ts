@@ -103,7 +103,6 @@ const defaultConfig = {
   app: {
     port: 3000,
     host: 'localhost',
-    environment: 'development'
   },
   
   // Database configuration
@@ -141,7 +140,6 @@ import { IAFDatabasesConfig } from 'af-db-ts';
 export interface IAppConfig {
   port: number;
   host: string;
-  environment: string;
 }
 
 export interface ILoggerConfig {

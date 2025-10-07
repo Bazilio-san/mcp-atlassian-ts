@@ -1,11 +1,9 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { spawn } from 'child_process';
-import fetch from 'node-fetch';
-import EventSource from 'eventsource';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from "url";
 
 /**
  * MCP Client for extracting server metadata
@@ -54,14 +52,9 @@ export class MCPClient {
     this.transport = new SSEClientTransport(
       new URL(url),
       {
-        fetch: (url, init) => fetch(url, {
-          ...init,
-          headers: {
-            ...init?.headers,
-            ...headers
-          }
-        }),
-        EventSource
+        requestInit: {
+          headers: headers
+        }
       }
     );
 
@@ -145,9 +138,10 @@ export class MCPClient {
   /**
    * Save metadata to JSON file
    */
-  async saveMetadata(metadata, outputPath) {
-    const fileName = outputPath || `mcp-${this.config.name || 'server'}-meta.json`;
-    const fullPath = path.join(process.cwd(), fileName);
+  async saveMetadata(metadata) {
+    const fileName = `meta/mcp-${this.config.name || 'server'}-meta.json`;
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const fullPath = path.join(__dirname, fileName);
 
     await fs.writeFile(
       fullPath,

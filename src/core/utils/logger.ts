@@ -93,7 +93,7 @@ function createPinoLogger() {
   };
 
   // Pretty print for development
-  if ((appConfig.server.environment || 'development') === 'development') {
+  if ((process.env.NODE_ENV || 'development') === 'development') {
     pinoConfig.transport = {
       target: 'pino-pretty',
       options: {

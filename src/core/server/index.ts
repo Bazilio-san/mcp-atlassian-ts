@@ -46,7 +46,7 @@ export class McpAtlassianServer {
     // Initialize MCP server
     this.server = new Server(
       {
-        name: 'mcp-atlassian-typescript',
+        name: 'mcp-atlassian-ts',
         version: '2.0.0',
       },
       {
@@ -227,7 +227,7 @@ export class McpAtlassianServer {
       this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
       // CORS headers for development
-      if (this.serverConfig.environment === 'development') {
+      if (process.env.NODE_ENV === 'development') {
         this.app.use((req, res, next) => {
           res.header('Access-Control-Allow-Origin', '*');
           res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -427,9 +427,8 @@ export class McpAtlassianServer {
   protected getHealthCheckInfo(): any {
     return {
       status: 'ok',
-      service: 'mcp-atlassian-typescript',
+      service: 'mcp-atlassian-ts',
       version: '2.0.0',
-      environment: this.serverConfig.environment,
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     };

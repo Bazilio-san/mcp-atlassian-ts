@@ -4,7 +4,6 @@
 server:
   port: SERVER_PORT
   host: SERVER_HOST
-  environment: NODE_ENV
   transportType: TRANSPORT_TYPE
   serviceMode: MCP_SERVICE
 

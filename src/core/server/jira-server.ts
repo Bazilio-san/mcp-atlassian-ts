@@ -83,7 +83,6 @@ export class JiraServer extends McpAtlassianServer {
       status: 'ok',
       service: 'mcp-atlassian-jira',
       version: '2.0.0',
-      environment: this.serverConfig.environment,
       serviceMode: 'jira',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),

@@ -83,7 +83,6 @@ export class ConfluenceServer extends McpAtlassianServer {
       status: 'ok',
       service: 'mcp-atlassian-confluence',
       version: '2.0.0',
-      environment: this.serverConfig.environment,
       serviceMode: 'confluence',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),

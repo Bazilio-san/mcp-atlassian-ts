@@ -29,7 +29,6 @@ export type AuthConfig = BasicAuth | PersonalAccessToken | OAuth2Auth;
 // Server configuration
 export interface ServerConfig {
   port: number;
-  environment: 'development' | 'production' | 'test';
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   transportType: 'stdio' | 'http' | 'sse';
   rateLimit: {

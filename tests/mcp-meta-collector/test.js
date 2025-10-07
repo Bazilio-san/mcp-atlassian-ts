@@ -23,22 +23,24 @@ const finamConfig = {
     url: 'https://mcp-finam-trade-api.bazilio.ru/sse',
     headers: {
       // Add your credentials here if needed
-      // 'Authorization': 'Bearer YOUR_SECRET_TOKEN',
-      // 'X-Finam-Account-Id': 'YOUR_ACCOUNT_ID'
+      'Authorization': 'Bearer YOUR_SECRET_TOKEN',
+      'X-Finam-Account-Id': '1982834'
     }
   }
 };
 
 /**
- * Alternative: Using STDIO transport with npx mcp-remote proxy
- * This configuration uses the mcp-remote proxy tool to handle authentication
+ * Atlassian using STDIO transport with npx mcp-remote proxy
+ * This configuration uses the mcp-remote proxy tool to handle OAuth authentication
  */
 const atlassianStdioConfig = {
-  name: 'atlassian-stdio',
+  name: 'atlassian-mcp-remote',
   stdio: {
     command: 'npx',
-    args: ['-y', 'mcp-remote', 'https://mcp.atlassian.com/v1/sse'],
-    env: {}
+    args: ['-y', 'mcp-remote@0.1.13', 'https://mcp.atlassian.com/v1/sse'],
+    env: {
+      ...process.env
+    }
   }
 };
 
@@ -50,7 +52,7 @@ const localAtlassianConfig = {
   name: 'local-atlassian',
   stdio: {
     command: 'node',
-    args: ['../dist/src/index.js'],
+    args: ['./dist/src/index.js'],
     env: {
       ...process.env,
       JIRA_URL: 'http://localhost:80',
@@ -74,15 +76,15 @@ async function runTests () {
 
   const results = [];
 
-  // Test 1: Atlassian MCP via SSE (requires OAuth - skipped)
-  console.log('\n📡 Test 1: Atlassian MCP Server (SSE)');
+  // Test 1: Atlassian MCP via STDIO (using mcp-remote proxy)
+  console.log('\n📡 Test 1: Atlassian MCP Server (STDIO with mcp-remote)');
   console.log('-'.repeat(60));
   try {
-    const result = await extractMCPMetadata(atlassianConfig);
-    results.push({ name: 'Atlassian (SSE)', success: true, ...result });
+    const result = await extractMCPMetadata(atlassianStdioConfig);
+    results.push({ name: 'Atlassian (STDIO)', success: true, ...result });
   } catch (error) {
     console.error(`❌ Failed: ${error.message}`);
-    results.push({ name: 'Atlassian (SSE)', success: false, error: error.message });
+    results.push({ name: 'Atlassian (STDIO)', success: false, error: error.message });
   }
 
   // Test 2: FINAM Trade API via SSE (requires credentials - skipped)
@@ -97,17 +99,16 @@ async function runTests () {
   }
 
   // Test 3: Local Atlassian MCP Server via STDIO
-  /*
-    console.log('\n📡 Test 3: Local Atlassian MCP Server (STDIO)');
-    console.log('-'.repeat(60));
-    try {
-      const result = await extractMCPMetadata(localAtlassianConfig);
-      results.push({ name: 'Local Atlassian (STDIO)', success: true, ...result });
-    } catch (error) {
-      console.error(`❌ Failed: ${error.message}`);
-      results.push({ name: 'Local Atlassian (STDIO)', success: false, error: error.message });
-    }
-  */
+
+  // console.log('\n📡 Test 3: Local Atlassian MCP Server (STDIO)');
+  // console.log('-'.repeat(60));
+  // try {
+  //   const result = await extractMCPMetadata(localAtlassianConfig);
+  //   results.push({ name: 'Local Atlassian (STDIO)', success: true, ...result });
+  // } catch (error) {
+  //   console.error(`❌ Failed: ${error.message}`);
+  //   results.push({ name: 'Local Atlassian (STDIO)', success: false, error: error.message });
+  // }
 
   // Print summary
   console.log('\n' + '='.repeat(60));
