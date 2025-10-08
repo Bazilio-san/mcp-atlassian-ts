@@ -2,7 +2,7 @@
 
 ## Настройка
 Проверьте `.env` файл:
-- `JIRA_URL` - URL вашего JIRA сервера
+- `JIRA_URL` - URL вашего JIRA сервера (https://jira.your-org.com)
 - `JIRA_USERNAME` - логин
 - `JIRA_PASSWORD` - API токен (не пароль!)
 - `TEST_JIRA_PROJECT` - тестовый проект (по умолчанию TEST)

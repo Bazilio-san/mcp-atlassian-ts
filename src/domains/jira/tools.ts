@@ -19,7 +19,7 @@ export class JiraToolsManager {
   private client: JiraClient;
   private config: JCConfig;
 
-  constructor(config: JCConfig) {
+  constructor (config: JCConfig) {
     this.config = config;
     this.client = new JiraClient(config);
   }
@@ -27,7 +27,7 @@ export class JiraToolsManager {
   /**
    * Initialize the tools manager
    */
-  async initialize(): Promise<void> {
+  async initialize (): Promise<void> {
     logger.info('Initializing JIRA tools manager');
     // Any async initialization can go here
   }
@@ -36,7 +36,7 @@ export class JiraToolsManager {
    * Normalize string or array parameter to array
    * Allows flexible input: single string or array of strings
    */
-  private normalizeToArray(value: string | string[] | undefined): string[] {
+  private normalizeToArray (value: string | string[] | undefined): string[] {
     if (!value) return [];
     if (Array.isArray(value)) return value;
     return [value];
@@ -45,7 +45,7 @@ export class JiraToolsManager {
   /**
    * Get all available JIRA tools
    */
-  getAvailableTools(): Tool[] {
+  getAvailableTools (): Tool[] {
     return [
       // Issue management
       {
@@ -64,13 +64,13 @@ An example issue key is ISSUE-1.`,
             },
             expand: {
               type: 'array',
-              items: {type: 'string'},
+              items: { type: 'string' },
               description: `Additional fields to expand. e.g.: ["changelog", "transitions"]`,
               default: [],
             },
             fields: {
               type: 'array',
-              items: {type: 'string'},
+              items: { type: 'string' },
               description: `Specific fields to return. e.g.: ["summary", "status", "assignee"]`,
               default: [],
             },
@@ -108,12 +108,12 @@ An example issue key is ISSUE-1.`,
             },
             fields: {
               type: 'array',
-              items: {type: 'string'},
+              items: { type: 'string' },
               description: `Specific fields to return. e.g.: ["summary", "status", "assignee"]`,
             },
             expand: {
               type: 'array',
-              items: {type: 'string'},
+              items: { type: 'string' },
               description: `Additional fields to expand. e.g.: ["changelog", "transitions"]`,
               default: [],
             },
@@ -1106,7 +1106,7 @@ An example issue key is ISSUE-1.`,
   /**
    * Execute a JIRA tool
    */
-  async executeTool(toolName: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
+  async executeTool (toolName: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
     return withErrorHandling(async () => {
       logger.info('Executing JIRA tool', { toolName, hasCustomHeaders: !!customHeaders });
 
@@ -1203,17 +1203,17 @@ An example issue key is ISSUE-1.`,
   /**
    * Health check for JIRA connectivity
    */
-  async healthCheck(): Promise<any> {
+  async healthCheck (): Promise<any> {
     return this.client.healthCheck();
   }
 
   // === Tool Implementations ===
 
-  private async getIssue(args: any) {
+  private async getIssue (args: any) {
     const { issueKey, expand = [], fields } = args;
 
     const options: any = {
-      expand: this.normalizeToArray(expand)
+      expand: this.normalizeToArray(expand),
     };
     if (fields) {
       options.fields = this.normalizeToArray(fields);
@@ -1247,7 +1247,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async searchIssues(args: any) {
+  private async searchIssues (args: any) {
     const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
 
     const searchRequest: any = {
@@ -1292,7 +1292,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createIssue(args: any) {
+  private async createIssue (args: any) {
     const {
       project,
       issueType,
@@ -1344,8 +1344,16 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async updateIssue(args: any) {
-    const { issueKey, summary, description, assignee, priority, labels, customFields = {} } = args;
+  private async updateIssue (args: any) {
+    const {
+      issueKey,
+      summary,
+      description,
+      assignee,
+      priority,
+      labels,
+      customFields = {},
+    } = args;
 
     const updateData: any = { fields: { ...customFields } };
 
@@ -1371,7 +1379,25 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async addComment(args: any) {
+  private async deleteIssue (args: any) {
+    const { issueKey, deleteSubtasks = false } = args;
+
+    await this.client.deleteIssue(issueKey, deleteSubtasks);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text:
+            `**JIRA Issue Deleted Successfully**\n\n` +
+            `**Key:** ${issueKey}\n` +
+            `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`,
+        },
+      ],
+    };
+  }
+
+  private async addComment (args: any) {
     const { issueKey, body, visibility } = args;
 
     const commentInput: any = { body };
@@ -1395,7 +1421,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getTransitions(args: any) {
+  private async getTransitions (args: any) {
     const { issueKey } = args;
 
     const transitions = await this.client.getTransitions(issueKey);
@@ -1425,7 +1451,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async transitionIssue(args: any) {
+  private async transitionIssue (args: any) {
     const { issueKey, transitionId, comment, fields = {} } = args;
 
     const transitionData: any = { id: transitionId, fields };
@@ -1448,12 +1474,12 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getProjects(args: any) {
+  private async getProjects (args: any) {
     const { expand, recent } = args;
 
     const projects = await this.client.getProjects({
       expand: this.normalizeToArray(expand),
-      recent
+      recent,
     });
 
     if (projects.length === 0) {
@@ -1483,7 +1509,7 @@ An example issue key is ISSUE-1.`,
 
   // === Extended Tool Implementations ===
 
-  private async getUserProfile(args: any) {
+  private async getUserProfile (args: any) {
     const { userIdOrEmail } = args;
 
     const user = await this.client.getUserProfile(userIdOrEmail);
@@ -1506,25 +1532,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async deleteIssue(args: any) {
-    const { issueKey, deleteSubtasks = false } = args;
-
-    await this.client.deleteIssue(issueKey, deleteSubtasks);
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text:
-            `**JIRA Issue Deleted Successfully**\n\n` +
-            `**Key:** ${issueKey}\n` +
-            `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`,
-        },
-      ],
-    };
-  }
-
-  private async batchCreateIssues(args: any) {
+  private async batchCreateIssues (args: any) {
     const { issues } = args;
 
     // Convert to the format expected by the client
@@ -1577,7 +1585,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async searchFields(args: any) {
+  private async searchFields (args: any) {
     const { query } = args;
 
     const fields = await this.client.searchFields(query);
@@ -1609,7 +1617,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getProjectVersions(args: any) {
+  private async getProjectVersions (args: any) {
     const { projectKey } = args;
 
     const versions = await this.client.getProjectVersions(projectKey);
@@ -1628,7 +1636,7 @@ An example issue key is ISSUE-1.`,
     const versionsList = versions
       .map(
         v =>
-          `• **${v.name}** ${v.released ? '(Released)' : '(Unreleased)'} ${v.archived ? '[Archived]' : ''}`
+          `• **${v.name}** ${v.released ? '(Released)' : '(Unreleased)'} ${v.archived ? '[Archived]' : ''}`,
       )
       .join('\n');
 
@@ -1642,7 +1650,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createVersion(args: any) {
+  private async createVersion (args: any) {
     const versionData = args;
 
     const version = await this.client.createVersion(versionData);
@@ -1663,7 +1671,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async batchCreateVersions(args: any) {
+  private async batchCreateVersions (args: any) {
     const { versions } = args;
 
     const results = await this.client.batchCreateVersions(versions);
@@ -1701,7 +1709,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getLinkTypes() {
+  private async getLinkTypes () {
     const linkTypes = await this.client.getLinkTypes();
 
     if (linkTypes.length === 0) {
@@ -1729,7 +1737,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createIssueLink(args: any) {
+  private async createIssueLink (args: any) {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
 
     const linkData: any = {
@@ -1758,7 +1766,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createRemoteIssueLink(args: any) {
+  private async createRemoteIssueLink (args: any) {
     const { issueKey, url, title, summary, iconUrl } = args;
 
     const linkData: any = { url, title };
@@ -1783,7 +1791,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async removeIssueLink(args: any) {
+  private async removeIssueLink (args: any) {
     const { linkId } = args;
 
     await this.client.removeIssueLink(linkId);
@@ -1798,7 +1806,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async linkToEpic(args: any) {
+  private async linkToEpic (args: any) {
     const { issueKey, epicKey } = args;
 
     await this.client.linkToEpic(issueKey, epicKey);
@@ -1819,7 +1827,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getWorklog(args: any) {
+  private async getWorklog (args: any) {
     const { issueKey, startAt = 0, maxResults = 50 } = args;
 
     const worklogResult = await this.client.getWorklogs(issueKey, { startAt, maxResults });
@@ -1840,7 +1848,7 @@ An example issue key is ISSUE-1.`,
         w =>
           `• **${w.author.displayName}**: ${w.timeSpent} on ${new Date(w.started).toLocaleDateString()}\n${
             w.comment ? `  Comment: ${w.comment}\n` : ''
-          }`
+          }`,
       )
       .join('\n');
 
@@ -1857,7 +1865,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async addWorklog(args: any) {
+  private async addWorklog (args: any) {
     const { issueKey, timeSpent, comment, started, visibility } = args;
 
     const worklogInput: any = { timeSpent };
@@ -1884,7 +1892,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async downloadAttachments(args: any) {
+  private async downloadAttachments (args: any) {
     const { issueKey } = args;
 
     const attachments = await this.client.getAttachments(issueKey);
@@ -1905,7 +1913,7 @@ An example issue key is ISSUE-1.`,
         a =>
           `• **${a.filename}** (${Math.round(a.size / 1024)}KB) - ${new Date(a.created).toLocaleDateString()}\n` +
           `  Download: ${a.content}\n` +
-          `  Author: ${a.author.displayName}`
+          `  Author: ${a.author.displayName}`,
       )
       .join('\n\n');
 
@@ -1922,7 +1930,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getAgileBoards(args: any) {
+  private async getAgileBoards (args: any) {
     const options = args;
 
     const boardsResult = await this.client.getAgileBoards(options);
@@ -1955,7 +1963,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getBoardIssues(args: any) {
+  private async getBoardIssues (args: any) {
     const { boardId, fields, ...options } = args;
 
     const requestOptions: any = { ...options };
@@ -1993,7 +2001,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getSprintsFromBoard(args: any) {
+  private async getSprintsFromBoard (args: any) {
     const { boardId, ...options } = args;
 
     const sprintsResult = await this.client.getSprintsFromBoard(boardId, options);
@@ -2016,7 +2024,7 @@ An example issue key is ISSUE-1.`,
             s.startDate && s.endDate
               ? ` (${new Date(s.startDate).toLocaleDateString()} - ${new Date(s.endDate).toLocaleDateString()})`
               : ''
-          }`
+          }`,
       )
       .join('\n');
 
@@ -2033,7 +2041,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getSprintIssues(args: any) {
+  private async getSprintIssues (args: any) {
     const { sprintId, fields, ...options } = args;
 
     const requestOptions: any = { ...options };
@@ -2071,7 +2079,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createSprint(args: any) {
+  private async createSprint (args: any) {
     const { boardId, name, goal, startDate, endDate } = args;
 
     const sprintData = {
@@ -2101,7 +2109,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async updateSprint(args: any) {
+  private async updateSprint (args: any) {
     const { sprintId, ...updateData } = args;
 
     const sprint = await this.client.updateSprint(sprintId, updateData);
@@ -2122,7 +2130,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async batchGetChangelogs(args: any) {
+  private async batchGetChangelogs (args: any) {
     const { issueKeys } = args;
 
     const changelogs = await this.client.batchGetChangelogs(issueKeys);
@@ -2174,7 +2182,7 @@ An example issue key is ISSUE-1.`,
 
   // === Utility Methods ===
 
-  private formatDescription(description: any): string {
+  private formatDescription (description: any): string {
     if (typeof description === 'string') {
       return description;
     }

@@ -520,14 +520,14 @@ class JiraDirectApiExecutor {
       'Content-Type': 'application/json',
       ...this.customHeaders,
     };
-
-    if (this.auth.type === 'token') {
-      headers['Authorization'] = `Bearer ${this.auth.token}`;
+    const { type, token, username, password } = this.auth
+    if (type === 'token') {
+      headers['Authorization'] = `Bearer ${token}`;
     } else {
-      const token = Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64');
+      const token = Buffer.from(`${username}:${password}`).toString('base64');
       headers['Authorization'] = `Basic ${token}`;
     }
-
+    // console.log('Authorization', headers['Authorization'], username, password)
     return headers;
   }
 

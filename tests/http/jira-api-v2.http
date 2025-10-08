@@ -17,7 +17,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### Get full issue data
-PUT {{baseUrl}}/rest/api/2/issue/AITECH-1
+PUT {{baseUrl}}/rest/api/2/issue/AITECH-10
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
