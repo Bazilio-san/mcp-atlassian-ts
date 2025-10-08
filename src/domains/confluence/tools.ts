@@ -2,13 +2,13 @@
  * Confluence MCP tools implementation
  */
 
-import { withErrorHandling, ToolExecutionError } from '../../core/errors/index.js';
-import { createLogger } from '../../core/utils/logger.js';
+import {withErrorHandling, ToolExecutionError} from '../../core/errors';
+import {createLogger} from '../../core/utils/logger.js';
 
-import { ConfluenceClient } from './client.js';
+import {ConfluenceClient} from './client.js';
 
-import type { JCConfig } from '../../types/index.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type {JCConfig} from '../../types';
+import type {Tool} from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('confluence-tools');
 
@@ -33,6 +33,16 @@ export class ConfluenceToolsManager {
   }
 
   /**
+   * Normalize string or array parameter to array
+   * Allows flexible input: single string or array of strings
+   */
+  private normalizeToArray(value: string | string[] | undefined): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return [value];
+  }
+
+  /**
    * Get all available Confluence tools
    */
   getAvailableTools(): Tool[] {
@@ -40,34 +50,41 @@ export class ConfluenceToolsManager {
       // Content search and retrieval
       {
         name: 'confluence_search',
-        description: 'Search Confluence content using CQL (Confluence Query Language)',
+        description: `Search Confluence content using CQL (Confluence Query Language)`,
         inputSchema: {
           type: 'object',
           properties: {
             cql: {
               type: 'string',
-              description: 'CQL query string (e.g., "space = SPACE AND title ~ \\"keyword\\"")',
+              description: `CQL query string for searching content.
+Examples:
+"space = SPACE AND title ~ \\"keyword\\"",
+"type = page AND creator = currentUser()"`,
             },
-            start: {
+            offset: {
               type: 'number',
-              description: 'Starting index for results',
+              description: `Zero-based results offset for pagination.
+Specifies how many items to skip before returning the current page of results.
+Examples: With limit = 50: 0 (items 1–50), 50 (items 51–100), 100 (items 101–150)`,
               default: 0,
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results to return',
+              description: `Maximum number of results per page`,
               default: 50,
+              minimum: 1,
+              maximum: 100,
             },
             excerpt: {
               type: 'string',
               enum: ['indexed', 'highlight', 'none'],
-              description: 'Type of excerpt to include',
+              description: `Type of excerpt to include`,
               default: 'highlight',
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand`,
               default: [],
             },
           },
@@ -82,25 +99,51 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_get_page',
-        description: 'Get detailed information about a Confluence page by ID',
+        description: `Get a specific Confluence page by its ID. 
+Returns the page body content as HTML or converted to Markdown format, includes metadata, ancestors, and structure. 
+You can extract the page ID from Confluence URLs - for example, from a URL like 
+https://wiki.yoursite.ru/pages/viewpage.action?pageId=123456789
+or
+https://yoursite.atlassian.net/wiki/spaces/SPACE/pages/123456789/Page+Title, the page ID is "123456789".`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID',
+              type: 'number',
+              description: `Confluence page ID. Can be found in page URL.`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand (body.storage, version, space, etc.)',
+              items: {type: 'string'},
+              description: `Additional fields to expand.
+Available fields: "body.storage", "body.view", "version", "space", "history", "metadata", "children", "ancestors".
+Example: ["body.storage", "metadata"]`,
               default: ['body.storage', 'version', 'space'],
             },
             version: {
               type: 'number',
-              description: 'Specific version number to retrieve',
+              description: `Specific version number to retrieve`,
+            },
+            includeAncestors: {
+              type: 'boolean',
+              description: `Include page ancestors (breadcrumb path).
+When true, shows hierarchical path to this page`,
+              default: true,
+            },
+            includeDescendants: {
+              type: 'boolean',
+              description: `Include child pages list.
+When true, shows all direct child pages`,
+              default: false,
+            },
+            convertToMarkdown: {
+              type: 'boolean',
+              description: `Convert HTML content to Markdown format.
+When true, provides cleaner Markdown output instead of raw HTML`,
+              default: true,
             },
           },
           required: ['pageId'],
@@ -114,24 +157,26 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_get_page_by_title',
-        description: 'Get Confluence page(s) by space key and title',
+        description: `Get Confluence page(s) by space key and title`,
         inputSchema: {
           type: 'object',
           properties: {
             spaceKey: {
               type: 'string',
-              description: 'The space key (e.g., PROJ)',
+              description: `Confluence space key. Uppercase identifier for the space.
+Examples: "PROJ", "TEAM", "DOC".`,
             },
             title: {
               type: 'string',
-              description: 'The page title',
+              description: `The page title`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Fields to expand.`,
               default: ['body.storage', 'version', 'space'],
             },
           },
@@ -146,38 +191,42 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_create_page',
-        description: 'Create a new Confluence page',
+        description: `Create a new Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             spaceKey: {
               type: 'string',
-              description: 'The space key where the page will be created',
+              description: `Confluence space key where the page will be created. Uppercase identifier.
+Examples: "PROJ", "TEAM", "DOC"`,
             },
             title: {
               type: 'string',
-              description: 'Page title',
+              description: `Page title. Human-readable page name.`,
             },
             body: {
               type: 'string',
-              description: 'Page content in Confluence storage format or plain text',
+              description: `Page content. HTML-like Confluence markup or plain text.`,
             },
             parentId: {
-              type: 'string',
-              description: 'Parent page ID (optional)',
+              type: 'number',
+              description: `Parent page ID for page hierarchy.
+Makes this page a child of the specified parent`,
             },
             type: {
               type: 'string',
               enum: ['page', 'blogpost'],
-              description: 'Content type',
+              description: `Content type`,
               default: 'page',
             },
             labels: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Labels to add to the page',
+              items: {type: 'string'},
+              description: `Labels to add to the page. Array of label names.
+Examples: ["core-documentation", "api"]`,
               default: [],
             },
           },
@@ -192,38 +241,40 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_update_page',
-        description: 'Update an existing Confluence page',
+        description: `Update an existing Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to update',
+              type: 'number',
+              description: `The page ID to update`,
             },
             title: {
               type: 'string',
-              description: 'New page title',
+              description: `New page title`,
             },
             body: {
               type: 'string',
-              description: 'Updated page content',
+              description: `Updated page content`,
             },
             versionComment: {
               type: 'string',
-              description: 'Comment for this version update',
+              description: `Comment for this version update. Visible in page history.
+Examples: "Updated API documentation", "Fixed typos", "Added new section"`,
               default: 'Updated via MCP',
             },
             minorEdit: {
               type: 'boolean',
-              description: 'Whether this is a minor edit',
+              description: `Whether this is a minor edit`,
               default: false,
             },
             labels: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Labels to set on the page',
+              items: {type: 'string'},
+              description: `Labels to set on the page`,
             },
           },
           required: ['pageId'],
@@ -237,33 +288,36 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_get_spaces',
-        description: 'Get all Confluence spaces accessible to the user',
+        description: `Get all Confluence spaces accessible to the user`,
         inputSchema: {
           type: 'object',
           properties: {
             type: {
               type: 'string',
               enum: ['global', 'personal'],
-              description: 'Type of spaces to retrieve',
+              description: `Type of spaces to retrieve`,
             },
             status: {
               type: 'string',
               enum: ['current', 'archived'],
-              description: 'Status of spaces to retrieve',
+              description: `Status of spaces to retrieve`,
               default: 'current',
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand`,
               default: [],
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 300,
             },
           },
           additionalProperties: false,
@@ -276,20 +330,22 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_get_space',
-        description: 'Get detailed information about a specific Confluence space',
+        description: `Get detailed information about a specific Confluence space`,
         inputSchema: {
           type: 'object',
           properties: {
             spaceKey: {
               type: 'string',
-              description: 'The space key (e.g., PROJ)',
+              description: `Confluence space key. Uppercase identifier for the space.
+Examples: "PROJ", "TEAM", "DOC"`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand`,
               default: ['description', 'homepage'],
             },
           },
@@ -304,38 +360,42 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_get_space_content',
-        description: 'Get content (pages/blogposts) from a Confluence space',
+        description: `Get content (pages/blogposts) from a Confluence space`,
         inputSchema: {
           type: 'object',
           properties: {
             spaceKey: {
               type: 'string',
-              description: 'The space key (e.g., PROJ)',
+              description: `Confluence space key. Uppercase identifier for the space.
+Examples: "PROJ", "TEAM", "DOC"`,
             },
             type: {
               type: 'string',
               enum: ['page', 'blogpost'],
-              description: 'Type of content to retrieve',
+              description: `Type of content to retrieve`,
               default: 'page',
             },
             status: {
               type: 'string',
               enum: ['current', 'trashed', 'draft'],
-              description: 'Content status',
+              description: `Content status`,
               default: 'current',
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand`,
               default: ['version', 'space'],
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 100,
             },
           },
           required: ['spaceKey'],
@@ -349,23 +409,24 @@ export class ConfluenceToolsManager {
           openWorldHint: false,
         },
       },
+
       {
         name: 'confluence_add_comment',
-        description: 'Add a comment to a Confluence page',
+        description: `Add a comment to a Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to comment on',
+              type: 'number',
+              description: `The page ID to comment on`,
             },
             body: {
               type: 'string',
-              description: 'Comment text',
+              description: `Comment text`,
             },
             parentCommentId: {
               type: 'string',
-              description: 'Parent comment ID for replies',
+              description: `Parent comment ID for replies`,
             },
           },
           required: ['pageId', 'body'],
@@ -383,18 +444,20 @@ export class ConfluenceToolsManager {
       // === User Management ===
       {
         name: 'confluence_search_user',
-        description: 'Search for users in Confluence by name or email',
+        description: `Search for users in Confluence by name or email`,
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Search query (name or email)',
+              description: `Search query (name or email)`,
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 100,
             },
           },
           required: ['query'],
@@ -412,22 +475,22 @@ export class ConfluenceToolsManager {
       // === Label Management ===
       {
         name: 'confluence_add_label',
-        description: 'Add a label to a Confluence page',
+        description: `Add a label to a Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to add label to',
+              type: 'number',
+              description: `The page ID to add label to`,
             },
             label: {
               type: 'string',
-              description: 'Label name to add',
+              description: `Label name to add`,
             },
             prefix: {
               type: 'string',
               enum: ['global', 'my', 'team'],
-              description: 'Label prefix type',
+              description: `Label prefix type`,
               default: 'global',
             },
           },
@@ -445,22 +508,24 @@ export class ConfluenceToolsManager {
 
       {
         name: 'confluence_get_labels',
-        description: 'Get all labels for a Confluence page',
+        description: `Get all labels for a Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to get labels for',
+              type: 'number',
+              description: `The page ID to get labels for`,
             },
             prefix: {
               type: 'string',
-              description: 'Filter by label prefix',
+              description: `Filter by label prefix`,
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 200,
             },
           },
           required: ['pageId'],
@@ -477,28 +542,30 @@ export class ConfluenceToolsManager {
 
       {
         name: 'confluence_get_pages_by_label',
-        description: 'Find all pages with a specific label',
+        description: `Find all pages with a specific label`,
         inputSchema: {
           type: 'object',
           properties: {
             label: {
               type: 'string',
-              description: 'Label name to search for',
+              description: `Label name to search for`,
             },
             spaceKey: {
               type: 'string',
-              description: 'Filter by space key',
+              description: `Filter by space key`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand`,
               default: ['version', 'space'],
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 100,
             },
           },
           required: ['label'],
@@ -516,24 +583,26 @@ export class ConfluenceToolsManager {
       // === Page Management Extended ===
       {
         name: 'confluence_get_page_children',
-        description: 'Get child pages of a Confluence page',
+        description: `Get child pages of a Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'Parent page ID',
+              type: 'number',
+              description: `Parent page ID`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand`,
               default: ['version', 'space'],
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 100,
             },
           },
           required: ['pageId'],
@@ -550,29 +619,34 @@ export class ConfluenceToolsManager {
 
       {
         name: 'confluence_get_comments',
-        description: 'Get comments for a Confluence page',
+        description: `Get comments for a Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to get comments for',
+              type: 'number',
+              description: `The page ID to get comments for`,
             },
             location: {
               type: 'string',
               enum: ['inline', 'footer'],
-              description: 'Comment location type',
+              description: `Comment location type`,
             },
             expand: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              anyOf: [
+                {type: 'string', description: `Single field to expand`},
+                {type: 'array', items: {type: 'string'}, description: `Multiple fields to expand`},
+              ],
+              description: `Additional fields to expand.
+Can be a single string or array of strings`,
               default: ['body.view', 'history.lastUpdated'],
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results',
+              description: `Maximum number of results`,
               default: 50,
+              minimum: 1,
+              maximum: 100,
             },
           },
           required: ['pageId'],
@@ -589,17 +663,17 @@ export class ConfluenceToolsManager {
 
       {
         name: 'confluence_delete_page',
-        description: 'Delete a Confluence page (move to trash or permanent)',
+        description: `Delete a Confluence page (move to trash or permanent)`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to delete',
+              type: 'number',
+              description: `The page ID to delete`,
             },
             permanent: {
               type: 'boolean',
-              description: 'Whether to delete permanently (true) or move to trash (false)',
+              description: `Whether to delete permanently (true) or move to trash (false)`,
               default: false,
             },
           },
@@ -618,24 +692,29 @@ export class ConfluenceToolsManager {
       // === History and Versions ===
       {
         name: 'confluence_get_page_history',
-        description: 'Get version history of a Confluence page',
+        description: `Get version history of a Confluence page`,
         inputSchema: {
           type: 'object',
           properties: {
             pageId: {
-              type: 'string',
-              description: 'The page ID to get history for',
+              type: 'number',
+              description: `The page ID to get history for`,
             },
             expand: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              anyOf: [
+                {type: 'string', description: `Single field to expand`},
+                {type: 'array', items: {type: 'string'}, description: `Multiple fields to expand`},
+              ],
+              description: `Additional fields to expand.
+Can be a single string or array of strings`,
               default: ['lastUpdated', 'previousVersion', 'contributors'],
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of versions to return',
+              description: `Maximum number of versions to return`,
               default: 25,
+              minimum: 1,
+              maximum: 50,
             },
           },
           required: ['pageId'],
@@ -657,7 +736,7 @@ export class ConfluenceToolsManager {
    */
   async executeTool(toolName: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
     return withErrorHandling(async () => {
-      logger.info('Executing Confluence tool', { toolName, hasCustomHeaders: !!customHeaders });
+      logger.info('Executing Confluence tool', {toolName, hasCustomHeaders: !!customHeaders});
 
       // Set custom headers in the client if provided
       if (customHeaders && Object.keys(customHeaders).length > 0) {
@@ -729,14 +808,14 @@ export class ConfluenceToolsManager {
   // === Tool Implementations ===
 
   private async searchContent(args: any) {
-    const { cql, start = 0, limit = 50, excerpt = 'highlight', expand = [] } = args;
+    const {cql, offset = 0, limit = 50, excerpt = 'highlight', expand} = args;
 
     const searchResult = await this.client.searchContent({
       cql,
-      start,
+      offset,
       limit,
       excerpt,
-      expand,
+      expand: this.normalizeToArray(expand),
     });
 
     if (searchResult.results.length === 0) {
@@ -776,40 +855,90 @@ export class ConfluenceToolsManager {
   }
 
   private async getPage(args: any) {
-    const { pageId, expand = ['body.storage', 'version', 'space'], version } = args;
+    const {
+      pageId,
+      expand,
+      version,
+      includeAncestors = true,
+      includeDescendants = false,
+      convertToMarkdown = true,
+    } = args;
 
-    const page = await this.client.getContent(pageId, { expand, version });
+    // Build expand fields based on options
+    const expandFields = this.normalizeToArray(expand);
+    if (includeAncestors && !expandFields.includes('ancestors')) {
+      expandFields.push('ancestors');
+    }
+    if (includeDescendants && !expandFields.includes('children.page')) {
+      expandFields.push('children.page');
+    }
+
+    const page = await this.client.getContent(pageId, {
+      expand: expandFields,
+      version,
+    });
+
+    // Build result text
+    let resultText = `**Confluence Page: ${page.title}**\n\n`;
+
+    // Add breadcrumb path if ancestors included
+    if (includeAncestors && page.ancestors && page.ancestors.length > 0) {
+      const breadcrumbs = page.ancestors.map((a: any) => a.title).join(' > ');
+      resultText += `**Path:** ${breadcrumbs} > ${page.title}\n\n`;
+    }
+
+    // Add metadata
+    resultText += `**ID:** ${page.id}\n`;
+    resultText += `**Space:** ${page.space.name} (${page.space.key})\n`;
+    resultText += `**Type:** ${page.type}\n`;
+    resultText += `**Status:** ${page.status}\n`;
+    resultText += `**Version:** ${page.version.number} (${new Date(page.version.when).toLocaleString()})\n`;
+    resultText += `**Created:** ${new Date(page.history.createdDate).toLocaleString()}\n`;
+    resultText += `**Creator:** ${page.history.createdBy.displayName}\n`;
+
+    if (page.history.lastUpdated) {
+      resultText += `**Last Updated:** ${new Date(page.history.lastUpdated.when).toLocaleString()} by ${
+        page.history.lastUpdated.by.displayName
+      }\n`;
+    }
+
+    // Add content
+    if (page.body?.storage) {
+      const bodyContent = page.body.storage.value || '';
+      const formattedContent = convertToMarkdown
+        ? this.htmlToMarkdown(bodyContent)
+        : this.formatContent(bodyContent);
+
+      resultText += `\n**Content${convertToMarkdown ? ' (Markdown)' : ''}:**\n${formattedContent}\n`;
+    }
+
+    // Add child pages if requested
+    if (includeDescendants && page.children?.page?.results) {
+      const childPages = page.children.page.results;
+      if (childPages.length > 0) {
+        const childrenList = childPages.map((child: any) => `- ${child.title}`).join('\n');
+        resultText += `\n**Child Pages:**\n${childrenList}\n`;
+      }
+    }
+
+    resultText += `\n**Direct Link:** ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`;
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Confluence Page: ${page.title}**\n\n` +
-            `**ID:** ${page.id}\n` +
-            `**Space:** ${page.space.name} (${page.space.key})\n` +
-            `**Type:** ${page.type}\n` +
-            `**Status:** ${page.status}\n` +
-            `**Version:** ${page.version.number} (${new Date(page.version.when).toLocaleString()})\n` +
-            `**Created:** ${new Date(page.history.createdDate).toLocaleString()}\n` +
-            `**Creator:** ${page.history.createdBy.displayName}\n${
-              page.history.lastUpdated
-                ? `**Last Updated:** ${new Date(page.history.lastUpdated.when).toLocaleString()} by ${page.history.lastUpdated.by.displayName}\n`
-                : ''
-            }${
-              page.body?.storage
-                ? `\n**Content:**\n${this.formatContent(page.body.storage.value)}\n`
-                : ''
-            }\n**Direct Link:** ${this.config.url}/wiki/spaces/${page.space.key}/pages/${page.id}`,
+          text: resultText,
         },
       ],
     };
   }
 
   private async getPageByTitle(args: any) {
-    const { spaceKey, title, expand = ['body.storage', 'version', 'space'] } = args;
+    const {spaceKey, title, expand} = args;
 
-    const pages = await this.client.getContentBySpaceAndTitle(spaceKey, title, { expand });
+    const pages = await this.client.getContentBySpaceAndTitle(spaceKey, title, {
+      expand: this.normalizeToArray(expand)
+    });
 
     if (pages.length === 0) {
       return {
@@ -849,13 +978,13 @@ export class ConfluenceToolsManager {
   }
 
   private async createPage(args: any) {
-    const { spaceKey, title, body, parentId, type = 'page', labels = [] } = args;
+    const {spaceKey, title, body, parentId, type = 'page', labels = []} = args;
 
     // Build the page input
     const pageInput: any = {
       type,
       title,
-      space: { key: spaceKey },
+      space: {key: spaceKey},
       body: {
         storage: {
           value: this.processBodyContent(body),
@@ -865,7 +994,7 @@ export class ConfluenceToolsManager {
     };
 
     if (parentId) {
-      pageInput.ancestors = [{ id: parentId }];
+      pageInput.ancestors = [{id: parentId}];
     }
 
     const createdPage = await this.client.createContent(pageInput);
@@ -874,9 +1003,9 @@ export class ConfluenceToolsManager {
     if (labels.length > 0) {
       for (const labelName of labels) {
         try {
-          await this.client.addLabel(createdPage.id, { prefix: 'global', name: labelName });
+          await this.client.addLabel(createdPage.id, {prefix: 'global', name: labelName});
         } catch (error) {
-          logger.warn('Failed to add label', { pageId: createdPage.id, label: labelName, error });
+          logger.warn('Failed to add label', {pageId: createdPage.id, label: labelName, error});
         }
       }
     }
@@ -900,7 +1029,6 @@ export class ConfluenceToolsManager {
 
   private async updatePage(args: any) {
     const {
-      pageId,
       title,
       body,
       versionComment = 'Updated via MCP',
@@ -908,8 +1036,9 @@ export class ConfluenceToolsManager {
       labels,
     } = args;
 
+    const pageId = String(args.pageId)
     // Get current page to increment version
-    const currentPage = await this.client.getContent(pageId, { expand: ['version', 'space'] });
+    const currentPage = await this.client.getContent(pageId, {expand: ['version', 'space']});
 
     // Build the update input
     const updateInput: any = {
@@ -939,9 +1068,9 @@ export class ConfluenceToolsManager {
       // Note: This is a simplified approach; in production, you might want to be more selective
       for (const labelName of labels) {
         try {
-          await this.client.addLabel(pageId, { prefix: 'global', name: labelName });
+          await this.client.addLabel(pageId, {prefix: 'global', name: labelName});
         } catch (error) {
-          logger.warn('Failed to add label', { pageId, label: labelName, error });
+          logger.warn('Failed to add label', {pageId, label: labelName, error});
         }
       }
     }
@@ -963,9 +1092,14 @@ export class ConfluenceToolsManager {
   }
 
   private async getSpaces(args: any) {
-    const { type, status = 'current', expand = [], limit = 50 } = args;
+    const {type, status = 'current', expand, limit = 50} = args;
 
-    const spacesResult = await this.client.getSpaces({ type, status, expand, limit });
+    const spacesResult = await this.client.getSpaces({
+      type,
+      status,
+      expand: this.normalizeToArray(expand),
+      limit
+    });
 
     if (spacesResult.results.length === 0) {
       return {
@@ -993,9 +1127,11 @@ export class ConfluenceToolsManager {
   }
 
   private async getSpace(args: any) {
-    const { spaceKey, expand = ['description', 'homepage'] } = args;
+    const {spaceKey, expand} = args;
 
-    const space = await this.client.getSpace(spaceKey, { expand });
+    const space = await this.client.getSpace(spaceKey, {
+      expand: this.normalizeToArray(expand)
+    });
 
     return {
       content: [
@@ -1022,14 +1158,14 @@ export class ConfluenceToolsManager {
       spaceKey,
       type = 'page',
       status = 'current',
-      expand = ['version', 'space'],
+      expand,
       limit = 50,
     } = args;
 
     const contentResult = await this.client.getSpaceContent(spaceKey, {
       type,
       status,
-      expand,
+      expand: this.normalizeToArray(expand),
       limit,
     });
 
@@ -1065,11 +1201,11 @@ export class ConfluenceToolsManager {
   }
 
   private async addComment(args: any) {
-    const { pageId, body, parentCommentId } = args;
-
+    const {body, parentCommentId} = args;
+    const pageId = String(args.pageId);
     const commentInput: any = {
       type: 'comment',
-      container: { id: pageId },
+      container: {id: pageId},
       body: {
         storage: {
           value: this.processBodyContent(body),
@@ -1079,7 +1215,7 @@ export class ConfluenceToolsManager {
     };
 
     if (parentCommentId) {
-      commentInput.ancestors = [{ id: parentCommentId }];
+      commentInput.ancestors = [{id: parentCommentId}];
     }
 
     const comment = await this.client.addComment(commentInput);
@@ -1103,7 +1239,7 @@ export class ConfluenceToolsManager {
   // === Extended Tool Implementations ===
 
   private async searchUsers(args: any) {
-    const { query, limit = 50 } = args;
+    const {query, limit = 50} = args;
 
     const users = await this.client.searchUsers(query, limit);
 
@@ -1141,9 +1277,10 @@ export class ConfluenceToolsManager {
   }
 
   private async addLabel(args: any) {
-    const { pageId, label, prefix = 'global' } = args;
+    const {label, prefix = 'global'} = args;
+    const pageId = String(args.pageId);
 
-    await this.client.addLabel(pageId, { prefix, name: label });
+    await this.client.addLabel(pageId, {prefix, name: label});
 
     return {
       content: [
@@ -1161,9 +1298,10 @@ export class ConfluenceToolsManager {
   }
 
   private async getLabels(args: any) {
-    const { pageId, prefix, limit = 50 } = args;
+    const {prefix, limit = 50} = args;
+    const pageId = String(args.pageId);
 
-    const labelsResult = await this.client.getLabels(pageId, { prefix, limit });
+    const labelsResult = await this.client.getLabels(pageId, {prefix, limit});
 
     if (labelsResult.results.length === 0) {
       return {
@@ -1194,9 +1332,13 @@ export class ConfluenceToolsManager {
   }
 
   private async getPagesByLabel(args: any) {
-    const { label, spaceKey, expand = ['version', 'space'], limit = 50 } = args;
+    const {label, spaceKey, expand, limit = 50} = args;
 
-    const pagesResult = await this.client.getPagesByLabel(label, { spaceKey, expand, limit });
+    const pagesResult = await this.client.getPagesByLabel(label, {
+      spaceKey,
+      expand: this.normalizeToArray(expand),
+      limit
+    });
 
     if (pagesResult.results.length === 0) {
       return {
@@ -1232,9 +1374,13 @@ export class ConfluenceToolsManager {
   }
 
   private async getPageChildren(args: any) {
-    const { pageId, expand = ['version', 'space'], limit = 50 } = args;
+    const {expand, limit = 50} = args;
+    const pageId = String(args.pageId);
 
-    const childrenResult = await this.client.getPageChildren(pageId, { expand, limit });
+    const childrenResult = await this.client.getPageChildren(pageId, {
+      expand: this.normalizeToArray(expand),
+      limit
+    });
 
     if (childrenResult.results.length === 0) {
       return {
@@ -1270,9 +1416,14 @@ export class ConfluenceToolsManager {
   }
 
   private async getComments(args: any) {
-    const { pageId, location, expand = ['body.view', 'history.lastUpdated'], limit = 50 } = args;
+    const {location, expand, limit = 50} = args;
+    const pageId = String(args.pageId);
 
-    const commentsResult = await this.client.getComments(pageId, { location, expand, limit });
+    const commentsResult = await this.client.getComments(pageId, {
+      location,
+      expand: this.normalizeToArray(expand),
+      limit
+    });
 
     if (commentsResult.results.length === 0) {
       return {
@@ -1307,7 +1458,8 @@ export class ConfluenceToolsManager {
   }
 
   private async deletePage(args: any) {
-    const { pageId, permanent = false } = args;
+    const {permanent = false} = args;
+    const pageId = String(args.pageId);
 
     await this.client.deleteContent(pageId, permanent ? 'deleted' : 'trashed');
 
@@ -1325,13 +1477,13 @@ export class ConfluenceToolsManager {
   }
 
   private async getPageHistory(args: any) {
-    const {
-      pageId,
-      expand = ['lastUpdated', 'previousVersion', 'contributors'],
-      limit = 25,
-    } = args;
+    const { expand, limit = 25 } = args;
+    const pageId = String(args.pageId);
 
-    const historyResult = await this.client.getContentHistory(pageId, { expand, limit });
+    const historyResult = await this.client.getContentHistory(pageId, {
+      expand: this.normalizeToArray(expand),
+      limit
+    });
 
     if (!historyResult.lastUpdated && !historyResult.previousVersion) {
       return {
@@ -1385,6 +1537,71 @@ export class ConfluenceToolsManager {
   }
 
   // === Utility Methods ===
+
+  /**
+   * Convert Confluence HTML storage format to Markdown
+   */
+  private htmlToMarkdown(html: string): string {
+    if (!html) return '';
+
+    let markdown = html
+      // Headers
+      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+      .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n')
+      .replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n\n')
+      .replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n')
+
+      // Bold and italic
+      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+
+      // Links
+      .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+
+      // Code blocks
+      .replace(/<pre[^>]*><code[^>]*>(.*?)<\/code><\/pre>/gis, '```\n$1\n```\n')
+      .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
+
+      // Lists
+      .replace(/<ul[^>]*>/gi, '\n')
+      .replace(/<\/ul>/gi, '\n')
+      .replace(/<ol[^>]*>/gi, '\n')
+      .replace(/<\/ol>/gi, '\n')
+      .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+
+      // Paragraphs and breaks
+      .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+
+      // Tables (basic)
+      .replace(/<table[^>]*>/gi, '\n')
+      .replace(/<\/table>/gi, '\n')
+      .replace(/<tr[^>]*>/gi, '| ')
+      .replace(/<\/tr>/gi, ' |\n')
+      .replace(/<th[^>]*>(.*?)<\/th>/gi, '$1 | ')
+      .replace(/<td[^>]*>(.*?)<\/td>/gi, '$1 | ')
+
+      // Remove remaining HTML tags
+      .replace(/<[^>]*>/g, '')
+
+      // HTML entities
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+
+      // Clean up multiple newlines
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    return markdown;
+  }
 
   private formatContent(content: string): string {
     // Basic formatting for storage format content

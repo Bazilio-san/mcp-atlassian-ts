@@ -33,31 +33,46 @@ export class JiraToolsManager {
   }
 
   /**
+   * Normalize string or array parameter to array
+   * Allows flexible input: single string or array of strings
+   */
+  private normalizeToArray(value: string | string[] | undefined): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return [value];
+  }
+
+  /**
    * Get all available JIRA tools
    */
   getAvailableTools(): Tool[] {
     return [
       // Issue management
       {
-        name: 'jira_get_issue',
-        description: 'Get detailed information about a JIRA issue by key or ID',
+        name: 'jira_get_issue', // TODO расширить функционал
+        description: `Get detailed information about a JIRA issue by key or ID`,
         inputSchema: {
           type: 'object',
           properties: {
-            issueKey: {
+            issueKey: { // TODO замениь на issueIdOrKey
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123) or ID',
+              description: `
+Issue id or key can be used to uniquely identify an existing issue.
+Issue id is a numerical identifier (e.g. 123).
+Issue key is formatted as <project key>-<id> (e.g. ISSUE-123).
+An example issue key is ISSUE-1.`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand (changelog, transitions, etc.)',
+              items: {type: 'string'},
+              description: `Additional fields to expand. e.g.: ["changelog", "transitions"]`,
               default: [],
             },
             fields: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Specific fields to return',
+              items: {type: 'string'},
+              description: `Specific fields to return. e.g.: ["summary", "status", "assignee"]`,
+              default: [],
             },
           },
           required: ['issueKey'],
@@ -73,33 +88,33 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_search_issues',
-        description: 'Search for JIRA issues using JQL (JIRA Query Language)',
+        description: `Search for JIRA issues using JQL (JIRA Query Language)`,
         inputSchema: {
           type: 'object',
           properties: {
             jql: {
               type: 'string',
-              description: 'JQL query string (e.g., "project = PROJ AND status = Open")',
+              description: `JQL query string (e.g., "project = PROJ AND status = Open")`,
             },
             startAt: {
               type: 'number',
-              description: 'Starting index for results',
+              description: `Starting index for results`,
               default: 0,
             },
             maxResults: {
               type: 'number',
-              description: 'Maximum number of results to return',
+              description: `Maximum number of results to return`,
               default: 50,
             },
             fields: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Specific fields to return',
+              items: {type: 'string'},
+              description: `Specific fields to return. e.g.: ["summary", "status", "assignee"]`,
             },
             expand: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Additional fields to expand',
+              items: {type: 'string'},
+              description: `Additional fields to expand. e.g.: ["changelog", "transitions"]`,
               default: [],
             },
           },
@@ -116,49 +131,49 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_create_issue',
-        description: 'Create a new JIRA issue',
+        description: `Create a new JIRA issue`,
         inputSchema: {
           type: 'object',
           properties: {
             project: {
               type: 'string',
-              description: 'Project key or ID',
+              description: `Project key or ID`,
             },
             issueType: {
               type: 'string',
-              description: 'Issue type name or ID (e.g., "Task", "Bug", "Story")',
+              description: `Issue type name or ID (e.g., "Task", "Bug", "Story")`,
             },
             summary: {
               type: 'string',
-              description: 'Issue summary/title',
+              description: `Issue summary/title`,
             },
             description: {
               type: 'string',
-              description: 'Issue description',
+              description: `Issue description`,
             },
             assignee: {
               type: 'string',
-              description: 'Assignee account ID or email',
+              description: `Assignee account ID or email`,
             },
             priority: {
               type: 'string',
-              description: 'Priority name or ID',
+              description: `Priority name or ID`,
             },
             labels: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Labels to add to the issue',
+              description: `Labels to add to the issue (e.g.: ["bug", "urgent"])`,
               default: [],
             },
             components: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Component names or IDs',
+              description: `Component names or IDs, e.g.: ["Backend", "API"]`,
               default: [],
             },
             customFields: {
               type: 'object',
-              description: 'Custom field values (field ID as key)',
+              description: `Custom field values (field ID as key)`,
               additionalProperties: true,
             },
           },
@@ -175,38 +190,39 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_update_issue',
-        description: 'Update an existing JIRA issue',
+        description: `Update an existing JIRA issue`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123) or ID',
+              description: `The issue key (e.g., PROJ-123) or ID`,
             },
             summary: {
               type: 'string',
-              description: 'Updated summary/title',
+              description: `Updated summary/title`,
             },
             description: {
               type: 'string',
-              description: 'Updated description',
+              description: `Updated description`,
             },
             assignee: {
               type: 'string',
-              description: 'New assignee account ID or email',
+              description: `New assignee account ID or email`,
             },
             priority: {
               type: 'string',
-              description: 'New priority name or ID',
+              description: `New priority name or ID`,
             },
             labels: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Labels to set (replaces existing)',
+              description: `Labels to set (replaces existing). e.g.: ["bug", "urgent"]`,
+              default: [],
             },
             customFields: {
               type: 'object',
-              description: 'Custom field values to update',
+              description: `Custom field values to update`,
               additionalProperties: true,
             },
           },
@@ -223,17 +239,17 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_add_comment',
-        description: 'Add a comment to a JIRA issue',
+        description: `Add a comment to a JIRA issue`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123) or ID',
+              description: `The issue key (e.g., PROJ-123) or ID`,
             },
             body: {
               type: 'string',
-              description: 'Comment text',
+              description: `Comment text`,
             },
             visibility: {
               type: 'object',
@@ -244,10 +260,10 @@ export class JiraToolsManager {
                 },
                 value: {
                   type: 'string',
-                  description: 'Group name or role name',
+                  description: `Group name or role name`,
                 },
               },
-              description: 'Comment visibility restrictions',
+              description: `Comment visibility restrictions`,
             },
           },
           required: ['issueKey', 'body'],
@@ -263,13 +279,13 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_get_transitions',
-        description: 'Get available transitions for a JIRA issue',
+        description: `Get available transitions for a JIRA issue`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123) or ID',
+              description: `The issue key (e.g., PROJ-123) or ID`,
             },
           },
           required: ['issueKey'],
@@ -285,25 +301,25 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_transition_issue',
-        description: 'Transition a JIRA issue to a new status',
+        description: `Transition a JIRA issue to a new status`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123) or ID',
+              description: `The issue key (e.g., PROJ-123) or ID`,
             },
             transitionId: {
               type: 'string',
-              description: 'Transition ID to execute',
+              description: `Transition ID to execute`,
             },
             comment: {
               type: 'string',
-              description: 'Optional comment to add with the transition',
+              description: `Optional comment to add with the transition`,
             },
             fields: {
               type: 'object',
-              description: 'Field values required for the transition',
+              description: `Field values required for the transition`,
               additionalProperties: true,
             },
           },
@@ -320,7 +336,7 @@ export class JiraToolsManager {
       },
       {
         name: 'jira_get_projects',
-        description: 'Get all JIRA projects accessible to the user',
+        description: `Get all JIRA projects accessible to the user`,
         inputSchema: {
           type: 'object',
           properties: {
@@ -332,7 +348,7 @@ export class JiraToolsManager {
             },
             recent: {
               type: 'number',
-              description: 'Number of recent projects to return',
+              description: `Number of recent projects to return`,
             },
           },
           additionalProperties: false,
@@ -349,13 +365,13 @@ export class JiraToolsManager {
       // === User Management ===
       {
         name: 'jira_get_user_profile',
-        description: 'Get detailed user profile information by account ID or email',
+        description: `Get detailed user profile information by account ID or email`,
         inputSchema: {
           type: 'object',
           properties: {
             userIdOrEmail: {
               type: 'string',
-              description: 'User account ID or email address',
+              description: `User account ID or email address`,
             },
           },
           required: ['userIdOrEmail'],
@@ -373,17 +389,17 @@ export class JiraToolsManager {
       // === Issue Management Extended ===
       {
         name: 'jira_delete_issue',
-        description: 'Delete a JIRA issue permanently',
+        description: `Delete a JIRA issue permanently`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123) or ID',
+              description: `The issue key (e.g., PROJ-123) or ID`,
             },
             deleteSubtasks: {
               type: 'boolean',
-              description: 'Whether to delete subtasks as well',
+              description: `Whether to delete subtasks as well`,
               default: false,
             },
           },
@@ -401,7 +417,7 @@ export class JiraToolsManager {
 
       {
         name: 'jira_batch_create_issues',
-        description: 'Create multiple JIRA issues in a single request',
+        description: `Create multiple JIRA issues in a single request`,
         inputSchema: {
           type: 'object',
           properties: {
@@ -421,7 +437,7 @@ export class JiraToolsManager {
                 },
                 required: ['project', 'issueType', 'summary'],
               },
-              description: 'Array of issues to create',
+              description: `Array of issues to create`,
             },
           },
           required: ['issues'],
@@ -439,13 +455,13 @@ export class JiraToolsManager {
       // === Fields and Metadata ===
       {
         name: 'jira_search_fields',
-        description: 'Search for JIRA fields (including custom fields)',
+        description: `Search for JIRA fields (including custom fields)`,
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Search query to filter fields by name or key',
+              description: `Search query to filter fields by name or key`,
             },
           },
           additionalProperties: false,
@@ -462,13 +478,13 @@ export class JiraToolsManager {
       // === Project Versions ===
       {
         name: 'jira_get_project_versions',
-        description: 'Get all versions for a JIRA project',
+        description: `Get all versions for a JIRA project`,
         inputSchema: {
           type: 'object',
           properties: {
             projectKey: {
               type: 'string',
-              description: 'Project key or ID',
+              description: `Project key or ID`,
             },
           },
           required: ['projectKey'],
@@ -485,38 +501,38 @@ export class JiraToolsManager {
 
       {
         name: 'jira_create_version',
-        description: 'Create a new version in a JIRA project',
+        description: `Create a new version in a JIRA project`,
         inputSchema: {
           type: 'object',
           properties: {
             projectId: {
               type: 'string',
-              description: 'Project ID',
+              description: `Project ID`,
             },
             name: {
               type: 'string',
-              description: 'Version name',
+              description: `Version name`,
             },
             description: {
               type: 'string',
-              description: 'Version description',
+              description: `Version description`,
             },
             releaseDate: {
               type: 'string',
-              description: 'Release date (YYYY-MM-DD)',
+              description: `Release date (YYYY-MM-DD)`,
             },
             startDate: {
               type: 'string',
-              description: 'Start date (YYYY-MM-DD)',
+              description: `Start date (YYYY-MM-DD)`,
             },
             archived: {
               type: 'boolean',
-              description: 'Whether version is archived',
+              description: `Whether version is archived`,
               default: false,
             },
             released: {
               type: 'boolean',
-              description: 'Whether version is released',
+              description: `Whether version is released`,
               default: false,
             },
           },
@@ -534,7 +550,7 @@ export class JiraToolsManager {
 
       {
         name: 'jira_batch_create_versions',
-        description: 'Create multiple versions in JIRA projects',
+        description: `Create multiple versions in JIRA projects`,
         inputSchema: {
           type: 'object',
           properties: {
@@ -551,7 +567,7 @@ export class JiraToolsManager {
                 },
                 required: ['projectId', 'name'],
               },
-              description: 'Array of versions to create',
+              description: `Array of versions to create`,
             },
           },
           required: ['versions'],
@@ -569,7 +585,7 @@ export class JiraToolsManager {
       // === Issue Links ===
       {
         name: 'jira_get_link_types',
-        description: 'Get all available JIRA issue link types',
+        description: `Get all available JIRA issue link types`,
         inputSchema: {
           type: 'object',
           additionalProperties: false,
@@ -585,25 +601,25 @@ export class JiraToolsManager {
 
       {
         name: 'jira_create_issue_link',
-        description: 'Create a link between two JIRA issues',
+        description: `Create a link between two JIRA issues`,
         inputSchema: {
           type: 'object',
           properties: {
             linkType: {
               type: 'string',
-              description: 'Link type name (e.g., "Blocks", "Relates")',
+              description: `Link type name (e.g., "Blocks", "Relates")`,
             },
             inwardIssue: {
               type: 'string',
-              description: 'Key of the inward issue',
+              description: `Key of the inward issue`,
             },
             outwardIssue: {
               type: 'string',
-              description: 'Key of the outward issue',
+              description: `Key of the outward issue`,
             },
             comment: {
               type: 'string',
-              description: 'Optional comment for the link',
+              description: `Optional comment for the link`,
             },
           },
           required: ['linkType', 'inwardIssue', 'outwardIssue'],
@@ -620,29 +636,29 @@ export class JiraToolsManager {
 
       {
         name: 'jira_create_remote_issue_link',
-        description: 'Create a remote link from a JIRA issue to external URL',
+        description: `Create a remote link from a JIRA issue to external URL`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123)',
+              description: `The issue key (e.g., PROJ-123)`,
             },
             url: {
               type: 'string',
-              description: 'External URL to link to',
+              description: `External URL to link to`,
             },
             title: {
               type: 'string',
-              description: 'Link title',
+              description: `Link title`,
             },
             summary: {
               type: 'string',
-              description: 'Link summary',
+              description: `Link summary`,
             },
             iconUrl: {
               type: 'string',
-              description: 'URL to link icon',
+              description: `URL to link icon`,
             },
           },
           required: ['issueKey', 'url', 'title'],
@@ -659,13 +675,13 @@ export class JiraToolsManager {
 
       {
         name: 'jira_remove_issue_link',
-        description: 'Remove a link between JIRA issues',
+        description: `Remove a link between JIRA issues`,
         inputSchema: {
           type: 'object',
           properties: {
             linkId: {
               type: 'string',
-              description: 'Link ID to remove',
+              description: `Link ID to remove`,
             },
           },
           required: ['linkId'],
@@ -683,17 +699,17 @@ export class JiraToolsManager {
       // === Epics ===
       {
         name: 'jira_link_to_epic',
-        description: 'Link a JIRA issue to an epic',
+        description: `Link a JIRA issue to an epic`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'Issue key to link to epic',
+              description: `Issue key to link to epic`,
             },
             epicKey: {
               type: 'string',
-              description: 'Epic issue key',
+              description: `Epic issue key`,
             },
           },
           required: ['issueKey', 'epicKey'],
@@ -711,22 +727,22 @@ export class JiraToolsManager {
       // === Worklog ===
       {
         name: 'jira_get_worklog',
-        description: 'Get worklog entries for a JIRA issue',
+        description: `Get worklog entries for a JIRA issue`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123)',
+              description: `The issue key (e.g., PROJ-123)`,
             },
             startAt: {
               type: 'number',
-              description: 'Starting index',
+              description: `Starting index`,
               default: 0,
             },
             maxResults: {
               type: 'number',
-              description: 'Maximum results to return',
+              description: `Maximum results to return`,
               default: 50,
             },
           },
@@ -744,25 +760,25 @@ export class JiraToolsManager {
 
       {
         name: 'jira_add_worklog',
-        description: 'Add a worklog entry to a JIRA issue',
+        description: `Add a worklog entry to a JIRA issue`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123)',
+              description: `The issue key (e.g., PROJ-123)`,
             },
             timeSpent: {
               type: 'string',
-              description: 'Time spent (e.g., "1h 30m", "2d 4h")',
+              description: `Time spent (e.g., "1h 30m", "2d 4h")`,
             },
             comment: {
               type: 'string',
-              description: 'Worklog comment',
+              description: `Worklog comment`,
             },
             started: {
               type: 'string',
-              description: 'When work started (ISO format)',
+              description: `When work started (ISO format)`,
             },
             visibility: {
               type: 'object',
@@ -775,7 +791,7 @@ export class JiraToolsManager {
                   type: 'string',
                 },
               },
-              description: 'Worklog visibility restrictions',
+              description: `Worklog visibility restrictions`,
             },
           },
           required: ['issueKey', 'timeSpent'],
@@ -793,13 +809,13 @@ export class JiraToolsManager {
       // === Attachments ===
       {
         name: 'jira_download_attachments',
-        description: 'Get metadata and download links for JIRA issue attachments',
+        description: `Get metadata and download links for JIRA issue attachments`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKey: {
               type: 'string',
-              description: 'The issue key (e.g., PROJ-123)',
+              description: `The issue key (e.g., PROJ-123)`,
             },
           },
           required: ['issueKey'],
@@ -817,31 +833,31 @@ export class JiraToolsManager {
       // === Agile ===
       {
         name: 'jira_get_agile_boards',
-        description: 'Get all agile boards (Scrum/Kanban)',
+        description: `Get all agile boards (Scrum/Kanban)`,
         inputSchema: {
           type: 'object',
           properties: {
             startAt: {
               type: 'number',
-              description: 'Starting index',
+              description: `Starting index`,
               default: 0,
             },
             maxResults: {
               type: 'number',
-              description: 'Maximum results',
+              description: `Maximum results`,
               default: 50,
             },
             type: {
               type: 'string',
-              description: 'Board type filter',
+              description: `Board type filter`,
             },
             name: {
               type: 'string',
-              description: 'Board name filter',
+              description: `Board name filter`,
             },
             projectKeyOrId: {
               type: 'string',
-              description: 'Filter by project',
+              description: `Filter by project`,
             },
           },
           additionalProperties: false,
@@ -857,27 +873,27 @@ export class JiraToolsManager {
 
       {
         name: 'jira_get_board_issues',
-        description: 'Get issues from an agile board',
+        description: `Get issues from an agile board`,
         inputSchema: {
           type: 'object',
           properties: {
             boardId: {
               type: 'string',
-              description: 'Board ID',
+              description: `Board ID`,
             },
             startAt: {
               type: 'number',
-              description: 'Starting index',
+              description: `Starting index`,
               default: 0,
             },
             maxResults: {
               type: 'number',
-              description: 'Maximum results',
+              description: `Maximum results`,
               default: 50,
             },
             jql: {
               type: 'string',
-              description: 'Additional JQL filter',
+              description: `Additional JQL filter`,
             },
             fields: {
               type: 'array',
@@ -899,28 +915,28 @@ export class JiraToolsManager {
 
       {
         name: 'jira_get_sprints_from_board',
-        description: 'Get sprints from an agile board',
+        description: `Get sprints from an agile board`,
         inputSchema: {
           type: 'object',
           properties: {
             boardId: {
               type: 'string',
-              description: 'Board ID',
+              description: `Board ID`,
             },
             startAt: {
               type: 'number',
-              description: 'Starting index',
+              description: `Starting index`,
               default: 0,
             },
             maxResults: {
               type: 'number',
-              description: 'Maximum results',
+              description: `Maximum results`,
               default: 50,
             },
             state: {
               type: 'string',
               enum: ['active', 'closed', 'future'],
-              description: 'Sprint state filter',
+              description: `Sprint state filter`,
             },
           },
           required: ['boardId'],
@@ -937,27 +953,27 @@ export class JiraToolsManager {
 
       {
         name: 'jira_get_sprint_issues',
-        description: 'Get issues from a specific sprint',
+        description: `Get issues from a specific sprint`,
         inputSchema: {
           type: 'object',
           properties: {
             sprintId: {
               type: 'string',
-              description: 'Sprint ID',
+              description: `Sprint ID`,
             },
             startAt: {
               type: 'number',
-              description: 'Starting index',
+              description: `Starting index`,
               default: 0,
             },
             maxResults: {
               type: 'number',
-              description: 'Maximum results',
+              description: `Maximum results`,
               default: 50,
             },
             jql: {
               type: 'string',
-              description: 'Additional JQL filter',
+              description: `Additional JQL filter`,
             },
             fields: {
               type: 'array',
@@ -979,29 +995,29 @@ export class JiraToolsManager {
 
       {
         name: 'jira_create_sprint',
-        description: 'Create a new sprint on an agile board',
+        description: `Create a new sprint on an agile board`,
         inputSchema: {
           type: 'object',
           properties: {
             boardId: {
               type: 'string',
-              description: 'Board ID where sprint will be created',
+              description: `Board ID where sprint will be created`,
             },
             name: {
               type: 'string',
-              description: 'Sprint name',
+              description: `Sprint name`,
             },
             goal: {
               type: 'string',
-              description: 'Sprint goal',
+              description: `Sprint goal`,
             },
             startDate: {
               type: 'string',
-              description: 'Sprint start date (ISO format)',
+              description: `Sprint start date (ISO format)`,
             },
             endDate: {
               type: 'string',
-              description: 'Sprint end date (ISO format)',
+              description: `Sprint end date (ISO format)`,
             },
           },
           required: ['boardId', 'name'],
@@ -1018,34 +1034,34 @@ export class JiraToolsManager {
 
       {
         name: 'jira_update_sprint',
-        description: 'Update an existing sprint',
+        description: `Update an existing sprint`,
         inputSchema: {
           type: 'object',
           properties: {
             sprintId: {
               type: 'string',
-              description: 'Sprint ID to update',
+              description: `Sprint ID to update`,
             },
             name: {
               type: 'string',
-              description: 'New sprint name',
+              description: `New sprint name`,
             },
             goal: {
               type: 'string',
-              description: 'New sprint goal',
+              description: `New sprint goal`,
             },
             state: {
               type: 'string',
               enum: ['active', 'closed', 'future'],
-              description: 'Sprint state',
+              description: `Sprint state`,
             },
             startDate: {
               type: 'string',
-              description: 'Sprint start date (ISO format)',
+              description: `Sprint start date (ISO format)`,
             },
             endDate: {
               type: 'string',
-              description: 'Sprint end date (ISO format)',
+              description: `Sprint end date (ISO format)`,
             },
           },
           required: ['sprintId'],
@@ -1063,14 +1079,14 @@ export class JiraToolsManager {
       // === Bulk Operations ===
       {
         name: 'jira_batch_get_changelogs',
-        description: 'Get changelogs for multiple issues (Cloud only)',
+        description: `Get changelogs for multiple issues (Cloud only)`,
         inputSchema: {
           type: 'object',
           properties: {
             issueKeys: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Array of issue keys',
+              description: `Array of issue keys`,
             },
           },
           required: ['issueKeys'],
@@ -1196,7 +1212,14 @@ export class JiraToolsManager {
   private async getIssue(args: any) {
     const { issueKey, expand = [], fields } = args;
 
-    const issue = await this.client.getIssue(issueKey, { expand, fields });
+    const options: any = {
+      expand: this.normalizeToArray(expand)
+    };
+    if (fields) {
+      options.fields = this.normalizeToArray(fields);
+    }
+
+    const issue = await this.client.getIssue(issueKey, options);
 
     return {
       content: [
@@ -1225,15 +1248,19 @@ export class JiraToolsManager {
   }
 
   private async searchIssues(args: any) {
-    const { jql, startAt = 0, maxResults = 50, fields, expand = [] } = args;
+    const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
 
-    const searchResult = await this.client.searchIssues({
+    const searchRequest: any = {
       jql,
       startAt,
       maxResults,
-      fields,
-      expand,
-    });
+      expand: this.normalizeToArray(expand),
+    };
+    if (fields) {
+      searchRequest.fields = this.normalizeToArray(fields);
+    }
+
+    const searchResult = await this.client.searchIssues(searchRequest);
 
     if (searchResult.issues.length === 0) {
       return {
@@ -1273,10 +1300,14 @@ export class JiraToolsManager {
       description,
       assignee,
       priority,
-      labels = [],
-      components = [],
+      labels,
+      components,
       customFields = {},
     } = args;
+
+    // Normalize labels and components
+    const normalizedLabels = this.normalizeToArray(labels);
+    const normalizedComponents = this.normalizeToArray(components);
 
     // Build the issue input
     const issueInput: any = {
@@ -1291,9 +1322,9 @@ export class JiraToolsManager {
     if (description) issueInput.fields.description = description;
     if (assignee) issueInput.fields.assignee = { accountId: assignee };
     if (priority) issueInput.fields.priority = { name: priority };
-    if (labels.length > 0) issueInput.fields.labels = labels;
-    if (components.length > 0)
-      issueInput.fields.components = components.map((c: string) => ({ name: c }));
+    if (normalizedLabels.length > 0) issueInput.fields.labels = normalizedLabels;
+    if (normalizedComponents.length > 0)
+      issueInput.fields.components = normalizedComponents.map((c: string) => ({ name: c }));
 
     const createdIssue = await this.client.createIssue(issueInput);
 
@@ -1322,7 +1353,7 @@ export class JiraToolsManager {
     if (description) updateData.fields.description = description;
     if (assignee) updateData.fields.assignee = { accountId: assignee };
     if (priority) updateData.fields.priority = { name: priority };
-    if (labels) updateData.fields.labels = labels;
+    if (labels) updateData.fields.labels = this.normalizeToArray(labels);
 
     await this.client.updateIssue(issueKey, updateData);
 
@@ -1418,9 +1449,12 @@ export class JiraToolsManager {
   }
 
   private async getProjects(args: any) {
-    const { expand = [], recent } = args;
+    const { expand, recent } = args;
 
-    const projects = await this.client.getProjects({ expand, recent });
+    const projects = await this.client.getProjects({
+      expand: this.normalizeToArray(expand),
+      recent
+    });
 
     if (projects.length === 0) {
       return {
@@ -1922,9 +1956,14 @@ export class JiraToolsManager {
   }
 
   private async getBoardIssues(args: any) {
-    const { boardId, ...options } = args;
+    const { boardId, fields, ...options } = args;
 
-    const issuesResult = await this.client.getBoardIssues(boardId, options);
+    const requestOptions: any = { ...options };
+    if (fields) {
+      requestOptions.fields = this.normalizeToArray(fields);
+    }
+
+    const issuesResult = await this.client.getBoardIssues(boardId, requestOptions);
 
     if (issuesResult.issues.length === 0) {
       return {
@@ -1995,9 +2034,14 @@ export class JiraToolsManager {
   }
 
   private async getSprintIssues(args: any) {
-    const { sprintId, ...options } = args;
+    const { sprintId, fields, ...options } = args;
 
-    const issuesResult = await this.client.getSprintIssues(sprintId, options);
+    const requestOptions: any = { ...options };
+    if (fields) {
+      requestOptions.fields = this.normalizeToArray(fields);
+    }
+
+    const issuesResult = await this.client.getSprintIssues(sprintId, requestOptions);
 
     if (issuesResult.issues.length === 0) {
       return {

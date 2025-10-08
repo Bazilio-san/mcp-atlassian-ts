@@ -186,13 +186,15 @@ export class ConfluenceClient {
             limit: searchRequest.limit,
           });
 
-          // Apply default limit if not specified
-          const request = {
-            ...searchRequest,
+          // Transform offset to start for Confluence API compatibility
+          const { offset, ...rest } = searchRequest;
+          const apiParams = {
+            ...rest,
+            start: offset ?? 0,
             limit: searchRequest.limit || this.config.maxResults || 50,
           };
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/search', { params: request });
+          const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/search', { params: apiParams });
           return response.data;
         },
         60
@@ -268,10 +270,10 @@ export class ConfluenceClient {
       status?: 'current' | 'archived';
       label?: string[];
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
     } = {}
-  ): Promise<{ results: ConfluenceSpace[]; size: number; start: number; limit: number }> {
+  ): Promise<{ results: ConfluenceSpace[]; size: number; offset: number; limit: number }> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'spaces', options);
 
@@ -338,10 +340,10 @@ export class ConfluenceClient {
       title?: string;
       status?: 'current' | 'trashed' | 'draft';
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
     } = {}
-  ): Promise<{ results: ConfluencePage[]; size: number; start: number; limit: number }> {
+  ): Promise<{ results: ConfluencePage[]; size: number; offset: number; limit: number }> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'spaceContent', { spaceKey, ...options });
 
@@ -369,7 +371,7 @@ export class ConfluenceClient {
     contentId: string,
     options: {
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
       location?: string;
       depth?: 'all' | string;
@@ -457,7 +459,7 @@ export class ConfluenceClient {
     contentId: string,
     options: {
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
       filename?: string;
       mediaType?: string;
@@ -514,7 +516,7 @@ export class ConfluenceClient {
     contentId: string,
     options: {
       prefix?: string;
-      start?: number;
+      offset?: number;
       limit?: number;
     } = {}
   ): Promise<any> {
@@ -540,7 +542,7 @@ export class ConfluenceClient {
     pageId: string,
     options: {
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
       type?: string;
     } = {}
@@ -594,7 +596,7 @@ export class ConfluenceClient {
     options: {
       spaceKey?: string;
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
     } = {}
   ): Promise<any> {
@@ -611,7 +613,7 @@ export class ConfluenceClient {
 
         const params: any = {
           cql,
-          start: options.start || 0,
+          offset: options.offset || 0,
           limit: options.limit || 50,
           excerpt: 'none',
         };
@@ -630,7 +632,7 @@ export class ConfluenceClient {
     contentId: string,
     options: {
       expand?: string[];
-      start?: number;
+      offset?: number;
       limit?: number;
     } = {}
   ): Promise<any> {

@@ -15,19 +15,19 @@ export interface ConfluencePage {
   children?: {
     page?: {
       results: ConfluencePage[];
-      start: number;
+      offset: number;
       limit: number;
       size: number;
     };
     attachment?: {
       results: ConfluenceAttachment[];
-      start: number;
+      offset: number;
       limit: number;
       size: number;
     };
     comment?: {
       results: ConfluenceComment[];
-      start: number;
+      offset: number;
       limit: number;
       size: number;
     };
@@ -35,7 +35,7 @@ export interface ConfluencePage {
   descendants?: {
     page?: {
       results: ConfluencePage[];
-      start: number;
+      offset: number;
       limit: number;
       size: number;
     };
@@ -273,7 +273,7 @@ export interface ConfluenceSearchRequest {
   cql: string;
   cqlcontext?: string;
   excerpt?: 'indexed' | 'highlight' | 'none';
-  start?: number;
+  offset?: number;
   limit?: number;
   includeArchivedSpaces?: boolean;
   expand?: string[];
@@ -281,7 +281,7 @@ export interface ConfluenceSearchRequest {
 
 export interface ConfluenceSearchResponse {
   results: ConfluenceSearchResult[];
-  start: number;
+  offset: number;
   limit: number;
   size: number;
   totalSize: number;
