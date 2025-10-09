@@ -16,8 +16,8 @@ Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### Get full issue data
-PUT {{baseUrl}}/rest/api/2/issue/AITECH-10
+### Update issue
+PUT {{baseUrl}}/rest/api/2/issue/AITECH-4
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -317,3 +317,9 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 ### Board properties (list)
 GET {{baseUrl}}/rest/agile/1.0/board/820/properties
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+### Create Version
+POST {{baseUrl}}/rest/api/2/version
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+

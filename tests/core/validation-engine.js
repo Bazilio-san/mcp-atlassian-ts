@@ -21,22 +21,28 @@ class ValidationEngine {
     };
 
     // Check HTTP status code
-    if (testCase.expectedStatus && response.status !== testCase.expectedStatus) {
-      result.passed = false;
-      let errorMsg = `Status mismatch: expected ${testCase.expectedStatus}, got ${response.status}`;
+    if (testCase.expectedStatus) {
+      const expectedStatuses = Array.isArray(testCase.expectedStatus)
+        ? testCase.expectedStatus
+        : [testCase.expectedStatus];
 
-      // Check for JIRA API error messages in error responses
-      if (response.data && response.data.errorMessages && Array.isArray(response.data.errorMessages) && response.data.errorMessages.length > 0) {
-        errorMsg += ` - ${response.data.errorMessages.join(', ')}`;
-        result.details.errorMessages = response.data.errorMessages;
-        if (response.data.errors) {
-          result.details.errors = response.data.errors;
+      if (!expectedStatuses.includes(response.status)) {
+        result.passed = false;
+        let errorMsg = `Status mismatch: expected ${Array.isArray(testCase.expectedStatus) ? `one of [${testCase.expectedStatus.join(', ')}]` : testCase.expectedStatus}, got ${response.status}`;
+
+        // Check for JIRA API error messages in error responses
+        if (response.data && response.data.errorMessages && Array.isArray(response.data.errorMessages) && response.data.errorMessages.length > 0) {
+          errorMsg += ` - ${response.data.errorMessages.join(', ')}`;
+          result.details.errorMessages = response.data.errorMessages;
+          if (response.data.errors) {
+            result.details.errors = response.data.errors;
+          }
         }
-      }
 
-      result.error = errorMsg;
-      result.details.statusMismatch = true;
-      return result;
+        result.error = errorMsg;
+        result.details.statusMismatch = true;
+        return result;
+      }
     }
 
     // Check for JIRA API error messages even in successful responses

@@ -21,7 +21,8 @@ import { isObj } from './core/utils.js';
 import { appConfig } from "../dist/src/bootstrap/init-config.js";
 
 // Test IDs that require admin rights
-const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3'];
+// const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3']; VVQ
+const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3', '8-5', '8-6', '8-7'];
 
 
 const {
