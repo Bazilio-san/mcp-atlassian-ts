@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import fs from 'fs';
 import path from 'path';
 import { SJ } from '../utils.js';
@@ -104,8 +107,9 @@ ${triQ}
    * @param {number} httpStatusCode - HTTP status code
    * @param {object} responseBody - Response body
    * @param {object} headers - Request headers (optional)
+   * @param {object} requestBody - Request body data (optional)
    */
-  logDirectApiResponse(testId, testName, method, endpoint, httpStatusCode, responseBody, headers = {}) {
+  logDirectApiResponse(testId, testName, method, endpoint, httpStatusCode, responseBody, headers = {}, requestBody = null) {
     if (!this.enabled) {
       return;
     }
@@ -115,7 +119,7 @@ ${triQ}
       testId,
       testName,
       url,
-      null,
+      requestBody,
       httpStatusCode,
       responseBody,
       method,

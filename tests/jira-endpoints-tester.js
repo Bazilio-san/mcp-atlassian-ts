@@ -6,6 +6,9 @@
  * Direct implementation without inheritance for cleaner, more maintainable code
  */
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import fetch from 'node-fetch';
 import ResourceManager from './core/resource-manager.js';
 import CascadeExecutor from './core/cascade-executor.js';
@@ -16,6 +19,7 @@ import SharedJiraTestCases from './core/test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from './constants.js';
 import { isObj } from './core/utils.js';
 import { appConfig } from "../dist/src/bootstrap/init-config.js";
+
 
 const {
   jira: {
@@ -50,7 +54,6 @@ class JiraDirectApiExecutor {
     };
     this.resourceManager = null;
     this.testFilter = config.testFilter || null;
-    this.verbose = config.verbose || false;
 
     // JIRA-specific configuration
     this.baseUrl = url || 'http://localhost:8080';
@@ -71,7 +74,7 @@ class JiraDirectApiExecutor {
     this.sharedTestCases = new SharedJiraTestCases();
 
     // Resource tracking
-    this.resourceManager = new ResourceManager({ source: 'direct', verbose: config.verbose });
+    this.resourceManager = new ResourceManager({ source: 'direct' });
 
     // Track created resources
     this.createdResources = {
@@ -124,15 +127,7 @@ class JiraDirectApiExecutor {
     };
 
     try {
-      // Check if test should be skipped based on filter
-      if (!this.shouldRunTest(testCase)) {
-        result.status = 'skipped';
-        result.reason = 'Filtered out';
-        this.stats.skipped++;
-        return result;
-      }
-
-      // Execute the test case
+      // Execute the test case (filtering already done in runAllTests)
       const response = await this.executeTestCase(testCase);
 
       // Handle skipped tests (e.g., unavailable MCP tools)
@@ -170,53 +165,38 @@ class JiraDirectApiExecutor {
 
   /**
    * Run tests by category
-   * (copied from BaseTestExecutor)
    */
   async runTestsByCategory (category, testCases) {
     const categoryTests = testCases.filter(test => test.category === category);
+
+    // Skip empty categories when filtering
+    if (categoryTests.length === 0) {
+      return;
+    }
 
     console.log(`\n📂 Running ${category} tests (${categoryTests.length} tests)`);
     console.log(dLine);
 
     for (const testCase of categoryTests) {
-      // Always show test info when running single test or in verbose mode
-      const showDetails = this.verbose || categoryTests.length === 1;
-
       const result = await this.runSharedTestCase(testCase);
 
-      // Print result inline
+      // Print result with full details (always verbose mode now)
       const statusSymbol =
         result.status === 'passed' ? '✅' :
           result.status === 'failed' ? '❌' :
             '⏭️';
 
-      if (showDetails) {
-        // Format test name with fixed width of 50 characters
-        const testId = testCase.fullId || testCase.id;
-        const paddedIdName = `${testId}: ${testCase.name}`.padEnd(45, ' ');
-        console.log(`${statusSymbol}  ${paddedIdName} 🔗 ${testCase.httpMethod} ${testCase.url}`);
-      }
+      // Format test name with fixed width of 50 characters
+      const testId = testCase.fullId || testCase.id;
+      const paddedIdName = `${testId}: ${testCase.name}`.padEnd(45, ' ');
+      console.log(`${statusSymbol}  ${paddedIdName} 🔗 ${testCase.httpMethod} ${testCase.url}`);
 
-      if (!showDetails) {
-        process.stdout.write(statusSymbol + '  ');
-      } else {
-        if (result.status === 'failed' && result.error) {
-          console.log(`    └─ Error: ${result.error}`);
-        }
-        if (result.status === 'skipped' && result.reason) {
-          console.log(`    └─ Reason: ${result.reason}`);
-        }
+      if (result.status === 'failed' && result.error) {
+        console.log(`    └─ Error: ${result.error}`);
       }
-
-      // For failed tests in non-verbose mode, show minimal error info
-      if (!this.verbose && result.status === 'failed' && categoryTests.length > 1) {
-        const testId = testCase.fullId || testCase.id;
-        console.log(`\n    ❌ ${testId}: ${testCase.name} - ${result.error}`);
+      if (result.status === 'skipped' && result.reason) {
+        console.log(`    └─ Reason: ${result.reason}`);
       }
-    }
-
-    if (!this.verbose && categoryTests.length > 1) {
-      console.log(); // New line after status symbols
     }
   }
 
@@ -235,7 +215,6 @@ class JiraDirectApiExecutor {
 
   /**
    * Run all tests with provided test cases
-   * (copied from BaseTestExecutor)
    */
   async runAllTests (testCases) {
     // Small delay first to let Node.js warnings appear
@@ -246,12 +225,17 @@ class JiraDirectApiExecutor {
 
     this.stats.startTime = Date.now();
 
-    // Get unique categories
-    const categories = [...new Set(testCases.map(t => t.category))];
+    // Filter test cases first to avoid processing unnecessary categories
+    const filteredTestCases = this.testFilter
+      ? testCases.filter(test => this.shouldRunTest(test))
+      : testCases;
+
+    // Get unique categories from filtered tests only
+    const categories = [...new Set(filteredTestCases.map(t => t.category))];
 
     // Run tests by category
     for (const category of categories) {
-      await this.runTestsByCategory(category, testCases);
+      await this.runTestsByCategory(category, filteredTestCases);
     }
 
     // Generate and print report
@@ -792,6 +776,7 @@ class JiraDirectApiExecutor {
           response.status,
           data,
           finalHeaders,
+          body
         );
       }
 
@@ -876,7 +861,10 @@ class JiraDirectApiExecutor {
    */
   async runTests () {
     console.log(`\n🔗 JIRA API URL: ${this.baseUrl}`);
-    console.log(`📦 Authentication: ${this.auth.type}`);
+    const authInfo = this.auth.type === 'basic'
+      ? `${this.auth.type} (${this.auth.username} ${this.auth.password})`
+      : this.auth.type;
+    console.log(`📦 Authentication: ${authInfo}`);
     console.log(`📦 Test Project Key: ${this.testProjectKey}`);
     console.log(`📦 Test Issue Key: ${this.testIssueKey}`);
     console.log(`📦 Test Second Issue Key: ${TEST_SECOND_ISSUE_KEY}`);
@@ -884,7 +872,7 @@ class JiraDirectApiExecutor {
     // Get all test cases using the centralized method
     const allTestCases = this.sharedTestCases.getAllTestCasesFlat();
 
-    // Run tests using runAllTests method (filtering handled by shouldRunTest)
+    // Run tests using runAllTests method (filtering handled in runAllTests)
     const result = await this.runAllTests(allTestCases);
 
     // Cleanup remote links for the test issue (keep only one)
@@ -978,7 +966,6 @@ async function main () {
   // Parse command line arguments
   const args = process.argv.slice(2);
   const config = {
-    verbose: args.includes('--verbose') || args.includes('-v'),
     testFilter: null,
   };
 
