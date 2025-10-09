@@ -53,7 +53,7 @@ node tests/mcp-client-tests.js
 node tests/jira-emulator.js
 
 # Terminal 2: Run comprehensive API tests
-node tests/jira-endpoints-tester.js
+node tests/endpoints/jira.js
 ```
 
 **Test Results:**

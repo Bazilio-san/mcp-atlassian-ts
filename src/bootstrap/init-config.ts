@@ -8,7 +8,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Read package.json for metadata (from project root)
 // Handle both development (src/) and production (dist/src/) scenarios
-const packageJsonPath = join(__dirname, '..', '..', '..', 'package.json')  // dist/src/bootstrap -> project root
+const isProduction = __dirname.includes('dist');
+const packageJsonPath = isProduction
+  ? join(__dirname, '..', '..', '..', 'package.json')  // dist/src/bootstrap -> project root
+  : join(__dirname, '..', '..', 'package.json');        // src/bootstrap -> project root
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 
 /**

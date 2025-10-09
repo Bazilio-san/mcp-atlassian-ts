@@ -12,13 +12,13 @@
 ### 1. Тесты прямого API JIRA
 ```bash
 # Запустить все тесты
-node tests/jira-endpoints-tester.js
+node tests/endpoints/jira.js
 
 # Выборочные тесты
-node tests/jira-endpoints-tester.js --tests=1-1,2-*,9
+node tests/endpoints/jira.js --tests=1-1,2-*,9
 
 # С подробным выводом
-node tests/jira-endpoints-tester.js --verbose
+node tests/endpoints/jira.js --verbose
 ```
 
 ## Параметры

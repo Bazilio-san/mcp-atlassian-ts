@@ -5,11 +5,12 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders } from 'axios';
 
 import { AuthenticationError } from '../errors/index.js';
-import { createLogger } from '../utils/logger.js';
+import { createLogger, getDebug } from '../utils/logger.js';
 
 import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
 
 const logger = createLogger('auth');
+const debug = getDebug('headers-to-api');
 
 /**
  * Authentication manager for different auth methods
@@ -39,7 +40,14 @@ export class AuthenticationManager {
 
     // Add request interceptor for authentication
     client.interceptors.request.use(
-      requestConfig => this.addAuthenticationHeaders(requestConfig),
+      requestConfig => {
+        const configWithAuth = this.addAuthenticationHeaders(requestConfig);
+        if (debug.enabled) {
+          const headers = `\nheaders-to-api:\n${Object.entries(configWithAuth.headers).map(([k, v]) => `  ${k}: ${v}`).join('\n')}\n`;
+          console.log(headers)
+        }
+        return configWithAuth;
+      },
       error => Promise.reject(error),
     );
 

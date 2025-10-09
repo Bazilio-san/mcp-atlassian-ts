@@ -76,3 +76,4 @@ local-*.*
 
 # API response logs for testing
 _api_responses/
+/tests/http/simple.http

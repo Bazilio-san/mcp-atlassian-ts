@@ -24,7 +24,7 @@ const SENSITIVE_PATTERNS = [
 /**
  * Mask sensitive information in log messages
  */
-function maskSensitiveData(data: any): any {
+function maskSensitiveData (data: any): any {
   if (typeof data === 'string') {
     let masked = data;
     SENSITIVE_PATTERNS.forEach(pattern => {
@@ -33,7 +33,7 @@ function maskSensitiveData(data: any): any {
           // Email masking: keep first char and domain
           return match.replace(
             /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
-            (_, user, domain) => `${user.charAt(0)}***@${domain}`
+            (_, user, domain) => `${user.charAt(0)}***@${domain}`,
           );
         }
         return '[MASKED]';
@@ -71,17 +71,17 @@ function maskSensitiveData(data: any): any {
 /**
  * Create a pino logger instance
  */
-function createPinoLogger() {
+function createPinoLogger () {
   const pinoConfig: pino.LoggerOptions = {
     level: appConfig.logger.level || 'info',
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: {
-      level(label) {
+      level (label) {
         return { level: label };
       },
     },
     hooks: {
-      logMethod(inputArgs, method) {
+      logMethod (inputArgs, method) {
         // Mask sensitive data in all log arguments
         const maskedArgs = inputArgs.map(arg => maskSensitiveData(arg));
         if (maskedArgs.length === 0) {
@@ -114,7 +114,7 @@ const globalLogger = createPinoLogger();
 /**
  * Create a component-specific logger
  */
-export function createLogger(component: string) {
+export function createLogger (component: string) {
   const componentLogger = globalLogger.child({ component });
 
   return {
@@ -171,7 +171,7 @@ export function createLogger(component: string) {
 /**
  * Express middleware for request logging
  */
-export function createRequestLogger() {
+export function createRequestLogger () {
   return (req: any, res: any, next: any) => {
     const requestLogger = globalLogger.child({
       component: 'http',
@@ -212,7 +212,7 @@ export function createRequestLogger() {
 /**
  * Global error handler logger
  */
-export function logUnhandledError(error: Error, context?: LogContext) {
+export function logUnhandledError (error: Error, context?: LogContext) {
   const errorLogger = createLogger('unhandled');
   errorLogger.fatal('Unhandled error occurred', error, context);
 }
@@ -229,5 +229,11 @@ process.on('unhandledRejection', (reason, promise) => {
     promise: String(promise),
   });
 });
+
+export function getDebug (pattern: string) {
+  const debugEnv = process.env.DEBUG;
+  const enabled = debugEnv && (debugEnv === '*' || debugEnv.split(',').some((v) => (v === pattern)));
+  return { enabled };
+}
 
 export { globalLogger as logger };

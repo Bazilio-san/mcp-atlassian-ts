@@ -616,11 +616,13 @@ class JiraMcpHttpTester {
       customHeaders = `\nCustom Headers:\n${Object.entries(result.customHeaders).map(([k, v]) => `${k}: ${v}`).join('\n')}\n`;
     }
 
-    const md = `# ${resultStatus} # ${result.toolName} # ${result.timestamp} # ${result.duration}ms
+    const md = `# ${resultStatus} / ${result.timestamp} / ${result.duration}ms\n# ${result.toolName} 
 ${customHeaders}
-description: ${result.description}    
+description: 
+${result.description}    
 
-parameters: ${mdJson(result.parameters)}
+parameters: 
+${mdJson(result.parameters)}
 `;
     return md;
   }

@@ -30,7 +30,7 @@ src/
 ### Existing Test Infrastructure
 - **JIRA Emulator**: `tests/jira-emulator.js` (порт 8080)
 - **Test Framework**: Готовая инфраструктура в `tests/core/`
-- **API Coverage**: 62/62 JIRA endpoints протестированы в `tests/jira-endpoints-tester.js`
+- **API Coverage**: 62/62 JIRA endpoints протестированы в `tests/endpoints/jira.js`
 
 ## Детальный план реализации
 
