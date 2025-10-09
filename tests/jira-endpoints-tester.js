@@ -22,8 +22,25 @@ import { appConfig } from "../dist/src/bootstrap/init-config.js";
 
 // Test IDs that require admin rights
 // const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3']; VVQ
-const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3', '8-5', '8-6', '8-7'];
+const ENDPOINTS_WITH_ADMIN_RIGHTS = [
+  '1-3', // Get Permissions
+  '1-4', // Get Application Roles
+  '7-3', // Get Project Roles
 
+  // '8-5', // Create Version
+  // '8-6', // Update Version
+  // '8-7', // Get Version
+
+  '10-8', // Get Permission Schemes
+  '10-9', // Get Workflows
+
+  '11-1', // Get Project Workflow Scheme
+  '11-2', // Get Workflow Scheme by ID
+  '11-3', // Get Workflow Scheme Default
+  '11-4', // Create Workflow Scheme Draft
+  '11-5', // Get Workflow Scheme Draft
+  '11-6', // Delete Workflow Scheme Draft
+];
 
 const {
   jira: {
@@ -564,6 +581,20 @@ class JiraDirectApiExecutor {
 
     const { method, endpoint, data: body, headers: additionalHeaders = {} } = testCase.directApi;
 
+    // Set HTTP method for diagnostics early (before any early returns)
+    testCase.httpMethod = method;
+
+    // Set basic URL for diagnostics (will be updated with real values later)
+    let basicEndpoint = endpoint
+      .replace('{projectKey}', this.testProjectKey)
+      .replace('{issueKey}', this.testIssueKey);
+
+    if (basicEndpoint.startsWith('/rest/agile/')) {
+      testCase.url = `${this.baseUrl}${basicEndpoint}`;
+    } else {
+      testCase.url = `${this.baseUrl}/rest/api/2${basicEndpoint}`;
+    }
+
     // Special handling for attachment creation test with requiresFile flag
     if (testCase.requiresFile) {
       // Set URL and HTTP method for diagnostics
@@ -723,7 +754,7 @@ class JiraDirectApiExecutor {
       }
     }
 
-    // Replace placeholders in endpoint
+    // Update URL with actual values at the end
     let finalEndpoint = endpoint
       .replace('{projectKey}', this.testProjectKey)
       .replace('{issueKey}', this.testIssueKey)
@@ -737,7 +768,7 @@ class JiraDirectApiExecutor {
       .replace('{workflowSchemeId}', workflowSchemeId || '')
       .replace('{boardId}', boardId || '');
 
-    // Special handling for Agile API endpoints
+    // Update URL with resolved placeholders
     let url;
     if (finalEndpoint.startsWith('/rest/agile/')) {
       // For Agile API, use the path as-is without adding /rest/api/2
@@ -747,7 +778,6 @@ class JiraDirectApiExecutor {
       url = `${this.baseUrl}/rest/api/2${finalEndpoint}`;
     }
     testCase.url = url;
-    testCase.httpMethod = method;
     const finalHeaders = {
       ...this.getHeaders(),
       ...additionalHeaders,

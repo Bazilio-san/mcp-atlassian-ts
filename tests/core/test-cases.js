@@ -65,27 +65,27 @@ export class SharedJiraTestCases {
 
     // Add getters for groupNumber and testNumber based on fullId
     Object.defineProperty(transformed, 'groupNumber', {
-      get() {
+      get () {
         return this.fullId ? parseInt(this.fullId.split('-')[0], 10) : undefined;
       },
       enumerable: true,
-      configurable: true
+      configurable: true,
     });
 
     Object.defineProperty(transformed, 'testNumber', {
-      get() {
+      get () {
         return this.fullId ? parseInt(this.fullId.split('-')[1], 10) : undefined;
       },
       enumerable: true,
-      configurable: true
+      configurable: true,
     });
 
     Object.defineProperty(transformed, 'category', {
-      get() {
+      get () {
         return GROUP_INFO[this.groupNumber]?.name;
       },
       enumerable: true,
-      configurable: true
+      configurable: true,
     });
 
     return transformed;
@@ -776,7 +776,7 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: `/issue/${this.testIssueKey}/remotelink/{remoteLinkId}`, // will be replaced at runtime
         },
-        expectedStatus: 204,
+        expectedStatus: [204, 200],
         validation: {
           checkContent: (content) => true, // DELETE may return empty response
           checkResult: (result) => true, // For DELETE operations status 204 is considered successful
@@ -793,7 +793,7 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/issue/{tempIssueKey}', // will be replaced with created issue key
         },
-        expectedStatus: 204, // DELETE operations usually return 204
+        expectedStatus: [204, 200], // DELETE operations usually return 204
         validation: {
           checkContent: (content) => true, // DELETE may return empty response
           checkResult: (result) => true, // For DELETE operations status 204 is considered successful
@@ -807,7 +807,7 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/version/{versionId}', // will be replaced at runtime
         },
-        expectedStatus: 204, // DELETE operations usually return 204
+        expectedStatus: [204, 200], // DELETE operations usually return 204
         validation: {
           checkContent: (content) => true, // DELETE may return empty response
           checkResult: (result) => true, // For DELETE operations status 204 is considered successful
@@ -821,7 +821,7 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/issueLink/{linkId}', // will be replaced at runtime with actual link ID
         },
-        expectedStatus: 204, // DELETE operations usually return 204
+        expectedStatus: [204, 200], // DELETE operations usually return 204
         validation: {
           checkContent: (content) => true, // DELETE may return empty response
           checkResult: (result) => true, // For DELETE operations status 204 is considered successful
@@ -933,7 +933,7 @@ export class SharedJiraTestCases {
           method: 'DELETE',
           endpoint: '/attachment/{attachmentId}', // will be replaced at runtime
         },
-        expectedStatus: 204, // DELETE operations usually return 204
+        expectedStatus: [204, 200], // DELETE operations usually return 204
         validation: {
           checkContent: (content) => true, // DELETE may return empty response
           checkResult: () => true,

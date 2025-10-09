@@ -117,10 +117,12 @@ Content-Type: application/json
 
 
 ### Create issue attachment
-POST {{baseUrl}}/rest/api/2/issue/AITECH-1/attachments
+POST {{baseUrl}}/rest/api/2/issue/AITECH-5/attachments
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 X-Atlassian-Token: no-check
 Content-Type: multipart/form-data; boundary=WebAppBoundary
+X-finam-user: ashapovalov
+X-Atlassian-Token: no-check
 
 --WebAppBoundary
 Content-Disposition: form-data; name="comment"
