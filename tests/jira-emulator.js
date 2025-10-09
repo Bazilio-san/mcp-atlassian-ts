@@ -176,6 +176,8 @@ const MOCK_FIELDS = [
   { id: 'description', name: 'Description', custom: false, orderable: false, navigable: false, searchable: true },
   { id: 'customfield_10001', name: 'Epic Link', custom: true, orderable: true, navigable: true, searchable: true },
   { id: 'customfield_10002', name: 'Story Points', custom: true, orderable: true, navigable: false, searchable: true },
+  { id: 'customfield_10014', name: 'Epic Link', custom: true, orderable: true, navigable: true, searchable: true },
+  { id: 'customfield_10015', name: 'Sprint', custom: true, orderable: true, navigable: true, searchable: true },
 ];
 
 const MOCK_LINK_TYPES = [
@@ -347,7 +349,7 @@ function getPort(urlString) {
 
 export class JiraEmulator {
   constructor(port) {
-    this.port = port || 80;
+    this.port = port || 8080;
     this.app = express();
     this.server = null;
     this.setupMiddleware();
@@ -1266,17 +1268,43 @@ export class JiraEmulator {
     this.app.post('/rest/api/2/issueLink', (req, res) => {
       const { type, inwardIssue, outwardIssue } = req.body;
 
+      const linkId = (10000 + linkCounter++).toString();
       const newLink = {
-        id: (10000 + linkCounter++).toString(),
-        type: MOCK_LINK_TYPES.find(t => t.id === type.id) || MOCK_LINK_TYPES[0],
+        id: linkId,
+        type: MOCK_LINK_TYPES.find(t => t.id === type.id || t.name === type.name) || MOCK_LINK_TYPES[0],
         inwardIssue: { key: inwardIssue.key, id: inwardIssue.id },
         outwardIssue: { key: outwardIssue.key, id: outwardIssue.id },
+        self: `https://test.atlassian.net/rest/api/2/issueLink/${linkId}`,
       };
 
       issueLinks.set(newLink.id, newLink);
 
-      console.log(chalk.green(`[JIRA EMULATOR] Created issue link: ${inwardIssue.key} -> ${outwardIssue.key}`));
-      res.status(201).json(newLink);
+      // Store link ID on the involved issues for retrieval
+      const inwardIssueData = issues.get(inwardIssue.key);
+      const outwardIssueData = issues.get(outwardIssue.key);
+
+      if (inwardIssueData) {
+        if (!inwardIssueData.fields.issuelinks) inwardIssueData.fields.issuelinks = [];
+        inwardIssueData.fields.issuelinks.push({
+          id: linkId,
+          type: newLink.type,
+          outwardIssue: { key: outwardIssue.key, id: outwardIssue.id, fields: { summary: outwardIssueData?.fields?.summary || 'Test Issue' } }
+        });
+      }
+
+      if (outwardIssueData) {
+        if (!outwardIssueData.fields.issuelinks) outwardIssueData.fields.issuelinks = [];
+        outwardIssueData.fields.issuelinks.push({
+          id: linkId,
+          type: newLink.type,
+          inwardIssue: { key: inwardIssue.key, id: inwardIssue.id, fields: { summary: inwardIssueData?.fields?.summary || 'Test Issue' } }
+        });
+      }
+
+      console.log(chalk.green(`[JIRA EMULATOR] Created issue link: ${inwardIssue.key} -> ${outwardIssue.key} (ID: ${linkId})`));
+
+      // Return the created link with ID for tracking
+      res.status(201).json({ id: linkId, self: newLink.self });
     });
 
     this.app.delete('/rest/api/2/issueLink/:linkId', (req, res) => {
@@ -1320,6 +1348,37 @@ export class JiraEmulator {
 
       console.log(chalk.green(`[JIRA EMULATOR] Added remote link to ${issueKey}`));
       res.status(201).json(newRemoteLink);
+    });
+
+    // Delete remote link
+    this.app.delete('/rest/api/2/issue/:issueKey/remotelink/:remoteLinkId', (req, res) => {
+      const { issueKey, remoteLinkId } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      const issueRemoteLinks = remoteLinks.get(issue.id) || [];
+      const index = issueRemoteLinks.findIndex(link => link.id === remoteLinkId);
+
+      if (index === -1) {
+        res.status(404).json({
+          errorMessages: ['Remote Link Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      issueRemoteLinks.splice(index, 1);
+      remoteLinks.set(issue.id, issueRemoteLinks);
+
+      console.log(chalk.red(`[JIRA EMULATOR] Deleted remote link ${remoteLinkId} from ${issueKey}`));
+      res.status(204).send();
     });
 
     // User endpoints
@@ -1406,7 +1465,7 @@ export class JiraEmulator {
       ]);
     });
 
-    // Attachment (mock)
+    // Attachment endpoints
     this.app.get('/rest/api/2/attachment/:id', (req, res) => {
       const { id } = req.params;
       res.json({
@@ -1418,6 +1477,66 @@ export class JiraEmulator {
         mimeType: 'text/plain',
         content: `http://localhost:${this.port}/rest/api/2/attachment/content/${id}`,
       });
+    });
+
+    // Create attachment for issue
+    this.app.post('/rest/api/2/issue/:issueKey/attachments', (req, res) => {
+      const { issueKey } = req.params;
+      const issue = issues.get(issueKey);
+
+      if (!issue) {
+        res.status(404).json({
+          errorMessages: ['Issue Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      // Mock attachment creation
+      const newAttachment = {
+        id: (10000 + attachmentCounter++).toString(),
+        filename: 'test-file.txt',
+        author: MOCK_USER,
+        created: new Date().toISOString(),
+        size: 1024,
+        mimeType: 'text/plain',
+        content: `http://localhost:${this.port}/rest/api/2/attachment/content/${attachmentCounter}`,
+      };
+
+      const issueAttachments = attachments.get(issue.id) || [];
+      issueAttachments.push(newAttachment);
+      attachments.set(issue.id, issueAttachments);
+
+      console.log(chalk.green(`[JIRA EMULATOR] Created attachment for ${issueKey}`));
+      res.status(200).json([newAttachment]);
+    });
+
+    // Delete attachment
+    this.app.delete('/rest/api/2/attachment/:id', (req, res) => {
+      const { id } = req.params;
+
+      // Find and remove attachment from all issues
+      let found = false;
+      for (const [issueId, issueAttachments] of attachments.entries()) {
+        const index = issueAttachments.findIndex(a => a.id === id);
+        if (index !== -1) {
+          issueAttachments.splice(index, 1);
+          attachments.set(issueId, issueAttachments);
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        res.status(404).json({
+          errorMessages: ['Attachment Does Not Exist'],
+          errors: {},
+        });
+        return;
+      }
+
+      console.log(chalk.red(`[JIRA EMULATOR] Deleted attachment: ${id}`));
+      res.status(204).send();
     });
 
     // Dashboards
@@ -1514,6 +1633,120 @@ export class JiraEmulator {
           },
         ],
       });
+    });
+
+    // Get project workflow scheme
+    this.app.get('/rest/api/2/project/:projectKey/workflowscheme', (req, res) => {
+      const { projectKey } = req.params;
+      if (projectKey === 'TEST' || projectKey === '10000') {
+        res.json({
+          id: '10000',
+          name: 'Default Workflow Scheme',
+          description: 'Default workflow scheme for TEST project',
+          defaultWorkflow: 'jira',
+          issueTypeMappings: {
+            '10001': 'jira', // Task
+            '10002': 'jira', // Bug
+          },
+        });
+      } else {
+        res.status(404).json({
+          errorMessages: ['Project Does Not Exist'],
+          errors: {},
+        });
+      }
+    });
+
+    // Get workflow scheme by ID
+    this.app.get('/rest/api/2/workflowscheme/:id', (req, res) => {
+      const { id } = req.params;
+      if (id === '10000') {
+        res.json({
+          id: '10000',
+          name: 'Default Workflow Scheme',
+          description: 'Default workflow scheme',
+          defaultWorkflow: 'jira',
+          issueTypeMappings: {
+            '10001': 'jira', // Task
+            '10002': 'jira', // Bug
+          },
+        });
+      } else {
+        res.status(404).json({
+          errorMessages: ['Workflow Scheme Does Not Exist'],
+          errors: {},
+        });
+      }
+    });
+
+    // Get workflow scheme default workflow
+    this.app.get('/rest/api/2/workflowscheme/:id/default', (req, res) => {
+      const { id } = req.params;
+      if (id === '10000') {
+        res.json({
+          workflow: 'jira',
+          updateDraftIfNeeded: false,
+        });
+      } else {
+        res.status(404).json({
+          errorMessages: ['Workflow Scheme Does Not Exist'],
+          errors: {},
+        });
+      }
+    });
+
+    // Create workflow scheme draft
+    this.app.post('/rest/api/2/workflowscheme/:id/createdraft', (req, res) => {
+      const { id } = req.params;
+      if (id === '10000') {
+        res.status(201).json({
+          id: '10001',
+          name: 'Default Workflow Scheme (Draft)',
+          description: 'Default workflow scheme draft',
+          defaultWorkflow: 'jira',
+          draft: true,
+          originalDefaultWorkflow: 'jira',
+        });
+      } else {
+        res.status(404).json({
+          errorMessages: ['Workflow Scheme Does Not Exist'],
+          errors: {},
+        });
+      }
+    });
+
+    // Get workflow scheme draft
+    this.app.get('/rest/api/2/workflowscheme/:id/draft', (req, res) => {
+      const { id } = req.params;
+      if (id === '10000') {
+        res.json({
+          id: '10001',
+          name: 'Default Workflow Scheme (Draft)',
+          description: 'Default workflow scheme draft',
+          defaultWorkflow: 'jira',
+          draft: true,
+          originalDefaultWorkflow: 'jira',
+        });
+      } else {
+        res.status(404).json({
+          errorMessages: ['Workflow Scheme Draft Does Not Exist'],
+          errors: {},
+        });
+      }
+    });
+
+    // Delete workflow scheme draft
+    this.app.delete('/rest/api/2/workflowscheme/:id/draft', (req, res) => {
+      const { id } = req.params;
+      if (id === '10000') {
+        console.log(chalk.red(`[JIRA EMULATOR] Deleted workflow scheme draft for scheme: ${id}`));
+        res.status(204).send();
+      } else {
+        res.status(404).json({
+          errorMessages: ['Workflow Scheme Draft Does Not Exist'],
+          errors: {},
+        });
+      }
     });
 
     // Search GET endpoint

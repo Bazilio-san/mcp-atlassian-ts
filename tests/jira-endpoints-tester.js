@@ -826,11 +826,16 @@ class JiraDirectApiExecutor {
       this.createdResources.versions.push(responseData.id);
       this.resourceManager.trackVersion(responseData.id, this.testProjectKey);
     } else if (testCase.fullId === '8-8') {
-      // Created issue link - for 8-8 the response is typically empty (201 with no body)
-      // We need to extract the link ID from the Location header or use a placeholder
-      // For now, use a placeholder since JIRA doesn't return the link ID directly
-      this.createdResources.links.push('created-link-id');
-      this.resourceManager.trackLink('created-link-id');
+      // Created issue link - now we get the link ID from the response
+      if (responseData && responseData.id) {
+        this.createdResources.links.push(responseData.id);
+        this.resourceManager.trackLink(responseData.id);
+        console.log(`    → Stored link ID: ${responseData.id}`);
+      } else {
+        // Fallback for legacy responses
+        this.createdResources.links.push('created-link-id');
+        this.resourceManager.trackLink('created-link-id');
+      }
     } else if (testCase.fullId === '8-9' && responseData.id) {
       // Created remote link
       this.createdResources.links.push(responseData.id);
