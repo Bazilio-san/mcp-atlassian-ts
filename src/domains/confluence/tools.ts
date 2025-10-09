@@ -2,7 +2,7 @@
  * Confluence MCP tools implementation
  */
 
-import {withErrorHandling, ToolExecutionError} from '../../core/errors';
+import {withErrorHandling, ToolExecutionError} from '../../core/errors/index.js';
 import {createLogger} from '../../core/utils/logger.js';
 
 import {ConfluenceClient} from './client.js';

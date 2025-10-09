@@ -46,7 +46,6 @@
       "WebFetch"
     ],
     "deny": [
-      "Read(./.env)",
       "Read(./.idea/**)",
       "Read(./.quasar/**)",
       "Read(./dist/**)",
