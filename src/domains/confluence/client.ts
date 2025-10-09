@@ -31,7 +31,6 @@ export class ConfluenceClient {
   private httpClient: AxiosInstance;
   private config: JCConfig;
   private cache = getCache();
-  private customHeaders: Record<string, string> = {};
 
   constructor(config: JCConfig) {
     this.config = config;
@@ -46,53 +45,34 @@ export class ConfluenceClient {
   }
 
   /**
-   * Set custom headers for all requests
+   * Make HTTP request with optional custom headers
    */
-  setCustomHeaders(headers: Record<string, string>): void {
-    this.customHeaders = { ...headers };
-    logger.debug('Custom headers set for Confluence client', { headers: Object.keys(headers) });
-  }
+  private async makeRequest(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, options: {
+    params?: any;
+    data?: any;
+    headers?: Record<string, string> | undefined;
+  } = {}): Promise<any> {
+    const requestConfig: any = {
+      method: method.toLowerCase(),
+      url,
+    };
 
-  /**
-   * Get current custom headers
-   */
-  getCustomHeaders(): Record<string, string> {
-    return { ...this.customHeaders };
-  }
+    if (options.params) requestConfig.params = options.params;
+    if (options.data) requestConfig.data = options.data;
+    if (options.headers && Object.keys(options.headers).length > 0) requestConfig.headers = options.headers;
 
-  /**
-   * Get HTTP client with custom headers applied
-   */
-  private getHttpClientWithCustomHeaders(): AxiosInstance {
-    if (Object.keys(this.customHeaders).length === 0) {
-      return this.httpClient;
-    }
-
-    const authManager = createAuthenticationManager(this.config.auth, this.config.url);
-    const client = authManager.getHttpClient();
-
-    // Add custom headers to the client
-    client.interceptors.request.use(
-      config => {
-        if (config.headers) {
-          Object.assign(config.headers, this.customHeaders);
-        }
-        return config;
-      },
-      error => Promise.reject(error)
-    );
-
-    return client;
+    return this.httpClient.request(requestConfig);
   }
 
   /**
    * Test connectivity and authentication
    */
-  async healthCheck(): Promise<{ status: string; user?: any; error?: string }> {
+  async healthCheck(headers?: Record<string, string>): Promise<{ status: string; user?: any; error?: string }> {
     return withErrorHandling(async () => {
       // Confluence doesn't have a direct /myself endpoint, so we'll use space list
-      const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/space', {
+      const response = await this.makeRequest('GET', '/wiki/rest/api/space', {
         params: { limit: 1 },
+        headers,
       });
 
       return {
@@ -124,7 +104,7 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/wiki/rest/api/content/${contentId}`, {
+        const response = await this.makeRequest("GET", `/wiki/rest/api/content/${contentId}`, {
           params,
         });
 
@@ -165,7 +145,7 @@ export class ConfluenceClient {
         };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/content', { params });
+        const response = await this.makeRequest("GET", '/wiki/rest/api/content', { params });
         return response.data.results;
       });
     });
@@ -194,7 +174,7 @@ export class ConfluenceClient {
             limit: searchRequest.limit || this.config.maxResults || 50,
           };
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/search', { params: apiParams });
+          const response = await this.makeRequest("GET", '/wiki/rest/api/search', { params: apiParams });
           return response.data;
         },
         60
@@ -224,7 +204,7 @@ export class ConfluenceClient {
         throw new ValidationError('Body content is required for content creation');
       }
 
-      const response = await this.getHttpClientWithCustomHeaders().post('/wiki/rest/api/content', contentInput);
+      const response = await this.makeRequest("POST", '/wiki/rest/api/content', { data: contentInput });
 
       // Clear cache for space and search results
       this.invalidateContentCache(response.data.id, contentInput.space.key);
@@ -248,7 +228,7 @@ export class ConfluenceClient {
         throw new ValidationError('Version number is required for content updates');
       }
 
-      const response = await this.getHttpClientWithCustomHeaders().put(`/wiki/rest/api/content/${contentId}`, updateData);
+      const response = await this.makeRequest("PUT", `/wiki/rest/api/content/${contentId}`, { data: updateData });
 
       // Clear cache for this content
       this.invalidateContentCache(contentId);
@@ -287,7 +267,7 @@ export class ConfluenceClient {
           if (options.label?.length) params.label = options.label.join(',');
           if (options.expand?.length) params.expand = options.expand.join(',');
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/space', { params });
+          const response = await this.makeRequest("GET", '/wiki/rest/api/space', { params });
           return response.data;
         },
         300
@@ -315,7 +295,7 @@ export class ConfluenceClient {
           const params: any = {};
           if (options.expand?.length) params.expand = options.expand.join(',');
 
-          const response = await this.getHttpClientWithCustomHeaders().get(`/wiki/rest/api/space/${spaceKey}`, {
+          const response = await this.makeRequest("GET", `/wiki/rest/api/space/${spaceKey}`, {
             params,
           });
 
@@ -356,7 +336,7 @@ export class ConfluenceClient {
         };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/content', { params });
+        const response = await this.makeRequest("GET", '/wiki/rest/api/content', { params });
         return response.data;
       });
     });
@@ -386,7 +366,7 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(
+        const response = await this.makeRequest("GET", 
           `/wiki/rest/api/content/${contentId}/child/comment`,
           { params }
         );
@@ -406,7 +386,7 @@ export class ConfluenceClient {
         throw new ValidationError('Comment body is required');
       }
 
-      const response = await this.getHttpClientWithCustomHeaders().post('/wiki/rest/api/content', commentInput);
+      const response = await this.makeRequest("POST", '/wiki/rest/api/content', { data: commentInput });
 
       // Clear cache for the container content
       this.invalidateContentCache(commentInput.container.id);
@@ -425,9 +405,9 @@ export class ConfluenceClient {
     return withErrorHandling(async () => {
       logger.info('Adding Confluence label', { contentId, label: label.name });
 
-      const response = await this.getHttpClientWithCustomHeaders().post(`/wiki/rest/api/content/${contentId}/label`, [
-        label,
-      ]);
+      const response = await this.makeRequest("POST", `/wiki/rest/api/content/${contentId}/label`, {
+        data: [label],
+      });
 
       // Clear cache for this content
       this.invalidateContentCache(contentId);
@@ -443,7 +423,7 @@ export class ConfluenceClient {
     return withErrorHandling(async () => {
       logger.info('Removing Confluence label', { contentId, labelName });
 
-      await this.getHttpClientWithCustomHeaders().delete(`/wiki/rest/api/content/${contentId}/label/${labelName}`);
+      await this.makeRequest("DELETE", `/wiki/rest/api/content/${contentId}/label/${labelName}`);
 
       // Clear cache for this content
       this.invalidateContentCache(contentId);
@@ -474,7 +454,7 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(
+        const response = await this.makeRequest("GET", 
           `/wiki/rest/api/content/${contentId}/child/attachment`,
           { params }
         );
@@ -497,7 +477,7 @@ export class ConfluenceClient {
         async () => {
           logger.info('Searching Confluence users', { query, limit });
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/search/user', {
+          const response = await this.makeRequest("GET", '/wiki/rest/api/search/user', {
             params: { cql: `user.fullname ~ "${query}" OR user.email ~ "${query}"`, limit },
           });
 
@@ -526,7 +506,7 @@ export class ConfluenceClient {
       return this.cache.getOrSet(cacheKey, async () => {
         logger.info('Fetching Confluence labels', { contentId });
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/wiki/rest/api/content/${contentId}/label`, {
+        const response = await this.makeRequest("GET", `/wiki/rest/api/content/${contentId}/label`, {
           params: options,
         });
 
@@ -556,7 +536,7 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/wiki/rest/api/content/${pageId}/child/page`, {
+        const response = await this.makeRequest("GET", `/wiki/rest/api/content/${pageId}/child/page`, {
           params,
         });
 
@@ -575,13 +555,15 @@ export class ConfluenceClient {
 
       if (status === 'trashed') {
         // Move to trash first
-        await this.getHttpClientWithCustomHeaders().put(`/wiki/rest/api/content/${contentId}`, {
-          version: { number: 1 }, // Will be updated automatically
-          status: 'trashed',
+        await this.makeRequest("PUT", `/wiki/rest/api/content/${contentId}`, {
+          data: {
+            version: { number: 1 }, // Will be updated automatically
+            status: 'trashed',
+          },
         });
       } else {
         // Permanent deletion
-        await this.getHttpClientWithCustomHeaders().delete(`/wiki/rest/api/content/${contentId}`);
+        await this.makeRequest("DELETE", `/wiki/rest/api/content/${contentId}`);
       }
 
       this.invalidateContentCache(contentId);
@@ -619,7 +601,7 @@ export class ConfluenceClient {
         };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/content/search', { params });
+        const response = await this.makeRequest("GET", '/wiki/rest/api/content/search', { params });
         return response.data;
       });
     });
@@ -645,7 +627,7 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/wiki/rest/api/content/${contentId}/history`, {
+        const response = await this.makeRequest("GET", `/wiki/rest/api/content/${contentId}/history`, {
           params,
         });
 
@@ -695,7 +677,7 @@ export class ConfluenceClient {
         async () => {
           // Confluence REST API doesn't have a direct /myself endpoint
           // We'll get user info from the first space we can access
-          const spacesResponse = await this.getHttpClientWithCustomHeaders().get('/wiki/rest/api/space', {
+          const spacesResponse = await this.makeRequest("GET", '/wiki/rest/api/space', {
             params: { limit: 1, expand: 'permissions' },
           });
 
@@ -721,9 +703,9 @@ export class ConfluenceClient {
   }
 
   /**
-   * Get the underlying HTTP client with custom headers applied
+   * Get the underlying HTTP client
    */
   getHttpClient(): AxiosInstance {
-    return this.getHttpClientWithCustomHeaders();
+    return this.httpClient;
   }
 }

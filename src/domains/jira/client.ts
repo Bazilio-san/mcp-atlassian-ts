@@ -31,7 +31,6 @@ export class JiraClient {
   private httpClient: AxiosInstance;
   private config: JCConfig;
   private cache = getCache();
-  private customHeaders: Record<string, string> = {};
 
   constructor(config: JCConfig) {
     this.config = config;
@@ -46,51 +45,31 @@ export class JiraClient {
   }
 
   /**
-   * Set custom headers for all requests
+   * Make HTTP request with optional custom headers
    */
-  setCustomHeaders(headers: Record<string, string>): void {
-    this.customHeaders = { ...headers };
-    logger.debug('Custom headers set for JIRA client', { headers: Object.keys(headers) });
-  }
+  private async makeRequest(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, options: {
+    params?: any;
+    data?: any;
+    headers?: Record<string, string> | undefined;
+  } = {}): Promise<any> {
+    const requestConfig: any = {
+      method: method.toLowerCase(),
+      url,
+    };
 
-  /**
-   * Get current custom headers
-   */
-  getCustomHeaders(): Record<string, string> {
-    return { ...this.customHeaders };
-  }
+    if (options.params) requestConfig.params = options.params;
+    if (options.data) requestConfig.data = options.data;
+    if (options.headers && Object.keys(options.headers).length > 0) requestConfig.headers = options.headers;
 
-  /**
-   * Get HTTP client with custom headers applied
-   */
-  private getHttpClientWithCustomHeaders(): AxiosInstance {
-    if (Object.keys(this.customHeaders).length === 0) {
-      return this.httpClient;
-    }
-
-    const authManager = createAuthenticationManager(this.config.auth, this.config.url);
-    const client = authManager.getHttpClient();
-
-    // Add custom headers to the client
-    client.interceptors.request.use(
-      config => {
-        if (config.headers) {
-          Object.assign(config.headers, this.customHeaders);
-        }
-        return config;
-      },
-      error => Promise.reject(error)
-    );
-
-    return client;
+    return this.httpClient.request(requestConfig);
   }
 
   /**
    * Test connectivity and authentication
    */
-  async healthCheck(): Promise<{ status: string; user?: any; error?: string }> {
+  async healthCheck(headers?: Record<string, string>): Promise<{ status: string; user?: any; error?: string }> {
     return withErrorHandling(async () => {
-      const response = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/myself');
+      const response = await this.makeRequest('GET', '/rest/api/2/myself', { headers });
 
       return {
         status: 'ok',
@@ -107,7 +86,7 @@ export class JiraClient {
   /**
    * Get user profile by account ID or email
    */
-  async getUserProfile(userIdOrEmail: string): Promise<any> {
+  async getUserProfile(userIdOrEmail: string, headers?: Record<string, string>): Promise<any> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('jira', 'user', { userIdOrEmail });
 
@@ -116,14 +95,16 @@ export class JiraClient {
 
         // Try by account ID first, then by email
         try {
-          const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/user`, {
+          const response = await this.makeRequest('GET', `/rest/api/2/user`, {
             params: { accountId: userIdOrEmail },
+            headers,
           });
           return response.data;
         } catch {
           // Fallback to email search
-          const searchResponse = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/user/search', {
+          const searchResponse = await this.makeRequest('GET', '/rest/api/2/user/search', {
             params: { query: userIdOrEmail, maxResults: 1 },
+            headers,
           });
 
           if (searchResponse.data.length === 0) {
@@ -147,6 +128,7 @@ export class JiraClient {
       expand?: string[];
       fields?: string[];
       properties?: string[];
+      headers?: Record<string, string>;
     } = {}
   ): Promise<JiraIssue> {
     return withErrorHandling(async () => {
@@ -160,7 +142,7 @@ export class JiraClient {
         if (options.fields?.length) params.fields = options.fields.join(',');
         if (options.properties?.length) params.properties = options.properties.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+        const response = await this.makeRequest('GET', `/rest/api/2/issue/${issueIdOrKey}`, { params, headers: options.headers });
 
         if (!response.data) {
           throw new NotFoundError('Issue', issueIdOrKey);
@@ -174,7 +156,7 @@ export class JiraClient {
   /**
    * Search issues using JQL
    */
-  async searchIssues(searchRequest: JiraSearchRequest): Promise<JiraSearchResponse> {
+  async searchIssues(searchRequest: JiraSearchRequest, headers?: Record<string, string>): Promise<JiraSearchResponse> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('jira', 'search', searchRequest);
 
@@ -192,7 +174,7 @@ export class JiraClient {
             maxResults: searchRequest.maxResults || this.config.maxResults || 50,
           };
 
-          const response = await this.getHttpClientWithCustomHeaders().post('/rest/api/2/search', request);
+          const response = await this.makeRequest('POST', '/rest/api/2/search', { data: request, headers });
           return response.data;
         },
         60
@@ -203,7 +185,7 @@ export class JiraClient {
   /**
    * Create a new issue
    */
-  async createIssue(issueInput: JiraIssueInput): Promise<JiraIssue> {
+  async createIssue(issueInput: JiraIssueInput, headers?: Record<string, string>): Promise<JiraIssue> {
     return withErrorHandling(async () => {
       logger.info('Creating JIRA issue', {
         project: issueInput.fields.project,
@@ -222,7 +204,7 @@ export class JiraClient {
         throw new ValidationError('Issue type is required for issue creation');
       }
 
-      const response = await this.getHttpClientWithCustomHeaders().post('/rest/api/2/issue', issueInput);
+      const response = await this.makeRequest('POST', '/rest/api/2/issue', { data: issueInput, headers });
 
       // Clear cache for project and search results
       this.invalidateIssueCache(response.data.key);
@@ -240,12 +222,13 @@ export class JiraClient {
       fields?: Partial<JiraIssue['fields']>;
       update?: Record<string, any>;
       properties?: Array<{ key: string; value: any }>;
-    }
+    },
+    headers?: Record<string, string>
   ): Promise<void> {
     return withErrorHandling(async () => {
       logger.info('Updating JIRA issue', { issueIdOrKey });
 
-      await this.getHttpClientWithCustomHeaders().put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
+      await this.makeRequest('PUT', `/rest/api/2/issue/${issueIdOrKey}`, { data: updateData, headers });
 
       // Clear cache for this issue
       this.invalidateIssueCache(issueIdOrKey);
@@ -255,12 +238,12 @@ export class JiraClient {
   /**
    * Delete an issue
    */
-  async deleteIssue(issueIdOrKey: string, deleteSubtasks: boolean = false): Promise<void> {
+  async deleteIssue(issueIdOrKey: string, deleteSubtasks: boolean = false, headers?: Record<string, string>): Promise<void> {
     return withErrorHandling(async () => {
       logger.info('Deleting JIRA issue', { issueIdOrKey, deleteSubtasks });
 
       const params = deleteSubtasks ? { deleteSubtasks: 'true' } : {};
-      await this.getHttpClientWithCustomHeaders().delete(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+      await this.makeRequest('DELETE', `/rest/api/2/issue/${issueIdOrKey}`, { params, headers });
 
       // Clear cache for this issue
       this.invalidateIssueCache(issueIdOrKey);
@@ -290,7 +273,7 @@ export class JiraClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/issue/${issueIdOrKey}/comment`, {
+        const response = await this.makeRequest("GET", `/rest/api/2/issue/${issueIdOrKey}/comment`, {
           params,
         });
 
@@ -309,9 +292,9 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Adding JIRA comment', { issueIdOrKey });
 
-      const response = await this.getHttpClientWithCustomHeaders().post(
+      const response = await this.makeRequest("POST",
         `/rest/api/2/issue/${issueIdOrKey}/comment`,
-        commentInput
+        { data: commentInput }
       );
 
       // Clear cache for this issue's comments
@@ -333,7 +316,7 @@ export class JiraClient {
       return this.cache.getOrSet(cacheKey, async () => {
         logger.info('Fetching JIRA transitions', { issueIdOrKey });
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
+        const response = await this.makeRequest("GET", `/rest/api/2/issue/${issueIdOrKey}/transitions`);
 
         return response.data.transitions;
       });
@@ -362,7 +345,7 @@ export class JiraClient {
         comment: transition.comment,
       };
 
-      await this.getHttpClientWithCustomHeaders().post(`/rest/api/2/issue/${issueIdOrKey}/transitions`, transitionData);
+      await this.makeRequest("POST", `/rest/api/2/issue/${issueIdOrKey}/transitions`, { data: transitionData });
 
       // Clear cache for this issue
       this.invalidateIssueCache(issueIdOrKey);
@@ -389,7 +372,7 @@ export class JiraClient {
       return this.cache.getOrSet(cacheKey, async () => {
         logger.info('Fetching JIRA worklogs', { issueIdOrKey });
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
+        const response = await this.makeRequest("GET", `/rest/api/2/issue/${issueIdOrKey}/worklog`, {
           params: options,
         });
 
@@ -408,9 +391,9 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Adding JIRA worklog', { issueIdOrKey, timeSpent: worklogInput.timeSpent });
 
-      const response = await this.getHttpClientWithCustomHeaders().post(
+      const response = await this.makeRequest("POST",
         `/rest/api/2/issue/${issueIdOrKey}/worklog`,
-        worklogInput
+        { data: worklogInput }
       );
 
       // Clear cache for this issue
@@ -444,7 +427,7 @@ export class JiraClient {
           if (options.expand?.length) params.expand = options.expand.join(',');
           if (options.properties?.length) params.properties = options.properties.join(',');
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/project', { params });
+          const response = await this.makeRequest("GET", '/rest/api/2/project', { params });
           return response.data;
         },
         300
@@ -474,7 +457,7 @@ export class JiraClient {
           if (options.expand?.length) params.expand = options.expand.join(',');
           if (options.properties?.length) params.properties = options.properties.join(',');
 
-          const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/project/${projectIdOrKey}`, {
+          const response = await this.makeRequest("GET", `/rest/api/2/project/${projectIdOrKey}`, {
             params,
           });
           return response.data;
@@ -515,7 +498,7 @@ export class JiraClient {
       return this.cache.getOrSet(
         cacheKey,
         async () => {
-          const response = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/myself');
+          const response = await this.makeRequest("GET", '/rest/api/2/myself');
           return response.data;
         },
         300
@@ -533,7 +516,7 @@ export class JiraClient {
       return this.cache.getOrSet(
         cacheKey,
         async () => {
-          const response = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/serverInfo');
+          const response = await this.makeRequest("GET", '/rest/api/2/serverInfo');
           return response.data;
         },
         600
@@ -549,10 +532,10 @@ export class JiraClient {
   }
 
   /**
-   * Get the underlying HTTP client with custom headers applied
+   * Get the underlying HTTP client
    */
   getHttpClient(): AxiosInstance {
-    return this.getHttpClientWithCustomHeaders();
+    return this.httpClient;
   }
 
   // === Extended API Methods ===
@@ -570,7 +553,7 @@ export class JiraClient {
         async () => {
           logger.info('Searching JIRA fields', { query });
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/field');
+          const response = await this.makeRequest("GET", '/rest/api/2/field');
           let fields = response.data;
 
           if (query) {
@@ -600,7 +583,7 @@ export class JiraClient {
         async () => {
           logger.info('Fetching JIRA project versions', { projectIdOrKey });
 
-          const response = await this.getHttpClientWithCustomHeaders().get(
+          const response = await this.makeRequest("GET", 
             `/rest/api/2/project/${projectIdOrKey}/versions`
           );
           return response.data;
@@ -628,7 +611,7 @@ export class JiraClient {
         projectId: versionInput.projectId,
       });
 
-      const response = await this.getHttpClientWithCustomHeaders().post('/rest/api/2/version', versionInput);
+      const response = await this.makeRequest("POST", '/rest/api/2/version', { data: versionInput });
 
       // Invalidate versions cache
       this.cache
@@ -683,7 +666,7 @@ export class JiraClient {
         async () => {
           logger.info('Fetching JIRA link types');
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/rest/api/2/issueLinkType');
+          const response = await this.makeRequest("GET", '/rest/api/2/issueLinkType');
           return response.data.issueLinkTypes;
         },
         600
@@ -703,7 +686,7 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Creating JIRA issue link', { linkData });
 
-      await this.getHttpClientWithCustomHeaders().post('/rest/api/2/issueLink', linkData);
+      await this.makeRequest("POST", '/rest/api/2/issueLink', { data: linkData });
 
       // Invalidate cache for linked issues
       const inwardKey =
@@ -730,8 +713,8 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Creating JIRA remote issue link', { issueIdOrKey, url: linkData.url });
 
-      const response = await this.getHttpClientWithCustomHeaders().post(`/rest/api/2/issue/${issueIdOrKey}/remotelink`, {
-        object: linkData,
+      const response = await this.makeRequest("POST", `/rest/api/2/issue/${issueIdOrKey}/remotelink`, {
+        data: { object: linkData },
       });
 
       this.invalidateIssueCache(issueIdOrKey);
@@ -746,7 +729,7 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Removing JIRA issue link', { linkId });
 
-      await this.getHttpClientWithCustomHeaders().delete(`/rest/api/2/issueLink/${linkId}`);
+      await this.makeRequest("DELETE", `/rest/api/2/issueLink/${linkId}`);
 
       // Clear search cache since links may affect search results
       this.cache
@@ -789,7 +772,7 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Downloading JIRA attachment', { attachmentId });
 
-      const response = await this.getHttpClientWithCustomHeaders().get(`/rest/api/2/attachment/${attachmentId}`, {
+      const response = await this.httpClient.get(`/rest/api/2/attachment/${attachmentId}`, {
         responseType: 'arraybuffer',
       });
 
@@ -804,8 +787,8 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Batch creating JIRA issues', { count: issues.length });
 
-      const response = await this.getHttpClientWithCustomHeaders().post('/rest/api/2/issue/bulk', {
-        issueUpdates: issues,
+      const response = await this.makeRequest("POST", '/rest/api/2/issue/bulk', {
+        data: { issueUpdates: issues },
       });
 
       // Clear relevant caches
@@ -826,8 +809,8 @@ export class JiraClient {
       logger.info('Batch fetching JIRA changelogs', { count: issueKeys.length });
 
       // For Cloud instances, use the bulk API
-      const response = await this.getHttpClientWithCustomHeaders().post('/rest/api/2/issue/changelog/list', {
-        issueIds: issueKeys,
+      const response = await this.makeRequest("POST", '/rest/api/2/issue/changelog/list', {
+        data: { issueIds: issueKeys },
       });
 
       return response.data;
@@ -856,7 +839,7 @@ export class JiraClient {
         async () => {
           logger.info('Fetching JIRA agile boards');
 
-          const response = await this.getHttpClientWithCustomHeaders().get('/rest/agile/1.0/board', {
+          const response = await this.makeRequest("GET", '/rest/agile/1.0/board', {
             params: options,
           });
 
@@ -890,7 +873,7 @@ export class JiraClient {
         if (options.expand?.length) params.expand = options.expand.join(',');
         if (options.fields?.length) params.fields = options.fields.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/agile/1.0/board/${boardId}/issue`, {
+        const response = await this.makeRequest("GET", `/rest/agile/1.0/board/${boardId}/issue`, {
           params,
         });
 
@@ -916,7 +899,7 @@ export class JiraClient {
       return this.cache.getOrSet(cacheKey, async () => {
         logger.info('Fetching JIRA board sprints', { boardId });
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/agile/1.0/board/${boardId}/sprint`, {
+        const response = await this.makeRequest("GET", `/rest/agile/1.0/board/${boardId}/sprint`, {
           params: options,
         });
 
@@ -948,7 +931,7 @@ export class JiraClient {
         if (options.expand?.length) params.expand = options.expand.join(',');
         if (options.fields?.length) params.fields = options.fields.join(',');
 
-        const response = await this.getHttpClientWithCustomHeaders().get(`/rest/agile/1.0/sprint/${sprintId}/issue`, {
+        const response = await this.makeRequest("GET", `/rest/agile/1.0/sprint/${sprintId}/issue`, {
           params,
         });
 
@@ -973,7 +956,7 @@ export class JiraClient {
         boardId: sprintData.originBoardId,
       });
 
-      const response = await this.getHttpClientWithCustomHeaders().post('/rest/agile/1.0/sprint', sprintData);
+      const response = await this.makeRequest("POST", '/rest/agile/1.0/sprint', { data: sprintData });
 
       // Clear board sprints cache
       this.cache
@@ -1001,7 +984,7 @@ export class JiraClient {
     return withErrorHandling(async () => {
       logger.info('Updating JIRA sprint', { sprintId });
 
-      const response = await this.getHttpClientWithCustomHeaders().put(`/rest/agile/1.0/sprint/${sprintId}`, sprintData);
+      const response = await this.makeRequest("PUT", `/rest/agile/1.0/sprint/${sprintId}`, { data: sprintData });
 
       // Clear sprint-related caches
       this.cache

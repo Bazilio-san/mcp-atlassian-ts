@@ -1110,89 +1110,85 @@ An example issue key is ISSUE-1.`,
     return withErrorHandling(async () => {
       logger.info('Executing JIRA tool', { toolName, hasCustomHeaders: !!customHeaders });
 
-      // Set custom headers in the client if provided
-      if (customHeaders && Object.keys(customHeaders).length > 0) {
-        this.client.setCustomHeaders(customHeaders);
-      }
 
       switch (toolName) {
         // Basic operations
         case 'jira_get_issue':
-          return this.getIssue(args);
+          return this.getIssue(args, customHeaders);
         case 'jira_search_issues':
-          return this.searchIssues(args);
+          return this.searchIssues(args, customHeaders);
         case 'jira_create_issue':
-          return this.createIssue(args);
+          return this.createIssue(args, customHeaders);
         case 'jira_update_issue':
-          return this.updateIssue(args);
+          return this.updateIssue(args, customHeaders);
         case 'jira_delete_issue':
-          return this.deleteIssue(args);
+          return this.deleteIssue(args, customHeaders);
         case 'jira_batch_create_issues':
-          return this.batchCreateIssues(args);
+          return this.batchCreateIssues(args, customHeaders);
         case 'jira_add_comment':
-          return this.addComment(args);
+          return this.addComment(args, customHeaders);
         case 'jira_get_transitions':
-          return this.getTransitions(args);
+          return this.getTransitions(args, customHeaders);
         case 'jira_transition_issue':
-          return this.transitionIssue(args);
+          return this.transitionIssue(args, customHeaders);
         case 'jira_get_projects':
-          return this.getProjects(args);
+          return this.getProjects(args, customHeaders);
 
         // User management
         case 'jira_get_user_profile':
-          return this.getUserProfile(args);
+          return this.getUserProfile(args, customHeaders);
 
         // Fields and metadata
         case 'jira_search_fields':
-          return this.searchFields(args);
+          return this.searchFields(args, customHeaders);
 
         // Project versions
         case 'jira_get_project_versions':
-          return this.getProjectVersions(args);
+          return this.getProjectVersions(args, customHeaders);
         case 'jira_create_version':
-          return this.createVersion(args);
+          return this.createVersion(args, customHeaders);
         case 'jira_batch_create_versions':
-          return this.batchCreateVersions(args);
+          return this.batchCreateVersions(args, customHeaders);
 
         // Issue links
         case 'jira_get_link_types':
-          return this.getLinkTypes();
+          return this.getLinkTypes(customHeaders);
         case 'jira_create_issue_link':
-          return this.createIssueLink(args);
+          return this.createIssueLink(args, customHeaders);
         case 'jira_create_remote_issue_link':
-          return this.createRemoteIssueLink(args);
+          return this.createRemoteIssueLink(args, customHeaders);
         case 'jira_remove_issue_link':
-          return this.removeIssueLink(args);
+          return this.removeIssueLink(args, customHeaders);
         case 'jira_link_to_epic':
-          return this.linkToEpic(args);
+          return this.linkToEpic(args, customHeaders);
 
         // Worklog
         case 'jira_get_worklog':
-          return this.getWorklog(args);
+          return this.getWorklog(args, customHeaders);
         case 'jira_add_worklog':
-          return this.addWorklog(args);
+          return this.addWorklog(args, customHeaders);
 
         // Attachments
         case 'jira_download_attachments':
-          return this.downloadAttachments(args);
+          return this.downloadAttachments(args, customHeaders);
 
         // Agile
         case 'jira_get_agile_boards':
-          return this.getAgileBoards(args);
+          return this.getAgileBoards(args, customHeaders);
         case 'jira_get_board_issues':
-          return this.getBoardIssues(args);
+          return this.getBoardIssues(args, customHeaders);
         case 'jira_get_sprints_from_board':
-          return this.getSprintsFromBoard(args);
+          return this.getSprintsFromBoard(args, customHeaders);
         case 'jira_get_sprint_issues':
-          return this.getSprintIssues(args);
+          return this.getSprintIssues(args, customHeaders);
         case 'jira_create_sprint':
-          return this.createSprint(args);
+          return this.createSprint(args, customHeaders);
         case 'jira_update_sprint':
-          return this.updateSprint(args);
+          return this.updateSprint(args, customHeaders);
 
         // Bulk operations
         case 'jira_batch_get_changelogs':
-          return this.batchGetChangelogs(args);
+          return this.batchGetChangelogs(args, customHeaders);
 
         default:
           throw new ToolExecutionError(toolName, `Unknown JIRA tool: ${toolName}`);
@@ -1209,7 +1205,7 @@ An example issue key is ISSUE-1.`,
 
   // === Tool Implementations ===
 
-  private async getIssue (args: any) {
+  private async getIssue (args: any, headers?: Record<string, string>) {
     const { issueKey, expand = [], fields } = args;
 
     const options: any = {
@@ -1219,7 +1215,7 @@ An example issue key is ISSUE-1.`,
       options.fields = this.normalizeToArray(fields);
     }
 
-    const issue = await this.client.getIssue(issueKey, options);
+    const issue = await this.client.getIssue(issueKey, { ...options, headers });
 
     return {
       content: [
@@ -1247,7 +1243,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async searchIssues (args: any) {
+  private async searchIssues (args: any, headers?: Record<string, string>) {
     const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
 
     const searchRequest: any = {
@@ -1260,7 +1256,7 @@ An example issue key is ISSUE-1.`,
       searchRequest.fields = this.normalizeToArray(fields);
     }
 
-    const searchResult = await this.client.searchIssues(searchRequest);
+    const searchResult = await this.client.searchIssues(searchRequest, headers);
 
     if (searchResult.issues.length === 0) {
       return {
@@ -1292,7 +1288,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createIssue (args: any) {
+  private async createIssue (args: any, headers?: Record<string, string>) {
     const {
       project,
       issueType,
@@ -1326,7 +1322,7 @@ An example issue key is ISSUE-1.`,
     if (normalizedComponents.length > 0)
       issueInput.fields.components = normalizedComponents.map((c: string) => ({ name: c }));
 
-    const createdIssue = await this.client.createIssue(issueInput);
+    const createdIssue = await this.client.createIssue(issueInput, headers);
 
     return {
       content: [
@@ -1344,7 +1340,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async updateIssue (args: any) {
+  private async updateIssue (args: any, headers?: Record<string, string>) {
     const {
       issueKey,
       summary,
@@ -1363,7 +1359,7 @@ An example issue key is ISSUE-1.`,
     if (priority) updateData.fields.priority = { name: priority };
     if (labels) updateData.fields.labels = this.normalizeToArray(labels);
 
-    await this.client.updateIssue(issueKey, updateData);
+    await this.client.updateIssue(issueKey, updateData, headers);
 
     return {
       content: [
@@ -1379,10 +1375,10 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async deleteIssue (args: any) {
+  private async deleteIssue (args: any, headers?: Record<string, string>) {
     const { issueKey, deleteSubtasks = false } = args;
 
-    await this.client.deleteIssue(issueKey, deleteSubtasks);
+    await this.client.deleteIssue(issueKey, deleteSubtasks, headers);
 
     return {
       content: [
@@ -1397,7 +1393,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async addComment (args: any) {
+  private async addComment (args: any, headers?: Record<string, string>) {
     const { issueKey, body, visibility } = args;
 
     const commentInput: any = { body };
@@ -1421,7 +1417,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getTransitions (args: any) {
+  private async getTransitions (args: any, headers?: Record<string, string>) {
     const { issueKey } = args;
 
     const transitions = await this.client.getTransitions(issueKey);
@@ -1451,7 +1447,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async transitionIssue (args: any) {
+  private async transitionIssue (args: any, headers?: Record<string, string>) {
     const { issueKey, transitionId, comment, fields = {} } = args;
 
     const transitionData: any = { id: transitionId, fields };
@@ -1474,7 +1470,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getProjects (args: any) {
+  private async getProjects (args: any, headers?: Record<string, string>) {
     const { expand, recent } = args;
 
     const projects = await this.client.getProjects({
@@ -1509,7 +1505,7 @@ An example issue key is ISSUE-1.`,
 
   // === Extended Tool Implementations ===
 
-  private async getUserProfile (args: any) {
+  private async getUserProfile (args: any, headers?: Record<string, string>) {
     const { userIdOrEmail } = args;
 
     const user = await this.client.getUserProfile(userIdOrEmail);
@@ -1532,7 +1528,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async batchCreateIssues (args: any) {
+  private async batchCreateIssues (args: any, headers?: Record<string, string>) {
     const { issues } = args;
 
     // Convert to the format expected by the client
@@ -1585,7 +1581,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async searchFields (args: any) {
+  private async searchFields (args: any, headers?: Record<string, string>) {
     const { query } = args;
 
     const fields = await this.client.searchFields(query);
@@ -1617,7 +1613,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getProjectVersions (args: any) {
+  private async getProjectVersions (args: any, headers?: Record<string, string>) {
     const { projectKey } = args;
 
     const versions = await this.client.getProjectVersions(projectKey);
@@ -1650,7 +1646,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createVersion (args: any) {
+  private async createVersion (args: any, headers?: Record<string, string>) {
     const versionData = args;
 
     const version = await this.client.createVersion(versionData);
@@ -1671,7 +1667,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async batchCreateVersions (args: any) {
+  private async batchCreateVersions (args: any, headers?: Record<string, string>) {
     const { versions } = args;
 
     const results = await this.client.batchCreateVersions(versions);
@@ -1709,7 +1705,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getLinkTypes () {
+  private async getLinkTypes (headers?: Record<string, string>) {
     const linkTypes = await this.client.getLinkTypes();
 
     if (linkTypes.length === 0) {
@@ -1737,7 +1733,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createIssueLink (args: any) {
+  private async createIssueLink (args: any, headers?: Record<string, string>) {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
 
     const linkData: any = {
@@ -1766,7 +1762,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createRemoteIssueLink (args: any) {
+  private async createRemoteIssueLink (args: any, headers?: Record<string, string>) {
     const { issueKey, url, title, summary, iconUrl } = args;
 
     const linkData: any = { url, title };
@@ -1791,7 +1787,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async removeIssueLink (args: any) {
+  private async removeIssueLink (args: any, headers?: Record<string, string>) {
     const { linkId } = args;
 
     await this.client.removeIssueLink(linkId);
@@ -1806,7 +1802,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async linkToEpic (args: any) {
+  private async linkToEpic (args: any, headers?: Record<string, string>) {
     const { issueKey, epicKey } = args;
 
     await this.client.linkToEpic(issueKey, epicKey);
@@ -1827,7 +1823,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getWorklog (args: any) {
+  private async getWorklog (args: any, headers?: Record<string, string>) {
     const { issueKey, startAt = 0, maxResults = 50 } = args;
 
     const worklogResult = await this.client.getWorklogs(issueKey, { startAt, maxResults });
@@ -1865,7 +1861,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async addWorklog (args: any) {
+  private async addWorklog (args: any, headers?: Record<string, string>) {
     const { issueKey, timeSpent, comment, started, visibility } = args;
 
     const worklogInput: any = { timeSpent };
@@ -1892,7 +1888,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async downloadAttachments (args: any) {
+  private async downloadAttachments (args: any, headers?: Record<string, string>) {
     const { issueKey } = args;
 
     const attachments = await this.client.getAttachments(issueKey);
@@ -1930,7 +1926,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getAgileBoards (args: any) {
+  private async getAgileBoards (args: any, headers?: Record<string, string>) {
     const options = args;
 
     const boardsResult = await this.client.getAgileBoards(options);
@@ -1963,7 +1959,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getBoardIssues (args: any) {
+  private async getBoardIssues (args: any, headers?: Record<string, string>) {
     const { boardId, fields, ...options } = args;
 
     const requestOptions: any = { ...options };
@@ -2001,7 +1997,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getSprintsFromBoard (args: any) {
+  private async getSprintsFromBoard (args: any, headers?: Record<string, string>) {
     const { boardId, ...options } = args;
 
     const sprintsResult = await this.client.getSprintsFromBoard(boardId, options);
@@ -2041,7 +2037,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async getSprintIssues (args: any) {
+  private async getSprintIssues (args: any, headers?: Record<string, string>) {
     const { sprintId, fields, ...options } = args;
 
     const requestOptions: any = { ...options };
@@ -2079,7 +2075,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async createSprint (args: any) {
+  private async createSprint (args: any, headers?: Record<string, string>) {
     const { boardId, name, goal, startDate, endDate } = args;
 
     const sprintData = {
@@ -2109,7 +2105,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async updateSprint (args: any) {
+  private async updateSprint (args: any, headers?: Record<string, string>) {
     const { sprintId, ...updateData } = args;
 
     const sprint = await this.client.updateSprint(sprintId, updateData);
@@ -2130,7 +2126,7 @@ An example issue key is ISSUE-1.`,
     };
   }
 
-  private async batchGetChangelogs (args: any) {
+  private async batchGetChangelogs (args: any, headers?: Record<string, string>) {
     const { issueKeys } = args;
 
     const changelogs = await this.client.batchGetChangelogs(issueKeys);

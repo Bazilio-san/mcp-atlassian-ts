@@ -738,59 +738,55 @@ Can be a single string or array of strings`,
     return withErrorHandling(async () => {
       logger.info('Executing Confluence tool', {toolName, hasCustomHeaders: !!customHeaders});
 
-      // Set custom headers in the client if provided
-      if (customHeaders && Object.keys(customHeaders).length > 0) {
-        this.client.setCustomHeaders(customHeaders);
-      }
 
       switch (toolName) {
         // Content operations
         case 'confluence_search':
-          return this.searchContent(args);
+          return this.searchContent(args, customHeaders);
         case 'confluence_get_page':
-          return this.getPage(args);
+          return this.getPage(args, customHeaders);
         case 'confluence_get_page_by_title':
-          return this.getPageByTitle(args);
+          return this.getPageByTitle(args, customHeaders);
         case 'confluence_create_page':
-          return this.createPage(args);
+          return this.createPage(args, customHeaders);
         case 'confluence_update_page':
-          return this.updatePage(args);
+          return this.updatePage(args, customHeaders);
         case 'confluence_delete_page':
-          return this.deletePage(args);
+          return this.deletePage(args, customHeaders);
 
         // Space operations
         case 'confluence_get_spaces':
-          return this.getSpaces(args);
+          return this.getSpaces(args, customHeaders);
         case 'confluence_get_space':
-          return this.getSpace(args);
+          return this.getSpace(args, customHeaders);
         case 'confluence_get_space_content':
-          return this.getSpaceContent(args);
+          return this.getSpaceContent(args, customHeaders);
 
         // Comments
         case 'confluence_add_comment':
-          return this.addComment(args);
+          return this.addComment(args, customHeaders);
         case 'confluence_get_comments':
-          return this.getComments(args);
+          return this.getComments(args, customHeaders);
 
         // User management
         case 'confluence_search_user':
-          return this.searchUsers(args);
+          return this.searchUsers(args, customHeaders);
 
         // Label management
         case 'confluence_add_label':
-          return this.addLabel(args);
+          return this.addLabel(args, customHeaders);
         case 'confluence_get_labels':
-          return this.getLabels(args);
+          return this.getLabels(args, customHeaders);
         case 'confluence_get_pages_by_label':
-          return this.getPagesByLabel(args);
+          return this.getPagesByLabel(args, customHeaders);
 
         // Page hierarchy
         case 'confluence_get_page_children':
-          return this.getPageChildren(args);
+          return this.getPageChildren(args, customHeaders);
 
         // History
         case 'confluence_get_page_history':
-          return this.getPageHistory(args);
+          return this.getPageHistory(args, customHeaders);
 
         default:
           throw new ToolExecutionError(toolName, `Unknown Confluence tool: ${toolName}`);
@@ -807,7 +803,7 @@ Can be a single string or array of strings`,
 
   // === Tool Implementations ===
 
-  private async searchContent(args: any) {
+  private async searchContent(args: any, headers?: Record<string, string>) {
     const {cql, offset = 0, limit = 50, excerpt = 'highlight', expand} = args;
 
     const searchResult = await this.client.searchContent({
@@ -854,7 +850,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getPage(args: any) {
+  private async getPage(args: any, headers?: Record<string, string>) {
     const {
       pageId,
       expand,
@@ -933,7 +929,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getPageByTitle(args: any) {
+  private async getPageByTitle(args: any, headers?: Record<string, string>) {
     const {spaceKey, title, expand} = args;
 
     const pages = await this.client.getContentBySpaceAndTitle(spaceKey, title, {
@@ -977,7 +973,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async createPage(args: any) {
+  private async createPage(args: any, headers?: Record<string, string>) {
     const {spaceKey, title, body, parentId, type = 'page', labels = []} = args;
 
     // Build the page input
@@ -1027,7 +1023,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async updatePage(args: any) {
+  private async updatePage(args: any, headers?: Record<string, string>) {
     const {
       title,
       body,
@@ -1091,7 +1087,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getSpaces(args: any) {
+  private async getSpaces(args: any, headers?: Record<string, string>) {
     const {type, status = 'current', expand, limit = 50} = args;
 
     const spacesResult = await this.client.getSpaces({
@@ -1126,7 +1122,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getSpace(args: any) {
+  private async getSpace(args: any, headers?: Record<string, string>) {
     const {spaceKey, expand} = args;
 
     const space = await this.client.getSpace(spaceKey, {
@@ -1153,7 +1149,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getSpaceContent(args: any) {
+  private async getSpaceContent(args: any, headers?: Record<string, string>) {
     const {
       spaceKey,
       type = 'page',
@@ -1200,7 +1196,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async addComment(args: any) {
+  private async addComment(args: any, headers?: Record<string, string>) {
     const {body, parentCommentId} = args;
     const pageId = String(args.pageId);
     const commentInput: any = {
@@ -1238,7 +1234,7 @@ Can be a single string or array of strings`,
 
   // === Extended Tool Implementations ===
 
-  private async searchUsers(args: any) {
+  private async searchUsers(args: any, headers?: Record<string, string>) {
     const {query, limit = 50} = args;
 
     const users = await this.client.searchUsers(query, limit);
@@ -1276,7 +1272,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async addLabel(args: any) {
+  private async addLabel(args: any, headers?: Record<string, string>) {
     const {label, prefix = 'global'} = args;
     const pageId = String(args.pageId);
 
@@ -1297,7 +1293,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getLabels(args: any) {
+  private async getLabels(args: any, headers?: Record<string, string>) {
     const {prefix, limit = 50} = args;
     const pageId = String(args.pageId);
 
@@ -1331,7 +1327,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getPagesByLabel(args: any) {
+  private async getPagesByLabel(args: any, headers?: Record<string, string>) {
     const {label, spaceKey, expand, limit = 50} = args;
 
     const pagesResult = await this.client.getPagesByLabel(label, {
@@ -1373,7 +1369,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getPageChildren(args: any) {
+  private async getPageChildren(args: any, headers?: Record<string, string>) {
     const {expand, limit = 50} = args;
     const pageId = String(args.pageId);
 
@@ -1415,7 +1411,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getComments(args: any) {
+  private async getComments(args: any, headers?: Record<string, string>) {
     const {location, expand, limit = 50} = args;
     const pageId = String(args.pageId);
 
@@ -1457,7 +1453,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async deletePage(args: any) {
+  private async deletePage(args: any, headers?: Record<string, string>) {
     const {permanent = false} = args;
     const pageId = String(args.pageId);
 
@@ -1476,7 +1472,7 @@ Can be a single string or array of strings`,
     };
   }
 
-  private async getPageHistory(args: any) {
+  private async getPageHistory(args: any, headers?: Record<string, string>) {
     const { expand, limit = 25 } = args;
     const pageId = String(args.pageId);
 

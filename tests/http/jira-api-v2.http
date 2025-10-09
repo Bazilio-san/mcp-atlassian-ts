@@ -324,4 +324,12 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 POST {{baseUrl}}/rest/api/2/version
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+###
+GET {{baseUrl}}/rest/api/2/myself
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+x-finam-user: ashapovalov
+
+###
+GET {{baseUrl}}/rest/api/2/serverInfo
+
 

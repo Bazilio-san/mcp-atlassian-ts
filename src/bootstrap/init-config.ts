@@ -7,15 +7,14 @@ import type { IConfig } from '../types/config.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Read package.json for metadata (from project root)
-const packageJsonPath = join(__dirname, '..', '..', '..', 'package.json');
-const packageJson = JSON.parse(
-  readFileSync(packageJsonPath, 'utf-8')
-);
+// Handle both development (src/) and production (dist/src/) scenarios
+const packageJsonPath = join(__dirname, '..', '..', '..', 'package.json')  // dist/src/bootstrap -> project root
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 
 /**
  * Get environment variable value with type conversion
  */
-function getEnv(key: string, defaultValue: any = undefined): any {
+function getEnv (key: string, defaultValue: any = undefined): any {
   const value = process.env[key];
 
   if (value === undefined) {
@@ -45,7 +44,7 @@ function getEnv(key: string, defaultValue: any = undefined): any {
 /**
  * Check if a string value is meaningful (not empty, not just asterisks)
  */
-function hasValue(value: any): boolean {
+function hasValue (value: any): boolean {
   if (typeof value !== 'string') return false;
   const cleaned = value.replace(/\*+/g, '').trim();
   return cleaned.length > 0;
@@ -56,7 +55,7 @@ export const hasStringValue = (v: any): boolean => (typeof v === "string" && v.r
 /**
  * Build authentication configuration from environment
  */
-function buildAuthConfig(prefix: 'JIRA' | 'CONFLUENCE') {
+function buildAuthConfig (prefix: 'JIRA' | 'CONFLUENCE') {
   const username = getEnv(`${prefix}_USERNAME`);
   const password = getEnv(`${prefix}_PASSWORD`);
   const pat = getEnv(`${prefix}_PAT`);

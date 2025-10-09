@@ -8,18 +8,37 @@
 
 import fetch from 'node-fetch';
 import fs from 'fs/promises';
+import fss from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3000';
 const JIRA_EMULATOR_URL = process.env.JIRA_URL || 'http://localhost:8080';
-const RESULTS_DIR = './tests/results';
+const RESULTS_DIR = path.join(process.cwd(), '_tmp/mcp-http-tester-results');
+
+if (!fss.existsSync(RESULTS_DIR)) {
+  fss.mkdirSync(RESULTS_DIR, { recursive: true });
+}
+
+// Parse custom header from .env if provided
+let DEFAULT_CUSTOM_HEADERS = {};
+if (process.env.TEST_ADD_X_HEADER) {
+  const [key, value] = process.env.TEST_ADD_X_HEADER.split(':');
+  if (key && value) {
+    DEFAULT_CUSTOM_HEADERS[key.trim()] = value.trim();
+    console.log(chalk.cyan(`📋 Default custom header from .env: ${key.trim()}: ${value.trim()}`));
+  }
+}
 
 /**
  * MCP HTTP Client for testing
  */
 class McpHttpClient {
-  constructor(baseUrl, customHeaders = {}) {
+  constructor (baseUrl, customHeaders = {}) {
     this.baseUrl = baseUrl;
     this.customHeaders = customHeaders;
     this.requestId = 1;
@@ -28,7 +47,7 @@ class McpHttpClient {
   /**
    * Send MCP request over HTTP
    */
-  async sendRequest(method, params = {}) {
+  async sendRequest (method, params = {}) {
     const requestId = this.requestId++;
 
     const headers = {
@@ -69,14 +88,14 @@ class McpHttpClient {
   /**
    * List all available tools
    */
-  async listTools() {
+  async listTools () {
     return this.sendRequest('tools/list');
   }
 
   /**
    * Call a specific tool
    */
-  async callTool(toolName, parameters = {}) {
+  async callTool (toolName, parameters = {}) {
     return this.sendRequest('tools/call', {
       name: toolName,
       arguments: parameters,
@@ -86,14 +105,14 @@ class McpHttpClient {
   /**
    * Ping the server
    */
-  async ping() {
+  async ping () {
     return this.sendRequest('ping');
   }
 
   /**
    * Check health
    */
-  async health() {
+  async health () {
     const response = await fetch(`${this.baseUrl}/health`);
     return response.json();
   }
@@ -103,7 +122,7 @@ class McpHttpClient {
  * Test case definition
  */
 class TestCase {
-  constructor(toolName, params, description, customHeaders = {}) {
+  constructor (toolName, params, description, customHeaders = {}) {
     this.toolName = toolName;
     this.params = params;
     this.description = description;
@@ -115,7 +134,7 @@ class TestCase {
  * Main test orchestrator
  */
 class JiraMcpHttpTester {
-  constructor() {
+  constructor () {
     this.client = null;
     this.testCases = [];
     this.results = [];
@@ -130,7 +149,7 @@ class JiraMcpHttpTester {
   /**
    * Initialize test cases for all 30 JIRA tools
    */
-  initializeTestCases() {
+  initializeTestCases () {
     // Test header for custom header propagation testing
     const testHeader = { 'X-Test-Request-ID': `test-${Date.now()}` };
 
@@ -140,13 +159,13 @@ class JiraMcpHttpTester {
         'jira_get_issue',
         { issueKey: 'TEST-1' },
         'Get issue details',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_search_issues',
         { jql: 'project = TEST', maxResults: 10 },
         'Search issues by JQL',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_create_issue',
@@ -157,7 +176,7 @@ class JiraMcpHttpTester {
           description: 'Created via MCP HTTP tester',
         },
         'Create new issue',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_update_issue',
@@ -166,7 +185,7 @@ class JiraMcpHttpTester {
           summary: 'Updated via MCP HTTP test',
         },
         'Update existing issue',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_add_comment',
@@ -175,13 +194,13 @@ class JiraMcpHttpTester {
           body: 'Test comment from MCP HTTP tester',
         },
         'Add comment to issue',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_get_transitions',
         { issueKey: 'TEST-1' },
         'Get available transitions',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_transition_issue',
@@ -191,13 +210,13 @@ class JiraMcpHttpTester {
           comment: 'Transitioned via MCP test',
         },
         'Transition issue status',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_delete_issue',
         { issueKey: 'TEST-DELETE', deleteSubtasks: false },
         'Delete issue (will fail if not exists)',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_batch_create_issues',
@@ -216,7 +235,7 @@ class JiraMcpHttpTester {
           ],
         },
         'Batch create multiple issues',
-        testHeader
+        testHeader,
       ),
 
       // === Project Management (3 tools) ===
@@ -224,13 +243,13 @@ class JiraMcpHttpTester {
         'jira_get_projects',
         { recent: 5 },
         'Get all projects',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_get_project_versions',
         { projectKey: 'TEST' },
         'Get project versions',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_create_version',
@@ -240,7 +259,7 @@ class JiraMcpHttpTester {
           description: 'Created via MCP HTTP test',
         },
         'Create project version',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_batch_create_versions',
@@ -259,7 +278,7 @@ class JiraMcpHttpTester {
           ],
         },
         'Batch create versions',
-        testHeader
+        testHeader,
       ),
 
       // === User Management (1 tool) ===
@@ -267,7 +286,7 @@ class JiraMcpHttpTester {
         'jira_get_user_profile',
         { userIdOrEmail: '12345' },
         'Get user profile',
-        testHeader
+        testHeader,
       ),
 
       // === Fields and Metadata (1 tool) ===
@@ -275,7 +294,7 @@ class JiraMcpHttpTester {
         'jira_search_fields',
         { query: 'summary' },
         'Search JIRA fields',
-        testHeader
+        testHeader,
       ),
 
       // === Issue Links (4 tools) ===
@@ -283,7 +302,7 @@ class JiraMcpHttpTester {
         'jira_get_link_types',
         {},
         'Get issue link types',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_create_issue_link',
@@ -293,7 +312,7 @@ class JiraMcpHttpTester {
           outwardIssue: 'TEST-2',
         },
         'Create issue link',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_create_remote_issue_link',
@@ -303,13 +322,13 @@ class JiraMcpHttpTester {
           title: 'External Issue Link',
         },
         'Create remote issue link',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_remove_issue_link',
         { linkId: '10000' },
         'Remove issue link (will fail if not exists)',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_link_to_epic',
@@ -318,7 +337,7 @@ class JiraMcpHttpTester {
           epicKey: 'TEST-2',
         },
         'Link issue to epic',
-        testHeader
+        testHeader,
       ),
 
       // === Worklog (2 tools) ===
@@ -326,7 +345,7 @@ class JiraMcpHttpTester {
         'jira_get_worklog',
         { issueKey: 'TEST-1', maxResults: 10 },
         'Get issue worklogs',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_add_worklog',
@@ -336,7 +355,7 @@ class JiraMcpHttpTester {
           comment: 'Work logged via MCP test',
         },
         'Add worklog entry',
-        testHeader
+        testHeader,
       ),
 
       // === Attachments (1 tool) ===
@@ -344,7 +363,7 @@ class JiraMcpHttpTester {
         'jira_download_attachments',
         { issueKey: 'TEST-1' },
         'Get issue attachments',
-        testHeader
+        testHeader,
       ),
 
       // === Agile/Scrum (6 tools) ===
@@ -352,25 +371,25 @@ class JiraMcpHttpTester {
         'jira_get_agile_boards',
         { maxResults: 10 },
         'Get all agile boards',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_get_board_issues',
         { boardId: '1', maxResults: 10 },
         'Get board issues',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_get_sprints_from_board',
         { boardId: '1', maxResults: 10 },
         'Get board sprints',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_get_sprint_issues',
         { sprintId: '1', maxResults: 10 },
         'Get sprint issues',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_create_sprint',
@@ -380,7 +399,7 @@ class JiraMcpHttpTester {
           goal: 'Test sprint creation',
         },
         'Create new sprint',
-        testHeader
+        testHeader,
       ),
       new TestCase(
         'jira_update_sprint',
@@ -390,7 +409,7 @@ class JiraMcpHttpTester {
           state: 'active',
         },
         'Update sprint',
-        testHeader
+        testHeader,
       ),
 
       // === Bulk Operations (1 tool) ===
@@ -398,7 +417,7 @@ class JiraMcpHttpTester {
         'jira_batch_get_changelogs',
         { issueKeys: ['TEST-1', 'TEST-2'] },
         'Get changelogs for multiple issues',
-        testHeader
+        testHeader,
       ),
     ];
 
@@ -408,14 +427,14 @@ class JiraMcpHttpTester {
   /**
    * Run all tests
    */
-  async runAllTests() {
+  async runAllTests () {
     console.log(chalk.bold.cyan('='.repeat(80)));
     console.log(chalk.bold.cyan('JIRA MCP HTTP Tester'));
     console.log(chalk.bold.cyan('='.repeat(80)));
     console.log();
 
-    // Initialize client
-    this.client = new McpHttpClient(MCP_SERVER_URL);
+    // Initialize client with default custom headers from .env
+    this.client = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
 
     // Check server health
     console.log(chalk.yellow('🏥 Checking MCP server health...'));
@@ -472,7 +491,7 @@ class JiraMcpHttpTester {
   /**
    * Run a single test case
    */
-  async runSingleTest(testCase, index) {
+  async runSingleTest (testCase, index) {
     const testId = `${index}/${this.testCases.length}`;
     console.log(chalk.cyan(`[${testId}] Testing: ${testCase.toolName}`));
     console.log(chalk.dim(`  Description: ${testCase.description}`));
@@ -491,8 +510,8 @@ class JiraMcpHttpTester {
     };
 
     try {
-      // Create client with custom headers for this test
-      const testClient = new McpHttpClient(MCP_SERVER_URL, testCase.customHeaders);
+      // Create client with merged custom headers (default from .env + test-specific)
+      const testClient = new McpHttpClient(MCP_SERVER_URL, { ...DEFAULT_CUSTOM_HEADERS, ...testCase.customHeaders });
 
       // Call the tool
       const response = await testClient.callTool(testCase.toolName, testCase.params);
@@ -501,7 +520,7 @@ class JiraMcpHttpTester {
       result.response = response;
       result.status = 'passed';
 
-      console.log(chalk.green(`  ✓ Passed (${result.duration}ms)`));
+      console.log(chalk.green(`  ✅  Passed (${result.duration}ms)`));
       console.log(chalk.dim(`  Response: ${JSON.stringify(response).substring(0, 100)}...`));
 
       this.stats.passed++;
@@ -516,7 +535,7 @@ class JiraMcpHttpTester {
         this.stats.skipped++;
       } else {
         result.status = 'failed';
-        console.log(chalk.red(`  ✗ Failed (${result.duration}ms)`));
+        console.log(chalk.red(`  ❌  Failed (${result.duration}ms)`));
         console.log(chalk.red(`  Error: ${error.message}`));
         this.stats.failed++;
       }
@@ -534,7 +553,7 @@ class JiraMcpHttpTester {
   /**
    * Check if a failure is expected
    */
-  isExpectedFailure(toolName, errorMessage) {
+  isExpectedFailure (toolName, errorMessage) {
     const expectedFailures = {
       'jira_delete_issue': ['not found', 'does not exist'],
       'jira_remove_issue_link': ['not found', 'does not exist'],
@@ -549,14 +568,14 @@ class JiraMcpHttpTester {
     if (!patterns) return false;
 
     return patterns.some(pattern =>
-      errorMessage.toLowerCase().includes(pattern.toLowerCase())
+      errorMessage.toLowerCase().includes(pattern.toLowerCase()),
     );
   }
 
   /**
    * Log test result to individual file
    */
-  async logResultToFile(result) {
+  async logResultToFile (result) {
     const filename = `JIRA_${result.toolName}.md`;
     const filepath = path.join(RESULTS_DIR, filename);
 
@@ -572,37 +591,44 @@ class JiraMcpHttpTester {
   /**
    * Format test result as Markdown
    */
-  formatResultAsMarkdown(result) {
-    let md = `# ${result.toolName}\n\n`;
-    md += `**Description:** ${result.description}\n\n`;
-    md += `**Status:** ${result.status.toUpperCase()}\n\n`;
-    md += `**Timestamp:** ${result.timestamp}\n\n`;
-    md += `**Duration:** ${result.duration}ms\n\n`;
+  formatResultAsMarkdown (result) {
+    const t = '```';
+    const mdText = (s) => `${t}\n${s}\n${t}`;
+    const mdJson = (v) => `${t}json\n${v && JSON.stringify(v, null, 2)}\n${t}`;
 
-    md += `## Parameters\n\n\`\`\`json\n${JSON.stringify(result.parameters, null, 2)}\n\`\`\`\n\n`;
-
-    if (Object.keys(result.customHeaders).length > 0) {
-      md += `## Custom Headers\n\n\`\`\`json\n${JSON.stringify(result.customHeaders, null, 2)}\n\`\`\`\n\n`;
-    }
+    let resultStatus = '⚠️ RESULT STATUS UNKNOWN';
+    let errorText = '';
+    // md += `## Response\n\n\`\`\`json\n${JSON.stringify(result.response, null, 2)}\n\`\`\`\n\n`;
 
     if (result.status === 'passed') {
-      md += `## Response\n\n\`\`\`json\n${JSON.stringify(result.response, null, 2)}\n\`\`\`\n\n`;
-      md += `✅ Test passed successfully\n`;
-    } else if (result.status === 'expected_failure') {
-      md += `## Error\n\n\`\`\`\n${result.error}\n\`\`\`\n\n`;
-      md += `⚠️ Expected failure - test validation successful\n`;
+      resultStatus = `✅  PASSED`;
     } else {
-      md += `## Error\n\n\`\`\`\n${result.error}\n\`\`\`\n\n`;
-      md += `❌ Test failed\n`;
+      errorText = `## Error\n\n${mdText(result.error)}\n\n`;
+      if (result.status === 'expected_failure') {
+        resultStatus = `⚠️  Expected failure - test validation successful`;
+      } else {
+        resultStatus = `❌  FAILED`;
+      }
     }
 
+    let customHeaders = '';
+    if (Object.keys(result.customHeaders).length > 0) {
+      customHeaders = `\nCustom Headers:\n${Object.entries(result.customHeaders).map(([k, v]) => `${k}: ${v}`).join('\n')}\n`;
+    }
+
+    const md = `# ${resultStatus} # ${result.toolName} # ${result.timestamp} # ${result.duration}ms
+${customHeaders}
+description: ${result.description}    
+
+parameters: ${mdJson(result.parameters)}
+`;
     return md;
   }
 
   /**
    * Generate summary report
    */
-  async generateSummary() {
+  async generateSummary () {
     console.log(chalk.bold.cyan('\n' + '='.repeat(80)));
     console.log(chalk.bold.cyan('Test Summary'));
     console.log(chalk.bold.cyan('='.repeat(80)));
@@ -632,7 +658,7 @@ class JiraMcpHttpTester {
     console.log();
 
     if (this.stats.failed > 0) {
-      console.log(chalk.red('❌ Some tests failed'));
+      console.log(chalk.red('❌  Some tests failed'));
       console.log();
 
       const failedTests = this.results.filter(r => r.status === 'failed');
@@ -642,7 +668,7 @@ class JiraMcpHttpTester {
       });
       console.log();
     } else {
-      console.log(chalk.green('✅ All tests passed!'));
+      console.log(chalk.green('✅  All tests passed!'));
       console.log();
     }
 
@@ -653,7 +679,7 @@ class JiraMcpHttpTester {
   /**
    * Generate summary as Markdown
    */
-  generateSummaryMarkdown() {
+  generateSummaryMarkdown () {
     let md = `# JIRA MCP HTTP Test Summary\n\n`;
     md += `**Generated:** ${new Date().toISOString()}\n\n`;
     md += `**MCP Server:** ${MCP_SERVER_URL}\n\n`;
@@ -674,7 +700,7 @@ class JiraMcpHttpTester {
 
     this.results.forEach((result, index) => {
       const statusIcon = result.status === 'passed' ? '✅' :
-                        result.status === 'expected_failure' ? '⚠️' : '❌';
+        result.status === 'expected_failure' ? '⚠️' : '❌';
       md += `| ${index + 1} | \`${result.toolName}\` | ${statusIcon} ${result.status} | ${result.duration}ms |\n`;
     });
 
@@ -707,7 +733,7 @@ class JiraMcpHttpTester {
 /**
  * Main entry point
  */
-async function main() {
+async function main () {
   const tester = new JiraMcpHttpTester();
 
   try {
@@ -719,8 +745,13 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if executed directly
+const isMainModule = process.argv[1] && (
+  import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`
+);
+
+if (isMainModule) {
   main();
 }
 
