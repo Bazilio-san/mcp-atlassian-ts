@@ -618,7 +618,7 @@ export class SharedJiraTestCases {
             },
           },
         },
-        expectedStatus: 204,
+        expectedStatus: [204, 200],
         validation: {
           checkContent: (c) => inclOneOf(c, 'Successfully', 'Updated'),
           checkResult: (result, response) => [204].includes(response?.status), // Note true

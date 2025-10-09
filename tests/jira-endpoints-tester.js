@@ -20,6 +20,9 @@ import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_IS
 import { isObj } from './core/utils.js';
 import { appConfig } from "../dist/src/bootstrap/init-config.js";
 
+// Test IDs that require admin rights
+const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3'];
+
 
 const {
   jira: {
@@ -54,6 +57,7 @@ class JiraDirectApiExecutor {
     };
     this.resourceManager = null;
     this.testFilter = config.testFilter || null;
+    this.noAdmin = config.noAdmin || false;
 
     // JIRA-specific configuration
     this.baseUrl = url || 'http://localhost:8080';
@@ -226,9 +230,16 @@ class JiraDirectApiExecutor {
     this.stats.startTime = Date.now();
 
     // Filter test cases first to avoid processing unnecessary categories
-    const filteredTestCases = this.testFilter
+    let filteredTestCases = this.testFilter
       ? testCases.filter(test => this.shouldRunTest(test))
       : testCases;
+
+    // Filter out admin tests if --no-admin flag is set
+    if (this.noAdmin) {
+      filteredTestCases = filteredTestCases.filter(test =>
+        !ENDPOINTS_WITH_ADMIN_RIGHTS.includes(test.fullId)
+      );
+    }
 
     // Get unique categories from filtered tests only
     const categories = [...new Set(filteredTestCases.map(t => t.category))];
@@ -967,12 +978,18 @@ async function main () {
   const args = process.argv.slice(2);
   const config = {
     testFilter: null,
+    noAdmin: false,
   };
 
   // Parse test filter
   const testsArg = args.find(arg => arg.startsWith('--tests='));
   if (testsArg) {
     config.testFilter = testsArg.split('=')[1];
+  }
+
+  // Parse no-admin flag
+  if (args.includes('--no-admin')) {
+    config.noAdmin = true;
   }
 
   // Enable API response logging
