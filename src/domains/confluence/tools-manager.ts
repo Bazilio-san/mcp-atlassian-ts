@@ -14,23 +14,23 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ConfluenceToolContext } from './shared/tool-context.js';
 
 // Import all modular tools directly
-import { confluence_search } from './tools/content/search.js';
-import { confluence_get_page } from './tools/content/get-page.js';
-import { confluence_get_page_by_title } from './tools/content/get-page-by-title.js';
-import { confluence_create_page } from './tools/content/create-page.js';
-import { confluence_update_page } from './tools/content/update-page.js';
-import { confluence_delete_page } from './tools/content/delete-page.js';
-import { confluence_get_spaces } from './tools/spaces/get-spaces.js';
-import { confluence_get_space } from './tools/spaces/get-space.js';
-import { confluence_get_space_content } from './tools/spaces/get-space-content.js';
-import { confluence_add_comment } from './tools/comments/add-comment.js';
-import { confluence_get_comments } from './tools/comments/get-comments.js';
-import { confluence_add_label } from './tools/labels/add-label.js';
-import { confluence_get_labels } from './tools/labels/get-labels.js';
-import { confluence_get_pages_by_label } from './tools/labels/get-pages-by-label.js';
-import { confluence_get_page_children } from './tools/hierarchy/get-page-children.js';
-import { confluence_get_page_history } from './tools/history/get-page-history.js';
-import { confluence_search_user } from './tools/users/search-user.js';
+import { confluence_search } from './tools/content/confluence_search.js';
+import { confluence_get_page } from './tools/content/confluence_get_page.js';
+import { confluence_get_page_by_title } from './tools/content/confluence_get_page_by_title.js';
+import { confluence_create_page } from './tools/content/confluence_create_page.js';
+import { confluence_update_page } from './tools/content/confluence_update_page.js';
+import { confluence_delete_page } from './tools/content/confluence_delete_page.js';
+import { confluence_get_spaces } from './tools/spaces/confluence_get_spaces.js';
+import { confluence_get_space } from './tools/spaces/confluence_get_space.js';
+import { confluence_get_space_content } from './tools/spaces/confluence_get_space_content.js';
+import { confluence_add_comment } from './tools/comments/confluence_add_comment.js';
+import { confluence_get_comments } from './tools/comments/confluence_get_comments.js';
+import { confluence_add_label } from './tools/labels/confluence_add_label.js';
+import { confluence_get_labels } from './tools/labels/confluence_get_labels.js';
+import { confluence_get_pages_by_label } from './tools/labels/confluence_get_pages_by_label.js';
+import { confluence_get_page_children } from './tools/hierarchy/confluence_get_page_children.js';
+import { confluence_get_page_history } from './tools/history/confluence_get_page_history.js';
+import { confluence_search_user } from './tools/users/confluence_search_user.js';
 
 /**
  * Modular Confluence Tools Manager
