@@ -16,9 +16,9 @@ export const updateIssueTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      issueKey: {
+      issueIdOrKey: {
         type: 'string',
-        description: `The issue key (e.g., PROJ-123) or ID`,
+        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
       },
       summary: {
         type: 'string',
@@ -48,7 +48,7 @@ export const updateIssueTool: Tool = {
         default: {},
       },
     },
-    required: ['issueKey'],
+    required: ['issueIdOrKey'],
     additionalProperties: false,
   },
   annotations: {
@@ -66,7 +66,7 @@ export const updateIssueTool: Tool = {
 export async function updateIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const {
-      issueKey,
+      issueIdOrKey,
       summary,
       description,
       assignee,
@@ -76,7 +76,7 @@ export async function updateIssueHandler(args: any, context: ToolContext): Promi
     } = args;
     const { httpClient, config, logger, normalizeToArray } = context;
 
-    logger.info('Updating JIRA issue', { issueKey });
+    logger.info('Updating JIRA issue', { issueIdOrKey });
 
     // Build update data
     const updateData: any = { fields: { ...customFields } };
@@ -88,7 +88,10 @@ export async function updateIssueHandler(args: any, context: ToolContext): Promi
     if (labels) updateData.fields.labels = normalizeToArray(labels);
 
     // Make API call
-    await httpClient.put(`/rest/api/2/issue/${issueKey}`, updateData);
+    await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
+
+    // Invalidate cache for this issue
+    context.invalidateIssueCache(issueIdOrKey);
 
     // Format response for MCP
     return {
@@ -97,9 +100,9 @@ export async function updateIssueHandler(args: any, context: ToolContext): Promi
           type: 'text',
           text:
             `**JIRA Issue Updated Successfully**\n\n` +
-            `**Key:** ${issueKey}\n` +
+            `**Key:** ${issueIdOrKey}\n` +
             `Updated fields: ${Object.keys(updateData.fields).join(', ')}\n` +
-            `\n**Direct Link:** ${config.url}/browse/${issueKey}`,
+            `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
         },
       ],
     };

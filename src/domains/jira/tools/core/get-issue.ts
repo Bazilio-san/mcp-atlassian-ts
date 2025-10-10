@@ -17,11 +17,11 @@ export const getIssueTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      issueKey: {
+      issueIdOrKey: {
         type: 'string',
         description: `
-Issue id or key can be used to uniquely identify an existing issue.
-Issue id is a numerical identifier (e.g. 123).
+Issue ID or key can be used to uniquely identify an existing issue.
+Issue ID is a numerical identifier (e.g. 123).
 Issue key is formatted as <project key>-<id> (e.g. ISSUE-123).
 An example issue key is ISSUE-1.`,
       },
@@ -38,7 +38,7 @@ An example issue key is ISSUE-1.`,
         default: [],
       },
     },
-    required: ['issueKey'],
+    required: ['issueIdOrKey'],
     additionalProperties: false,
   },
   annotations: {
@@ -55,10 +55,10 @@ An example issue key is ISSUE-1.`,
  */
 export async function getIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueKey, expand = [], fields } = args;
+    const { issueIdOrKey, expand = [], fields } = args;
     const { httpClient, cache, config, logger, normalizeToArray, formatDescription } = context;
 
-    logger.info('Fetching JIRA issue', { issueKey });
+    logger.info('Fetching JIRA issue', { issueIdOrKey });
 
     // Build options
     const options = {
@@ -67,7 +67,7 @@ export async function getIssueHandler(args: any, context: ToolContext): Promise<
     };
 
     // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'issue', { issueKey, ...options });
+    const cacheKey = generateCacheKey('jira', 'issue', { issueIdOrKey, ...options });
 
     // Fetch from cache or API
     const issue = await cache.getOrSet(cacheKey, async () => {
@@ -75,10 +75,10 @@ export async function getIssueHandler(args: any, context: ToolContext): Promise<
       if (options.expand?.length) params.expand = options.expand.join(',');
       if (options.fields?.length) params.fields = options.fields.join(',');
 
-      const response = await httpClient.get(`/rest/api/2/issue/${issueKey}`, { params });
+      const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, { params });
 
       if (!response.data) {
-        throw new NotFoundError('Issue', issueKey);
+        throw new NotFoundError('Issue', issueIdOrKey);
       }
 
       return response.data;

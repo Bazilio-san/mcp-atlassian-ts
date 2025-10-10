@@ -1,52 +1,89 @@
 /**
- * JIRA tool module: jira_add_comment
- * TODO: Add description
+ * JIRA tool module: Add Comment
+ * Adds a comment to a JIRA issue with optional visibility restrictions
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_add_comment
+ * Tool definition for adding a comment to a JIRA issue
  */
 export const addCommentTool: Tool = {
   name: 'jira_add_comment',
-  description: `TODO: Add description`,
+  description: `Add a comment to a JIRA issue`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      issueIdOrKey: {
+        type: 'string',
+        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+      },
+      body: {
+        type: 'string',
+        description: `Comment text`,
+      },
+      visibility: {
+        type: 'object',
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['group', 'role'],
+          },
+          value: {
+            type: 'string',
+            description: `Group name or role name`,
+          },
+        },
+        description: `Comment visibility restrictions`,
+      },
     },
-    required: [],
+    required: ['issueIdOrKey', 'body'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
-    readOnlyHint: true,
+    title: 'Add comment to JIRA issue',
+    readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
     openWorldHint: false,
   },
 };
 
 /**
- * Handler function for jira_add_comment
+ * Handler function for adding a comment to a JIRA issue
  */
 export async function addCommentHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { issueIdOrKey, body, visibility } = args;
+    const { httpClient, config, logger } = context;
 
-    logger.info('Executing jira_add_comment', args);
+    logger.info('Adding JIRA comment', { issueIdOrKey });
 
-    // TODO: Implement handler logic from original implementation
+    // Build comment input
+    const commentInput: any = { body };
+    if (visibility) {
+      commentInput.visibility = visibility;
+    }
 
+    // Make API call to add comment
+    const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/comment`, commentInput);
+
+    const comment = response.data;
+
+    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Comment Added Successfully**\n\n` +
+            `**Issue:** ${issueIdOrKey}\n` +
+            `**Author:** ${comment.author.displayName}\n` +
+            `**Created:** ${new Date(comment.created).toLocaleString()}\n` +
+            `**Comment:** ${body}\n` +
+            `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
         },
       ],
     };

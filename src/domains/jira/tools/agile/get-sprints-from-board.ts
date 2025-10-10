@@ -1,29 +1,46 @@
 /**
- * JIRA tool module: jira_get_sprints_from_board
- * TODO: Add description
+ * JIRA tool module: Get Sprints from Board
+ * Retrieves all sprints from a specific agile board
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling } from '../../../../core/errors/index.js';
+import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_get_sprints_from_board
+ * Tool definition for getting sprints from board
  */
 export const getSprintsFromBoardTool: Tool = {
   name: 'jira_get_sprints_from_board',
-  description: `TODO: Add description`,
+  description: `Get all sprints from a specific agile board. Returns sprints with their status and dates.`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      boardId: {
+        type: 'number',
+        description: 'ID of the board to get sprints from',
+      },
+      startAt: {
+        type: 'number',
+        description: 'The starting index of the returned sprints. Default is 0.',
+        default: 0,
+      },
+      maxResults: {
+        type: 'number',
+        description: 'The maximum number of sprints to return. Default is 50.',
+        default: 50,
+      },
+      state: {
+        type: 'string',
+        description: 'Filter sprints by state. Valid values: active, future, closed',
+      },
     },
-    required: [],
+    required: ['boardId'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
+    title: 'Get Board Sprints',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -32,21 +49,73 @@ export const getSprintsFromBoardTool: Tool = {
 };
 
 /**
- * Handler function for jira_get_sprints_from_board
+ * Handler function for getting sprints from board
  */
 export async function getSprintsFromBoardHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { httpClient, cache, logger } = context;
+    const { boardId, startAt = 0, maxResults = 50, state } = args;
 
-    logger.info('Executing jira_get_sprints_from_board', args);
+    logger.info('Fetching JIRA board sprints', { boardId, state });
 
-    // TODO: Implement handler logic from original implementation
+    // Build query parameters
+    const params: any = { startAt, maxResults };
+    if (state) params.state = state;
+
+    // Generate cache key
+    const cacheKey = generateCacheKey('jira', 'boardSprints', { boardId, ...params });
+
+    // Fetch from cache or API
+    const sprintsResult = await cache.getOrSet(cacheKey, async () => {
+      logger.info('Making API call to get board sprints');
+      const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/sprint`, { params });
+
+      if (!response.data) {
+        throw new NotFoundError('Board', boardId.toString());
+      }
+
+      return response.data;
+    });
+
+    if (!sprintsResult.values || sprintsResult.values.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `**No sprints found on board ${boardId}**`,
+          },
+        ],
+      };
+    }
+
+    const sprintsList = sprintsResult.values
+      .map((sprint: any) => {
+        let dateInfo = '';
+        if (sprint.startDate && sprint.endDate) {
+          const startDate = new Date(sprint.startDate).toLocaleDateString();
+          const endDate = new Date(sprint.endDate).toLocaleDateString();
+          dateInfo = ` (${startDate} - ${endDate})`;
+        } else if (sprint.startDate) {
+          const startDate = new Date(sprint.startDate).toLocaleDateString();
+          dateInfo = ` (Started: ${startDate})`;
+        }
+
+        return `• **${sprint.name}** (ID: ${sprint.id}) - ${sprint.state}${dateInfo}${
+          sprint.goal ? `\n  Goal: ${sprint.goal}` : ''
+        }`;
+      })
+      .join('\n\n');
 
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Found ${sprintsResult.values.length} sprint(s) on board ${boardId}:**\n\n` +
+            sprintsList +
+            `\n\n**Total:** ${sprintsResult.total || sprintsResult.values.length} sprint(s) available${
+              sprintsResult.isLast ? '' : ` (showing ${sprintsResult.values.length})`
+            }`,
         },
       ],
     };

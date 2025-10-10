@@ -1,6 +1,6 @@
 /**
- * JIRA tool module: jira_search_fields
- * TODO: Add description
+ * JIRA tool module: Search Fields
+ * Searches for JIRA fields (including custom fields)
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -9,21 +9,23 @@ import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_search_fields
+ * Tool definition for searching JIRA fields
  */
 export const searchFieldsTool: Tool = {
   name: 'jira_search_fields',
-  description: `TODO: Add description`,
+  description: 'Search for JIRA fields (including custom fields)',
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      query: {
+        type: 'string',
+        description: 'Search query to filter fields by name or key',
+      },
     },
-    required: [],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
+    title: 'Search JIRA fields including custom fields',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -32,21 +34,56 @@ export const searchFieldsTool: Tool = {
 };
 
 /**
- * Handler function for jira_search_fields
+ * Handler function for searching JIRA fields
  */
 export async function searchFieldsHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { query } = args;
+    const { httpClient, cache, logger } = context;
 
-    logger.info('Executing jira_search_fields', args);
+    logger.info('Searching JIRA fields', { query });
 
-    // TODO: Implement handler logic from original implementation
+    // Generate cache key
+    const cacheKey = generateCacheKey('jira', 'fields', { query });
+
+    // Fetch from cache or API
+    const fields = await cache.getOrSet(cacheKey, async () => {
+      const response = await httpClient.get('/rest/api/2/field');
+      let allFields = response.data;
+
+      if (query) {
+        allFields = allFields.filter(
+          (field: any) =>
+            field.name.toLowerCase().includes(query.toLowerCase()) ||
+            field.key.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      return allFields;
+    });
+
+    if (fields.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: query ? `No fields found matching "${query}"` : 'No fields found',
+          },
+        ],
+      };
+    }
+
+    const fieldsList = fields
+      .map((field: any) => `• **${field.name}** (${field.key}) - ${field.schema?.type || 'unknown type'}`)
+      .join('\n');
 
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**JIRA Fields ${query ? `matching "${query}"` : ''}**\n\n` +
+            `**Found:** ${fields.length} fields\n\n${fieldsList}`,
         },
       ],
     };

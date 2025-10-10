@@ -140,6 +140,7 @@ Environment configuration via `.env` file:
 - **Performance**: `CACHE_TTL_SECONDS`, `RATE_LIMIT_MAX_REQUESTS`
 - **Logging**: `LOG_LEVEL`, `LOG_PRETTY`
 - **Features**: `ENABLED_TOOLS` (comma-separated list of tools to enable)
+- **JIRA Custom Fields**: `JIRA_EPIC_LINK_FIELD_ID` (default: customfield_10014)
 
 ### Authentication Structure
 The new authentication system uses a structured approach:

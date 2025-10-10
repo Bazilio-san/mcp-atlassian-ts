@@ -46,6 +46,7 @@ export interface JCConfig {
   url: string;
   auth: AuthConfig;
   maxResults: number;
+  epicLinkFieldId?: string; // Custom field ID for Epic Link (defaults to customfield_10014)
 }
 
 // API Response types

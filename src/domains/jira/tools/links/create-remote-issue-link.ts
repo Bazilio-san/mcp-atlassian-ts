@@ -1,52 +1,89 @@
 /**
- * JIRA tool module: jira_create_remote_issue_link
- * TODO: Add description
+ * JIRA tool module: Create Remote Issue Link
+ * Creates a remote link from a JIRA issue to external URL
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_create_remote_issue_link
+ * Tool definition for creating a JIRA remote issue link
  */
 export const createRemoteIssueLinkTool: Tool = {
   name: 'jira_create_remote_issue_link',
-  description: `TODO: Add description`,
+  description: `Create a remote link from a JIRA issue to external URL`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      issueIdOrKey: {
+        type: 'string',
+        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+      },
+      url: {
+        type: 'string',
+        description: `External URL to link to`,
+      },
+      title: {
+        type: 'string',
+        description: `Link title`,
+      },
+      summary: {
+        type: 'string',
+        description: `Link summary`,
+      },
+      iconUrl: {
+        type: 'string',
+        description: `URL to link icon`,
+      },
     },
-    required: [],
+    required: ['issueIdOrKey', 'url', 'title'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
-    readOnlyHint: true,
+    title: 'Create remote link to external URL',
+    readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
     openWorldHint: false,
   },
 };
 
 /**
- * Handler function for jira_create_remote_issue_link
+ * Handler function for creating a JIRA remote issue link
  */
 export async function createRemoteIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { issueIdOrKey, url, title, summary, iconUrl } = args;
+    const { httpClient, config, logger, invalidateIssueCache } = context;
 
-    logger.info('Executing jira_create_remote_issue_link', args);
+    logger.info('Creating JIRA remote issue link', { issueIdOrKey, url, title });
 
-    // TODO: Implement handler logic from original implementation
+    // Build link data
+    const linkData: any = { url, title };
+    if (summary) linkData.summary = summary;
+    if (iconUrl) linkData.icon = { url16x16: iconUrl, title };
 
+    // Create the remote link
+    const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/remotelink`, {
+      object: linkData,
+    });
+
+    // Invalidate cache for the linked issue
+    invalidateIssueCache(issueIdOrKey);
+
+    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Remote Issue Link Created Successfully**\n\n` +
+            `**Issue:** ${issueIdOrKey}\n` +
+            `**Link Title:** ${title}\n` +
+            `**URL:** ${url}\n` +
+            `**Link ID:** ${response.data.id}\n` +
+            `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
         },
       ],
     };

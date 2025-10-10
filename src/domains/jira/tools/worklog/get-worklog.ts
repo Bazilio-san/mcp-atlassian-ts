@@ -1,6 +1,6 @@
 /**
- * JIRA tool module: jira_get_worklog
- * TODO: Add description
+ * JIRA tool module: Get Worklog
+ * Retrieves worklog entries for a JIRA issue
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -9,21 +9,34 @@ import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_get_worklog
+ * Tool definition for getting JIRA worklog entries
  */
 export const getWorklogTool: Tool = {
   name: 'jira_get_worklog',
-  description: `TODO: Add description`,
+  description: 'Get worklog entries for a JIRA issue',
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      issueIdOrKey: {
+        type: 'string',
+        description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
+      },
+      startAt: {
+        type: 'number',
+        description: 'Starting index',
+        default: 0,
+      },
+      maxResults: {
+        type: 'number',
+        description: 'Maximum results to return',
+        default: 50,
+      },
     },
-    required: [],
+    required: ['issueIdOrKey'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
+    title: 'Retrieve JIRA issue worklog entries',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -32,21 +45,54 @@ export const getWorklogTool: Tool = {
 };
 
 /**
- * Handler function for jira_get_worklog
+ * Handler function for getting JIRA worklog entries
  */
 export async function getWorklogHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { issueIdOrKey, startAt = 0, maxResults = 50 } = args;
+    const { httpClient, cache, logger } = context;
 
-    logger.info('Executing jira_get_worklog', args);
+    logger.info('Fetching JIRA worklog entries', { issueIdOrKey });
 
-    // TODO: Implement handler logic from original implementation
+    // Generate cache key
+    const cacheKey = generateCacheKey('jira', 'worklogs', { issueIdOrKey, startAt, maxResults });
+
+    // Fetch from cache or API
+    const worklogResult = await cache.getOrSet(cacheKey, async () => {
+      const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
+        params: { startAt, maxResults },
+      });
+      return response.data;
+    });
+
+    if (worklogResult.worklogs.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `**No worklog entries found for ${issueIdOrKey}**`,
+          },
+        ],
+      };
+    }
+
+    const worklogList = worklogResult.worklogs
+      .map(
+        (w: any) =>
+          `• **${w.author.displayName}**: ${w.timeSpent} on ${new Date(w.started).toLocaleDateString()}\n${
+            w.comment ? `  Comment: ${w.comment}\n` : ''
+          }`,
+      )
+      .join('\n');
 
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Worklog Entries for ${issueIdOrKey}**\n\n` +
+            `**Total:** ${worklogResult.total} entries (showing ${worklogResult.worklogs.length})\n\n` +
+            `${worklogList}`,
         },
       ],
     };

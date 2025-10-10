@@ -119,6 +119,7 @@ export const appConfig: IConfig = {
     url: getEnv('JIRA_URL', ''),
     auth: buildAuthConfig('JIRA'),
     maxResults: getEnv('JIRA_MAX_RESULTS', 50),
+    epicLinkFieldId: getEnv('JIRA_EPIC_LINK_FIELD_ID', 'customfield_10014'),
   },
 
   // Confluence configuration

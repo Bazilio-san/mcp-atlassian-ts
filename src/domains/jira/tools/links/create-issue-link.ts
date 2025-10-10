@@ -1,52 +1,93 @@
 /**
- * JIRA tool module: jira_create_issue_link
- * TODO: Add description
+ * JIRA tool module: Create Issue Link
+ * Creates a link between two JIRA issues
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_create_issue_link
+ * Tool definition for creating a JIRA issue link
  */
 export const createIssueLinkTool: Tool = {
   name: 'jira_create_issue_link',
-  description: `TODO: Add description`,
+  description: `Create a link between two JIRA issues`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      linkType: {
+        type: 'string',
+        description: `Link type name (e.g., "Blocks", "Relates")`,
+      },
+      inwardIssue: {
+        type: 'string',
+        description: `Key of the inward issue`,
+      },
+      outwardIssue: {
+        type: 'string',
+        description: `Key of the outward issue`,
+      },
+      comment: {
+        type: 'string',
+        description: `Optional comment for the link`,
+      },
     },
-    required: [],
+    required: ['linkType', 'inwardIssue', 'outwardIssue'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
-    readOnlyHint: true,
+    title: 'Create link between two JIRA issues',
+    readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
     openWorldHint: false,
   },
 };
 
 /**
- * Handler function for jira_create_issue_link
+ * Handler function for creating a JIRA issue link
  */
 export async function createIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { linkType, inwardIssue, outwardIssue, comment } = args;
+    const { httpClient, cache, logger, invalidateIssueCache } = context;
 
-    logger.info('Executing jira_create_issue_link', args);
+    logger.info('Creating JIRA issue link', { linkType, inwardIssue, outwardIssue });
 
-    // TODO: Implement handler logic from original implementation
+    // Build link data
+    const linkData: any = {
+      type: { name: linkType },
+      inwardIssue: { key: inwardIssue },
+      outwardIssue: { key: outwardIssue },
+    };
 
+    if (comment) {
+      linkData.comment = { body: comment };
+    }
+
+    // Create the link
+    await httpClient.post('/rest/api/2/issueLink', linkData);
+
+    // Invalidate cache for linked issues
+    invalidateIssueCache(inwardIssue);
+    invalidateIssueCache(outwardIssue);
+
+    // Clear search cache since links may affect search results
+    cache.keys()
+      .filter(key => key.includes('jira:search'))
+      .forEach(key => cache.del(key));
+
+    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Issue Link Created Successfully**\n\n` +
+            `**Link Type:** ${linkType}\n` +
+            `**From:** ${inwardIssue}\n` +
+            `**To:** ${outwardIssue}\n${comment ? `**Comment:** ${comment}\n` : ''}`,
         },
       ],
     };

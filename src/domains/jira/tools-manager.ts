@@ -16,12 +16,51 @@ import type { ToolContext } from './shared/tool-context.js';
 import { getIssueTool, getIssueHandler } from './tools/core/get-issue.js';
 import { searchIssuesTool, searchIssuesHandler } from './tools/core/search-issues.js';
 import { createIssueTool, createIssueHandler } from './tools/core/create-issue.js';
-// TODO: Import remaining core tools when migrated
-// import { updateIssueTool, updateIssueHandler } from './tools/core/update-issue.js';
-// import { deleteIssueTool, deleteIssueHandler } from './tools/core/delete-issue.js';
-// import { batchCreateIssuesTool, batchCreateIssuesHandler } from './tools/core/batch-create-issues.js';
+import { updateIssueTool, updateIssueHandler } from './tools/core/update-issue.js';
+import { deleteIssueTool, deleteIssueHandler } from './tools/core/delete-issue.js';
+import { batchCreateIssuesTool, batchCreateIssuesHandler } from './tools/core/batch-create-issues.js';
 
-// TODO: Import all other tool groups when migrated
+// Import comment and transition tools
+import { addCommentTool, addCommentHandler } from './tools/comments/add-comment.js';
+import { getTransitionsTool, getTransitionsHandler } from './tools/comments/get-transitions.js';
+import { transitionIssueTool, transitionIssueHandler } from './tools/comments/transition-issue.js';
+
+// Import project tools
+import { getProjectsTool, getProjectsHandler } from './tools/projects/get-projects.js';
+import { getProjectVersionsTool, getProjectVersionsHandler } from './tools/projects/get-project-versions.js';
+import { createVersionTool, createVersionHandler } from './tools/projects/create-version.js';
+import { batchCreateVersionsTool, batchCreateVersionsHandler } from './tools/projects/batch-create-versions.js';
+
+// Import user tools
+import { getUserProfileTool, getUserProfileHandler } from './tools/users/get-user-profile.js';
+
+// Import link tools
+import { getLinkTypesTool, getLinkTypesHandler } from './tools/links/get-link-types.js';
+import { createIssueLinkTool, createIssueLinkHandler } from './tools/links/create-issue-link.js';
+import { createRemoteIssueLinkTool, createRemoteIssueLinkHandler } from './tools/links/create-remote-issue-link.js';
+import { removeIssueLinkTool, removeIssueLinkHandler } from './tools/links/remove-issue-link.js';
+import { linkToEpicTool, linkToEpicHandler } from './tools/links/link-to-epic.js';
+
+// Import worklog tools
+import { getWorklogTool, getWorklogHandler } from './tools/worklog/get-worklog.js';
+import { addWorklogTool, addWorklogHandler } from './tools/worklog/add-worklog.js';
+
+// Import attachment tools
+import { downloadAttachmentsTool, downloadAttachmentsHandler } from './tools/attachments/download-attachments.js';
+
+// Import agile tools
+import { getAgileBoardsTool, getAgileBoardsHandler } from './tools/agile/get-agile-boards.js';
+import { getBoardIssuesTool, getBoardIssuesHandler } from './tools/agile/get-board-issues.js';
+import { getSprintsFromBoardTool, getSprintsFromBoardHandler } from './tools/agile/get-sprints-from-board.js';
+import { getSprintIssuesTool, getSprintIssuesHandler } from './tools/agile/get-sprint-issues.js';
+import { createSprintTool, createSprintHandler } from './tools/agile/create-sprint.js';
+import { updateSprintTool, updateSprintHandler } from './tools/agile/update-sprint.js';
+
+// Import metadata tools
+import { searchFieldsTool, searchFieldsHandler } from './tools/metadata/search-fields.js';
+
+// Import bulk operation tools
+import { batchGetChangelogsTool, batchGetChangelogsHandler } from './tools/bulk/batch-get-changelogs.js';
 
 /**
  * Modular JIRA Tools Manager
@@ -64,7 +103,51 @@ export class JiraToolsManager {
       ['jira_get_issue', getIssueHandler],
       ['jira_search_issues', searchIssuesHandler],
       ['jira_create_issue', createIssueHandler],
-      // TODO: Add remaining handlers as they are migrated
+      ['jira_update_issue', updateIssueHandler],
+      ['jira_delete_issue', deleteIssueHandler],
+      ['jira_batch_create_issues', batchCreateIssuesHandler],
+
+      // Comment and transition tools
+      ['jira_add_comment', addCommentHandler],
+      ['jira_get_transitions', getTransitionsHandler],
+      ['jira_transition_issue', transitionIssueHandler],
+
+      // Project tools
+      ['jira_get_projects', getProjectsHandler],
+      ['jira_get_project_versions', getProjectVersionsHandler],
+      ['jira_create_version', createVersionHandler],
+      ['jira_batch_create_versions', batchCreateVersionsHandler],
+
+      // User tools
+      ['jira_get_user_profile', getUserProfileHandler],
+
+      // Link tools
+      ['jira_get_link_types', getLinkTypesHandler],
+      ['jira_create_issue_link', createIssueLinkHandler],
+      ['jira_create_remote_issue_link', createRemoteIssueLinkHandler],
+      ['jira_remove_issue_link', removeIssueLinkHandler],
+      ['jira_link_to_epic', linkToEpicHandler],
+
+      // Worklog tools
+      ['jira_get_worklog', getWorklogHandler],
+      ['jira_add_worklog', addWorklogHandler],
+
+      // Attachment tools
+      ['jira_download_attachments', downloadAttachmentsHandler],
+
+      // Agile tools
+      ['jira_get_agile_boards', getAgileBoardsHandler],
+      ['jira_get_board_issues', getBoardIssuesHandler],
+      ['jira_get_sprints_from_board', getSprintsFromBoardHandler],
+      ['jira_get_sprint_issues', getSprintIssuesHandler],
+      ['jira_create_sprint', createSprintHandler],
+      ['jira_update_sprint', updateSprintHandler],
+
+      // Metadata tools
+      ['jira_search_fields', searchFieldsHandler],
+
+      // Bulk operation tools
+      ['jira_batch_get_changelogs', batchGetChangelogsHandler],
     ]);
 
     // Register all tools
@@ -73,7 +156,51 @@ export class JiraToolsManager {
       getIssueTool,
       searchIssuesTool,
       createIssueTool,
-      // TODO: Add remaining tools as they are migrated
+      updateIssueTool,
+      deleteIssueTool,
+      batchCreateIssuesTool,
+
+      // Comment and transition tools
+      addCommentTool,
+      getTransitionsTool,
+      transitionIssueTool,
+
+      // Project tools
+      getProjectsTool,
+      getProjectVersionsTool,
+      createVersionTool,
+      batchCreateVersionsTool,
+
+      // User tools
+      getUserProfileTool,
+
+      // Link tools
+      getLinkTypesTool,
+      createIssueLinkTool,
+      createRemoteIssueLinkTool,
+      removeIssueLinkTool,
+      linkToEpicTool,
+
+      // Worklog tools
+      getWorklogTool,
+      addWorklogTool,
+
+      // Attachment tools
+      downloadAttachmentsTool,
+
+      // Agile tools
+      getAgileBoardsTool,
+      getBoardIssuesTool,
+      getSprintsFromBoardTool,
+      getSprintIssuesTool,
+      createSprintTool,
+      updateSprintTool,
+
+      // Metadata tools
+      searchFieldsTool,
+
+      // Bulk operation tools
+      batchGetChangelogsTool,
     ];
   }
 

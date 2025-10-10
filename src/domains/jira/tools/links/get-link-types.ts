@@ -1,6 +1,6 @@
 /**
- * JIRA tool module: jira_get_link_types
- * TODO: Add description
+ * JIRA tool module: Get Link Types
+ * Retrieves all available JIRA issue link types
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -9,21 +9,17 @@ import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_get_link_types
+ * Tool definition for getting JIRA issue link types
  */
 export const getLinkTypesTool: Tool = {
   name: 'jira_get_link_types',
-  description: `TODO: Add description`,
+  description: `Get all available JIRA issue link types`,
   inputSchema: {
     type: 'object',
-    properties: {
-      // TODO: Add properties from original tool definition
-    },
-    required: [],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
+    title: 'Retrieve all JIRA issue link types',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -32,21 +28,44 @@ export const getLinkTypesTool: Tool = {
 };
 
 /**
- * Handler function for jira_get_link_types
+ * Handler function for getting JIRA issue link types
  */
 export async function getLinkTypesHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { httpClient, cache, logger } = context;
 
-    logger.info('Executing jira_get_link_types', args);
+    logger.info('Fetching JIRA issue link types');
 
-    // TODO: Implement handler logic from original implementation
+    // Generate cache key
+    const cacheKey = generateCacheKey('jira', 'linkTypes', {});
 
+    // Fetch from cache or API
+    const linkTypes = await cache.getOrSet(cacheKey, async () => {
+      const response = await httpClient.get('/rest/api/2/issueLinkType');
+      return response.data.issueLinkTypes || [];
+    }, 600); // Cache for 10 minutes
+
+    if (linkTypes.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `**No issue link types found**`,
+          },
+        ],
+      };
+    }
+
+    const linkTypesList = linkTypes
+      .map((lt: any) => `• **${lt.name}**: ${lt.inward} ↔ ${lt.outward}`)
+      .join('\n');
+
+    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text: `**Available Issue Link Types**\n\n${linkTypesList}`,
         },
       ],
     };

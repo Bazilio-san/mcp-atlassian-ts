@@ -59,6 +59,7 @@ export interface IJCConfig {
     oauth2?: IOAuth2Auth;
   };
   maxResults: number;
+  epicLinkFieldId?: string;
 }
 
 // SSL/TLS configuration

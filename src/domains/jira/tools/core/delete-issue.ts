@@ -16,9 +16,9 @@ export const deleteIssueTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      issueKey: {
+      issueIdOrKey: {
         type: 'string',
-        description: `The issue key (e.g., PROJ-123) or ID`,
+        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
       },
       deleteSubtasks: {
         type: 'boolean',
@@ -26,7 +26,7 @@ export const deleteIssueTool: Tool = {
         default: false,
       },
     },
-    required: ['issueKey'],
+    required: ['issueIdOrKey'],
     additionalProperties: false,
   },
   annotations: {
@@ -43,16 +43,19 @@ export const deleteIssueTool: Tool = {
  */
 export async function deleteIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueKey, deleteSubtasks = false } = args;
-    const { httpClient, logger } = context;
+    const { issueIdOrKey, deleteSubtasks = false } = args;
+    const { httpClient, logger, invalidateIssueCache } = context;
 
-    logger.info('Deleting JIRA issue', { issueKey, deleteSubtasks });
+    logger.info('Deleting JIRA issue', { issueIdOrKey, deleteSubtasks });
 
     // Build query parameters
     const params = deleteSubtasks ? { deleteSubtasks: 'true' } : {};
 
     // Make API call
-    await httpClient.delete(`/rest/api/2/issue/${issueKey}`, { params });
+    await httpClient.delete(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+
+    // Invalidate cache for this issue
+    invalidateIssueCache(issueIdOrKey);
 
     // Format response for MCP
     return {
@@ -61,7 +64,7 @@ export async function deleteIssueHandler(args: any, context: ToolContext): Promi
           type: 'text',
           text:
             `**JIRA Issue Deleted Successfully**\n\n` +
-            `**Key:** ${issueKey}\n` +
+            `**Key:** ${issueIdOrKey}\n` +
             `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`,
         },
       ],

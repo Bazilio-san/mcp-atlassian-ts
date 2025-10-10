@@ -1,6 +1,6 @@
 /**
- * JIRA tool module: jira_get_transitions
- * TODO: Add description
+ * JIRA tool module: Get Transitions
+ * Retrieves available transitions for a JIRA issue
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -9,21 +9,24 @@ import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_get_transitions
+ * Tool definition for getting available transitions for a JIRA issue
  */
 export const getTransitionsTool: Tool = {
   name: 'jira_get_transitions',
-  description: `TODO: Add description`,
+  description: `Get available transitions for a JIRA issue`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      issueIdOrKey: {
+        type: 'string',
+        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+      },
     },
-    required: [],
+    required: ['issueIdOrKey'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
+    title: 'Retrieve available JIRA issue transitions',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -32,21 +35,47 @@ export const getTransitionsTool: Tool = {
 };
 
 /**
- * Handler function for jira_get_transitions
+ * Handler function for getting available transitions for a JIRA issue
  */
 export async function getTransitionsHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { issueIdOrKey } = args;
+    const { httpClient, cache, logger } = context;
 
-    logger.info('Executing jira_get_transitions', args);
+    logger.info('Fetching JIRA transitions', { issueIdOrKey });
 
-    // TODO: Implement handler logic from original implementation
+    // Generate cache key
+    const cacheKey = generateCacheKey('jira', 'transitions', { issueIdOrKey });
 
+    // Fetch from cache or API
+    const transitions = await cache.getOrSet(cacheKey, async () => {
+      const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
+      return response.data.transitions;
+    });
+
+    // Handle empty transitions
+    if (transitions.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `**No transitions available for issue ${issueIdOrKey}**`,
+          },
+        ],
+      };
+    }
+
+    // Format transitions list
+    const transitionsList = transitions
+      .map((t: any) => `• **${t.name}** (ID: ${t.id}) → ${t.to.name}`)
+      .join('\n');
+
+    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text: `**Available Transitions for ${issueIdOrKey}**\n\n${transitionsList}`,
         },
       ],
     };

@@ -1,6 +1,6 @@
 /**
- * JIRA tool module: jira_get_project_versions
- * TODO: Add description
+ * JIRA tool module: Get Project Versions
+ * Retrieves all versions for a specific JIRA project
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -13,17 +13,20 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
  */
 export const getProjectVersionsTool: Tool = {
   name: 'jira_get_project_versions',
-  description: `TODO: Add description`,
+  description: `Get all versions for a specific JIRA project`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      projectKey: {
+        type: 'string',
+        description: 'The project key or ID to get versions for (e.g. "TEST" or "10000")',
+      },
     },
-    required: [],
+    required: ['projectKey'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
+    title: 'Get project versions',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -36,17 +39,43 @@ export const getProjectVersionsTool: Tool = {
  */
 export async function getProjectVersionsHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { httpClient, cache, logger } = context;
+    const { projectKey } = args;
 
-    logger.info('Executing jira_get_project_versions', args);
+    logger.info('Fetching JIRA project versions', { projectKey });
 
-    // TODO: Implement handler logic from original implementation
+    // Generate cache key
+    const cacheKey = generateCacheKey('jira', 'versions', { projectKey });
+
+    // Fetch from cache or API
+    const versions = await cache.getOrSet(cacheKey, async () => {
+      const response = await httpClient.get(`/rest/api/2/project/${projectKey}/versions`);
+      return response.data || [];
+    });
+
+    if (versions.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `**No versions found for project ${projectKey}**`,
+          },
+        ],
+      };
+    }
+
+    const versionsList = versions
+      .map(
+        (v: any) =>
+          `• **${v.name}** ${v.released ? '(Released)' : '(Unreleased)'} ${v.archived ? '[Archived]' : ''}`,
+      )
+      .join('\n');
 
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text: `**Project Versions for ${projectKey}**\n\n${versionsList}`,
         },
       ],
     };

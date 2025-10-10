@@ -1,30 +1,56 @@
 /**
- * JIRA tool module: jira_update_sprint
- * TODO: Add description
+ * JIRA tool module: Update Sprint
+ * Updates an existing sprint with new information
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
+import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 
 /**
- * Tool definition for jira_update_sprint
+ * Tool definition for updating a sprint
  */
 export const updateSprintTool: Tool = {
   name: 'jira_update_sprint',
-  description: `TODO: Add description`,
+  description: `Update an existing sprint. Can modify name, goal, dates, and state.`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      sprintId: {
+        type: 'number',
+        description: 'ID of the sprint to update',
+      },
+      name: {
+        type: 'string',
+        description: 'New name for the sprint (optional)',
+      },
+      goal: {
+        type: 'string',
+        description: 'New goal or objective for the sprint (optional)',
+      },
+      state: {
+        type: 'string',
+        description: 'New state for the sprint. Valid values: active, closed, future',
+      },
+      startDate: {
+        type: 'string',
+        description: 'New start date in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.',
+      },
+      endDate: {
+        type: 'string',
+        description: 'New end date in ISO 8601 format (e.g., 2023-01-15T00:00:00.000Z). Optional.',
+      },
+      completeDate: {
+        type: 'string',
+        description: 'Complete date in ISO 8601 format when closing a sprint. Optional.',
+      },
     },
-    required: [],
+    required: ['sprintId'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
-    readOnlyHint: true,
+    title: 'Update Sprint',
+    readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: false,
@@ -32,21 +58,79 @@ export const updateSprintTool: Tool = {
 };
 
 /**
- * Handler function for jira_update_sprint
+ * Handler function for updating a sprint
  */
 export async function updateSprintHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { httpClient, cache, logger, config } = context;
+    const { sprintId, name, goal, state, startDate, endDate, completeDate } = args;
 
-    logger.info('Executing jira_update_sprint', args);
+    logger.info('Updating JIRA sprint', { sprintId, name, state });
 
-    // TODO: Implement handler logic from original implementation
+    // Build update data - only include provided fields
+    const sprintData: any = {};
+    if (name !== undefined) sprintData.name = name;
+    if (goal !== undefined) sprintData.goal = goal;
+    if (state !== undefined) sprintData.state = state;
+    if (startDate !== undefined) sprintData.startDate = startDate;
+    if (endDate !== undefined) sprintData.endDate = endDate;
+    if (completeDate !== undefined) sprintData.completeDate = completeDate;
+
+    // If no fields to update, return error
+    if (Object.keys(sprintData).length === 0) {
+      throw new Error('No fields specified for update. Provide at least one field to update.');
+    }
+
+    // Update sprint via API
+    const response = await httpClient.put(`/rest/agile/1.0/sprint/${sprintId}`, sprintData);
+
+    if (!response.data) {
+      throw new NotFoundError('Sprint', sprintId.toString());
+    }
+
+    const sprint = response.data;
+
+    // Clear related caches that might contain stale sprint data
+    cache.keys()
+      .filter(key =>
+        key.includes('jira:boardSprints') ||
+        key.includes('jira:sprintIssues') ||
+        key.includes('jira:agileBoards') ||
+        key.includes(`sprintId:${sprintId}`)
+      )
+      .forEach(key => cache.del(key));
+
+    logger.info('Sprint updated successfully', { sprintId: sprint.id, name: sprint.name, state: sprint.state });
+
+    // Format dates for display
+    let dateInfo = '';
+    if (sprint.startDate && sprint.endDate) {
+      const startFormatted = new Date(sprint.startDate).toLocaleDateString();
+      const endFormatted = new Date(sprint.endDate).toLocaleDateString();
+      dateInfo = ` (${startFormatted} - ${endFormatted})`;
+    } else if (sprint.startDate) {
+      const startFormatted = new Date(sprint.startDate).toLocaleDateString();
+      dateInfo = ` (Starts: ${startFormatted})`;
+    }
+
+    // Add complete date if present
+    if (sprint.completeDate) {
+      const completeFormatted = new Date(sprint.completeDate).toLocaleDateString();
+      dateInfo += ` (Completed: ${completeFormatted})`;
+    }
 
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Sprint Updated Successfully!**\n\n` +
+            `**Name:** ${sprint.name}\n` +
+            `**ID:** ${sprint.id}\n` +
+            `**State:** ${sprint.state}\n` +
+            `**Board ID:** ${sprint.originBoardId}${dateInfo}\n` +
+            `${sprint.goal ? `**Goal:** ${sprint.goal}\n` : ''}` +
+            `\n**Sprint URL:** ${config.url}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
         },
       ],
     };

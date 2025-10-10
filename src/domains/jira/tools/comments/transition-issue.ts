@@ -1,30 +1,45 @@
 /**
- * JIRA tool module: jira_transition_issue
- * TODO: Add description
+ * JIRA tool module: Transition Issue
+ * Transitions a JIRA issue to a new status with optional fields and comment
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_transition_issue
+ * Tool definition for transitioning a JIRA issue to a new status
  */
 export const transitionIssueTool: Tool = {
   name: 'jira_transition_issue',
-  description: `TODO: Add description`,
+  description: `Transition a JIRA issue to a new status`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      issueIdOrKey: {
+        type: 'string',
+        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+      },
+      transitionId: {
+        type: 'string',
+        description: `Transition ID to execute`,
+      },
+      comment: {
+        type: 'string',
+        description: `Optional comment to add with the transition`,
+      },
+      fields: {
+        type: 'object',
+        description: `Field values required for the transition`,
+        additionalProperties: true,
+      },
     },
-    required: [],
+    required: ['issueIdOrKey', 'transitionId'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
-    readOnlyHint: true,
+    title: 'Transition JIRA issue to new status',
+    readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: false,
@@ -32,21 +47,40 @@ export const transitionIssueTool: Tool = {
 };
 
 /**
- * Handler function for jira_transition_issue
+ * Handler function for transitioning a JIRA issue to a new status
  */
 export async function transitionIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { issueIdOrKey, transitionId, comment, fields = {} } = args;
+    const { httpClient, config, logger } = context;
 
-    logger.info('Executing jira_transition_issue', args);
+    logger.info('Transitioning JIRA issue', { issueIdOrKey, transitionId });
 
-    // TODO: Implement handler logic from original implementation
+    // Build transition data to match JIRA API format
+    const transitionData: any = {
+      transition: { id: transitionId },
+      fields
+    };
 
+    // Add comment if provided
+    if (comment) {
+      transitionData.comment = { body: comment };
+    }
+
+    // Make API call to transition issue
+    await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/transitions`, transitionData);
+
+    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Issue Transitioned Successfully**\n\n` +
+            `**Issue:** ${issueIdOrKey}\n` +
+            `**Transition ID:** ${transitionId}\n${
+              comment ? `**Comment:** ${comment}\n` : ''
+            }\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
         },
       ],
     };

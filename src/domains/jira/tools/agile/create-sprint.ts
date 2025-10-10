@@ -1,52 +1,117 @@
 /**
- * JIRA tool module: jira_create_sprint
- * TODO: Add description
+ * JIRA tool module: Create Sprint
+ * Creates a new sprint in an agile board
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 
 /**
- * Tool definition for jira_create_sprint
+ * Tool definition for creating a sprint
  */
 export const createSprintTool: Tool = {
   name: 'jira_create_sprint',
-  description: `TODO: Add description`,
+  description: `Create a new sprint in an agile board. The sprint will be created in the future state.`,
   inputSchema: {
     type: 'object',
     properties: {
-      // TODO: Add properties from original tool definition
+      name: {
+        type: 'string',
+        description: 'Name of the sprint',
+      },
+      originBoardId: {
+        type: 'number',
+        description: 'ID of the board where the sprint will be created',
+      },
+      goal: {
+        type: 'string',
+        description: 'Goal or objective of the sprint (optional)',
+      },
+      startDate: {
+        type: 'string',
+        description: 'Start date of the sprint in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.',
+      },
+      endDate: {
+        type: 'string',
+        description: 'End date of the sprint in ISO 8601 format (e.g., 2023-01-15T00:00:00.000Z). Optional.',
+      },
     },
-    required: [],
+    required: ['name', 'originBoardId'],
     additionalProperties: false,
   },
   annotations: {
-    title: 'TODO: Add title',
-    readOnlyHint: true,
+    title: 'Create Sprint',
+    readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
     openWorldHint: false,
   },
 };
 
 /**
- * Handler function for jira_create_sprint
+ * Handler function for creating a sprint
  */
 export async function createSprintHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, config, logger } = context;
+    const { httpClient, cache, logger, config } = context;
+    const { name, originBoardId, goal, startDate, endDate } = args;
 
-    logger.info('Executing jira_create_sprint', args);
+    logger.info('Creating JIRA sprint', { name, originBoardId, goal });
 
-    // TODO: Implement handler logic from original implementation
+    // Build sprint data
+    const sprintData: any = {
+      name,
+      originBoardId,
+    };
+
+    if (goal) sprintData.goal = goal;
+    if (startDate) sprintData.startDate = startDate;
+    if (endDate) sprintData.endDate = endDate;
+
+    // Create sprint via API
+    const response = await httpClient.post('/rest/agile/1.0/sprint', sprintData);
+
+    if (!response.data) {
+      throw new Error('Failed to create sprint - no data returned');
+    }
+
+    const sprint = response.data;
+
+    // Clear related caches
+    cache.keys()
+      .filter(key =>
+        key.includes('jira:boardSprints') ||
+        key.includes('jira:agileBoards') ||
+        key.includes(`boardId:${originBoardId}`)
+      )
+      .forEach(key => cache.del(key));
+
+    logger.info('Sprint created successfully', { sprintId: sprint.id, name: sprint.name });
+
+    // Format dates for display
+    let dateInfo = '';
+    if (sprint.startDate && sprint.endDate) {
+      const startFormatted = new Date(sprint.startDate).toLocaleDateString();
+      const endFormatted = new Date(sprint.endDate).toLocaleDateString();
+      dateInfo = ` (${startFormatted} - ${endFormatted})`;
+    } else if (sprint.startDate) {
+      const startFormatted = new Date(sprint.startDate).toLocaleDateString();
+      dateInfo = ` (Starts: ${startFormatted})`;
+    }
 
     return {
       content: [
         {
           type: 'text',
-          text: 'TODO: Implement response',
+          text:
+            `**Sprint Created Successfully!**\n\n` +
+            `**Name:** ${sprint.name}\n` +
+            `**ID:** ${sprint.id}\n` +
+            `**State:** ${sprint.state}\n` +
+            `**Board ID:** ${sprint.originBoardId}${dateInfo}\n` +
+            `${sprint.goal ? `**Goal:** ${sprint.goal}\n` : ''}` +
+            `\n**Sprint URL:** ${config.url}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
         },
       ],
     };
