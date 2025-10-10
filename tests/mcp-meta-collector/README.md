@@ -30,7 +30,7 @@ cd ..
 npm run build
 
 # 2. Start JIRA emulator (in separate terminal)
-node tests/jira-emulator.js
+node tests/emulator/jira.js
 
 # 3. Run the example (from tmp_mcp_a_client directory)
 cd tmp_mcp_a_client

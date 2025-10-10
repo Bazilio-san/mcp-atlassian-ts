@@ -3,7 +3,7 @@ dotenv.config();
 
 import fs from 'fs';
 import path from 'path';
-import { SJ } from '../utils.js';
+import { SJ } from './utils.js';
 
 /**
  * API Response Logger (Markdown format)
@@ -12,7 +12,7 @@ import { SJ } from '../utils.js';
 class ApiResponseLogger {
   constructor () {
     this.enabled = process.env.TEST_LOG_API_RESPONSES === 'true';
-    this.logDir = path.join(process.cwd(), '_api_responses');
+    this.logDir = path.join(process.cwd(), 'tests/endpoints/_logs/jira');
 
     if (this.enabled) {
       this.ensureLogDirectory();

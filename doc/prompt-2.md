@@ -5,9 +5,9 @@
 
 Если каких-то эндпоинтов не хватает - добавь в тестирование в в tests/endpoints/jira.js.
 
-Сейчас в tests/jira-emulator.js не хватает эмулируемых эндпоинтов.
+Сейчас в tests/emulator/jira.js не хватает эмулируемых эндпоинтов.
 
-запускай эмулятор tests/jira-emulator.js запускай тесты tests/endpoints/jira.js. 
+запускай эмулятор tests/emulator/jira.js запускай тесты tests/endpoints/jira.js. 
 
 Добавь все недостающие эмуляторы эндпоинтов в в tests/endpoints/jira.js
 

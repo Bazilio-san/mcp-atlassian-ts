@@ -10,14 +10,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import fetch from 'node-fetch';
-import ResourceManager from '../core/resource-manager.js';
-import CascadeExecutor from '../core/cascade-executor.js';
-import ValidationEngine from '../core/validation-engine.js';
-import { dLine, eqLine, TestReporter } from '../core/test-reporter.js';
-import { apiResponseLogger } from '../core/response-logger/api-response-logger.js';
-import SharedJiraTestCases from './test-cases.js';
+import ResourceManager from './core/resource-manager.js';
+import CascadeExecutor from './core/cascade-executor.js';
+import ValidationEngine from './core/validation-engine.js';
+import { dLine, eqLine, TestReporter } from './core/test-reporter.js';
+import { apiResponseLogger } from './core/logger.js';
+import SharedJiraTestCases from './jira-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from '../constants.js';
-import { isObj } from '../core/utils.js';
+import { isObj } from './core/utils.js';
 import { appConfig } from "../../dist/src/bootstrap/init-config.js";
 
 // Test IDs that require admin rights
@@ -1021,13 +1021,6 @@ async function main () {
   // Parse no-admin flag
   if (args.includes('--no-admin')) {
     config.noAdmin = true;
-  }
-
-  // Enable API response logging
-  const logArg = args.find(arg => arg.startsWith('--log='));
-  if (logArg) {
-    const logFile = logArg.split('=')[1];
-    apiResponseLogger.enable(logFile);
   }
 
   try {

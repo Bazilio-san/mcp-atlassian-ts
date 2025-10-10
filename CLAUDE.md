@@ -29,7 +29,7 @@ The project includes comprehensive testing tools:
 
 #### JIRA Emulator (Standalone Testing)
 ```bash
-node tests/jira-emulator.js
+node tests/emulator/jira.js
 ```
 - Runs on port 8080
 - Contains test data: project TEST, issues TEST-1/TEST-2
@@ -38,7 +38,7 @@ node tests/jira-emulator.js
 #### Complete Test Flow
 ```bash
 # Terminal 1: Start JIRA emulator
-node tests/jira-emulator.js
+node tests/emulator/jira.js
 
 # Terminal 2: Start MCP server  
 npm start
@@ -50,7 +50,7 @@ node tests/mcp-client-tests.js
 #### JIRA API Endpoint Testing (100% Coverage)
 ```bash
 # Terminal 1: Start JIRA emulator
-node tests/jira-emulator.js
+node tests/emulator/jira.js
 
 # Terminal 2: Run comprehensive API tests
 node tests/endpoints/jira.js

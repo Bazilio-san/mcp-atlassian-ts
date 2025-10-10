@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TEST-MCP-JIRA" type="NodeJSConfigurationType" folderName="TEST-MCP" path-to-js-file="tests/mcp/jira.js" working-dir="$PROJECT_DIR$">
-    <method v="2" />
-  </configuration>
-</component>

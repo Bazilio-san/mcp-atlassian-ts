@@ -5,20 +5,20 @@
  * Tests all JIRA MCP tools via HTTP transport
  * Validates custom header propagation and logs results to individual files
  */
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 import fetch from 'node-fetch';
 import fs from 'fs/promises';
 import fss from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import JiraMcpTestCases from './jira-test-cases.js';
 
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3000';
 const JIRA_EMULATOR_URL = process.env.JIRA_URL || 'http://localhost:8080';
-const RESULTS_DIR = path.join(process.cwd(), '_tmp/mcp-http-tester-results');
+const RESULTS_DIR = path.join(process.cwd(), 'tests/mcp/_logs/jira');
 
 if (!fss.existsSync(RESULTS_DIR)) {
   fss.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -70,18 +70,30 @@ class McpHttpClient {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+        error.requestHeaders = headers;
+        throw error;
       }
 
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`MCP Error: ${data.error.message || JSON.stringify(data.error)}`);
+        const error = new Error(`MCP Error: ${data.error.message || JSON.stringify(data.error)}`);
+        error.requestHeaders = headers;
+        throw error;
       }
 
-      return data.result;
+      // Return both result and request headers
+      return {
+        result: data.result,
+        requestHeaders: headers,
+      };
     } catch (error) {
-      throw new Error(`MCP Request failed: ${error.message}`);
+      // Preserve headers in error for debugging
+      if (!error.requestHeaders) {
+        error.requestHeaders = headers;
+      }
+      throw error;
     }
   }
 
@@ -89,7 +101,8 @@ class McpHttpClient {
    * List all available tools
    */
   async listTools () {
-    return this.sendRequest('tools/list');
+    const { result } = await this.sendRequest('tools/list');
+    return result;
   }
 
   /**
@@ -119,25 +132,14 @@ class McpHttpClient {
 }
 
 /**
- * Test case definition
- */
-class TestCase {
-  constructor (toolName, params, description, customHeaders = {}) {
-    this.toolName = toolName;
-    this.params = params;
-    this.description = description;
-    this.customHeaders = customHeaders;
-  }
-}
-
-/**
  * Main test orchestrator
  */
 class JiraMcpHttpTester {
-  constructor () {
+  constructor (testFilter = null) {
     this.client = null;
     this.testCases = [];
     this.results = [];
+    this.testFilter = testFilter;
     this.stats = {
       total: 0,
       passed: 0,
@@ -147,281 +149,28 @@ class JiraMcpHttpTester {
   }
 
   /**
-   * Initialize test cases for all 30 JIRA tools
+   * Initialize test cases using external test cases file
    */
   initializeTestCases () {
-    // Test header for custom header propagation testing
-    const testHeader = { 'X-Test-Request-ID': `test-${Date.now()}` };
+    const testCasesManager = new JiraMcpTestCases();
 
-    this.testCases = [
-      // === Issue Management (9 tools) ===
-      new TestCase(
-        'jira_get_issue',
-        { issueKey: 'TEST-1' },
-        'Get issue details',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_search_issues',
-        { jql: 'project = TEST', maxResults: 10 },
-        'Search issues by JQL',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_create_issue',
-        {
-          project: 'TEST',
-          issueType: 'Task',
-          summary: 'MCP HTTP Test Issue',
-          description: 'Created via MCP HTTP tester',
-        },
-        'Create new issue',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_update_issue',
-        {
-          issueKey: 'TEST-1',
-          summary: 'Updated via MCP HTTP test',
-        },
-        'Update existing issue',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_add_comment',
-        {
-          issueKey: 'TEST-1',
-          body: 'Test comment from MCP HTTP tester',
-        },
-        'Add comment to issue',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_get_transitions',
-        { issueKey: 'TEST-1' },
-        'Get available transitions',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_transition_issue',
-        {
-          issueKey: 'TEST-1',
-          transitionId: '11',
-          comment: 'Transitioned via MCP test',
-        },
-        'Transition issue status',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_delete_issue',
-        { issueKey: 'TEST-DELETE', deleteSubtasks: false },
-        'Delete issue (will fail if not exists)',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_batch_create_issues',
-        {
-          issues: [
-            {
-              project: 'TEST',
-              issueType: 'Task',
-              summary: 'Batch issue 1',
-            },
-            {
-              project: 'TEST',
-              issueType: 'Task',
-              summary: 'Batch issue 2',
-            },
-          ],
-        },
-        'Batch create multiple issues',
-        testHeader,
-      ),
+    // Parse filter and get matching test cases
+    const selectedTestCases = testCasesManager.parseFilterAndGetTestCases(this.testFilter);
 
-      // === Project Management (3 tools) ===
-      new TestCase(
-        'jira_get_projects',
-        { recent: 5 },
-        'Get all projects',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_get_project_versions',
-        { projectKey: 'TEST' },
-        'Get project versions',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_create_version',
-        {
-          projectId: '10000',
-          name: `MCP-Test-v${Date.now()}`,
-          description: 'Created via MCP HTTP test',
-        },
-        'Create project version',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_batch_create_versions',
-        {
-          versions: [
-            {
-              projectId: '10000',
-              name: `Batch-v1-${Date.now()}`,
-              description: 'Batch version 1',
-            },
-            {
-              projectId: '10000',
-              name: `Batch-v2-${Date.now()}`,
-              description: 'Batch version 2',
-            },
-          ],
-        },
-        'Batch create versions',
-        testHeader,
-      ),
+    this.testCases = selectedTestCases;
 
-      // === User Management (1 tool) ===
-      new TestCase(
-        'jira_get_user_profile',
-        { userIdOrEmail: '12345' },
-        'Get user profile',
-        testHeader,
-      ),
+    if (this.testFilter) {
+      console.log(chalk.blue(`\n📋 Filter: ${this.testFilter}`));
+      console.log(chalk.blue(`📋 Selected ${this.testCases.length} test cases\n`));
 
-      // === Fields and Metadata (1 tool) ===
-      new TestCase(
-        'jira_search_fields',
-        { query: 'summary' },
-        'Search JIRA fields',
-        testHeader,
-      ),
-
-      // === Issue Links (4 tools) ===
-      new TestCase(
-        'jira_get_link_types',
-        {},
-        'Get issue link types',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_create_issue_link',
-        {
-          linkType: 'Relates',
-          inwardIssue: 'TEST-1',
-          outwardIssue: 'TEST-2',
-        },
-        'Create issue link',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_create_remote_issue_link',
-        {
-          issueKey: 'TEST-1',
-          url: 'https://example.com/external-issue',
-          title: 'External Issue Link',
-        },
-        'Create remote issue link',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_remove_issue_link',
-        { linkId: '10000' },
-        'Remove issue link (will fail if not exists)',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_link_to_epic',
-        {
-          issueKey: 'TEST-1',
-          epicKey: 'TEST-2',
-        },
-        'Link issue to epic',
-        testHeader,
-      ),
-
-      // === Worklog (2 tools) ===
-      new TestCase(
-        'jira_get_worklog',
-        { issueKey: 'TEST-1', maxResults: 10 },
-        'Get issue worklogs',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_add_worklog',
-        {
-          issueKey: 'TEST-1',
-          timeSpent: '1h',
-          comment: 'Work logged via MCP test',
-        },
-        'Add worklog entry',
-        testHeader,
-      ),
-
-      // === Attachments (1 tool) ===
-      new TestCase(
-        'jira_download_attachments',
-        { issueKey: 'TEST-1' },
-        'Get issue attachments',
-        testHeader,
-      ),
-
-      // === Agile/Scrum (6 tools) ===
-      new TestCase(
-        'jira_get_agile_boards',
-        { maxResults: 10 },
-        'Get all agile boards',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_get_board_issues',
-        { boardId: '1', maxResults: 10 },
-        'Get board issues',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_get_sprints_from_board',
-        { boardId: '1', maxResults: 10 },
-        'Get board sprints',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_get_sprint_issues',
-        { sprintId: '1', maxResults: 10 },
-        'Get sprint issues',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_create_sprint',
-        {
-          boardId: '1',
-          name: `MCP Test Sprint ${Date.now()}`,
-          goal: 'Test sprint creation',
-        },
-        'Create new sprint',
-        testHeader,
-      ),
-      new TestCase(
-        'jira_update_sprint',
-        {
-          sprintId: '1',
-          name: 'Updated Sprint Name',
-          state: 'active',
-        },
-        'Update sprint',
-        testHeader,
-      ),
-
-      // === Bulk Operations (1 tool) ===
-      new TestCase(
-        'jira_batch_get_changelogs',
-        { issueKeys: ['TEST-1', 'TEST-2'] },
-        'Get changelogs for multiple issues',
-        testHeader,
-      ),
-    ];
-
-    console.log(chalk.blue(`\n📋 Initialized ${this.testCases.length} test cases\n`));
+      // Show selected test cases
+      selectedTestCases.forEach(tc => {
+        console.log(chalk.dim(`  ${tc.fullId}: ${tc.toolName} - ${tc.description}`));
+      });
+      console.log();
+    } else {
+      console.log(chalk.blue(`\n📋 Initialized ${this.testCases.length} test cases (all)\n`));
+    }
   }
 
   /**
@@ -492,8 +241,7 @@ class JiraMcpHttpTester {
    * Run a single test case
    */
   async runSingleTest (testCase, index) {
-    const testId = `${index}/${this.testCases.length}`;
-    console.log(chalk.cyan(`[${testId}] Testing: ${testCase.toolName}`));
+    console.log(chalk.cyan(`[${testCase.fullId}] Testing: ${testCase.toolName}`));
     console.log(chalk.dim(`  Description: ${testCase.description}`));
 
     const startTime = Date.now();
@@ -501,7 +249,6 @@ class JiraMcpHttpTester {
       toolName: testCase.toolName,
       description: testCase.description,
       parameters: testCase.params,
-      customHeaders: testCase.customHeaders,
       timestamp: new Date().toISOString(),
       duration: 0,
       status: 'pending',
@@ -509,15 +256,18 @@ class JiraMcpHttpTester {
       error: null,
     };
 
+    let requestHeaders = {};
     try {
-      // Create client with merged custom headers (default from .env + test-specific)
-      const testClient = new McpHttpClient(MCP_SERVER_URL, { ...DEFAULT_CUSTOM_HEADERS, ...testCase.customHeaders });
+      // Create client with default custom headers from .env
+      const testClient = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
 
       // Call the tool
-      const response = await testClient.callTool(testCase.toolName, testCase.params);
+      const { result: response, requestHeaders: capturedHeaders } = await testClient.callTool(testCase.toolName, testCase.params);
 
+      requestHeaders = capturedHeaders;
       result.duration = Date.now() - startTime;
       result.response = response;
+      result.requestHeaders = requestHeaders;
       result.status = 'passed';
 
       console.log(chalk.green(`  ✅  Passed (${result.duration}ms)`));
@@ -527,6 +277,8 @@ class JiraMcpHttpTester {
     } catch (error) {
       result.duration = Date.now() - startTime;
       result.error = error.message;
+      // Save headers even if request failed - try to get from error first, then fallback to local var
+      result.requestHeaders = error.requestHeaders || requestHeaders;
 
       // Some tests are expected to fail (e.g., delete non-existent issue)
       if (this.isExpectedFailure(testCase.toolName, error.message)) {
@@ -594,6 +346,7 @@ class JiraMcpHttpTester {
   formatResultAsMarkdown (result) {
     const t = '```';
     const mdText = (s) => `${t}\n${s}\n${t}`;
+    const mdDescr = (s) => `${t}description\n${s}\n${t}`;
     const mdJson = (v) => `${t}json\n${v && JSON.stringify(v, null, 2)}\n${t}`;
 
     let resultStatus = '⚠️ RESULT STATUS UNKNOWN';
@@ -611,20 +364,60 @@ class JiraMcpHttpTester {
       }
     }
 
-    let customHeaders = '';
-    if (Object.keys(result.customHeaders).length > 0) {
-      customHeaders = `\nCustom Headers:\n${Object.entries(result.customHeaders).map(([k, v]) => `${k}: ${v}`).join('\n')}\n`;
+    let requestHeaders = '';
+    if (result.requestHeaders && Object.keys(result.requestHeaders).length > 0) {
+      requestHeaders = `\nHeaders:\n${Object.entries(result.requestHeaders).map(([k, v]) => `  ${k}: ${v}`).join('\n')}\n`;
     }
 
-    const md = `# ${resultStatus} / ${result.timestamp} / ${result.duration}ms\n# ${result.toolName} 
-${customHeaders}
-description: 
-${result.description}    
+    // Format response section
+    let responseText = '';
+    if (result.response !== null && result.response !== undefined) {
+      try {
+        let parsedResponse = result.response;
+        let isJsonParsed = false;
 
-parameters: 
+        // If response is a string, try to parse as JSON first
+        if (typeof result.response === 'string') {
+          try {
+            parsedResponse = JSON.parse(result.response);
+            isJsonParsed = true;
+          } catch {
+            // If not valid JSON, treat as text
+            responseText = `## Response\n\n${mdText(result.response)}\n\n`;
+          }
+        } else if (typeof result.response === 'object') {
+          isJsonParsed = true;
+        }
+
+        // If we have a successfully parsed or original object
+        if (isJsonParsed && typeof parsedResponse === 'object') {
+          let text = parsedResponse;
+          let addText = '';
+          // Check if response has content[0].text structure and extract text
+          if (Array.isArray(parsedResponse?.content) && parsedResponse.content[0]?.text) {
+            const textContent = parsedResponse.content[0].text;
+            parsedResponse.content[0].text = '📋';
+            text = parsedResponse;
+            addText = `## Formatted Text 📋\n${mdText(textContent)}\n\n`;
+          }
+          responseText = `## Response\n\n${mdJson(text)}\n\n${addText}`
+        }
+
+      } catch {
+        // Fallback to text if any parsing errors
+        responseText = `## Response\n\n${mdText(String(result.response))}\n\n`;
+      }
+    }
+
+    return `${resultStatus} / ${result.timestamp} / ${result.duration}ms
+# ${result.toolName}
+${requestHeaders}
+${mdDescr(result.description)}
+
+parameters:
 ${mdJson(result.parameters)}
-`;
-    return md;
+
+${responseText}${errorText}`;
   }
 
   /**
@@ -719,8 +512,6 @@ ${mdJson(result.parameters)}
     }
 
     md += `## Custom Header Propagation\n\n`;
-    md += `All tests were executed with custom headers (X-Test-Request-ID) to verify header propagation through the MCP stack.\n\n`;
-
     md += `## Individual Test Results\n\n`;
     md += `Detailed results for each tool are available in:\n\n`;
     this.results.forEach(result => {
@@ -736,13 +527,49 @@ ${mdJson(result.parameters)}
  * Main entry point
  */
 async function main () {
-  const tester = new JiraMcpHttpTester();
+  // Parse command line arguments
+  const args = process.argv.slice(2);
+  let testFilter = null;
+
+  // Parse test filter
+  const testsArg = args.find(arg => arg.startsWith('--tests='));
+  if (testsArg) {
+    testFilter = testsArg.split('=')[1];
+  }
+
+  // Show help if requested
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(chalk.cyan('JIRA MCP HTTP Tester'));
+    console.log(chalk.white('\nUsage: node tests/mcp/jira.js [options]\n'));
+    console.log(chalk.white('Options:'));
+    console.log(chalk.white('  --tests=<filter>    Run specific tests (comma-separated)'));
+    console.log(chalk.white('                      Examples:'));
+    console.log(chalk.white('                        --tests=1           # All group 1 tests'));
+    console.log(chalk.white('                        --tests=1-1,1-2     # Specific tests'));
+    console.log(chalk.white('                        --tests=8           # All Agile tests'));
+    console.log(chalk.white('                        --tests=jira_get_issue # Specific tool'));
+    console.log(chalk.white('  --help, -h          Show this help\n'));
+    console.log(chalk.white('Test Groups:'));
+    console.log(chalk.white('  1: IssueManagement   (9 tools)'));
+    console.log(chalk.white('  2: ProjectManagement (3 tools)'));
+    console.log(chalk.white('  3: UserManagement    (1 tool)'));
+    console.log(chalk.white('  4: FieldsMetadata    (1 tool)'));
+    console.log(chalk.white('  5: IssueLinks        (5 tools)'));
+    console.log(chalk.white('  6: Worklog           (2 tools)'));
+    console.log(chalk.white('  7: Attachments       (1 tool)'));
+    console.log(chalk.white('  8: AgileScrum        (6 tools)'));
+    console.log(chalk.white('  9: BulkOperations    (1 tool)'));
+    console.log(chalk.white('  10: BatchOperations  (2 tools)'));
+    process.exit(0);
+  }
+
+  const tester = new JiraMcpHttpTester(testFilter);
 
   try {
     await tester.runAllTests();
     process.exit(tester.stats.failed > 0 ? 1 : 0);
   } catch (error) {
-    console.error(chalk.red('\n❌ Fatal error:'), error);
+    console.error(chalk.red('\n❌  Fatal error:'), error);
     process.exit(1);
   }
 }

@@ -4,7 +4,7 @@
 
 В файле tests/jira-mcp-http-tester.js Напиши тестер ВСЕХ инструментов MCP сервера JIRA в виде внешнего MCP клиента.
 
-Запускай эмулятор tests/jira-emulator.js и тестер tests/jira-mcp-http-tester.js и добейся 
+Запускай эмулятор tests/emulator/jira.js и тестер tests/jira-mcp-http-tester.js и добейся 
 полной работоспособности. 
 
 Среди тестов должна быть проверка того, что если MCP клиент вызывает MCP сервера с передачей кастомного "X-*" HTTP заголовка,

@@ -1,0 +1,570 @@
+/**
+ * JIRA MCP Test Cases
+ * Defines all test cases for JIRA MCP tools testing
+ * Numbered format following pattern from tests/endpoints/jira-test-cases.js
+ */
+
+import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from '../constants.js';
+
+/**
+ * Test groups information for MCP tests
+ */
+export const MCP_GROUP_INFO = {
+  1: { name: 'IssueManagement', description: 'Issue Management tools (9 tools)' },
+  2: { name: 'ProjectManagement', description: 'Project Management tools (3 tools)' },
+  3: { name: 'UserManagement', description: 'User Management tools (1 tool)' },
+  4: { name: 'FieldsMetadata', description: 'Fields and Metadata tools (1 tool)' },
+  5: { name: 'IssueLinks', description: 'Issue Links tools (4 tools)' },
+  6: { name: 'Worklog', description: 'Worklog tools (2 tools)' },
+  7: { name: 'Attachments', description: 'Attachments tools (1 tool)' },
+  8: { name: 'AgileScrum', description: 'Agile/Scrum tools (6 tools)' },
+  9: { name: 'BulkOperations', description: 'Bulk Operations tools (1 tool)' },
+  10: { name: 'BatchOperations', description: 'Batch Operations tools (2 tools)' },
+};
+
+/**
+ * JIRA MCP Test Cases
+ * Each test case follows the pattern: {fullId}-{name}-{toolName}-{params}-{description}
+ */
+export class JiraMcpTestCases {
+  constructor () {
+    this.testProjectKey = TEST_JIRA_PROJECT || 'TEST';
+    this.testIssueKey = TEST_ISSUE_KEY || 'TEST-1';
+    this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY || 'TEST-2';
+  }
+
+  /**
+   * Transform test case to add getters for groupNumber and testNumber
+   */
+  transformTestCase (testCase) {
+    const transformed = Object.create(null);
+
+    Object.keys(testCase).forEach(key => {
+      if (key !== 'groupNumber' && key !== 'testNumber') {
+        transformed[key] = testCase[key];
+      }
+    });
+
+    Object.defineProperty(transformed, 'groupNumber', {
+      get () {
+        return this.fullId ? parseInt(this.fullId.split('-')[0], 10) : undefined;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+
+    Object.defineProperty(transformed, 'testNumber', {
+      get () {
+        return this.fullId ? parseInt(this.fullId.split('-')[1], 10) : undefined;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+
+    Object.defineProperty(transformed, 'category', {
+      get () {
+        return MCP_GROUP_INFO[this.groupNumber]?.name;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+
+    return transformed;
+  }
+
+  /**
+   * Transform an array of test cases
+   */
+  transformTestCases (testCases) {
+    return testCases.map(tc => this.transformTestCase(tc));
+  }
+
+  /**
+   * Issue Management test cases (9 tools)
+   */
+  getIssueManagementTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '1-1',
+        name: 'Get Issue Details',
+        toolName: 'jira_get_issue',
+        params: { issueKey: this.testIssueKey },
+        description: 'Get issue details',
+      },
+      {
+        fullId: '1-2',
+        name: 'Search Issues by JQL',
+        toolName: 'jira_search_issues',
+        params: { jql: `project = ${this.testProjectKey}`, maxResults: 10 },
+        description: 'Search issues by JQL',
+      },
+      {
+        fullId: '1-3',
+        name: 'Create New Issue',
+        toolName: 'jira_create_issue',
+        params: {
+          project: this.testProjectKey,
+          issueType: 'Task',
+          summary: 'MCP HTTP Test Issue',
+          description: 'Created via MCP HTTP tester',
+        },
+        description: 'Create new issue',
+      },
+      {
+        fullId: '1-4',
+        name: 'Update Existing Issue',
+        toolName: 'jira_update_issue',
+        params: {
+          issueKey: this.testIssueKey,
+          summary: 'Updated via MCP HTTP test',
+        },
+        description: 'Update existing issue',
+      },
+      {
+        fullId: '1-5',
+        name: 'Add Comment to Issue',
+        toolName: 'jira_add_comment',
+        params: {
+          issueKey: this.testIssueKey,
+          body: 'Test comment from MCP HTTP tester',
+        },
+        description: 'Add comment to issue',
+      },
+      {
+        fullId: '1-6',
+        name: 'Get Available Transitions',
+        toolName: 'jira_get_transitions',
+        params: { issueKey: this.testIssueKey },
+        description: 'Get available transitions',
+      },
+      {
+        fullId: '1-7',
+        name: 'Transition Issue Status',
+        toolName: 'jira_transition_issue',
+        params: {
+          issueKey: this.testIssueKey,
+          transitionId: '11',
+          comment: 'Transitioned via MCP test',
+        },
+        description: 'Transition issue status',
+      },
+      {
+        fullId: '1-8',
+        name: 'Delete Issue',
+        toolName: 'jira_delete_issue',
+        params: { issueKey: 'TEST-DELETE', deleteSubtasks: false },
+        description: 'Delete issue (will fail if not exists)',
+      },
+      {
+        fullId: '1-9',
+        name: 'Batch Create Issues',
+        toolName: 'jira_batch_create_issues',
+        params: {
+          issues: [
+            {
+              project: this.testProjectKey,
+              issueType: 'Task',
+              summary: 'Batch issue 1',
+            },
+            {
+              project: this.testProjectKey,
+              issueType: 'Task',
+              summary: 'Batch issue 2',
+            },
+          ],
+        },
+        description: 'Batch create multiple issues',
+      },
+    ]);
+  }
+
+  /**
+   * Project Management test cases (3 tools)
+   */
+  getProjectManagementTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '2-1',
+        name: 'Get All Projects',
+        toolName: 'jira_get_projects',
+        params: { recent: 5 },
+        description: 'Get all projects',
+      },
+      {
+        fullId: '2-2',
+        name: 'Get Project Versions',
+        toolName: 'jira_get_project_versions',
+        params: { projectKey: this.testProjectKey },
+        description: 'Get project versions',
+      },
+      {
+        fullId: '2-3',
+        name: 'Create Project Version',
+        toolName: 'jira_create_version',
+        params: {
+          projectId: '10000',
+          name: `MCP-Test-v${Date.now()}`,
+          description: 'Created via MCP HTTP test',
+        },
+        description: 'Create project version',
+      },
+    ]);
+  }
+
+  /**
+   * Batch Operations test cases (2 tools)
+   */
+  getBatchOperationsTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '10-1',
+        name: 'Batch Create Versions',
+        toolName: 'jira_batch_create_versions',
+        params: {
+          versions: [
+            {
+              projectId: '10000',
+              name: `Batch-v1-${Date.now()}`,
+              description: 'Batch version 1',
+            },
+            {
+              projectId: '10000',
+              name: `Batch-v2-${Date.now()}`,
+              description: 'Batch version 2',
+            },
+          ],
+        },
+        description: 'Batch create versions',
+      },
+      {
+        fullId: '10-2',
+        name: 'Batch Get Changelogs',
+        toolName: 'jira_batch_get_changelogs',
+        params: { issueKeys: [this.testIssueKey, this.secondTestIssueKey] },
+        description: 'Get changelogs for multiple issues',
+      },
+    ]);
+  }
+
+  /**
+   * User Management test cases (1 tool)
+   */
+  getUserManagementTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '3-1',
+        name: 'Get User Profile',
+        toolName: 'jira_get_user_profile',
+        params: { userIdOrEmail: '12345' },
+        description: 'Get user profile',
+      },
+    ]);
+  }
+
+  /**
+   * Fields and Metadata test cases (1 tool)
+   */
+  getFieldsMetadataTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '4-1',
+        name: 'Search JIRA Fields',
+        toolName: 'jira_search_fields',
+        params: { query: 'summary' },
+        description: 'Search JIRA fields',
+      },
+    ]);
+  }
+
+  /**
+   * Issue Links test cases (4 tools)
+   */
+  getIssueLinksTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '5-1',
+        name: 'Get Issue Link Types',
+        toolName: 'jira_get_link_types',
+        params: {},
+        description: 'Get issue link types',
+      },
+      {
+        fullId: '5-2',
+        name: 'Create Issue Link',
+        toolName: 'jira_create_issue_link',
+        params: {
+          linkType: 'Relates',
+          inwardIssue: this.testIssueKey,
+          outwardIssue: this.secondTestIssueKey,
+        },
+        description: 'Create issue link',
+      },
+      {
+        fullId: '5-3',
+        name: 'Create Remote Issue Link',
+        toolName: 'jira_create_remote_issue_link',
+        params: {
+          issueKey: this.testIssueKey,
+          url: 'https://example.com/external-issue',
+          title: 'External Issue Link',
+        },
+        description: 'Create remote issue link',
+      },
+      {
+        fullId: '5-4',
+        name: 'Remove Issue Link',
+        toolName: 'jira_remove_issue_link',
+        params: { linkId: '10000' },
+        description: 'Remove issue link (will fail if not exists)',
+      },
+      {
+        fullId: '5-5',
+        name: 'Link Issue to Epic',
+        toolName: 'jira_link_to_epic',
+        params: {
+          issueKey: this.testIssueKey,
+          epicKey: this.secondTestIssueKey,
+        },
+        description: 'Link issue to epic',
+      },
+    ]);
+  }
+
+  /**
+   * Worklog test cases (2 tools)
+   */
+  getWorklogTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '6-1',
+        name: 'Get Issue Worklogs',
+        toolName: 'jira_get_worklog',
+        params: { issueKey: this.testIssueKey, maxResults: 10 },
+        description: 'Get issue worklogs',
+      },
+      {
+        fullId: '6-2',
+        name: 'Add Worklog Entry',
+        toolName: 'jira_add_worklog',
+        params: {
+          issueKey: this.testIssueKey,
+          timeSpent: '1h',
+          comment: 'Work logged via MCP test',
+        },
+        description: 'Add worklog entry',
+      },
+    ]);
+  }
+
+  /**
+   * Attachments test cases (1 tool)
+   */
+  getAttachmentsTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '7-1',
+        name: 'Get Issue Attachments',
+        toolName: 'jira_download_attachments',
+        params: { issueKey: this.testIssueKey },
+        description: 'Get issue attachments',
+      },
+    ]);
+  }
+
+  /**
+   * Agile/Scrum test cases (6 tools)
+   */
+  getAgileTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '8-1',
+        name: 'Get All Agile Boards',
+        toolName: 'jira_get_agile_boards',
+        params: { maxResults: 10 },
+        description: 'Get all agile boards',
+      },
+      {
+        fullId: '8-2',
+        name: 'Get Board Issues',
+        toolName: 'jira_get_board_issues',
+        params: { boardId: '1', maxResults: 10 },
+        description: 'Get board issues',
+      },
+      {
+        fullId: '8-3',
+        name: 'Get Board Sprints',
+        toolName: 'jira_get_sprints_from_board',
+        params: { boardId: '1', maxResults: 10 },
+        description: 'Get board sprints',
+      },
+      {
+        fullId: '8-4',
+        name: 'Get Sprint Issues',
+        toolName: 'jira_get_sprint_issues',
+        params: { sprintId: '1', maxResults: 10 },
+        description: 'Get sprint issues',
+      },
+      {
+        fullId: '8-5',
+        name: 'Create New Sprint',
+        toolName: 'jira_create_sprint',
+        params: {
+          boardId: '1',
+          name: `MCP Test Sprint ${Date.now()}`,
+          goal: 'Test sprint creation',
+        },
+        description: 'Create new sprint',
+      },
+      {
+        fullId: '8-6',
+        name: 'Update Sprint',
+        toolName: 'jira_update_sprint',
+        params: {
+          sprintId: '1',
+          name: 'Updated Sprint Name',
+          state: 'active',
+        },
+        description: 'Update sprint',
+      },
+    ]);
+  }
+
+  /**
+   * Bulk Operations test cases (1 tool)
+   */
+  getBulkOperationsTestCases () {
+
+
+    return this.transformTestCases([
+      {
+        fullId: '9-1',
+        name: 'Batch Get Changelogs',
+        toolName: 'jira_batch_get_changelogs',
+        params: { issueKeys: [this.testIssueKey, this.secondTestIssueKey] },
+        description: 'Get changelogs for multiple issues',
+      },
+    ]);
+  }
+
+  /**
+   * Get all test cases in a flat list
+   */
+  getAllTestCasesFlat () {
+    return [
+      ...this.getIssueManagementTestCases(),
+      ...this.getProjectManagementTestCases(),
+      ...this.getUserManagementTestCases(),
+      ...this.getFieldsMetadataTestCases(),
+      ...this.getIssueLinksTestCases(),
+      ...this.getWorklogTestCases(),
+      ...this.getAttachmentsTestCases(),
+      ...this.getAgileTestCases(),
+      ...this.getBulkOperationsTestCases(),
+      ...this.getBatchOperationsTestCases(),
+    ];
+  }
+
+  /**
+   * Get test cases by group
+   */
+  getTestCasesByGroup (groupNumber) {
+    const groupMethods = {
+      1: () => this.getIssueManagementTestCases(),
+      2: () => this.getProjectManagementTestCases(),
+      3: () => this.getUserManagementTestCases(),
+      4: () => this.getFieldsMetadataTestCases(),
+      5: () => this.getIssueLinksTestCases(),
+      6: () => this.getWorklogTestCases(),
+      7: () => this.getAttachmentsTestCases(),
+      8: () => this.getAgileTestCases(),
+      9: () => this.getBulkOperationsTestCases(),
+      10: () => this.getBatchOperationsTestCases(),
+    };
+
+    return groupMethods[groupNumber] ? groupMethods[groupNumber]() : [];
+  }
+
+  /**
+   * Get test cases by full IDs
+   */
+  getTestCasesByIds (ids) {
+    const allTestCases = this.getAllTestCasesFlat();
+    return ids.map(id =>
+      allTestCases.find(tc => tc.fullId === id)
+    ).filter(Boolean);
+  }
+
+  /**
+   * Get test cases by tool names
+   */
+  getTestCasesByToolNames (toolNames) {
+    const allTestCases = this.getAllTestCasesFlat();
+    return toolNames.map(toolName =>
+      allTestCases.find(tc => tc.toolName === toolName)
+    ).filter(Boolean);
+  }
+
+  /**
+   * Parse filter string and return matching test cases
+   */
+  parseFilterAndGetTestCases (filterString) {
+    if (!filterString) {
+      return this.getAllTestCasesFlat();
+    }
+
+    const allTestCases = this.getAllTestCasesFlat();
+    const filters = filterString.split(',').map(f => f.trim());
+    const selectedTestCases = [];
+
+    filters.forEach(filter => {
+      if (filter.includes('-')) {
+        // Range like "1-3" or "8-1,8-2,8-3"
+        if (filter.match(/^\d+-\d+$/)) {
+          // Group range like "1-3" means group 1, tests 1 to 3
+          const [groupStr, rangeStr] = filter.split('-');
+          const groupNum = parseInt(groupStr);
+          const maxTest = parseInt(rangeStr);
+
+          for (let testNum = 1; testNum <= maxTest; testNum++) {
+            const testCase = allTestCases.find(tc => tc.groupNumber === groupNum && tc.testNumber === testNum);
+            if (testCase) selectedTestCases.push(testCase);
+          }
+        } else {
+          // Specific test like "8-1"
+          const testCase = allTestCases.find(tc => tc.fullId === filter);
+          if (testCase) selectedTestCases.push(testCase);
+        }
+      } else if (filter.match(/^\d+$/)) {
+        // Single group number like "8"
+        const groupNum = parseInt(filter);
+        selectedTestCases.push(...this.getTestCasesByGroup(groupNum));
+      } else {
+        // Tool name
+        const testCase = allTestCases.find(tc => tc.toolName === filter);
+        if (testCase) selectedTestCases.push(testCase);
+      }
+    });
+
+    return selectedTestCases.length > 0 ? selectedTestCases : allTestCases;
+  }
+}
+
+export default JiraMcpTestCases;

@@ -43,7 +43,6 @@ Thumbs.db
 
 # Files formed by Realtime
 /_files/
-/_logs/
 /_cache/
 
 # DEV directories
@@ -77,3 +76,4 @@ local-*.*
 # API response logs for testing
 _api_responses/
 /tests/http/simple.http
+_logs/
