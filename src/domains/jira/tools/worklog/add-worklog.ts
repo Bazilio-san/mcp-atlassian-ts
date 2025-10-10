@@ -3,14 +3,14 @@
  * Adds a worklog entry to a JIRA issue
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for adding JIRA worklog entry
  */
-export const addWorklogTool: Tool = {
+export const jira_add_worklog: ToolWithHandler = {
   name: 'jira_add_worklog',
   description: 'Add a worklog entry to a JIRA issue',
   inputSchema: {
@@ -56,12 +56,13 @@ export const addWorklogTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: addWorklogHandler,
 };
 
 /**
  * Handler function for adding JIRA worklog entry
  */
-export async function addWorklogHandler(args: any, context: ToolContext): Promise<any> {
+async function addWorklogHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, timeSpent, comment, started, visibility } = args;
     const { httpClient, config, logger, invalidateIssueCache } = context;

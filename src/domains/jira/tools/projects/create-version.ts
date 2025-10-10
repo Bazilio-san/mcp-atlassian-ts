@@ -3,14 +3,14 @@
  * Creates a new version in a JIRA project
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for jira_create_version
  */
-export const createVersionTool: Tool = {
+export const jira_create_version: ToolWithHandler = {
   name: 'jira_create_version',
   description: `Create a new version in a JIRA project`,
   inputSchema: {
@@ -59,12 +59,13 @@ export const createVersionTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: createVersionHandler,
 };
 
 /**
  * Handler function for jira_create_version
  */
-export async function createVersionHandler(args: any, context: ToolContext): Promise<any> {
+async function createVersionHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const versionData = args;

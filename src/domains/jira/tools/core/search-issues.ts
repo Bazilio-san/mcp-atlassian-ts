@@ -3,7 +3,7 @@
  * Searches for JIRA issues using JQL (JIRA Query Language)
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for searching JIRA issues
  */
-export const searchIssuesTool: Tool = {
+export const jira_search_issues: ToolWithHandler = {
   name: 'jira_search_issues',
   description: `Search for JIRA issues using JQL (JIRA Query Language)`,
   inputSchema: {
@@ -53,12 +53,13 @@ export const searchIssuesTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: searchIssuesHandler,
 };
 
 /**
  * Handler function for searching JIRA issues
  */
-export async function searchIssuesHandler(args: any, context: ToolContext): Promise<any> {
+async function searchIssuesHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
     const { httpClient, cache, config, logger, normalizeToArray } = context;

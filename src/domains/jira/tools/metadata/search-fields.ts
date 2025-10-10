@@ -3,7 +3,7 @@
  * Searches for JIRA fields (including custom fields)
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for searching JIRA fields
  */
-export const searchFieldsTool: Tool = {
+export const jira_search_fields: ToolWithHandler = {
   name: 'jira_search_fields',
   description: 'Search for JIRA fields (including custom fields)',
   inputSchema: {
@@ -31,12 +31,13 @@ export const searchFieldsTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: searchFieldsHandler,
 };
 
 /**
  * Handler function for searching JIRA fields
  */
-export async function searchFieldsHandler(args: any, context: ToolContext): Promise<any> {
+async function searchFieldsHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { query } = args;
     const { httpClient, cache, logger } = context;

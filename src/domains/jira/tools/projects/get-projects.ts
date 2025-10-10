@@ -3,7 +3,7 @@
  * Retrieves all accessible JIRA projects for the authenticated user
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for jira_get_projects
  */
-export const getProjectsTool: Tool = {
+export const jira_get_projects: ToolWithHandler = {
   name: 'jira_get_projects',
   description: `Get all accessible JIRA projects for the authenticated user`,
   inputSchema: {
@@ -39,12 +39,13 @@ export const getProjectsTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getProjectsHandler,
 };
 
 /**
  * Handler function for jira_get_projects
  */
-export async function getProjectsHandler(args: any, context: ToolContext): Promise<any> {
+async function getProjectsHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, normalizeToArray } = context;
     const { expand, recent } = args;

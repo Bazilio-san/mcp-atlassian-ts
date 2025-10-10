@@ -3,7 +3,7 @@
  * Retrieves detailed information about a JIRA issue by key or ID
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for getting a JIRA issue
  */
-export const getIssueTool: Tool = {
+export const jira_get_issue: ToolWithHandler = {
   name: 'jira_get_issue',
   description: `Get detailed information about a JIRA issue by key or ID`,
   inputSchema: {
@@ -48,12 +48,13 @@ An example issue key is ISSUE-1.`,
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getIssueHandler,
 };
 
 /**
  * Handler function for getting a JIRA issue
  */
-export async function getIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function getIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, expand = [], fields } = args;
     const { httpClient, cache, config, logger, normalizeToArray, formatDescription } = context;

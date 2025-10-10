@@ -3,7 +3,7 @@
  * Retrieves all issues from a specific sprint
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for getting sprint issues
  */
-export const getSprintIssuesTool: Tool = {
+export const jira_get_sprint_issues: ToolWithHandler = {
   name: 'jira_get_sprint_issues',
   description: `Get all issues from a specific sprint. Supports filtering and field selection.`,
   inputSchema: {
@@ -63,12 +63,13 @@ export const getSprintIssuesTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getSprintIssuesHandler,
 };
 
 /**
  * Handler function for getting sprint issues
  */
-export async function getSprintIssuesHandler(args: any, context: ToolContext): Promise<any> {
+async function getSprintIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, normalizeToArray, config } = context;
     const { sprintId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;

@@ -3,14 +3,14 @@
  * Adds a comment to a JIRA issue with optional visibility restrictions
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for adding a comment to a JIRA issue
  */
-export const addCommentTool: Tool = {
+export const jira_add_comment: ToolWithHandler = {
   name: 'jira_add_comment',
   description: `Add a comment to a JIRA issue`,
   inputSchema: {
@@ -49,12 +49,13 @@ export const addCommentTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: addCommentHandler,
 };
 
 /**
  * Handler function for adding a comment to a JIRA issue
  */
-export async function addCommentHandler(args: any, context: ToolContext): Promise<any> {
+async function addCommentHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, body, visibility } = args;
     const { httpClient, config, logger } = context;

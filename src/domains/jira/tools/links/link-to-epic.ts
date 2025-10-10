@@ -3,14 +3,14 @@
  * Links a JIRA issue to an epic
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for linking a JIRA issue to an epic
  */
-export const linkToEpicTool: Tool = {
+export const jira_link_to_epic: ToolWithHandler = {
   name: 'jira_link_to_epic',
   description: `Link a JIRA issue to an epic`,
   inputSchema: {
@@ -35,12 +35,13 @@ export const linkToEpicTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: linkToEpicHandler,
 };
 
 /**
  * Handler function for linking a JIRA issue to an epic
  */
-export async function linkToEpicHandler(args: any, context: ToolContext): Promise<any> {
+async function linkToEpicHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, epicKey } = args;
     const { httpClient, config, logger, invalidateIssueCache } = context;

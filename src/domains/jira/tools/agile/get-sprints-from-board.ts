@@ -3,7 +3,7 @@
  * Retrieves all sprints from a specific agile board
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for getting sprints from board
  */
-export const getSprintsFromBoardTool: Tool = {
+export const jira_get_sprints_from_board: ToolWithHandler = {
   name: 'jira_get_sprints_from_board',
   description: `Get all sprints from a specific agile board. Returns sprints with their status and dates.`,
   inputSchema: {
@@ -46,12 +46,13 @@ export const getSprintsFromBoardTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getSprintsFromBoardHandler,
 };
 
 /**
  * Handler function for getting sprints from board
  */
-export async function getSprintsFromBoardHandler(args: any, context: ToolContext): Promise<any> {
+async function getSprintsFromBoardHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const { boardId, startAt = 0, maxResults = 50, state } = args;

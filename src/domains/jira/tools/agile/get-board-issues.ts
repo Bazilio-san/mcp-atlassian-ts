@@ -3,7 +3,7 @@
  * Retrieves all issues from a specific agile board
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for getting board issues
  */
-export const getBoardIssuesTool: Tool = {
+export const jira_get_board_issues: ToolWithHandler = {
   name: 'jira_get_board_issues',
   description: `Get all issues from a specific agile board. Supports filtering and field selection.`,
   inputSchema: {
@@ -63,12 +63,13 @@ export const getBoardIssuesTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getBoardIssuesHandler,
 };
 
 /**
  * Handler function for getting board issues
  */
-export async function getBoardIssuesHandler(args: any, context: ToolContext): Promise<any> {
+async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, normalizeToArray, config } = context;
     const { boardId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;
@@ -120,7 +121,7 @@ export async function getBoardIssuesHandler(args: any, context: ToolContext): Pr
         `Type: ${issue.fields.issuetype.name}${
           issue.fields.priority ? ` | Priority: ${issue.fields.priority.name}` : ''
         }\n` +
-        `  Link: ${config.url}/browse/${issue.key}`
+        `  Link: ${config.url}/browse/${issue.key}`,
       )
       .join('\n\n');
 

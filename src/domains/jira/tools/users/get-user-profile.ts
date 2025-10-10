@@ -3,7 +3,7 @@
  * Retrieves detailed user profile information by account ID or email
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for getting a JIRA user profile
  */
-export const getUserProfileTool: Tool = {
+export const jira_get_user_profile: ToolWithHandler = {
   name: 'jira_get_user_profile',
   description: 'Get detailed user profile information by account ID or email',
   inputSchema: {
@@ -32,12 +32,13 @@ export const getUserProfileTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getUserProfileHandler,
 };
 
 /**
  * Handler function for getting a JIRA user profile
  */
-export async function getUserProfileHandler(args: any, context: ToolContext): Promise<any> {
+async function getUserProfileHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { userIdOrEmail } = args;
     const { httpClient, cache, logger } = context;

@@ -3,14 +3,14 @@
  * Permanently deletes a JIRA issue and optionally its subtasks
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for deleting a JIRA issue
  */
-export const deleteIssueTool: Tool = {
+export const jira_delete_issue: ToolWithHandler = {
   name: 'jira_delete_issue',
   description: `Delete a JIRA issue permanently`,
   inputSchema: {
@@ -36,12 +36,13 @@ export const deleteIssueTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: deleteIssueHandler,
 };
 
 /**
  * Handler function for deleting a JIRA issue
  */
-export async function deleteIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function deleteIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, deleteSubtasks = false } = args;
     const { httpClient, logger, invalidateIssueCache } = context;

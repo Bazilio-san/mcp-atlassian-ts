@@ -3,14 +3,14 @@
  * Updates an existing sprint with new information
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for updating a sprint
  */
-export const updateSprintTool: Tool = {
+export const jira_update_sprint: ToolWithHandler = {
   name: 'jira_update_sprint',
   description: `Update an existing sprint. Can modify name, goal, dates, and state.`,
   inputSchema: {
@@ -55,12 +55,13 @@ export const updateSprintTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: updateSprintHandler,
 };
 
 /**
  * Handler function for updating a sprint
  */
-export async function updateSprintHandler(args: any, context: ToolContext): Promise<any> {
+async function updateSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
     const { sprintId, name, goal, state, startDate, endDate, completeDate } = args;
@@ -96,7 +97,7 @@ export async function updateSprintHandler(args: any, context: ToolContext): Prom
         key.includes('jira:boardSprints') ||
         key.includes('jira:sprintIssues') ||
         key.includes('jira:agileBoards') ||
-        key.includes(`sprintId:${sprintId}`)
+        key.includes(`sprintId:${sprintId}`),
       )
       .forEach(key => cache.del(key));
 

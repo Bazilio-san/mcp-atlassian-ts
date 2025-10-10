@@ -3,14 +3,14 @@
  * Transitions a JIRA issue to a new status with optional fields and comment
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for transitioning a JIRA issue to a new status
  */
-export const transitionIssueTool: Tool = {
+export const jira_transition_issue: ToolWithHandler = {
   name: 'jira_transition_issue',
   description: `Transition a JIRA issue to a new status`,
   inputSchema: {
@@ -44,12 +44,13 @@ export const transitionIssueTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: transitionIssueHandler,
 };
 
 /**
  * Handler function for transitioning a JIRA issue to a new status
  */
-export async function transitionIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function transitionIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, transitionId, comment, fields = {} } = args;
     const { httpClient, config, logger } = context;

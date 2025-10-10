@@ -3,14 +3,14 @@
  * Creates a new JIRA issue with specified fields
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for creating a JIRA issue
  */
-export const createIssueTool: Tool = {
+export const jira_create_issue: ToolWithHandler = {
   name: 'jira_create_issue',
   description: `Create a new JIRA issue`,
   inputSchema: {
@@ -68,12 +68,13 @@ export const createIssueTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: createIssueHandler,
 };
 
 /**
  * Handler function for creating a JIRA issue
  */
-export async function createIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function createIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const {
       project,

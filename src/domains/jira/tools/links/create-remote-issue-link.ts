@@ -3,14 +3,14 @@
  * Creates a remote link from a JIRA issue to external URL
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for creating a JIRA remote issue link
  */
-export const createRemoteIssueLinkTool: Tool = {
+export const jira_create_remote_issue_link: ToolWithHandler = {
   name: 'jira_create_remote_issue_link',
   description: `Create a remote link from a JIRA issue to external URL`,
   inputSchema: {
@@ -47,12 +47,13 @@ export const createRemoteIssueLinkTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: createRemoteIssueLinkHandler,
 };
 
 /**
  * Handler function for creating a JIRA remote issue link
  */
-export async function createRemoteIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
+async function createRemoteIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, url, title, summary, iconUrl } = args;
     const { httpClient, config, logger, invalidateIssueCache } = context;

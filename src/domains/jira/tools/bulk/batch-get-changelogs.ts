@@ -3,7 +3,7 @@
  * Retrieves changelogs for multiple issues (Cloud only)
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for batch getting JIRA changelogs
  */
-export const batchGetChangelogsTool: Tool = {
+export const jira_batch_get_changelogs: ToolWithHandler = {
   name: 'jira_batch_get_changelogs',
   description: 'Get changelogs for multiple issues (Cloud only)',
   inputSchema: {
@@ -33,12 +33,13 @@ export const batchGetChangelogsTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: batchGetChangelogsHandler,
 };
 
 /**
  * Handler function for batch getting JIRA changelogs
  */
-export async function batchGetChangelogsHandler(args: any, context: ToolContext): Promise<any> {
+async function batchGetChangelogsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueKeys } = args;
     const { httpClient, cache, logger, normalizeToArray } = context;

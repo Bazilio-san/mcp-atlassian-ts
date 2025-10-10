@@ -11,64 +11,65 @@ import { ToolExecutionError } from '../../core/errors/index.js';
 import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from './shared/tool-context.js';
+import type { ToolWithHandler } from './types/tool-with-handler.js';
 
 // Import tool modules - Core tools
-import { getIssueTool, getIssueHandler } from './tools/core/get-issue.js';
-import { searchIssuesTool, searchIssuesHandler } from './tools/core/search-issues.js';
-import { createIssueTool, createIssueHandler } from './tools/core/create-issue.js';
-import { updateIssueTool, updateIssueHandler } from './tools/core/update-issue.js';
-import { deleteIssueTool, deleteIssueHandler } from './tools/core/delete-issue.js';
-import { batchCreateIssuesTool, batchCreateIssuesHandler } from './tools/core/batch-create-issues.js';
+import { jira_get_issue } from './tools/core/get-issue.js';
+import { jira_search_issues } from './tools/core/search-issues.js';
+import { jira_create_issue } from './tools/core/create-issue.js';
+import { jira_update_issue } from './tools/core/update-issue.js';
+import { jira_delete_issue } from './tools/core/delete-issue.js';
+import { jira_batch_create_issues } from './tools/core/batch-create-issues.js';
 
 // Import comment and transition tools
-import { addCommentTool, addCommentHandler } from './tools/comments/add-comment.js';
-import { getTransitionsTool, getTransitionsHandler } from './tools/comments/get-transitions.js';
-import { transitionIssueTool, transitionIssueHandler } from './tools/comments/transition-issue.js';
+import { jira_add_comment } from './tools/comments/add-comment.js';
+import { jira_get_transitions } from './tools/comments/get-transitions.js';
+import { jira_transition_issue } from './tools/comments/transition-issue.js';
 
 // Import project tools
-import { getProjectsTool, getProjectsHandler } from './tools/projects/get-projects.js';
-import { getProjectVersionsTool, getProjectVersionsHandler } from './tools/projects/get-project-versions.js';
-import { createVersionTool, createVersionHandler } from './tools/projects/create-version.js';
-import { batchCreateVersionsTool, batchCreateVersionsHandler } from './tools/projects/batch-create-versions.js';
+import { jira_get_projects } from './tools/projects/get-projects.js';
+import { jira_get_project_versions } from './tools/projects/get-project-versions.js';
+import { jira_create_version } from './tools/projects/create-version.js';
+import { jira_batch_create_versions } from './tools/projects/batch-create-versions.js';
 
 // Import user tools
-import { getUserProfileTool, getUserProfileHandler } from './tools/users/get-user-profile.js';
+import { jira_get_user_profile } from './tools/users/get-user-profile.js';
 
 // Import link tools
-import { getLinkTypesTool, getLinkTypesHandler } from './tools/links/get-link-types.js';
-import { createIssueLinkTool, createIssueLinkHandler } from './tools/links/create-issue-link.js';
-import { createRemoteIssueLinkTool, createRemoteIssueLinkHandler } from './tools/links/create-remote-issue-link.js';
-import { removeIssueLinkTool, removeIssueLinkHandler } from './tools/links/remove-issue-link.js';
-import { linkToEpicTool, linkToEpicHandler } from './tools/links/link-to-epic.js';
+import { jira_get_link_types } from './tools/links/get-link-types.js';
+import { jira_create_issue_link } from './tools/links/create-issue-link.js';
+import { jira_create_remote_issue_link } from './tools/links/create-remote-issue-link.js';
+import { jira_remove_issue_link } from './tools/links/remove-issue-link.js';
+import { jira_link_to_epic } from './tools/links/link-to-epic.js';
 
 // Import worklog tools
-import { getWorklogTool, getWorklogHandler } from './tools/worklog/get-worklog.js';
-import { addWorklogTool, addWorklogHandler } from './tools/worklog/add-worklog.js';
+import { jira_get_worklog } from './tools/worklog/get-worklog.js';
+import { jira_add_worklog } from './tools/worklog/add-worklog.js';
 
 // Import attachment tools
-import { downloadAttachmentsTool, downloadAttachmentsHandler } from './tools/attachments/download-attachments.js';
+import { jira_download_attachments } from './tools/attachments/download-attachments.js';
 
 // Import agile tools
-import { getAgileBoardsTool, getAgileBoardsHandler } from './tools/agile/get-agile-boards.js';
-import { getBoardIssuesTool, getBoardIssuesHandler } from './tools/agile/get-board-issues.js';
-import { getSprintsFromBoardTool, getSprintsFromBoardHandler } from './tools/agile/get-sprints-from-board.js';
-import { getSprintIssuesTool, getSprintIssuesHandler } from './tools/agile/get-sprint-issues.js';
-import { createSprintTool, createSprintHandler } from './tools/agile/create-sprint.js';
-import { updateSprintTool, updateSprintHandler } from './tools/agile/update-sprint.js';
+import { jira_get_agile_boards } from './tools/agile/get-agile-boards.js';
+import { jira_get_board_issues } from './tools/agile/get-board-issues.js';
+import { jira_get_sprints_from_board } from './tools/agile/get-sprints-from-board.js';
+import { jira_get_sprint_issues } from './tools/agile/get-sprint-issues.js';
+import { jira_create_sprint } from './tools/agile/create-sprint.js';
+import { jira_update_sprint } from './tools/agile/update-sprint.js';
 
 // Import metadata tools
-import { searchFieldsTool, searchFieldsHandler } from './tools/metadata/search-fields.js';
+import { jira_search_fields } from './tools/metadata/search-fields.js';
 
 // Import bulk operation tools
-import { batchGetChangelogsTool, batchGetChangelogsHandler } from './tools/bulk/batch-get-changelogs.js';
+import { jira_batch_get_changelogs } from './tools/bulk/batch-get-changelogs.js';
 
 /**
  * Modular JIRA Tools Manager
  */
 export class JiraToolsManager {
   private context: ToolContext;
-  private toolHandlers: Map<string, (args: any, context: ToolContext) => Promise<any>>;
-  private tools: Tool[];
+  private tools: Map<string, ToolWithHandler>;
+  private toolsArray: Tool[];
 
   constructor(config: JCConfig) {
     // Validate configuration
@@ -97,118 +98,76 @@ export class JiraToolsManager {
       expandStringOrArray: this.expandStringOrArray.bind(this),
     };
 
-    // Register all tool handlers
-    this.toolHandlers = new Map([
+    // Register all tools with their handlers
+    const toolInstances = [
       // Core tools
-      ['jira_get_issue', getIssueHandler],
-      ['jira_search_issues', searchIssuesHandler],
-      ['jira_create_issue', createIssueHandler],
-      ['jira_update_issue', updateIssueHandler],
-      ['jira_delete_issue', deleteIssueHandler],
-      ['jira_batch_create_issues', batchCreateIssuesHandler],
+      jira_get_issue,
+      jira_search_issues,
+      jira_create_issue,
+      jira_update_issue,
+      jira_delete_issue,
+      jira_batch_create_issues,
 
       // Comment and transition tools
-      ['jira_add_comment', addCommentHandler],
-      ['jira_get_transitions', getTransitionsHandler],
-      ['jira_transition_issue', transitionIssueHandler],
+      jira_add_comment,
+      jira_get_transitions,
+      jira_transition_issue,
 
       // Project tools
-      ['jira_get_projects', getProjectsHandler],
-      ['jira_get_project_versions', getProjectVersionsHandler],
-      ['jira_create_version', createVersionHandler],
-      ['jira_batch_create_versions', batchCreateVersionsHandler],
+      jira_get_projects,
+      jira_get_project_versions,
+      jira_create_version,
+      jira_batch_create_versions,
 
       // User tools
-      ['jira_get_user_profile', getUserProfileHandler],
+      jira_get_user_profile,
 
       // Link tools
-      ['jira_get_link_types', getLinkTypesHandler],
-      ['jira_create_issue_link', createIssueLinkHandler],
-      ['jira_create_remote_issue_link', createRemoteIssueLinkHandler],
-      ['jira_remove_issue_link', removeIssueLinkHandler],
-      ['jira_link_to_epic', linkToEpicHandler],
+      jira_get_link_types,
+      jira_create_issue_link,
+      jira_create_remote_issue_link,
+      jira_remove_issue_link,
+      jira_link_to_epic,
 
       // Worklog tools
-      ['jira_get_worklog', getWorklogHandler],
-      ['jira_add_worklog', addWorklogHandler],
+      jira_get_worklog,
+      jira_add_worklog,
 
       // Attachment tools
-      ['jira_download_attachments', downloadAttachmentsHandler],
+      jira_download_attachments,
 
       // Agile tools
-      ['jira_get_agile_boards', getAgileBoardsHandler],
-      ['jira_get_board_issues', getBoardIssuesHandler],
-      ['jira_get_sprints_from_board', getSprintsFromBoardHandler],
-      ['jira_get_sprint_issues', getSprintIssuesHandler],
-      ['jira_create_sprint', createSprintHandler],
-      ['jira_update_sprint', updateSprintHandler],
+      jira_get_agile_boards,
+      jira_get_board_issues,
+      jira_get_sprints_from_board,
+      jira_get_sprint_issues,
+      jira_create_sprint,
+      jira_update_sprint,
 
       // Metadata tools
-      ['jira_search_fields', searchFieldsHandler],
+      jira_search_fields,
 
       // Bulk operation tools
-      ['jira_batch_get_changelogs', batchGetChangelogsHandler],
-    ]);
-
-    // Register all tools
-    this.tools = [
-      // Core tools
-      getIssueTool,
-      searchIssuesTool,
-      createIssueTool,
-      updateIssueTool,
-      deleteIssueTool,
-      batchCreateIssuesTool,
-
-      // Comment and transition tools
-      addCommentTool,
-      getTransitionsTool,
-      transitionIssueTool,
-
-      // Project tools
-      getProjectsTool,
-      getProjectVersionsTool,
-      createVersionTool,
-      batchCreateVersionsTool,
-
-      // User tools
-      getUserProfileTool,
-
-      // Link tools
-      getLinkTypesTool,
-      createIssueLinkTool,
-      createRemoteIssueLinkTool,
-      removeIssueLinkTool,
-      linkToEpicTool,
-
-      // Worklog tools
-      getWorklogTool,
-      addWorklogTool,
-
-      // Attachment tools
-      downloadAttachmentsTool,
-
-      // Agile tools
-      getAgileBoardsTool,
-      getBoardIssuesTool,
-      getSprintsFromBoardTool,
-      getSprintIssuesTool,
-      createSprintTool,
-      updateSprintTool,
-
-      // Metadata tools
-      searchFieldsTool,
-
-      // Bulk operation tools
-      batchGetChangelogsTool,
+      jira_batch_get_changelogs,
     ];
+
+    // Create maps for fast lookup
+    this.tools = new Map();
+    this.toolsArray = [];
+
+    for (const tool of toolInstances) {
+      this.tools.set(tool.name, tool);
+      // Create Tool without handler for the array
+      const { handler, ...toolWithoutHandler } = tool;
+      this.toolsArray.push(toolWithoutHandler as Tool);
+    }
   }
 
   /**
    * Get all available JIRA tools
    */
   getAvailableTools(): Tool[] {
-    return this.tools;
+    return this.toolsArray;
   }
 
   /**
@@ -219,8 +178,8 @@ export class JiraToolsManager {
     args: Record<string, any>,
     customHeaders?: Record<string, string>
   ): Promise<any> {
-    const handler = this.toolHandlers.get(toolName);
-    if (!handler) {
+    const tool = this.tools.get(toolName);
+    if (!tool || !tool.handler) {
       throw new ToolExecutionError(toolName, `Unknown JIRA tool: ${toolName}`);
     }
 
@@ -250,7 +209,7 @@ export class JiraToolsManager {
     }
 
     // Execute the handler
-    return handler(args, contextToUse);
+    return tool.handler(args, contextToUse);
   }
 
   /**

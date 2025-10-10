@@ -3,7 +3,7 @@
  * Retrieves metadata and download links for JIRA issue attachments
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for downloading JIRA attachments
  */
-export const downloadAttachmentsTool: Tool = {
+export const jira_download_attachments: ToolWithHandler = {
   name: 'jira_download_attachments',
   description: 'Get metadata and download links for JIRA issue attachments',
   inputSchema: {
@@ -32,12 +32,13 @@ export const downloadAttachmentsTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: downloadAttachmentsHandler,
 };
 
 /**
  * Handler function for downloading JIRA attachments
  */
-export async function downloadAttachmentsHandler(args: any, context: ToolContext): Promise<any> {
+async function downloadAttachmentsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
     const { httpClient, cache, logger } = context;

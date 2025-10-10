@@ -3,14 +3,14 @@
  * Creates a link between two JIRA issues
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for creating a JIRA issue link
  */
-export const createIssueLinkTool: Tool = {
+export const jira_create_issue_link: ToolWithHandler = {
   name: 'jira_create_issue_link',
   description: `Create a link between two JIRA issues`,
   inputSchema: {
@@ -43,12 +43,13 @@ export const createIssueLinkTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: createIssueLinkHandler,
 };
 
 /**
  * Handler function for creating a JIRA issue link
  */
-export async function createIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
+async function createIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
     const { httpClient, cache, logger, invalidateIssueCache } = context;

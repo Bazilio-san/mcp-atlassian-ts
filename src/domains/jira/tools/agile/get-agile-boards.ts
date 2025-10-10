@@ -3,7 +3,7 @@
  * Retrieves all agile boards in the JIRA instance
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
@@ -11,7 +11,7 @@ import { generateCacheKey } from '../../../../core/cache/index.js';
 /**
  * Tool definition for getting agile boards
  */
-export const getAgileBoardsTool: Tool = {
+export const jira_get_agile_boards: ToolWithHandler = {
   name: 'jira_get_agile_boards',
   description: `Get all agile boards available in JIRA. Returns a list of Scrum and Kanban boards with their details.`,
   inputSchema: {
@@ -50,12 +50,13 @@ export const getAgileBoardsTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: getAgileBoardsHandler,
 };
 
 /**
  * Handler function for getting agile boards
  */
-export async function getAgileBoardsHandler(args: any, context: ToolContext): Promise<any> {
+async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const { startAt = 0, maxResults = 50, type, name, projectKeyOrId } = args;
@@ -93,7 +94,7 @@ export async function getAgileBoardsHandler(args: any, context: ToolContext): Pr
       .map((board: any) =>
         `• **${board.name}** (ID: ${board.id}) - ${board.type}${
           board.location?.projectName ? ` | Project: ${board.location.projectName}` : ''
-        }`
+        }`,
       )
       .join('\n');
 

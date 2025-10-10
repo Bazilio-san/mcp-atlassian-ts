@@ -3,14 +3,14 @@
  * Updates an existing JIRA issue with new field values
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for updating a JIRA issue
  */
-export const updateIssueTool: Tool = {
+export const jira_update_issue: ToolWithHandler = {
   name: 'jira_update_issue',
   description: `Update an existing JIRA issue`,
   inputSchema: {
@@ -58,12 +58,13 @@ export const updateIssueTool: Tool = {
     idempotentHint: true,
     openWorldHint: false,
   },
+  handler: updateIssueHandler,
 };
 
 /**
  * Handler function for updating a JIRA issue
  */
-export async function updateIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function updateIssueHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const {
       issueIdOrKey,

@@ -3,14 +3,14 @@
  * Creates multiple JIRA issues in a single request for improved efficiency
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for batch creating JIRA issues
  */
-export const batchCreateIssuesTool: Tool = {
+export const jira_batch_create_issues: ToolWithHandler = {
   name: 'jira_batch_create_issues',
   description: `Create multiple JIRA issues in a single request`,
   inputSchema: {
@@ -80,12 +80,13 @@ export const batchCreateIssuesTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: batchCreateIssuesHandler,
 };
 
 /**
  * Handler function for batch creating JIRA issues
  */
-export async function batchCreateIssuesHandler(args: any, context: ToolContext): Promise<any> {
+async function batchCreateIssuesHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issues } = args;
     const { httpClient, logger } = context;

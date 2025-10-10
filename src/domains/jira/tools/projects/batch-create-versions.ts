@@ -3,14 +3,14 @@
  * Creates multiple versions in JIRA projects in batch
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for jira_batch_create_versions
  */
-export const batchCreateVersionsTool: Tool = {
+export const jira_batch_create_versions: ToolWithHandler = {
   name: 'jira_batch_create_versions',
   description: `Create multiple versions in JIRA projects in batch`,
   inputSchema: {
@@ -71,12 +71,13 @@ export const batchCreateVersionsTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: batchCreateVersionsHandler,
 };
 
 /**
  * Handler function for jira_batch_create_versions
  */
-export async function batchCreateVersionsHandler(args: any, context: ToolContext): Promise<any> {
+async function batchCreateVersionsHandler(args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const { versions } = args;

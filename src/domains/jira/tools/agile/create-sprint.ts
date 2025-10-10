@@ -3,14 +3,14 @@
  * Creates a new sprint in an agile board
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 
 /**
  * Tool definition for creating a sprint
  */
-export const createSprintTool: Tool = {
+export const jira_create_sprint: ToolWithHandler = {
   name: 'jira_create_sprint',
   description: `Create a new sprint in an agile board. The sprint will be created in the future state.`,
   inputSchema: {
@@ -47,12 +47,13 @@ export const createSprintTool: Tool = {
     idempotentHint: false,
     openWorldHint: false,
   },
+  handler: createSprintHandler,
 };
 
 /**
  * Handler function for creating a sprint
  */
-export async function createSprintHandler(args: any, context: ToolContext): Promise<any> {
+async function createSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
     const { name, originBoardId, goal, startDate, endDate } = args;
@@ -83,7 +84,7 @@ export async function createSprintHandler(args: any, context: ToolContext): Prom
       .filter(key =>
         key.includes('jira:boardSprints') ||
         key.includes('jira:agileBoards') ||
-        key.includes(`boardId:${originBoardId}`)
+        key.includes(`boardId:${originBoardId}`),
       )
       .forEach(key => cache.del(key));
 
