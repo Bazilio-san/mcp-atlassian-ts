@@ -269,7 +269,6 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/latest/user/assignable/search?issueKey=AITECH-845&username=Makaro
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-
 ### assignee
 GET {{baseUrl}}/rest/agile/1.0/board/
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}

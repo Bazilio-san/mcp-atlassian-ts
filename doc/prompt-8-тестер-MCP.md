@@ -4,8 +4,3 @@
 Очевидно, фильтрацию лучше сделать на уровне функций tests/mcp/jira-test-cases.js
 Используй функцию парсинга `config.yaml` из dist/src/core/config/tool-config.js
 
-
-
-# Задача:
-- Отладить MCP инструменты JIRA чтобы все работали
-- Отладить тестер MCP JIRA nfr

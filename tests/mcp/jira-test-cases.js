@@ -131,7 +131,7 @@ export class JiraMcpTestCases {
         fullId: '1-1',
         name: 'Get Issue Details',
         toolName: 'jira_get_issue',
-        params: { issueKey: this.testIssueKey },
+        params: { issueIdOrKey: this.testIssueKey },
         description: 'Get issue details',
       },
       {
@@ -158,7 +158,7 @@ export class JiraMcpTestCases {
         name: 'Update Existing Issue',
         toolName: 'jira_update_issue',
         params: {
-          issueKey: this.testIssueKey,
+          issueIdOrKey: this.testIssueKey,
           summary: 'Updated via MCP HTTP test',
         },
         description: 'Update existing issue',
@@ -168,7 +168,7 @@ export class JiraMcpTestCases {
         name: 'Add Comment to Issue',
         toolName: 'jira_add_comment',
         params: {
-          issueKey: this.testIssueKey,
+          issueIdOrKey: this.testIssueKey,
           body: 'Test comment from MCP HTTP tester',
         },
         description: 'Add comment to issue',
@@ -177,7 +177,7 @@ export class JiraMcpTestCases {
         fullId: '1-6',
         name: 'Get Available Transitions',
         toolName: 'jira_get_transitions',
-        params: { issueKey: this.testIssueKey },
+        params: { issueIdOrKey: this.testIssueKey },
         description: 'Get available transitions',
       },
       {
@@ -185,8 +185,8 @@ export class JiraMcpTestCases {
         name: 'Transition Issue Status',
         toolName: 'jira_transition_issue',
         params: {
-          issueKey: this.testIssueKey,
-          transitionId: '11',
+          issueIdOrKey: this.testIssueKey,
+          transitionId: '831',
           comment: 'Transitioned via MCP test',
         },
         description: 'Transition issue status',
@@ -195,7 +195,7 @@ export class JiraMcpTestCases {
         fullId: '1-8',
         name: 'Delete Issue',
         toolName: 'jira_delete_issue',
-        params: { issueKey: 'TEST-DELETE', deleteSubtasks: false },
+        params: { issueIdOrKey: 'TEST-DELETE', deleteSubtasks: false },
         description: 'Delete issue (will fail if not exists)',
       },
       {
@@ -348,7 +348,7 @@ export class JiraMcpTestCases {
         name: 'Create Issue Link',
         toolName: 'jira_create_issue_link',
         params: {
-          linkType: 'Relates',
+          linkType: 'Relationship',
           inwardIssue: this.testIssueKey,
           outwardIssue: this.secondTestIssueKey,
         },
@@ -359,7 +359,7 @@ export class JiraMcpTestCases {
         name: 'Create Remote Issue Link',
         toolName: 'jira_create_remote_issue_link',
         params: {
-          issueKey: this.testIssueKey,
+          issueIdOrKey: this.testIssueKey,
           url: 'https://example.com/external-issue',
           title: 'External Issue Link',
         },
@@ -377,7 +377,7 @@ export class JiraMcpTestCases {
         name: 'Link Issue to Epic',
         toolName: 'jira_link_to_epic',
         params: {
-          issueKey: this.testIssueKey,
+          issueIdOrKey: this.testIssueKey,
           epicKey: this.secondTestIssueKey,
         },
         description: 'Link issue to epic',
@@ -396,7 +396,7 @@ export class JiraMcpTestCases {
         fullId: '6-1',
         name: 'Get Issue Worklogs',
         toolName: 'jira_get_worklog',
-        params: { issueKey: this.testIssueKey, maxResults: 10 },
+        params: { issueIdOrKey: this.testIssueKey, maxResults: 10 },
         description: 'Get issue worklogs',
       },
       {
@@ -404,7 +404,7 @@ export class JiraMcpTestCases {
         name: 'Add Worklog Entry',
         toolName: 'jira_add_worklog',
         params: {
-          issueKey: this.testIssueKey,
+          issueIdOrKey: this.testIssueKey,
           timeSpent: '1h',
           comment: 'Work logged via MCP test',
         },
@@ -424,7 +424,7 @@ export class JiraMcpTestCases {
         fullId: '7-1',
         name: 'Get Issue Attachments',
         toolName: 'jira_download_attachments',
-        params: { issueKey: this.testIssueKey },
+        params: { issueIdOrKey: this.testIssueKey },
         description: 'Get issue attachments',
       },
     ]);

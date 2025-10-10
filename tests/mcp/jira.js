@@ -19,6 +19,7 @@ import JiraMcpTestCases from './jira-test-cases.js';
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3000';
 const JIRA_EMULATOR_URL = process.env.JIRA_URL || 'http://localhost:8080';
 const RESULTS_DIR = path.join(process.cwd(), 'tests/mcp/_logs/jira');
+const TEST_USE_EMOJI = process.env.TEST_USE_EMOJI === true;
 
 if (!fss.existsSync(RESULTS_DIR)) {
   fss.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -346,7 +347,8 @@ class JiraMcpHttpTester {
    * Log test result to individual file
    */
   async logResultToFile (result) {
-    const filename = `${result.fullId}_${result.marker}_${result.toolName}.md`;
+    const m = TEST_USE_EMOJI ? `_${result.marker}` : '';
+    const filename = `${result.fullId}_${result.toolName}.md`;
     const filepath = path.join(RESULTS_DIR, filename);
 
     const content = this.formatResultAsMarkdown(result);
