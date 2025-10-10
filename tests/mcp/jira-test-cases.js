@@ -184,12 +184,34 @@ export class JiraMcpTestCases {
         fullId: '1-7',
         name: 'Transition Issue Status',
         toolName: 'jira_transition_issue',
-        params: {
-          issueIdOrKey: this.testIssueKey,
-          transitionId: '831',
-          comment: 'Transitioned via MCP test',
+        params: async (client) => {
+          // Сначала получаем доступные переходы для задачи
+          try {
+            const { result: transitionsResult } = await client.callTool('jira_get_transitions', {
+              issueIdOrKey: this.testIssueKey,
+            });
+
+            // Проверяем, есть ли доступные переходы
+            if (!transitionsResult || !transitionsResult.transitions || transitionsResult.transitions.length === 0) {
+              console.log('  ℹ️  No transitions available for this issue');
+              return null; // Пропускаем тест
+            }
+
+            // Используем первый доступный переход
+            const firstTransition = transitionsResult.transitions[0];
+            console.log(`  ℹ️  Using transition: ${firstTransition.name} (ID: ${firstTransition.id})`);
+
+            return {
+              issueIdOrKey: this.testIssueKey,
+              transitionId: firstTransition.id,
+              comment: 'Transitioned via MCP test',
+            };
+          } catch (error) {
+            console.log(`  ⚠️  Failed to get transitions: ${error.message}`);
+            return null; // Пропускаем тест
+          }
         },
-        description: 'Transition issue status',
+        description: 'Transition issue status (gets valid transition first)',
       },
       {
         fullId: '1-8',

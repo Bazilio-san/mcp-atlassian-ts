@@ -248,11 +248,35 @@ class JiraMcpHttpTester {
     console.log(chalk.dim(`  Description: ${testCase.description}`));
 
     const startTime = Date.now();
+
+    // Create client with default custom headers from .env
+    const testClient = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
+
+    // Resolve parameters if they are a function
+    let resolvedParams = testCase.params;
+    if (typeof testCase.params === 'function') {
+      try {
+        resolvedParams = await testCase.params(testClient);
+        if (resolvedParams === null) {
+          // Test was skipped
+          console.log(chalk.yellow(`  ⏭️  Skipped - unable to resolve parameters`));
+          this.stats.skipped++;
+          this.stats.total++;
+          return;
+        }
+      } catch (error) {
+        console.log(chalk.red(`  ❌  Failed to resolve parameters: ${error.message}`));
+        this.stats.failed++;
+        this.stats.total++;
+        return;
+      }
+    }
+
     const result = {
       fullId: testCase.fullId,
       toolName: testCase.toolName,
       description: testCase.description,
-      parameters: testCase.params,
+      parameters: resolvedParams,
       timestamp: new Date().toISOString(),
       duration: 0,
       status: 'pending',
@@ -262,11 +286,8 @@ class JiraMcpHttpTester {
 
     let requestHeaders = {};
     try {
-      // Create client with default custom headers from .env
-      const testClient = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
-
       // Call the tool
-      const { result: response, requestHeaders: capturedHeaders } = await testClient.callTool(testCase.toolName, testCase.params);
+      const { result: response, requestHeaders: capturedHeaders } = await testClient.callTool(testCase.toolName, resolvedParams);
 
       requestHeaders = capturedHeaders;
       result.duration = Date.now() - startTime;
