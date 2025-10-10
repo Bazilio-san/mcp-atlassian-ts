@@ -106,7 +106,7 @@ export class JiraMcpTestCases {
         toolName: 'jira_create_issue',
         params: {
           project: this.testProjectKey,
-          issueType: 'Task',
+          issueType: TEST_ISSUE_TYPE_NAME,
           summary: 'MCP HTTP Test Issue',
           description: 'Created via MCP HTTP tester',
         },
@@ -165,12 +165,12 @@ export class JiraMcpTestCases {
           issues: [
             {
               project: this.testProjectKey,
-              issueType: 'Task',
+              issueType: TEST_ISSUE_TYPE_NAME,
               summary: 'Batch issue 1',
             },
             {
               project: this.testProjectKey,
-              issueType: 'Task',
+              issueType: TEST_ISSUE_TYPE_NAME,
               summary: 'Batch issue 2',
             },
           ],
@@ -536,25 +536,12 @@ export class JiraMcpTestCases {
 
     filters.forEach(filter => {
       if (filter.includes('-')) {
-        // Range like "1-3" or "8-1,8-2,8-3"
-        if (filter.match(/^\d+-\d+$/)) {
-          // Group range like "1-3" means group 1, tests 1 to 3
-          const [groupStr, rangeStr] = filter.split('-');
-          const groupNum = parseInt(groupStr);
-          const maxTest = parseInt(rangeStr);
-
-          for (let testNum = 1; testNum <= maxTest; testNum++) {
-            const testCase = allTestCases.find(tc => tc.groupNumber === groupNum && tc.testNumber === testNum);
-            if (testCase) selectedTestCases.push(testCase);
-          }
-        } else {
-          // Specific test like "8-1"
-          const testCase = allTestCases.find(tc => tc.fullId === filter);
-          if (testCase) selectedTestCases.push(testCase);
-        }
-      } else if (filter.match(/^\d+$/)) {
-        // Single group number like "8"
-        const groupNum = parseInt(filter);
+        // Specific test ID like "1-3" or "8-1"
+        const testCase = allTestCases.find(tc => tc.fullId === filter);
+        if (testCase) selectedTestCases.push(testCase);
+      } else if (filter.match(/^\d+\*?$/)) {
+        // Single group number like "1" or "1*" - run all tests in group
+        const groupNum = parseInt(filter.replace('*', ''));
         selectedTestCases.push(...this.getTestCasesByGroup(groupNum));
       } else {
         // Tool name

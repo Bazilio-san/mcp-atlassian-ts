@@ -93,7 +93,8 @@ export class ConfluenceClient {
       expand?: string[];
       status?: 'current' | 'trashed' | 'draft';
       version?: number;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<ConfluencePage> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'content', { contentId, ...options });
@@ -106,6 +107,7 @@ export class ConfluenceClient {
 
         const response = await this.makeRequest("GET", `/wiki/rest/api/content/${contentId}`, {
           params,
+          headers,
         });
 
         if (!response.data) {
@@ -126,7 +128,8 @@ export class ConfluenceClient {
     options: {
       expand?: string[];
       status?: 'current' | 'trashed' | 'draft';
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<ConfluencePage[]> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'contentByTitle', {
@@ -145,7 +148,7 @@ export class ConfluenceClient {
         };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.makeRequest("GET", '/wiki/rest/api/content', { params });
+        const response = await this.makeRequest("GET", '/wiki/rest/api/content', { params, headers });
         return response.data.results;
       });
     });
@@ -154,7 +157,7 @@ export class ConfluenceClient {
   /**
    * Search content using CQL
    */
-  async searchContent(searchRequest: ConfluenceSearchRequest): Promise<ConfluenceSearchResponse> {
+  async searchContent(searchRequest: ConfluenceSearchRequest, headers?: Record<string, string>): Promise<ConfluenceSearchResponse> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'search', searchRequest);
 
@@ -174,7 +177,7 @@ export class ConfluenceClient {
             limit: searchRequest.limit || this.config.maxResults || 50,
           };
 
-          const response = await this.makeRequest("GET", '/wiki/rest/api/search', { params: apiParams });
+          const response = await this.makeRequest("GET", '/wiki/rest/api/search', { params: apiParams, headers });
           return response.data;
         },
         60
@@ -185,7 +188,7 @@ export class ConfluenceClient {
   /**
    * Create new content (page/blogpost)
    */
-  async createContent(contentInput: ConfluencePageInput): Promise<ConfluencePage> {
+  async createContent(contentInput: ConfluencePageInput, headers?: Record<string, string>): Promise<ConfluencePage> {
     return withErrorHandling(async () => {
       logger.info('Creating Confluence content', {
         type: contentInput.type,
@@ -204,7 +207,7 @@ export class ConfluenceClient {
         throw new ValidationError('Body content is required for content creation');
       }
 
-      const response = await this.makeRequest("POST", '/wiki/rest/api/content', { data: contentInput });
+      const response = await this.makeRequest("POST", '/wiki/rest/api/content', { data: contentInput, headers });
 
       // Clear cache for space and search results
       this.invalidateContentCache(response.data.id, contentInput.space.key);
@@ -218,7 +221,8 @@ export class ConfluenceClient {
    */
   async updateContent(
     contentId: string,
-    updateData: ConfluencePageUpdateInput
+    updateData: ConfluencePageUpdateInput,
+    headers?: Record<string, string>
   ): Promise<ConfluencePage> {
     return withErrorHandling(async () => {
       logger.info('Updating Confluence content', { contentId });
@@ -228,7 +232,7 @@ export class ConfluenceClient {
         throw new ValidationError('Version number is required for content updates');
       }
 
-      const response = await this.makeRequest("PUT", `/wiki/rest/api/content/${contentId}`, { data: updateData });
+      const response = await this.makeRequest("PUT", `/wiki/rest/api/content/${contentId}`, { data: updateData, headers });
 
       // Clear cache for this content
       this.invalidateContentCache(contentId);
@@ -252,7 +256,8 @@ export class ConfluenceClient {
       expand?: string[];
       offset?: number;
       limit?: number;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<{ results: ConfluenceSpace[]; size: number; offset: number; limit: number }> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'spaces', options);

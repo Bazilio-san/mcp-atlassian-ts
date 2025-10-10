@@ -80,6 +80,8 @@ class McpHttpClient {
       if (data.error) {
         const error = new Error(`MCP Error: ${data.error.message || JSON.stringify(data.error)}`);
         error.requestHeaders = headers;
+        error.data = data.error.data;
+        error.fullMcpResponse = data; // Save full MCP JSON-RPC response
         throw error;
       }
 
@@ -246,6 +248,7 @@ class JiraMcpHttpTester {
 
     const startTime = Date.now();
     const result = {
+      fullId: testCase.fullId,
       toolName: testCase.toolName,
       description: testCase.description,
       parameters: testCase.params,
@@ -272,23 +275,38 @@ class JiraMcpHttpTester {
 
       console.log(chalk.green(`  ✅  Passed (${result.duration}ms)`));
       console.log(chalk.dim(`  Response: ${JSON.stringify(response).substring(0, 100)}...`));
+      result.marker = '✅';
 
       this.stats.passed++;
     } catch (error) {
       result.duration = Date.now() - startTime;
       result.error = error.message;
+      // Save detailed error information for debugging
+      if (error.data && error.data.details) {
+        result.errorDetails = error.data.details;
+      }
+      // Save full MCP response as seen by the agent
+      if (error.fullMcpResponse) {
+        result.fullMcpResponse = error.fullMcpResponse;
+      }
       // Save headers even if request failed - try to get from error first, then fallback to local var
       result.requestHeaders = error.requestHeaders || requestHeaders;
 
       // Some tests are expected to fail (e.g., delete non-existent issue)
       if (this.isExpectedFailure(testCase.toolName, error.message)) {
         result.status = 'expected_failure';
+        result.marker = '⚠';
         console.log(chalk.yellow(`  ⚠ Expected failure (${result.duration}ms)`));
         this.stats.skipped++;
       } else {
         result.status = 'failed';
+        result.marker = '❌';
         console.log(chalk.red(`  ❌  Failed (${result.duration}ms)`));
         console.log(chalk.red(`  Error: ${error.message}`));
+        // Display detailed error information if available
+        if (error.data && error.data.details) {
+          console.log(chalk.red(`  Details: ${JSON.stringify(error.data.details, null, 2)}`));
+        }
         this.stats.failed++;
       }
     }
@@ -328,7 +346,7 @@ class JiraMcpHttpTester {
    * Log test result to individual file
    */
   async logResultToFile (result) {
-    const filename = `JIRA_${result.toolName}.md`;
+    const filename = `${result.fullId}_${result.marker}_${result.toolName}.md`;
     const filepath = path.join(RESULTS_DIR, filename);
 
     const content = this.formatResultAsMarkdown(result);
@@ -356,7 +374,16 @@ class JiraMcpHttpTester {
     if (result.status === 'passed') {
       resultStatus = `✅  PASSED`;
     } else {
-      errorText = `## Error\n\n${mdText(result.error)}\n\n`;
+      // Show full MCP response as seen by the agent, or fallback to separate sections
+      if (result.fullMcpResponse) {
+        errorText = `## MCP Response (as seen by agent)\n\n${mdJson(result.fullMcpResponse)}\n\n`;
+      } else {
+        errorText = `## Error\n\n${mdText(result.error)}\n\n`;
+        // Add detailed error information if available
+        if (result.errorDetails) {
+          errorText += `## Error Details\n\n${mdJson(result.errorDetails)}\n\n`;
+        }
+      }
       if (result.status === 'expected_failure') {
         resultStatus = `⚠️  Expected failure - test validation successful`;
       } else {

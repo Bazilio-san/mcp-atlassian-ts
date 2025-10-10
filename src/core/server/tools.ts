@@ -5,7 +5,7 @@
 import { ConfluenceToolsManager } from '../../domains/confluence/tools.js';
 import { JiraToolsManager } from '../../domains/jira/tools.js';
 import { getCache } from '../cache/index.js';
-import { ToolExecutionError, ValidationError } from '../errors/index.js';
+import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
 import type { JCConfig } from '../../types/index.js';
@@ -213,6 +213,11 @@ export class ToolRegistry {
 
       if (error instanceof ValidationError || error instanceof ToolExecutionError) {
         throw error;
+      }
+
+      // Preserve detailed error information from underlying API errors
+      if (error instanceof McpAtlassianError) {
+        throw new ToolExecutionError(name, error.message, error.details);
       }
 
       throw new ToolExecutionError(name, error instanceof Error ? error.message : String(error));

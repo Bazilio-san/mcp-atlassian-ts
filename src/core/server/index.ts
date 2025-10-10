@@ -339,13 +339,33 @@ export class McpAtlassianServer {
             ));
           } else {
             logger.error('MCP request failed', error instanceof Error ? error : new Error(String(error)));
+
+            // Extract detailed error information for MCP response
+            let errorResponse;
+            if (error instanceof McpAtlassianError) {
+              // Use full error structure with details for better debugging
+              const errorObj = error.toJSON();
+              errorResponse = {
+                code: -1,
+                message: errorObj.message,
+                data: {
+                  code: errorObj.code,
+                  details: errorObj.details,
+                  // stack: process.env.NODE_ENV === 'development' ? errorObj.stack : undefined
+                }
+              };
+            } else {
+              // Standard error handling for non-MCP errors
+              errorResponse = {
+                code: -1,
+                message: error instanceof Error ? error.message : String(error),
+              };
+            }
+
             res.json({
               jsonrpc: '2.0',
               id: req.body?.id || null,
-              error: {
-                code: -1,
-                message: error instanceof Error ? error.message : String(error),
-              },
+              error: errorResponse,
             });
           }
         }

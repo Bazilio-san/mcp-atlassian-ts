@@ -1199,8 +1199,8 @@ An example issue key is ISSUE-1.`,
   /**
    * Health check for JIRA connectivity
    */
-  async healthCheck (): Promise<any> {
-    return this.client.healthCheck();
+  async healthCheck (headers?: Record<string, string>): Promise<any> {
+    return this.client.healthCheck(headers);
   }
 
   // === Tool Implementations ===
@@ -1399,7 +1399,7 @@ An example issue key is ISSUE-1.`,
     const commentInput: any = { body };
     if (visibility) commentInput.visibility = visibility;
 
-    const comment = await this.client.addComment(issueKey, commentInput);
+    const comment = await this.client.addComment(issueKey, commentInput, headers);
 
     return {
       content: [
@@ -1420,7 +1420,7 @@ An example issue key is ISSUE-1.`,
   private async getTransitions (args: any, headers?: Record<string, string>) {
     const { issueKey } = args;
 
-    const transitions = await this.client.getTransitions(issueKey);
+    const transitions = await this.client.getTransitions(issueKey, headers);
 
     if (transitions.length === 0) {
       return {
@@ -1453,7 +1453,7 @@ An example issue key is ISSUE-1.`,
     const transitionData: any = { id: transitionId, fields };
     if (comment) transitionData.comment = { body: comment };
 
-    await this.client.transitionIssue(issueKey, transitionData);
+    await this.client.transitionIssue(issueKey, transitionData, headers);
 
     return {
       content: [
@@ -1476,7 +1476,7 @@ An example issue key is ISSUE-1.`,
     const projects = await this.client.getProjects({
       expand: this.normalizeToArray(expand),
       recent,
-    });
+    }, headers);
 
     if (projects.length === 0) {
       return {
@@ -1508,7 +1508,7 @@ An example issue key is ISSUE-1.`,
   private async getUserProfile (args: any, headers?: Record<string, string>) {
     const { userIdOrEmail } = args;
 
-    const user = await this.client.getUserProfile(userIdOrEmail);
+    const user = await this.client.getUserProfile(userIdOrEmail, headers);
 
     return {
       content: [
@@ -1546,7 +1546,7 @@ An example issue key is ISSUE-1.`,
       },
     }));
 
-    const result = await this.client.batchCreateIssues(issueInputs);
+    const result = await this.client.batchCreateIssues(issueInputs, headers);
 
     const successCount = result.issues?.length || 0;
     const errorCount = result.errors?.length || 0;
@@ -1584,7 +1584,7 @@ An example issue key is ISSUE-1.`,
   private async searchFields (args: any, headers?: Record<string, string>) {
     const { query } = args;
 
-    const fields = await this.client.searchFields(query);
+    const fields = await this.client.searchFields(query, headers);
 
     if (fields.length === 0) {
       return {
@@ -1616,7 +1616,7 @@ An example issue key is ISSUE-1.`,
   private async getProjectVersions (args: any, headers?: Record<string, string>) {
     const { projectKey } = args;
 
-    const versions = await this.client.getProjectVersions(projectKey);
+    const versions = await this.client.getProjectVersions(projectKey, headers);
 
     if (versions.length === 0) {
       return {
@@ -1649,7 +1649,7 @@ An example issue key is ISSUE-1.`,
   private async createVersion (args: any, headers?: Record<string, string>) {
     const versionData = args;
 
-    const version = await this.client.createVersion(versionData);
+    const version = await this.client.createVersion(versionData, headers);
 
     return {
       content: [
@@ -1670,7 +1670,7 @@ An example issue key is ISSUE-1.`,
   private async batchCreateVersions (args: any, headers?: Record<string, string>) {
     const { versions } = args;
 
-    const results = await this.client.batchCreateVersions(versions);
+    const results = await this.client.batchCreateVersions(versions, headers);
 
     const successResults = results.filter(r => !r.error);
     const errorResults = results.filter(r => r.error);
@@ -1706,7 +1706,7 @@ An example issue key is ISSUE-1.`,
   }
 
   private async getLinkTypes (headers?: Record<string, string>) {
-    const linkTypes = await this.client.getLinkTypes();
+    const linkTypes = await this.client.getLinkTypes(headers);
 
     if (linkTypes.length === 0) {
       return {
@@ -1746,7 +1746,7 @@ An example issue key is ISSUE-1.`,
       linkData.comment = { body: comment };
     }
 
-    await this.client.createIssueLink(linkData);
+    await this.client.createIssueLink(linkData, headers);
 
     return {
       content: [
@@ -1769,7 +1769,7 @@ An example issue key is ISSUE-1.`,
     if (summary) linkData.summary = summary;
     if (iconUrl) linkData.icon = { url16x16: iconUrl, title };
 
-    const link = await this.client.createRemoteIssueLink(issueKey, linkData);
+    const link = await this.client.createRemoteIssueLink(issueKey, linkData, headers);
 
     return {
       content: [
@@ -1790,7 +1790,7 @@ An example issue key is ISSUE-1.`,
   private async removeIssueLink (args: any, headers?: Record<string, string>) {
     const { linkId } = args;
 
-    await this.client.removeIssueLink(linkId);
+    await this.client.removeIssueLink(linkId, headers);
 
     return {
       content: [
@@ -1805,7 +1805,7 @@ An example issue key is ISSUE-1.`,
   private async linkToEpic (args: any, headers?: Record<string, string>) {
     const { issueKey, epicKey } = args;
 
-    await this.client.linkToEpic(issueKey, epicKey);
+    await this.client.linkToEpic(issueKey, epicKey, headers);
 
     return {
       content: [
@@ -1826,7 +1826,7 @@ An example issue key is ISSUE-1.`,
   private async getWorklog (args: any, headers?: Record<string, string>) {
     const { issueKey, startAt = 0, maxResults = 50 } = args;
 
-    const worklogResult = await this.client.getWorklogs(issueKey, { startAt, maxResults });
+    const worklogResult = await this.client.getWorklogs(issueKey, { startAt, maxResults }, headers);
 
     if (worklogResult.worklogs.length === 0) {
       return {
@@ -1869,7 +1869,7 @@ An example issue key is ISSUE-1.`,
     if (started) worklogInput.started = started;
     if (visibility) worklogInput.visibility = visibility;
 
-    const worklog = await this.client.addWorklog(issueKey, worklogInput);
+    const worklog = await this.client.addWorklog(issueKey, worklogInput, headers);
 
     return {
       content: [
@@ -1891,7 +1891,7 @@ An example issue key is ISSUE-1.`,
   private async downloadAttachments (args: any, headers?: Record<string, string>) {
     const { issueKey } = args;
 
-    const attachments = await this.client.getAttachments(issueKey);
+    const attachments = await this.client.getAttachments(issueKey, headers);
 
     if (attachments.length === 0) {
       return {
@@ -1929,7 +1929,7 @@ An example issue key is ISSUE-1.`,
   private async getAgileBoards (args: any, headers?: Record<string, string>) {
     const options = args;
 
-    const boardsResult = await this.client.getAgileBoards(options);
+    const boardsResult = await this.client.getAgileBoards(options, headers);
 
     if (boardsResult.values.length === 0) {
       return {
@@ -1967,7 +1967,7 @@ An example issue key is ISSUE-1.`,
       requestOptions.fields = this.normalizeToArray(fields);
     }
 
-    const issuesResult = await this.client.getBoardIssues(boardId, requestOptions);
+    const issuesResult = await this.client.getBoardIssues(boardId, requestOptions, headers);
 
     if (issuesResult.issues.length === 0) {
       return {
@@ -2000,7 +2000,7 @@ An example issue key is ISSUE-1.`,
   private async getSprintsFromBoard (args: any, headers?: Record<string, string>) {
     const { boardId, ...options } = args;
 
-    const sprintsResult = await this.client.getSprintsFromBoard(boardId, options);
+    const sprintsResult = await this.client.getSprintsFromBoard(boardId, options, headers);
 
     if (sprintsResult.values.length === 0) {
       return {
@@ -2045,7 +2045,7 @@ An example issue key is ISSUE-1.`,
       requestOptions.fields = this.normalizeToArray(fields);
     }
 
-    const issuesResult = await this.client.getSprintIssues(sprintId, requestOptions);
+    const issuesResult = await this.client.getSprintIssues(sprintId, requestOptions, headers);
 
     if (issuesResult.issues.length === 0) {
       return {
@@ -2086,7 +2086,7 @@ An example issue key is ISSUE-1.`,
       endDate,
     };
 
-    const sprint = await this.client.createSprint(sprintData);
+    const sprint = await this.client.createSprint(sprintData, headers);
 
     return {
       content: [
@@ -2108,7 +2108,7 @@ An example issue key is ISSUE-1.`,
   private async updateSprint (args: any, headers?: Record<string, string>) {
     const { sprintId, ...updateData } = args;
 
-    const sprint = await this.client.updateSprint(sprintId, updateData);
+    const sprint = await this.client.updateSprint(sprintId, updateData, headers);
 
     const updatedFields = Object.keys(updateData).filter(key => updateData[key] !== undefined);
 
@@ -2129,7 +2129,7 @@ An example issue key is ISSUE-1.`,
   private async batchGetChangelogs (args: any, headers?: Record<string, string>) {
     const { issueKeys } = args;
 
-    const changelogs = await this.client.batchGetChangelogs(issueKeys);
+    const changelogs = await this.client.batchGetChangelogs(issueKeys, headers);
 
     if (changelogs.values.length === 0) {
       return {
