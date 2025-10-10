@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 /**
  * Extract tool definition from tools.ts
  */
-function extractToolDefinition(toolsContent, toolName) {
+function extractToolDefinition (toolsContent, toolName) {
   // Find the tool definition
   const regex = new RegExp(`name: '${toolName}'[^}]*?annotations:[^}]*?}[^}]*?}`, 's');
   const match = toolsContent.match(regex);
@@ -72,7 +72,7 @@ function extractToolDefinition(toolsContent, toolName) {
 /**
  * Extract handler implementation from tools.ts
  */
-function extractHandlerImplementation(toolsContent, toolName) {
+function extractHandlerImplementation (toolsContent, toolName) {
   // Map tool name to handler method name
   const methodName = toolName.replace('jira_', '').split('_').map((part, index) =>
     index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
@@ -115,7 +115,7 @@ function extractHandlerImplementation(toolsContent, toolName) {
 /**
  * Extract client method if exists
  */
-function extractClientMethod(clientContent, methodName) {
+function extractClientMethod (clientContent, methodName) {
   const methodRegex = new RegExp(`async ${methodName}\\([^)]*\\)[^{]*{`, 's');
   const methodMatch = clientContent.match(methodRegex);
 
@@ -147,7 +147,7 @@ function extractClientMethod(clientContent, methodName) {
 /**
  * Generate the migrated tool module
  */
-function generateMigratedModule(toolName, toolDef, handlerBody, clientMethod) {
+function generateMigratedModule (toolName, toolDef, handlerBody, clientMethod) {
   const fileName = toolName.replace('jira_', '').replace(/_/g, '-');
   const camelCase = fileName.split('-').map((part, index) =>
     index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
@@ -225,7 +225,7 @@ export async function ${camelCase}Handler(args: any, context: ToolContext): Prom
 /**
  * Migrate a single tool
  */
-async function migrateTool(toolName, group, fileName) {
+async function migrateTool (toolName, group, fileName) {
   console.log(`\n🔄 Migrating ${toolName}...`);
 
   const srcDir = path.join(__dirname, '..', 'src', 'domains', 'jira');

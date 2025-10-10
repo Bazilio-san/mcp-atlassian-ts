@@ -3,16 +3,16 @@
  * Updates an existing sprint with new information
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for updating a sprint
  */
 export const jira_update_sprint: ToolWithHandler = {
   name: 'jira_update_sprint',
-  description: `Update an existing sprint. Can modify name, goal, dates, and state.`,
+  description: 'Update an existing sprint. Can modify name, goal, dates, and state.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -125,7 +125,7 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
         {
           type: 'text',
           text:
-            `**Sprint Updated Successfully!**\n\n` +
+            '**Sprint Updated Successfully!**\n\n' +
             `**Name:** ${sprint.name}\n` +
             `**ID:** ${sprint.id}\n` +
             `**State:** ${sprint.state}\n` +

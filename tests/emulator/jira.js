@@ -205,7 +205,7 @@ const MOCK_LINK_TYPES = [
 ];
 
 // Creating initial test issues
-function initializeTestData() {
+function initializeTestData () {
   const issue1 = {
     id: '10001',
     key: 'TEST-1',
@@ -337,7 +337,7 @@ function initializeTestData() {
   dashboards.set('10000', dashboard1);
 }
 
-function getPort(urlString) {
+function getPort (urlString) {
   try {
     const url = new URL(urlString.includes('://') ? urlString : `http://${urlString}`);
     return url.port ? Number(url.port) : 80;
@@ -348,7 +348,7 @@ function getPort(urlString) {
 }
 
 export class JiraEmulator {
-  constructor(port) {
+  constructor (port) {
     this.port = port || 8080;
     this.app = express();
     this.server = null;
@@ -357,7 +357,7 @@ export class JiraEmulator {
     initializeTestData();
   }
 
-  setupMiddleware() {
+  setupMiddleware () {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
 
@@ -391,7 +391,7 @@ export class JiraEmulator {
     });
   }
 
-  setupRoutes() {
+  setupRoutes () {
     // Health check
     this.app.get('/status', (req, res) => {
       res.json({
@@ -630,7 +630,7 @@ export class JiraEmulator {
 
       if (!issue) {
         res.status(404).json({
-          errorMessages: [`Issue Does Not Exist`],
+          errorMessages: ['Issue Does Not Exist'],
           errors: {},
         });
         return;
@@ -1895,18 +1895,18 @@ export class JiraEmulator {
     });
   }
 
-  async start() {
+  async start () {
     return new Promise((resolve) => {
       this.server = this.app.listen(this.port, () => {
         console.log(chalk.green(`🚀 JIRA Emulator started on port ${this.port}`));
         console.log(chalk.blue(`📍 Base URL: http://localhost:${this.port}`));
-        console.log(chalk.yellow(`🔐 Use any credentials for authentication`));
+        console.log(chalk.yellow('🔐 Use any credentials for authentication'));
         resolve();
       });
     });
   }
 
-  async stop() {
+  async stop () {
     return new Promise((resolve, reject) => {
       if (this.server) {
         this.server.close((err) => {
@@ -1923,14 +1923,14 @@ export class JiraEmulator {
     });
   }
 
-  getBaseUrl() {
+  getBaseUrl () {
     return `http://localhost:${this.port}`;
   }
 }
 
 // If run directly, start emulator
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('jira-emulator.js')) {
-  async function runStandaloneEmulator() {
+  async function runStandaloneEmulator () {
     console.log('🚀 Starting JIRA Emulator...');
 
     const emulator = new JiraEmulator();

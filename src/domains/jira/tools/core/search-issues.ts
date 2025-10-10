@@ -3,43 +3,43 @@
  * Searches for JIRA issues using JQL (JIRA Query Language)
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for searching JIRA issues
  */
 export const jira_search_issues: ToolWithHandler = {
   name: 'jira_search_issues',
-  description: `Search for JIRA issues using JQL (JIRA Query Language)`,
+  description: 'Search for JIRA issues using JQL (JIRA Query Language)',
   inputSchema: {
     type: 'object',
     properties: {
       jql: {
         type: 'string',
-        description: `JQL query string (e.g., "project = PROJ AND status = Open")`,
+        description: 'JQL query string (e.g., "project = PROJ AND status = Open")',
       },
       startAt: {
         type: 'number',
-        description: `Starting index for results`,
+        description: 'Starting index for results',
         default: 0,
       },
       maxResults: {
         type: 'number',
-        description: `Maximum number of results to return`,
+        description: 'Maximum number of results to return',
         default: 50,
       },
       fields: {
         type: 'array',
         items: { type: 'string' },
-        description: `Specific fields to return. e.g.: ["summary", "status", "assignee"]`,
+        description: 'Specific fields to return. e.g.: ["summary", "status", "assignee"]',
       },
       expand: {
         type: 'array',
         items: { type: 'string' },
-        description: `Additional fields to expand. e.g.: ["changelog", "transitions"]`,
+        description: 'Additional fields to expand. e.g.: ["changelog", "transitions"]',
         default: [],
       },
     },
@@ -59,7 +59,7 @@ export const jira_search_issues: ToolWithHandler = {
 /**
  * Handler function for searching JIRA issues
  */
-async function searchIssuesHandler(args: any, context: ToolContext): Promise<any> {
+async function searchIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
     const { httpClient, cache, config, logger, normalizeToArray } = context;
@@ -121,7 +121,7 @@ async function searchIssuesHandler(args: any, context: ToolContext): Promise<any
         {
           type: 'text',
           text:
-            `**JIRA Search Results**\n\n` +
+            '**JIRA Search Results**\n\n' +
             `**JQL:** ${jql}\n` +
             `**Found:** ${searchResult.total} issues (showing ${searchResult.issues.length})\n\n` +
             `${issuesList}\n\n` +

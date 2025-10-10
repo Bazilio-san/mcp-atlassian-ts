@@ -3,23 +3,23 @@
  * Retrieves available transitions for a JIRA issue
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting available transitions for a JIRA issue
  */
 export const jira_get_transitions: ToolWithHandler = {
   name: 'jira_get_transitions',
-  description: `Get available transitions for a JIRA issue`,
+  description: 'Get available transitions for a JIRA issue',
   inputSchema: {
     type: 'object',
     properties: {
       issueIdOrKey: {
         type: 'string',
-        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+        description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
       },
     },
     required: ['issueIdOrKey'],
@@ -38,7 +38,7 @@ export const jira_get_transitions: ToolWithHandler = {
 /**
  * Handler function for getting available transitions for a JIRA issue
  */
-async function getTransitionsHandler(args: any, context: ToolContext): Promise<any> {
+async function getTransitionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
     const { httpClient, cache, logger } = context;

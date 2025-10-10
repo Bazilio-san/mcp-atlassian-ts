@@ -26,10 +26,22 @@ export default [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        'argsIgnorePattern': '^_',
+        'varsIgnorePattern': '^_',
+        'caughtErrorsIgnorePattern': '^_'
+      }],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       'import/no-default-export': 'error',
+      // Formatting rules
+      'quotes': ['error', 'single', { 'avoidEscape': true }],
+      'space-before-function-paren': ['error', {
+        'anonymous': 'always',
+        'named': 'always',
+        'asyncArrow': 'always'
+      }],
+      'object-curly-spacing': ['error', 'always'],
     },
   },
   {
@@ -50,6 +62,14 @@ export default [
     },
     rules: {
       'import/no-default-export': 'off',
+      // Formatting rules
+      'quotes': ['error', 'single', { 'avoidEscape': true }],
+      'space-before-function-paren': ['error', {
+        'anonymous': 'always',
+        'named': 'always',
+        'asyncArrow': 'always'
+      }],
+      'object-curly-spacing': ['error', 'always'],
     },
   },
   {

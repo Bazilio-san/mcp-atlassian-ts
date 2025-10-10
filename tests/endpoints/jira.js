@@ -18,7 +18,7 @@ import { apiResponseLogger } from './core/logger.js';
 import SharedJiraTestCases from './jira-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from '../constants.js';
 import { isObj } from './core/utils.js';
-import { appConfig } from "../../dist/src/bootstrap/init-config.js";
+import { appConfig } from '../../dist/src/bootstrap/init-config.js';
 
 // Test IDs that require admin rights
 // const ENDPOINTS_WITH_ADMIN_RIGHTS = ['1-3', '1-4', '7-3']; VVQ
@@ -242,7 +242,7 @@ class JiraDirectApiExecutor {
     // Small delay first to let Node.js warnings appear
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    console.log(`\n🚀 Starting Test Execution`);
+    console.log('\n🚀 Starting Test Execution');
     console.log(eqLine);
 
     this.stats.startTime = Date.now();
@@ -299,7 +299,7 @@ class JiraDirectApiExecutor {
     }
 
     if (Object.keys(headers).length > 0) {
-      console.log(`🔧 Custom headers configured:`, headers);
+      console.log('🔧 Custom headers configured:', headers);
     }
 
     return headers;
@@ -475,10 +475,10 @@ class JiraDirectApiExecutor {
         }
         return deletedCount;
       } else if (remoteLinks && remoteLinks.length === 1) {
-        console.log(`  ℹ️  Only one remote link found, keeping it`);
+        console.log('  ℹ️  Only one remote link found, keeping it');
         return 0;
       } else if (remoteLinks && remoteLinks.length === 0) {
-        console.log(`  ℹ️  No remote links found to clean up`);
+        console.log('  ℹ️  No remote links found to clean up');
         return 0;
       }
 
@@ -682,7 +682,7 @@ class JiraDirectApiExecutor {
         // Return as failed test if no remote link available
         return {
           status: 400,
-          data: { errorMessages: [`No remote link available for deletion. Run test 8-9 (Create Remote Link) first.`] },
+          data: { errorMessages: ['No remote link available for deletion. Run test 8-9 (Create Remote Link) first.'] },
         };
       }
     }

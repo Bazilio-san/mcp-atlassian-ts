@@ -53,7 +53,7 @@ export class TestReporter {
 
     // Header
     lines.push('\n' + eqLine);
-    lines.push(`📊 Test Results Summary`);
+    lines.push('📊 Test Results Summary');
     lines.push(eqLine);
 
     // Stats table

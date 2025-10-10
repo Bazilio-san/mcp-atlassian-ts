@@ -7,7 +7,7 @@ import { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
-import { hasStringValue } from "../../bootstrap/init-config.js";
+import { hasStringValue } from '../../bootstrap/init-config.js';
 
 const logger = createLogger('confluence-server');
 
@@ -17,7 +17,7 @@ const logger = createLogger('confluence-server');
 export class ConfluenceServer extends McpAtlassianServer {
   protected override toolRegistry: ServiceToolRegistry;
 
-  constructor(config: IConfig) {
+  constructor (config: IConfig) {
     // Convert IConfig to the expected ServerConfig and JCConfig formats
     const {
       confluence: {
@@ -70,7 +70,7 @@ export class ConfluenceServer extends McpAtlassianServer {
   /**
    * Register Confluence-specific tools only
    */
-  override async registerTools(): Promise<void> {
+  override async registerTools (): Promise<void> {
     try {
       await this.toolRegistry.initializeTools();
       logger.info('Confluence tools registered successfully');
@@ -83,7 +83,7 @@ export class ConfluenceServer extends McpAtlassianServer {
   /**
    * Override health check endpoint to show Confluence service info
    */
-  protected override getHealthCheckInfo() {
+  protected override getHealthCheckInfo () {
     return {
       status: 'ok',
       service: 'mcp-atlassian-confluence',

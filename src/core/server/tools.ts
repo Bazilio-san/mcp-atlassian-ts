@@ -2,8 +2,8 @@
  * Tool registry and management system
  */
 
-import { ConfluenceToolsManager } from '../../domains/confluence/tools.js';
-import { JiraToolsManager } from '../../domains/jira/tools.js';
+import { ConfluenceToolsManager } from '../../domains/confluence/tools-manager.js';
+import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
 import { getCache } from '../cache/index.js';
 import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
@@ -50,7 +50,7 @@ export class ToolRegistry {
   protected confluenceTools: ConfluenceToolsManager | null = null;
   protected toolsMap: Map<string, Tool> = new Map();
 
-  constructor(serviceConfig: JCConfig) {
+  constructor (serviceConfig: JCConfig) {
     this.serviceConfig = serviceConfig;
 
     // Create tool managers based on what config we have
@@ -72,7 +72,7 @@ export class ToolRegistry {
   /**
    * Initialize and register all available tools
    */
-  async initializeTools(): Promise<void> {
+  async initializeTools (): Promise<void> {
     try {
       logger.info('Initializing tools...');
 
@@ -122,7 +122,7 @@ export class ToolRegistry {
   /**
    * Register utility and system tools
    */
-  protected registerUtilityTools(): void {
+  protected registerUtilityTools (): void {
     // Cache management tool
     this.toolsMap.set('cache_clear', {
       name: 'cache_clear',
@@ -174,14 +174,14 @@ export class ToolRegistry {
   /**
    * List all available tools
    */
-  async listTools(): Promise<Tool[]> {
+  async listTools (): Promise<Tool[]> {
     return Array.from(this.toolsMap.values());
   }
 
   /**
    * Execute a tool by name
    */
-  async executeTool(name: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
+  async executeTool (name: string, args: Record<string, any>, customHeaders?: Record<string, string>): Promise<any> {
     const tool = this.toolsMap.get(name);
     if (!tool) {
       throw new ToolExecutionError(name, `Tool '${name}' not found`);
@@ -227,7 +227,7 @@ export class ToolRegistry {
   /**
    * Execute utility tools
    */
-  private async executeUtilityTool(name: string, args: Record<string, any>): Promise<any> {
+  private async executeUtilityTool (name: string, args: Record<string, any>): Promise<any> {
     const cache = getCache();
 
     switch (name) {
@@ -298,7 +298,7 @@ export class ToolRegistry {
   /**
    * Perform health check
    */
-  protected async performHealthCheck(detailed: boolean): Promise<any> {
+  protected async performHealthCheck (detailed: boolean): Promise<any> {
     const health: any = {
       timestamp: new Date().toISOString(),
       status: 'ok',
@@ -344,7 +344,7 @@ export class ToolRegistry {
   /**
    * Validate tool arguments against schema
    */
-  private validateToolArguments(tool: Tool, args: Record<string, any>): void {
+  private validateToolArguments (tool: Tool, args: Record<string, any>): void {
     // Basic validation - in production, you might want to use a proper JSON schema validator
     if (!tool.inputSchema || tool.inputSchema.type !== 'object') {
       return;
@@ -380,21 +380,21 @@ export class ToolRegistry {
   /**
    * Get tool by name
    */
-  getTool(name: string): Tool | undefined {
+  getTool (name: string): Tool | undefined {
     return this.toolsMap.get(name);
   }
 
   /**
    * Check if tool exists and is enabled
    */
-  hastool(name: string): boolean {
+  hastool (name: string): boolean {
     return this.toolsMap.has(name);
   }
 
   /**
    * Get enabled tool names by category
    */
-  getEnabledToolsByCategory(): {
+  getEnabledToolsByCategory (): {
     jira: string[];
     confluence: string[];
     utility: string[];
@@ -415,7 +415,7 @@ export class ToolRegistry {
 export class ServiceToolRegistry extends ToolRegistry {
   private serviceMode: ServiceMode;
 
-  constructor(serviceConfig: JCConfig, serviceMode: ServiceMode) {
+  constructor (serviceConfig: JCConfig, serviceMode: ServiceMode) {
     super(serviceConfig);
     this.serviceMode = serviceMode;
 
@@ -435,7 +435,7 @@ export class ServiceToolRegistry extends ToolRegistry {
   /**
    * Initialize tools based on service mode
    */
-  override async initializeTools(): Promise<void> {
+  override async initializeTools (): Promise<void> {
     try {
       logger.info('Initializing tools for service mode', { serviceMode: this.serviceMode });
 
@@ -492,7 +492,7 @@ export class ServiceToolRegistry extends ToolRegistry {
   /**
    * Override health check to only check relevant services
    */
-  protected override async performHealthCheck(detailed: boolean): Promise<any> {
+  protected override async performHealthCheck (detailed: boolean): Promise<any> {
     const health: any = {
       timestamp: new Date().toISOString(),
       status: 'ok',
@@ -539,7 +539,7 @@ export class ServiceToolRegistry extends ToolRegistry {
   /**
    * Get service mode
    */
-  getServiceMode(): ServiceMode {
+  getServiceMode (): ServiceMode {
     return this.serviceMode;
   }
 }

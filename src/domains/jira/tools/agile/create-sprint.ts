@@ -3,16 +3,16 @@
  * Creates a new sprint in an agile board
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for creating a sprint
  */
 export const jira_create_sprint: ToolWithHandler = {
   name: 'jira_create_sprint',
-  description: `Create a new sprint in an agile board. The sprint will be created in the future state.`,
+  description: 'Create a new sprint in an agile board. The sprint will be created in the future state.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -106,7 +106,7 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
         {
           type: 'text',
           text:
-            `**Sprint Created Successfully!**\n\n` +
+            '**Sprint Created Successfully!**\n\n' +
             `**Name:** ${sprint.name}\n` +
             `**ID:** ${sprint.id}\n` +
             `**State:** ${sprint.state}\n` +

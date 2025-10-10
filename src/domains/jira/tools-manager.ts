@@ -8,10 +8,9 @@ import { getCache } from '../../core/cache/index.js';
 import { createLogger } from '../../core/utils/logger.js';
 import { ToolExecutionError } from '../../core/errors/index.js';
 
-import type { JCConfig } from '../../types/index.js';
+import type { JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from './shared/tool-context.js';
-import type { ToolWithHandler } from './types/tool-with-handler.js';
 
 // Import tool modules - Core tools
 import { jira_get_issue } from './tools/core/get-issue.js';
@@ -71,7 +70,7 @@ export class JiraToolsManager {
   private tools: Map<string, ToolWithHandler>;
   private toolsArray: Tool[];
 
-  constructor(config: JCConfig) {
+  constructor (config: JCConfig) {
     // Validate configuration
     if (!config.url || config.url === '***') {
       throw new Error('JIRA URL is required but not configured');
@@ -158,22 +157,30 @@ export class JiraToolsManager {
     for (const tool of toolInstances) {
       this.tools.set(tool.name, tool);
       // Create Tool without handler for the array
-      const { handler, ...toolWithoutHandler } = tool;
+      const { handler: _foo, ...toolWithoutHandler } = tool;
       this.toolsArray.push(toolWithoutHandler as Tool);
     }
   }
 
   /**
+   * Initialize JIRA tools manager (for compatibility)
+   */
+  async initialize (): Promise<void> {
+    this.context.logger.info('JIRA tools manager initialized');
+    // Any async initialization can go here if needed
+  }
+
+  /**
    * Get all available JIRA tools
    */
-  getAvailableTools(): Tool[] {
+  getAvailableTools (): Tool[] {
     return this.toolsArray;
   }
 
   /**
    * Execute a JIRA tool by name
    */
-  async executeTool(
+  async executeTool (
     toolName: string,
     args: Record<string, any>,
     customHeaders?: Record<string, string>
@@ -215,7 +222,7 @@ export class JiraToolsManager {
   /**
    * Health check for JIRA connectivity
    */
-  async healthCheck(): Promise<any> {
+  async healthCheck (): Promise<any> {
     try {
       const response = await this.context.httpClient.get('/rest/api/2/myself');
       return {
@@ -240,7 +247,7 @@ export class JiraToolsManager {
   /**
    * Invalidate cache entries related to an issue
    */
-  private invalidateIssueCache(issueKey: string): void {
+  private invalidateIssueCache (issueKey: string): void {
     const cache = this.context.cache;
     const keys = cache.keys();
 
@@ -266,7 +273,7 @@ export class JiraToolsManager {
   /**
    * Normalize string or array parameter to array
    */
-  private normalizeToArray(value: string | string[] | undefined): string[] {
+  private normalizeToArray (value: string | string[] | undefined): string[] {
     if (!value) return [];
     if (Array.isArray(value)) return value;
     return [value];
@@ -275,7 +282,7 @@ export class JiraToolsManager {
   /**
    * Format description field
    */
-  private formatDescription(description: any): string {
+  private formatDescription (description: any): string {
     if (!description) return '';
     if (typeof description === 'string') return description;
 
@@ -302,7 +309,7 @@ export class JiraToolsManager {
   /**
    * Expand string or array to comma-separated string
    */
-  private expandStringOrArray(value: string | string[] | undefined, separator: string = ','): string | undefined {
+  private expandStringOrArray (value: string | string[] | undefined, separator: string = ','): string | undefined {
     if (!value) return undefined;
     const arr = this.normalizeToArray(value);
     return arr.length > 0 ? arr.join(separator) : undefined;

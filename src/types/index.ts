@@ -1,6 +1,7 @@
 /**
  * Core TypeScript type definitions for the MCP Atlassian server
  */
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 
 // Authentication types
@@ -82,6 +83,7 @@ export interface LogContext {
   userId?: string;
   method?: string;
   url?: string;
+
   [key: string]: unknown;
 }
 
@@ -133,3 +135,7 @@ export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 // Re-export common types
 export * from './jira.js';
 export * from './confluence.js';
+
+export interface ToolWithHandler extends Tool {
+  handler: (args: any, context: any) => Promise<any>;
+}

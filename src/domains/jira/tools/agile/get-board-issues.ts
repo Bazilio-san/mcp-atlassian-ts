@@ -3,17 +3,17 @@
  * Retrieves all issues from a specific agile board
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting board issues
  */
 export const jira_get_board_issues: ToolWithHandler = {
   name: 'jira_get_board_issues',
-  description: `Get all issues from a specific agile board. Supports filtering and field selection.`,
+  description: 'Get all issues from a specific agile board. Supports filtering and field selection.',
   inputSchema: {
     type: 'object',
     properties: {

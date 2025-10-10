@@ -3,17 +3,17 @@
  * Retrieves all accessible JIRA projects for the authenticated user
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for jira_get_projects
  */
 export const jira_get_projects: ToolWithHandler = {
   name: 'jira_get_projects',
-  description: `Get all accessible JIRA projects for the authenticated user`,
+  description: 'Get all accessible JIRA projects for the authenticated user',
   inputSchema: {
     type: 'object',
     properties: {
@@ -45,7 +45,7 @@ export const jira_get_projects: ToolWithHandler = {
 /**
  * Handler function for jira_get_projects
  */
-async function getProjectsHandler(args: any, context: ToolContext): Promise<any> {
+async function getProjectsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, normalizeToArray } = context;
     const { expand, recent } = args;
@@ -75,7 +75,7 @@ async function getProjectsHandler(args: any, context: ToolContext): Promise<any>
         content: [
           {
             type: 'text',
-            text: `**No JIRA projects found**`,
+            text: '**No JIRA projects found**',
           },
         ],
       };

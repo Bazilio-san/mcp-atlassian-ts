@@ -3,9 +3,9 @@
  * Adds a worklog entry to a JIRA issue
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for adding JIRA worklog entry
@@ -62,7 +62,7 @@ export const jira_add_worklog: ToolWithHandler = {
 /**
  * Handler function for adding JIRA worklog entry
  */
-async function addWorklogHandler(args: any, context: ToolContext): Promise<any> {
+async function addWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, timeSpent, comment, started, visibility } = args;
     const { httpClient, config, logger, invalidateIssueCache } = context;
@@ -86,7 +86,7 @@ async function addWorklogHandler(args: any, context: ToolContext): Promise<any> 
         {
           type: 'text',
           text:
-            `**Worklog Added Successfully**\n\n` +
+            '**Worklog Added Successfully**\n\n' +
             `**Issue:** ${issueIdOrKey}\n` +
             `**Time Spent:** ${timeSpent}\n` +
             `**Author:** ${worklog.author.displayName}\n` +

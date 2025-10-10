@@ -444,7 +444,7 @@ export class McpAtlassianServer {
   /**
    * Get health check information (can be overridden by subclasses)
    */
-  protected getHealthCheckInfo(): any {
+  protected getHealthCheckInfo (): any {
     return {
       status: 'ok',
       service: 'mcp-atlassian-ts',

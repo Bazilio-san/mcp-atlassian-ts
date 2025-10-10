@@ -3,10 +3,10 @@
  * Retrieves detailed user profile information by account ID or email
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting a JIRA user profile
@@ -38,7 +38,7 @@ export const jira_get_user_profile: ToolWithHandler = {
 /**
  * Handler function for getting a JIRA user profile
  */
-async function getUserProfileHandler(args: any, context: ToolContext): Promise<any> {
+async function getUserProfileHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { userIdOrEmail } = args;
     const { httpClient, cache, logger } = context;
@@ -76,7 +76,7 @@ async function getUserProfileHandler(args: any, context: ToolContext): Promise<a
         {
           type: 'text',
           text:
-            `**JIRA User Profile**\n\n` +
+            '**JIRA User Profile**\n\n' +
             `**Display Name:** ${user.displayName}\n` +
             `**Account ID:** ${user.accountId}\n` +
             `**Email:** ${user.emailAddress || 'Not available'}\n` +

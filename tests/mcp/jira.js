@@ -372,7 +372,7 @@ class JiraMcpHttpTester {
     // md += `## Response\n\n\`\`\`json\n${JSON.stringify(result.response, null, 2)}\n\`\`\`\n\n`;
 
     if (result.status === 'passed') {
-      resultStatus = `✅  PASSED`;
+      resultStatus = '✅  PASSED';
     } else {
       // Show full MCP response as seen by the agent, or fallback to separate sections
       if (result.fullMcpResponse) {
@@ -385,9 +385,9 @@ class JiraMcpHttpTester {
         }
       }
       if (result.status === 'expected_failure') {
-        resultStatus = `⚠️  Expected failure - test validation successful`;
+        resultStatus = '⚠️  Expected failure - test validation successful';
       } else {
-        resultStatus = `❌  FAILED`;
+        resultStatus = '❌  FAILED';
       }
     }
 
@@ -502,23 +502,23 @@ ${responseText}${errorText}`;
    * Generate summary as Markdown
    */
   generateSummaryMarkdown () {
-    let md = `# JIRA MCP HTTP Test Summary\n\n`;
+    let md = '# JIRA MCP HTTP Test Summary\n\n';
     md += `**Generated:** ${new Date().toISOString()}\n\n`;
     md += `**MCP Server:** ${MCP_SERVER_URL}\n\n`;
     md += `**JIRA Emulator:** ${JIRA_EMULATOR_URL}\n\n`;
 
-    md += `## Statistics\n\n`;
-    md += `| Metric | Count |\n`;
-    md += `|--------|-------|\n`;
+    md += '## Statistics\n\n';
+    md += '| Metric | Count |\n';
+    md += '|--------|-------|\n';
     md += `| Total Tests | ${this.stats.total} |\n`;
     md += `| Passed | ${this.stats.passed} |\n`;
     md += `| Failed | ${this.stats.failed} |\n`;
     md += `| Expected Failures | ${this.stats.skipped} |\n`;
     md += `| Success Rate | ${((this.stats.passed / this.stats.total) * 100).toFixed(1)}% |\n\n`;
 
-    md += `## Test Results\n\n`;
-    md += `| # | Tool | Status | Duration |\n`;
-    md += `|---|------|--------|----------|\n`;
+    md += '## Test Results\n\n';
+    md += '| # | Tool | Status | Duration |\n';
+    md += '|---|------|--------|----------|\n';
 
     this.results.forEach((result, index) => {
       const statusIcon = result.status === 'passed' ? '✅' :
@@ -526,11 +526,11 @@ ${responseText}${errorText}`;
       md += `| ${index + 1} | \`${result.toolName}\` | ${statusIcon} ${result.status} | ${result.duration}ms |\n`;
     });
 
-    md += `\n## Failed Tests\n\n`;
+    md += '\n## Failed Tests\n\n';
     const failedTests = this.results.filter(r => r.status === 'failed');
 
     if (failedTests.length === 0) {
-      md += `No tests failed ✅\n\n`;
+      md += 'No tests failed ✅\n\n';
     } else {
       failedTests.forEach(test => {
         md += `### ${test.toolName}\n\n`;
@@ -538,13 +538,13 @@ ${responseText}${errorText}`;
       });
     }
 
-    md += `## Custom Header Propagation\n\n`;
-    md += `## Individual Test Results\n\n`;
-    md += `Detailed results for each tool are available in:\n\n`;
+    md += '## Custom Header Propagation\n\n';
+    md += '## Individual Test Results\n\n';
+    md += 'Detailed results for each tool are available in:\n\n';
     this.results.forEach(result => {
       md += `- [\`${result.toolName}\`](./JIRA_${result.toolName}.md)\n`;
     });
-    md += `\n`;
+    md += '\n';
 
     return md;
   }

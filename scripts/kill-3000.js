@@ -14,7 +14,7 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function killPort(portNumber) {
+async function killPort (portNumber) {
   const isWindows = process.platform === 'win32';
 
   try {
@@ -77,7 +77,7 @@ async function killPort(portNumber) {
   }
 }
 
-async function killEmulator() {
+async function killEmulator () {
   console.log('🔍 Stopping OMS Emulator...\n');
 
   // Kill HTTP server on port 3000

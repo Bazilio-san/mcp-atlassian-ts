@@ -3,10 +3,10 @@
  * Retrieves changelogs for multiple issues (Cloud only)
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for batch getting JIRA changelogs
@@ -64,7 +64,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
         content: [
           {
             type: 'text',
-            text: `**No changelogs found for the specified issues**`,
+            text: '**No changelogs found for the specified issues**',
           },
         ],
       };

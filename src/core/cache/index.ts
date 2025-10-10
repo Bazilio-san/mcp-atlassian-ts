@@ -25,7 +25,7 @@ export class CacheManager {
     deletes: number;
   };
 
-  constructor(
+  constructor (
     options: {
       ttlSeconds?: number;
       maxItems?: number;
@@ -63,7 +63,7 @@ export class CacheManager {
   /**
    * Setup cache event listeners for monitoring
    */
-  private setupEventListeners(): void {
+  private setupEventListeners (): void {
     this.cache.on('set', (key, value) => {
       logger.debug('Cache set', { key, hasValue: !!value });
     });
@@ -84,7 +84,7 @@ export class CacheManager {
   /**
    * Get value from cache
    */
-  get<T>(key: string): T | undefined {
+  get<T> (key: string): T | undefined {
     try {
       const value = this.cache.get<T>(key);
 
@@ -107,7 +107,7 @@ export class CacheManager {
   /**
    * Set value in cache with optional TTL
    */
-  set<T>(key: string, value: T, ttlSeconds?: number): boolean {
+  set<T> (key: string, value: T, ttlSeconds?: number): boolean {
     try {
       const ttl = ttlSeconds || this.defaultTtl;
       const success = this.cache.set(key, value, ttl);
@@ -129,7 +129,7 @@ export class CacheManager {
   /**
    * Delete value from cache
    */
-  del(key: string): number {
+  del (key: string): number {
     try {
       const deleted = this.cache.del(key);
       this.stats.deletes += deleted;
@@ -144,7 +144,7 @@ export class CacheManager {
   /**
    * Check if key exists in cache
    */
-  has(key: string): boolean {
+  has (key: string): boolean {
     try {
       return this.cache.has(key);
     } catch (error) {
@@ -156,7 +156,7 @@ export class CacheManager {
   /**
    * Get multiple values from cache
    */
-  mget<T>(keys: string[]): Record<string, T> {
+  mget<T> (keys: string[]): Record<string, T> {
     try {
       const result: Record<string, T> = {};
 
@@ -177,7 +177,7 @@ export class CacheManager {
   /**
    * Set multiple values in cache
    */
-  mset<T>(obj: Array<{ key: string; val: T; ttl?: number }>): boolean {
+  mset<T> (obj: Array<{ key: string; val: T; ttl?: number }>): boolean {
     try {
       let allSuccess = true;
 
@@ -198,7 +198,7 @@ export class CacheManager {
   /**
    * Get or set pattern - execute function if key doesn't exist
    */
-  async getOrSet<T>(key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T> {
+  async getOrSet<T> (key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T> {
     try {
       // Try to get from cache first
       const cached = this.get<T>(key);
@@ -223,7 +223,7 @@ export class CacheManager {
   /**
    * Get cache statistics
    */
-  getStats() {
+  getStats () {
     const cacheStats = this.cache.getStats();
 
     return {
@@ -238,7 +238,7 @@ export class CacheManager {
   /**
    * Get all keys in cache
    */
-  keys(): string[] {
+  keys (): string[] {
     try {
       return this.cache.keys();
     } catch (error) {
@@ -250,7 +250,7 @@ export class CacheManager {
   /**
    * Clear all cache entries
    */
-  flush(): void {
+  flush (): void {
     try {
       this.cache.flushAll();
       this.resetStats();
@@ -263,7 +263,7 @@ export class CacheManager {
   /**
    * Reset cache statistics
    */
-  private resetStats(): void {
+  private resetStats (): void {
     this.stats = {
       hits: 0,
       misses: 0,
@@ -275,7 +275,7 @@ export class CacheManager {
   /**
    * Get cache entries with metadata
    */
-  getEntries<T>(): Array<{ key: string; value: T; ttl: number }> {
+  getEntries<T> (): Array<{ key: string; value: T; ttl: number }> {
     try {
       const keys = this.cache.keys();
       const entries: Array<{ key: string; value: T; ttl: number }> = [];
@@ -303,7 +303,7 @@ export class CacheManager {
   /**
    * Set TTL for existing key
    */
-  setTtl(key: string, ttlSeconds: number): boolean {
+  setTtl (key: string, ttlSeconds: number): boolean {
     try {
       return this.cache.ttl(key, ttlSeconds);
     } catch (error) {
@@ -315,7 +315,7 @@ export class CacheManager {
   /**
    * Get TTL for key
    */
-  getTtl(key: string): number {
+  getTtl (key: string): number {
     try {
       const ttl = this.cache.getTtl(key);
       return ttl ? Math.floor((ttl - Date.now()) / 1000) : 0;
@@ -328,7 +328,7 @@ export class CacheManager {
   /**
    * Cleanup expired entries manually
    */
-  cleanup(): void {
+  cleanup (): void {
     try {
       // NodeCache handles this automatically, but we can force it
       logger.debug('Manual cache cleanup triggered');
@@ -340,7 +340,7 @@ export class CacheManager {
   /**
    * Close cache and cleanup resources
    */
-  close(): void {
+  close (): void {
     try {
       this.cache.close();
       logger.info('Cache manager closed');
@@ -353,7 +353,7 @@ export class CacheManager {
 /**
  * Generate cache key for API requests
  */
-export function generateCacheKey(
+export function generateCacheKey (
   service: 'jira' | 'confluence',
   endpoint: string,
   params?: Record<string, any>
@@ -381,7 +381,7 @@ let globalCache: CacheManager | null = null;
 /**
  * Get or create global cache instance
  */
-export function getCache(options?: {
+export function getCache (options?: {
   ttlSeconds?: number;
   maxItems?: number;
   checkPeriod?: number;
@@ -395,7 +395,7 @@ export function getCache(options?: {
 /**
  * Initialize cache with configuration
  */
-export function initializeCache(options: {
+export function initializeCache (options: {
   ttlSeconds?: number;
   maxItems?: number;
   checkPeriod?: number;
@@ -411,7 +411,7 @@ export function initializeCache(options: {
 /**
  * Close global cache
  */
-export function closeCache(): void {
+export function closeCache (): void {
   if (globalCache) {
     globalCache.close();
     globalCache = null;

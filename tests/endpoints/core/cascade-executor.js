@@ -6,7 +6,7 @@
  */
 
 class CascadeExecutor {
-  constructor(resourceManager) {
+  constructor (resourceManager) {
     this.resourceManager = resourceManager;
     this.executionResults = new Map();
   }
@@ -14,7 +14,7 @@ class CascadeExecutor {
   /**
    * Execute cascade operation
    */
-  async executeCascade(cascadeTestCase, testRunner) {
+  async executeCascade (cascadeTestCase, testRunner) {
     const results = [];
 
     for (const step of cascadeTestCase.steps) {
@@ -75,14 +75,14 @@ class CascadeExecutor {
   /**
    * Find test case by name
    */
-  findTestCase(name, testRunner) {
+  findTestCase (name, testRunner) {
     return testRunner.sharedTestCases.getTestCasesByNames([name])[0];
   }
 
   /**
    * Prepare test case with resource substitution
    */
-  prepareTestCase(testCase, step) {
+  prepareTestCase (testCase, step) {
     const prepared = JSON.parse(JSON.stringify(testCase)); // deep clone
 
     if (step.useResource) {
@@ -137,7 +137,7 @@ class CascadeExecutor {
   /**
    * Replace placeholders in data object
    */
-  replacePlaceholders(obj, resourceName, resourceId) {
+  replacePlaceholders (obj, resourceName, resourceId) {
     const jsonStr = JSON.stringify(obj);
     const replaced = jsonStr
       .replace(new RegExp(`{${resourceName}}`, 'g'), resourceId)
@@ -149,7 +149,7 @@ class CascadeExecutor {
   /**
    * Extract resource ID from result
    */
-  extractResourceId(data, testCaseName) {
+  extractResourceId (data, testCaseName) {
     // Check common ID fields
     if (data.key) return data.key;
     if (data.id) return data.id;
@@ -177,7 +177,7 @@ class CascadeExecutor {
   /**
    * Determine resource type by test case name
    */
-  getResourceType(testCaseName) {
+  getResourceType (testCaseName) {
     if (testCaseName.includes('Issue')) return 'issues';
     if (testCaseName.includes('Version')) return 'versions';
     if (testCaseName.includes('Comment')) return 'comments';
@@ -194,7 +194,7 @@ class CascadeExecutor {
   /**
    * Execute multiple cascades in sequence
    */
-  async executeCascades(cascadeTestCases, testRunner) {
+  async executeCascades (cascadeTestCases, testRunner) {
     const results = [];
 
     for (const cascadeCase of cascadeTestCases) {
@@ -221,7 +221,7 @@ class CascadeExecutor {
   /**
    * Validate cascade definition
    */
-  validateCascade(cascadeTestCase) {
+  validateCascade (cascadeTestCase) {
     const errors = [];
 
     if (!cascadeTestCase.name) {
@@ -253,7 +253,7 @@ class CascadeExecutor {
   /**
    * Generate cascade execution report
    */
-  generateReport(cascadeResults) {
+  generateReport (cascadeResults) {
     const total = cascadeResults.length;
     const passed = cascadeResults.filter(r => r.success).length;
     const failed = total - passed;

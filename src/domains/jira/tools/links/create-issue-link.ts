@@ -3,34 +3,34 @@
  * Creates a link between two JIRA issues
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for creating a JIRA issue link
  */
 export const jira_create_issue_link: ToolWithHandler = {
   name: 'jira_create_issue_link',
-  description: `Create a link between two JIRA issues`,
+  description: 'Create a link between two JIRA issues',
   inputSchema: {
     type: 'object',
     properties: {
       linkType: {
         type: 'string',
-        description: `Link type name (e.g., "Blocks", "Relates")`,
+        description: 'Link type name (e.g., "Blocks", "Relates")',
       },
       inwardIssue: {
         type: 'string',
-        description: `Key of the inward issue`,
+        description: 'Key of the inward issue',
       },
       outwardIssue: {
         type: 'string',
-        description: `Key of the outward issue`,
+        description: 'Key of the outward issue',
       },
       comment: {
         type: 'string',
-        description: `Optional comment for the link`,
+        description: 'Optional comment for the link',
       },
     },
     required: ['linkType', 'inwardIssue', 'outwardIssue'],
@@ -49,7 +49,7 @@ export const jira_create_issue_link: ToolWithHandler = {
 /**
  * Handler function for creating a JIRA issue link
  */
-async function createIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
+async function createIssueLinkHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
     const { httpClient, cache, logger, invalidateIssueCache } = context;
@@ -85,7 +85,7 @@ async function createIssueLinkHandler(args: any, context: ToolContext): Promise<
         {
           type: 'text',
           text:
-            `**Issue Link Created Successfully**\n\n` +
+            '**Issue Link Created Successfully**\n\n' +
             `**Link Type:** ${linkType}\n` +
             `**From:** ${inwardIssue}\n` +
             `**To:** ${outwardIssue}\n${comment ? `**Comment:** ${comment}\n` : ''}`,

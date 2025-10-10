@@ -3,48 +3,48 @@
  * Updates an existing JIRA issue with new field values
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for updating a JIRA issue
  */
 export const jira_update_issue: ToolWithHandler = {
   name: 'jira_update_issue',
-  description: `Update an existing JIRA issue`,
+  description: 'Update an existing JIRA issue',
   inputSchema: {
     type: 'object',
     properties: {
       issueIdOrKey: {
         type: 'string',
-        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+        description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
       },
       summary: {
         type: 'string',
-        description: `Updated summary/title`,
+        description: 'Updated summary/title',
       },
       description: {
         type: 'string',
-        description: `Updated description`,
+        description: 'Updated description',
       },
       assignee: {
         type: 'string',
-        description: `New assignee account ID or email`,
+        description: 'New assignee account ID or email',
       },
       priority: {
         type: 'string',
-        description: `New priority name or ID`,
+        description: 'New priority name or ID',
       },
       labels: {
         type: 'array',
         items: { type: 'string' },
-        description: `Labels to set (replaces existing). e.g.: ["bug", "urgent"]`,
+        description: 'Labels to set (replaces existing). e.g.: ["bug", "urgent"]',
         default: [],
       },
       customFields: {
         type: 'object',
-        description: `Custom field values as key-value pairs`,
+        description: 'Custom field values as key-value pairs',
         default: {},
       },
     },
@@ -64,7 +64,7 @@ export const jira_update_issue: ToolWithHandler = {
 /**
  * Handler function for updating a JIRA issue
  */
-async function updateIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function updateIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const {
       issueIdOrKey,
@@ -100,7 +100,7 @@ async function updateIssueHandler(args: any, context: ToolContext): Promise<any>
         {
           type: 'text',
           text:
-            `**JIRA Issue Updated Successfully**\n\n` +
+            '**JIRA Issue Updated Successfully**\n\n' +
             `**Key:** ${issueIdOrKey}\n` +
             `Updated fields: ${Object.keys(updateData.fields).join(', ')}\n` +
             `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,

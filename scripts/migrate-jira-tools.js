@@ -68,7 +68,7 @@ const TOOL_MIGRATIONS = [
 /**
  * Generate migration status report
  */
-function generateStatusReport() {
+function generateStatusReport () {
   console.log('\n📊 JIRA Tools Migration Status\n');
   console.log('=' .repeat(60));
 
@@ -122,7 +122,7 @@ function generateStatusReport() {
 /**
  * Check which tools exist
  */
-function checkExistingTools() {
+function checkExistingTools () {
   const baseDir = path.join(__dirname, '..', 'src', 'domains', 'jira', 'tools');
 
   for (const tool of TOOL_MIGRATIONS) {
@@ -136,7 +136,7 @@ function checkExistingTools() {
 /**
  * Generate template for a tool module
  */
-function generateToolTemplate(toolName, group, fileName) {
+function generateToolTemplate (toolName, group, fileName) {
   const camelCase = fileName.split('-').map((part, index) =>
     index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
   ).join('');
@@ -202,7 +202,7 @@ export async function ${camelCase}Handler(args: any, context: ToolContext): Prom
 /**
  * Create migration templates for pending tools
  */
-function createMigrationTemplates() {
+function createMigrationTemplates () {
   const baseDir = path.join(__dirname, '..', 'src', 'domains', 'jira', 'tools');
   const pending = TOOL_MIGRATIONS.filter(t => !t.completed);
 
@@ -236,7 +236,7 @@ function createMigrationTemplates() {
 }
 
 // Main execution
-function main() {
+function main () {
   console.log('🚀 JIRA Tools Migration Script\n');
 
   // Check existing tools

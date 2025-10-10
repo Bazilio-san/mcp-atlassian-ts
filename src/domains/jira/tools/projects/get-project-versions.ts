@@ -3,17 +3,17 @@
  * Retrieves all versions for a specific JIRA project
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for jira_get_project_versions
  */
 export const jira_get_project_versions: ToolWithHandler = {
   name: 'jira_get_project_versions',
-  description: `Get all versions for a specific JIRA project`,
+  description: 'Get all versions for a specific JIRA project',
   inputSchema: {
     type: 'object',
     properties: {
@@ -38,7 +38,7 @@ export const jira_get_project_versions: ToolWithHandler = {
 /**
  * Handler function for jira_get_project_versions
  */
-async function getProjectVersionsHandler(args: any, context: ToolContext): Promise<any> {
+async function getProjectVersionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const { projectKey } = args;

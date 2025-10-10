@@ -109,7 +109,7 @@ ${triQ}
    * @param {object} headers - Request headers (optional)
    * @param {object} requestBody - Request body data (optional)
    */
-  logDirectApiResponse(testId, testName, method, endpoint, httpStatusCode, responseBody, headers = {}, requestBody = null) {
+  logDirectApiResponse (testId, testName, method, endpoint, httpStatusCode, responseBody, headers = {}, requestBody = null) {
     if (!this.enabled) {
       return;
     }

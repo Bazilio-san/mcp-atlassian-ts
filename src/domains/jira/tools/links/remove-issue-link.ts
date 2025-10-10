@@ -3,22 +3,22 @@
  * Removes a link between JIRA issues
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for removing a JIRA issue link
  */
 export const jira_remove_issue_link: ToolWithHandler = {
   name: 'jira_remove_issue_link',
-  description: `Remove a link between JIRA issues`,
+  description: 'Remove a link between JIRA issues',
   inputSchema: {
     type: 'object',
     properties: {
       linkId: {
         type: 'string',
-        description: `Link ID to remove`,
+        description: 'Link ID to remove',
       },
     },
     required: ['linkId'],
@@ -37,7 +37,7 @@ export const jira_remove_issue_link: ToolWithHandler = {
 /**
  * Handler function for removing a JIRA issue link
  */
-async function removeIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
+async function removeIssueLinkHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { linkId } = args;
     const { httpClient, cache, logger } = context;

@@ -3,17 +3,17 @@
  * Retrieves all agile boards in the JIRA instance
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting agile boards
  */
 export const jira_get_agile_boards: ToolWithHandler = {
   name: 'jira_get_agile_boards',
-  description: `Get all agile boards available in JIRA. Returns a list of Scrum and Kanban boards with their details.`,
+  description: 'Get all agile boards available in JIRA. Returns a list of Scrum and Kanban boards with their details.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -84,7 +84,7 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
         content: [
           {
             type: 'text',
-            text: `**No agile boards found**`,
+            text: '**No agile boards found**',
           },
         ],
       };

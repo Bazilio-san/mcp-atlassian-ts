@@ -7,7 +7,7 @@ import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
-import { hasStringValue } from "../../bootstrap/init-config.js";
+import { hasStringValue } from '../../bootstrap/init-config.js';
 
 const logger = createLogger('jira-server');
 

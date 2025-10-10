@@ -4,7 +4,7 @@
  */
 
 class ResourceManager {
-  constructor(config = {}) {
+  constructor (config = {}) {
     this.resources = {
       issues: [],
       projects: [],
@@ -28,7 +28,7 @@ class ResourceManager {
   /**
    * Track a created resource
    */
-  track(type, id, metadata = {}) {
+  track (type, id, metadata = {}) {
     if (!this.resources[type]) {
       this.resources[type] = [];
     }
@@ -53,70 +53,70 @@ class ResourceManager {
   /**
    * Track a JIRA issue
    */
-  trackIssue(issueKey, projectKey = null) {
+  trackIssue (issueKey, projectKey = null) {
     return this.track('issues', issueKey, { projectKey });
   }
 
   /**
    * Track a JIRA project
    */
-  trackProject(projectKey, projectId = null) {
+  trackProject (projectKey, projectId = null) {
     return this.track('projects', projectKey, { projectId });
   }
 
   /**
    * Track a sprint
    */
-  trackSprint(sprintId, boardId = null) {
+  trackSprint (sprintId, boardId = null) {
     return this.track('sprints', sprintId, { boardId });
   }
 
   /**
    * Track a board
    */
-  trackBoard(boardId, projectKey = null) {
+  trackBoard (boardId, projectKey = null) {
     return this.track('boards', boardId, { projectKey });
   }
 
   /**
    * Track a version
    */
-  trackVersion(versionId, projectId = null) {
+  trackVersion (versionId, projectId = null) {
     return this.track('versions', versionId, { projectId });
   }
 
   /**
    * Track an issue link
    */
-  trackLink(linkId) {
+  trackLink (linkId) {
     return this.track('links', linkId);
   }
 
   /**
    * Track a workflow scheme
    */
-  trackWorkflowScheme(schemeId, schemeName = null) {
+  trackWorkflowScheme (schemeId, schemeName = null) {
     return this.track('workflowSchemes', schemeId, { schemeName });
   }
 
   /**
    * Track a Confluence page
    */
-  trackPage(pageId, spaceKey = null) {
+  trackPage (pageId, spaceKey = null) {
     return this.track('pages', pageId, { spaceKey });
   }
 
   /**
    * Track a Confluence space
    */
-  trackSpace(spaceKey, spaceId = null) {
+  trackSpace (spaceKey, spaceId = null) {
     return this.track('spaces', spaceKey, { spaceId });
   }
 
   /**
    * Register a cleanup function
    */
-  registerCleanup(fn, description = '') {
+  registerCleanup (fn, description = '') {
     this.cleanupFunctions.push({
       fn,
       description,
@@ -131,7 +131,7 @@ class ResourceManager {
   /**
    * Get resource count
    */
-  getResourceCount() {
+  getResourceCount () {
     let total = 0;
     for (const type in this.resources) {
       total += this.resources[type].length;
@@ -142,7 +142,7 @@ class ResourceManager {
   /**
    * Get resource summary
    */
-  getResourceSummary() {
+  getResourceSummary () {
     const summary = {};
     for (const type in this.resources) {
       if (this.resources[type].length > 0) {
@@ -155,7 +155,7 @@ class ResourceManager {
   /**
    * Get all tracked resources
    */
-  getAllResources() {
+  getAllResources () {
     const all = [];
     for (const type in this.resources) {
       for (const resource of this.resources[type]) {
@@ -168,7 +168,7 @@ class ResourceManager {
   /**
    * Clear resources of a specific type
    */
-  clearType(type) {
+  clearType (type) {
     if (this.resources[type]) {
       const count = this.resources[type].length;
       this.resources[type] = [];
@@ -183,7 +183,7 @@ class ResourceManager {
   /**
    * Clear all resources
    */
-  clearAll() {
+  clearAll () {
     let total = 0;
     for (const type in this.resources) {
       total += this.clearType(type);
@@ -195,7 +195,7 @@ class ResourceManager {
   /**
    * Execute cleanup
    */
-  async cleanup() {
+  async cleanup () {
     const totalResources = this.getResourceCount();
     const totalFunctions = this.cleanupFunctions.length;
 
@@ -268,7 +268,7 @@ class ResourceManager {
   /**
    * Export resource tracking data
    */
-  exportData() {
+  exportData () {
     return {
       source: this.source,
       timestamp: new Date().toISOString(),
@@ -285,7 +285,7 @@ class ResourceManager {
   /**
    * Import resource tracking data
    */
-  importData(data) {
+  importData (data) {
     if (data.resources) {
       // Merge resources properly
       Object.entries(data.resources).forEach(([type, items]) => {
@@ -306,7 +306,7 @@ class ResourceManager {
   /**
    * Check if resource exists
    */
-  hasResource(type, id) {
+  hasResource (type, id) {
     if (!this.resources[type]) {
       return false;
     }
@@ -316,7 +316,7 @@ class ResourceManager {
   /**
    * Remove a specific resource from tracking
    */
-  untrack(type, id) {
+  untrack (type, id) {
     if (!this.resources[type]) {
       return false;
     }
@@ -335,7 +335,7 @@ class ResourceManager {
   /**
    * Get resources created within a time range
    */
-  getResourcesByTimeRange(startTime, endTime = null) {
+  getResourcesByTimeRange (startTime, endTime = null) {
     const start = new Date(startTime);
     const end = endTime ? new Date(endTime) : new Date();
 
@@ -354,7 +354,7 @@ class ResourceManager {
   /**
    * Generate cleanup report
    */
-  generateCleanupReport() {
+  generateCleanupReport () {
     const report = {
       title: 'Resource Cleanup Report',
       source: this.source,

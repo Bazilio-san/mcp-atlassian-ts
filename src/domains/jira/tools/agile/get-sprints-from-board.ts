@@ -3,17 +3,17 @@
  * Retrieves all sprints from a specific agile board
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting sprints from board
  */
 export const jira_get_sprints_from_board: ToolWithHandler = {
   name: 'jira_get_sprints_from_board',
-  description: `Get all sprints from a specific agile board. Returns sprints with their status and dates.`,
+  description: 'Get all sprints from a specific agile board. Returns sprints with their status and dates.',
   inputSchema: {
     type: 'object',
     properties: {

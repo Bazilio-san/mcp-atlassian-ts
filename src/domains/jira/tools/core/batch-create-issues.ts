@@ -3,16 +3,16 @@
  * Creates multiple JIRA issues in a single request for improved efficiency
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for batch creating JIRA issues
  */
 export const jira_batch_create_issues: ToolWithHandler = {
   name: 'jira_batch_create_issues',
-  description: `Create multiple JIRA issues in a single request`,
+  description: 'Create multiple JIRA issues in a single request',
   inputSchema: {
     type: 'object',
     properties: {
@@ -66,7 +66,7 @@ export const jira_batch_create_issues: ToolWithHandler = {
           required: ['project', 'issueType', 'summary'],
           additionalProperties: false,
         },
-        description: `Array of issues to create`,
+        description: 'Array of issues to create',
         minItems: 1,
       },
     },
@@ -86,7 +86,7 @@ export const jira_batch_create_issues: ToolWithHandler = {
 /**
  * Handler function for batch creating JIRA issues
  */
-async function batchCreateIssuesHandler(args: any, context: ToolContext): Promise<any> {
+async function batchCreateIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issues } = args;
     const { httpClient, logger } = context;
@@ -118,20 +118,20 @@ async function batchCreateIssuesHandler(args: any, context: ToolContext): Promis
     const errorCount = result.errors?.length || 0;
 
     let resultText =
-      `**Batch Issue Creation Results**\n\n` +
+      '**Batch Issue Creation Results**\n\n' +
       `**Total Issues:** ${issues.length}\n` +
       `**Successfully Created:** ${successCount}\n` +
       `**Errors:** ${errorCount}\n\n`;
 
     if (result.issues?.length > 0) {
-      resultText += `**Created Issues:**\n`;
+      resultText += '**Created Issues:**\n';
       result.issues.forEach((issue: any) => {
         resultText += `• **${issue.key}**: ${issue.summary || 'No summary'}\n`;
       });
     }
 
     if (result.errors?.length > 0) {
-      resultText += `\n**Errors:**\n`;
+      resultText += '\n**Errors:**\n';
       result.errors.forEach((error: any, index: number) => {
         resultText += `• Issue ${index + 1}: ${error.elementErrors?.errorMessages?.[0] || error.status}\n`;
       });

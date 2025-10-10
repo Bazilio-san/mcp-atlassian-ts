@@ -18,7 +18,7 @@ export type ServiceMode = 'jira' | 'confluence';
 /**
  * Create appropriate MCP server based on service mode
  */
-export function createServiceServer(config: IConfig): McpAtlassianServer {
+export function createServiceServer (config: IConfig): McpAtlassianServer {
   const serviceMode: ServiceMode = config.server.serviceMode as ServiceMode;
 
   if (!serviceMode) {
@@ -42,13 +42,13 @@ export function createServiceServer(config: IConfig): McpAtlassianServer {
 /**
  * Get available service modes
  */
-export function getAvailableServiceModes(): ServiceMode[] {
+export function getAvailableServiceModes (): ServiceMode[] {
   return ['jira', 'confluence'];
 }
 
 /**
  * Validate service mode
  */
-export function validateServiceMode(mode: string): mode is ServiceMode {
+export function validateServiceMode (mode: string): mode is ServiceMode {
   return getAvailableServiceModes().includes(mode as ServiceMode);
 }

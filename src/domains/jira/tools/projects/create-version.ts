@@ -3,16 +3,16 @@
  * Creates a new version in a JIRA project
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for jira_create_version
  */
 export const jira_create_version: ToolWithHandler = {
   name: 'jira_create_version',
-  description: `Create a new version in a JIRA project`,
+  description: 'Create a new version in a JIRA project',
   inputSchema: {
     type: 'object',
     properties: {
@@ -65,7 +65,7 @@ export const jira_create_version: ToolWithHandler = {
 /**
  * Handler function for jira_create_version
  */
-async function createVersionHandler(args: any, context: ToolContext): Promise<any> {
+async function createVersionHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const versionData = args;
@@ -84,7 +84,7 @@ async function createVersionHandler(args: any, context: ToolContext): Promise<an
         {
           type: 'text',
           text:
-            `**Version Created Successfully**\n\n` +
+            '**Version Created Successfully**\n\n' +
             `**Name:** ${version.name}\n` +
             `**ID:** ${version.id}\n` +
             `**Project:** ${versionData.projectId}\n${versionData.description ? `**Description:** ${versionData.description}\n` : ''}${versionData.releaseDate ? `**Release Date:** ${versionData.releaseDate}\n` : ''}`,

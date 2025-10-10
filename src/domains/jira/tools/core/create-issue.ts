@@ -3,58 +3,58 @@
  * Creates a new JIRA issue with specified fields
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for creating a JIRA issue
  */
 export const jira_create_issue: ToolWithHandler = {
   name: 'jira_create_issue',
-  description: `Create a new JIRA issue`,
+  description: 'Create a new JIRA issue',
   inputSchema: {
     type: 'object',
     properties: {
       project: {
         type: 'string',
-        description: `Project key or ID`,
+        description: 'Project key or ID',
       },
       issueType: {
         type: 'string',
-        description: `Issue type name or ID (e.g., "Task", "Bug", "Story")`,
+        description: 'Issue type name or ID (e.g., "Task", "Bug", "Story")',
       },
       summary: {
         type: 'string',
-        description: `Issue summary/title`,
+        description: 'Issue summary/title',
       },
       description: {
         type: 'string',
-        description: `Issue description`,
+        description: 'Issue description',
       },
       assignee: {
         type: 'string',
-        description: `Assignee account ID or email`,
+        description: 'Assignee account ID or email',
       },
       priority: {
         type: 'string',
-        description: `Priority name or ID`,
+        description: 'Priority name or ID',
       },
       labels: {
         type: 'array',
         items: { type: 'string' },
-        description: `Labels to add to the issue (e.g.: ["bug", "urgent"])`,
+        description: 'Labels to add to the issue (e.g.: ["bug", "urgent"])',
         default: [],
       },
       components: {
         type: 'array',
         items: { type: 'string' },
-        description: `Component names or IDs, e.g.: ["Backend", "API"]`,
+        description: 'Component names or IDs, e.g.: ["Backend", "API"]',
         default: [],
       },
       customFields: {
         type: 'object',
-        description: `Custom field values (field ID as key)`,
+        description: 'Custom field values (field ID as key)',
         additionalProperties: true,
       },
     },
@@ -74,7 +74,7 @@ export const jira_create_issue: ToolWithHandler = {
 /**
  * Handler function for creating a JIRA issue
  */
-async function createIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function createIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const {
       project,
@@ -132,7 +132,7 @@ async function createIssueHandler(args: any, context: ToolContext): Promise<any>
         {
           type: 'text',
           text:
-            `**JIRA Issue Created Successfully**\n\n` +
+            '**JIRA Issue Created Successfully**\n\n' +
             `**Key:** ${createdIssue.key}\n` +
             `**Summary:** ${summary}\n` +
             `**Project:** ${project}\n` +

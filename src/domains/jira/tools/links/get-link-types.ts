@@ -3,17 +3,17 @@
  * Retrieves all available JIRA issue link types
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting JIRA issue link types
  */
 export const jira_get_link_types: ToolWithHandler = {
   name: 'jira_get_link_types',
-  description: `Get all available JIRA issue link types`,
+  description: 'Get all available JIRA issue link types',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -31,7 +31,7 @@ export const jira_get_link_types: ToolWithHandler = {
 /**
  * Handler function for getting JIRA issue link types
  */
-async function getLinkTypesHandler(args: any, context: ToolContext): Promise<any> {
+async function getLinkTypesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
 
@@ -51,7 +51,7 @@ async function getLinkTypesHandler(args: any, context: ToolContext): Promise<any
         content: [
           {
             type: 'text',
-            text: `**No issue link types found**`,
+            text: '**No issue link types found**',
           },
         ],
       };

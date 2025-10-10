@@ -31,14 +31,14 @@ const AUDIENCE = 'api.atlassian.com';
 let globalAccessToken = process.env.ATLASSIAN_ACCESS_TOKEN;
 let server = null;
 
-function base64url(buf) {
+function base64url (buf) {
   return buf.toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
 }
 
 /**
  * Start OAuth server and get access token
  */
-async function getAccessTokenViaOAuth() {
+async function getAccessTokenViaOAuth () {
   return new Promise((resolve, reject) => {
     const app = express();
     app.use(session({ name: 'sess', keys: ['mcp-export'], maxAge: 24*60*60*1000 }));
@@ -139,7 +139,7 @@ async function getAccessTokenViaOAuth() {
  * Atlassian MCP Tools Export
  * Connects to Atlassian MCP server and saves complete tool specifications
  */
-async function exportAtlassianMCPInfo() {
+async function exportAtlassianMCPInfo () {
   const serverUrl = 'https://mcp.atlassian.com/v1/sse';
 
   // Check if we have a token or need OAuth
@@ -171,7 +171,7 @@ async function exportAtlassianMCPInfo() {
 
   console.log('🔌 Connecting to Atlassian MCP server...');
   console.log(`📍 URL: ${serverUrl}`);
-  console.log(`🔑 Using access token`);
+  console.log('🔑 Using access token');
 
   return new Promise((resolve, reject) => {
     const url = new URL(serverUrl);
@@ -284,7 +284,7 @@ async function exportAtlassianMCPInfo() {
 /**
  * Save tools to JSON file with full specification
  */
-async function saveToolsSpecification(tools, serverInfo) {
+async function saveToolsSpecification (tools, serverInfo) {
   const timestamp = new Date().toISOString();
   const date = new Date().toISOString().split('T')[0];
 
@@ -387,10 +387,10 @@ async function saveToolsSpecification(tools, serverInfo) {
   console.log(`\n✅ Full specification saved to: ${jsonFile}`);
 
   // Generate and save summary
-  let summary = `# Atlassian MCP Tools Export Summary\n\n`;
+  let summary = '# Atlassian MCP Tools Export Summary\n\n';
   summary += `**Generated:** ${timestamp}\n`;
   summary += `**Total Tools:** ${tools.length}\n\n`;
-  summary += `## Tools by Category\n\n`;
+  summary += '## Tools by Category\n\n';
 
   Object.entries(categories).forEach(([cat, toolNames]) => {
     if (toolNames.length > 0) {
@@ -413,7 +413,7 @@ async function saveToolsSpecification(tools, serverInfo) {
 /**
  * Main execution
  */
-async function main() {
+async function main () {
   console.log('=' .repeat(60));
   console.log('🚀 Atlassian MCP Tools Export');
   console.log('=' .repeat(60));

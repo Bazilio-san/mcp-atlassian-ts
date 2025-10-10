@@ -3,26 +3,26 @@
  * Permanently deletes a JIRA issue and optionally its subtasks
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for deleting a JIRA issue
  */
 export const jira_delete_issue: ToolWithHandler = {
   name: 'jira_delete_issue',
-  description: `Delete a JIRA issue permanently`,
+  description: 'Delete a JIRA issue permanently',
   inputSchema: {
     type: 'object',
     properties: {
       issueIdOrKey: {
         type: 'string',
-        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+        description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
       },
       deleteSubtasks: {
         type: 'boolean',
-        description: `Whether to delete subtasks as well`,
+        description: 'Whether to delete subtasks as well',
         default: false,
       },
     },
@@ -42,7 +42,7 @@ export const jira_delete_issue: ToolWithHandler = {
 /**
  * Handler function for deleting a JIRA issue
  */
-async function deleteIssueHandler(args: any, context: ToolContext): Promise<any> {
+async function deleteIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, deleteSubtasks = false } = args;
     const { httpClient, logger, invalidateIssueCache } = context;
@@ -64,7 +64,7 @@ async function deleteIssueHandler(args: any, context: ToolContext): Promise<any>
         {
           type: 'text',
           text:
-            `**JIRA Issue Deleted Successfully**\n\n` +
+            '**JIRA Issue Deleted Successfully**\n\n' +
             `**Key:** ${issueIdOrKey}\n` +
             `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`,
         },

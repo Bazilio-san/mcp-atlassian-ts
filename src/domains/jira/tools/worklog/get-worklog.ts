@@ -3,10 +3,10 @@
  * Retrieves worklog entries for a JIRA issue
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting JIRA worklog entries
@@ -48,7 +48,7 @@ export const jira_get_worklog: ToolWithHandler = {
 /**
  * Handler function for getting JIRA worklog entries
  */
-async function getWorklogHandler(args: any, context: ToolContext): Promise<any> {
+async function getWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, startAt = 0, maxResults = 50 } = args;
     const { httpClient, cache, logger } = context;

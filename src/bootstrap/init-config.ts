@@ -53,7 +53,7 @@ function hasValue (value: any): boolean {
   return cleaned.length > 0;
 }
 
-export const hasStringValue = (v: any): boolean => (typeof v === "string" && v.replace(/\*+/g, '').length > 0);
+export const hasStringValue = (v: any): boolean => (typeof v === 'string' && v.replace(/\*+/g, '').length > 0);
 
 /**
  * Build authentication configuration from environment

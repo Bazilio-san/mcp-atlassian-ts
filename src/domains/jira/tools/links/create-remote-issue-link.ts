@@ -3,38 +3,38 @@
  * Creates a remote link from a JIRA issue to external URL
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for creating a JIRA remote issue link
  */
 export const jira_create_remote_issue_link: ToolWithHandler = {
   name: 'jira_create_remote_issue_link',
-  description: `Create a remote link from a JIRA issue to external URL`,
+  description: 'Create a remote link from a JIRA issue to external URL',
   inputSchema: {
     type: 'object',
     properties: {
       issueIdOrKey: {
         type: 'string',
-        description: `The issue ID (e.g., 123) or key (e.g., PROJ-123)`,
+        description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
       },
       url: {
         type: 'string',
-        description: `External URL to link to`,
+        description: 'External URL to link to',
       },
       title: {
         type: 'string',
-        description: `Link title`,
+        description: 'Link title',
       },
       summary: {
         type: 'string',
-        description: `Link summary`,
+        description: 'Link summary',
       },
       iconUrl: {
         type: 'string',
-        description: `URL to link icon`,
+        description: 'URL to link icon',
       },
     },
     required: ['issueIdOrKey', 'url', 'title'],
@@ -53,7 +53,7 @@ export const jira_create_remote_issue_link: ToolWithHandler = {
 /**
  * Handler function for creating a JIRA remote issue link
  */
-async function createRemoteIssueLinkHandler(args: any, context: ToolContext): Promise<any> {
+async function createRemoteIssueLinkHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, url, title, summary, iconUrl } = args;
     const { httpClient, config, logger, invalidateIssueCache } = context;
@@ -79,7 +79,7 @@ async function createRemoteIssueLinkHandler(args: any, context: ToolContext): Pr
         {
           type: 'text',
           text:
-            `**Remote Issue Link Created Successfully**\n\n` +
+            '**Remote Issue Link Created Successfully**\n\n' +
             `**Issue:** ${issueIdOrKey}\n` +
             `**Link Title:** ${title}\n` +
             `**URL:** ${url}\n` +

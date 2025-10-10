@@ -449,3 +449,8 @@ export interface ConfluenceRestriction {
     };
   };
 }
+
+// Tool types for Confluence
+export interface ConfluenceToolWithHandler extends Omit<import('@modelcontextprotocol/sdk/types.js').Tool, 'handler'> {
+  handler: (args: any, context: import('../domains/confluence/shared/tool-context.js').ConfluenceToolContext) => Promise<any>;
+}

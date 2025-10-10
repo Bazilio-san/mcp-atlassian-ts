@@ -16,7 +16,7 @@ export class McpAtlassianError extends Error implements McpError {
   public readonly details?: Record<string, unknown>;
   public readonly statusCode: number;
 
-  constructor(
+  constructor (
     code: string,
     message: string,
     details?: Record<string, unknown>,
@@ -36,7 +36,7 @@ export class McpAtlassianError extends Error implements McpError {
     }
   }
 
-  toJSON(): McpError {
+  toJSON (): McpError {
     const result: McpError = {
       code: this.code,
       message: this.message,
@@ -58,7 +58,7 @@ export class McpAtlassianError extends Error implements McpError {
  * Configuration-related errors
  */
 export class ConfigurationError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('CONFIGURATION_ERROR', message, details, 500);
   }
 }
@@ -67,7 +67,7 @@ export class ConfigurationError extends McpAtlassianError {
  * Authentication-related errors
  */
 export class AuthenticationError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('AUTHENTICATION_ERROR', message, details, 401);
   }
 }
@@ -76,7 +76,7 @@ export class AuthenticationError extends McpAtlassianError {
  * Authorization-related errors
  */
 export class AuthorizationError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('AUTHORIZATION_ERROR', message, details, 403);
   }
 }
@@ -85,7 +85,7 @@ export class AuthorizationError extends McpAtlassianError {
  * API-related errors
  */
 export class ApiError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>, statusCode: number = 400) {
+  constructor (message: string, details?: Record<string, unknown>, statusCode: number = 400) {
     super('API_ERROR', message, details, statusCode);
   }
 }
@@ -94,7 +94,7 @@ export class ApiError extends McpAtlassianError {
  * Network-related errors
  */
 export class NetworkError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('NETWORK_ERROR', message, details, 503);
   }
 }
@@ -103,7 +103,7 @@ export class NetworkError extends McpAtlassianError {
  * Rate limiting errors
  */
 export class RateLimitError extends McpAtlassianError {
-  constructor(message: string = 'Rate limit exceeded', details?: Record<string, unknown>) {
+  constructor (message: string = 'Rate limit exceeded', details?: Record<string, unknown>) {
     super('RATE_LIMIT_ERROR', message, details, 429);
   }
 }
@@ -112,7 +112,7 @@ export class RateLimitError extends McpAtlassianError {
  * Validation-related errors
  */
 export class ValidationError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('VALIDATION_ERROR', message, details, 400);
   }
 }
@@ -121,7 +121,7 @@ export class ValidationError extends McpAtlassianError {
  * Resource not found errors
  */
 export class NotFoundError extends McpAtlassianError {
-  constructor(resource: string, identifier: string, details?: Record<string, unknown>) {
+  constructor (resource: string, identifier: string, details?: Record<string, unknown>) {
     super(
       'NOT_FOUND_ERROR',
       `${resource} with identifier '${identifier}' not found`,
@@ -135,7 +135,7 @@ export class NotFoundError extends McpAtlassianError {
  * Tool execution errors
  */
 export class ToolExecutionError extends McpAtlassianError {
-  constructor(toolName: string, message: string, details?: Record<string, unknown>) {
+  constructor (toolName: string, message: string, details?: Record<string, unknown>) {
     super(
       'TOOL_EXECUTION_ERROR',
       `Failed to execute tool '${toolName}': ${message}`,
@@ -149,7 +149,7 @@ export class ToolExecutionError extends McpAtlassianError {
  * Cache-related errors
  */
 export class CacheError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('CACHE_ERROR', message, details, 500);
   }
 }
@@ -158,7 +158,7 @@ export class CacheError extends McpAtlassianError {
  * Server-related errors
  */
 export class ServerError extends McpAtlassianError {
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor (message: string, details?: Record<string, unknown>) {
     super('SERVER_ERROR', message, details, 500);
   }
 }
@@ -180,7 +180,7 @@ export interface ErrorResponse {
 /**
  * Create standardized error response
  */
-export function createErrorResponse(
+export function createErrorResponse (
   error: Error | McpAtlassianError,
   requestId?: string
 ): ErrorResponse {
@@ -209,7 +209,7 @@ export function createErrorResponse(
 /**
  * Error handler for async functions
  */
-export function asyncErrorHandler<T extends any[], R>(fn: (...args: T) => Promise<R>) {
+export function asyncErrorHandler<T extends any[], R> (fn: (...args: T) => Promise<R>) {
   return async (...args: T): Promise<R> => {
     try {
       return await fn(...args);
@@ -237,7 +237,7 @@ export function asyncErrorHandler<T extends any[], R>(fn: (...args: T) => Promis
 /**
  * Error boundary decorator for class methods
  */
-export function errorBoundary(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function errorBoundary (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
 
   descriptor.value = async function (...args: any[]) {
@@ -272,7 +272,7 @@ export function errorBoundary(target: any, propertyKey: string, descriptor: Prop
 /**
  * Map HTTP status codes to appropriate error classes
  */
-export function createErrorFromStatus(
+export function createErrorFromStatus (
   status: number,
   message: string,
   details?: Record<string, unknown>
@@ -298,7 +298,7 @@ export function createErrorFromStatus(
 /**
  * Extract error information from Axios error
  */
-export function handleAxiosError(error: any): never {
+export function handleAxiosError (error: any): never {
   if (error.response) {
     // Server responded with error status
     const { status, data } = error.response;
@@ -329,7 +329,7 @@ export function handleAxiosError(error: any): never {
 /**
  * Wrap function calls with error handling
  */
-export async function withErrorHandling<T>(
+export async function withErrorHandling<T> (
   operation: () => Promise<T>,
   context?: Record<string, unknown>
 ): Promise<T> {

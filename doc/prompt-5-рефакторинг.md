@@ -1,9 +1,9 @@
-Давай сократим количество различных наименований инструментов и их хендлеров в src/domains/jira/tools
+Давай сократим количество различных наименований инструментов и их хендлеров в src/domains/confluence/tools
 
 Предлагаю:
 1) занести хендлеры в стандартное свойство handler в описание инструмента.
-2) назвать переменные тулов ровно так, как нывается тул. н-р. jira_create_sprint вместо createSprintTool
-   тогда в src/domains/jira/tools-manager.ts не нужен будет this.toolHandlers. 
+2) назвать переменные тулов ровно так, как нывается тул. н-р. confluence_create_sprint вместо createSprintTool
+   тогда в src/domains/confluence/tools-manager.ts не нужен будет this.toolHandlers. 
 
 ================================================================================
 
@@ -20,7 +20,7 @@
 2. Целевая архитектура
 
 Предлагаю:
-- Переименовать переменные инструментов точно по имени тула: jira_create_sprint, jira_get_issue_types
+- Переименовать переменные инструментов точно по имени тула: confluence_create_sprint, confluence_get_issue_types
 - Добавить свойство handler прямо в объект инструмента
 - Убрать отдельный экспорт хендлеров и мапинг в tools-manager.ts
 
@@ -28,7 +28,7 @@
 
 Шаг 1: Рефакторинг файлов инструментов
 
-Для каждого файла в src/domains/jira/tools/:
+Для каждого файла в src/domains/confluence/tools/:
 
 Было:
 // agile/create-sprint.ts

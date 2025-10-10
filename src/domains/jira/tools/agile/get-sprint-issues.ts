@@ -3,17 +3,17 @@
  * Retrieves all issues from a specific sprint
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for getting sprint issues
  */
 export const jira_get_sprint_issues: ToolWithHandler = {
   name: 'jira_get_sprint_issues',
-  description: `Get all issues from a specific sprint. Supports filtering and field selection.`,
+  description: 'Get all issues from a specific sprint. Supports filtering and field selection.',
   inputSchema: {
     type: 'object',
     properties: {

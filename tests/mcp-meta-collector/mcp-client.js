@@ -3,14 +3,14 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from "url";
+import { fileURLToPath } from 'url';
 
 /**
  * MCP Client for extracting server metadata
  * Supports both STDIO and HTTP/SSE transports
  */
 export class MCPClient {
-  constructor(config) {
+  constructor (config) {
     this.config = config;
     this.client = null;
     this.transport = null;
@@ -19,7 +19,7 @@ export class MCPClient {
   /**
    * Connect to MCP server using STDIO transport
    */
-  async connectStdio() {
+  async connectStdio () {
     const { command, args = [], env = {} } = this.config.stdio;
 
     console.log(`Connecting to MCP server via STDIO: ${command} ${args.join(' ')}`);
@@ -44,7 +44,7 @@ export class MCPClient {
   /**
    * Connect to MCP server using HTTP/SSE transport
    */
-  async connectSSE() {
+  async connectSSE () {
     const { url, headers = {} } = this.config.sse;
 
     console.log(`Connecting to MCP server via SSE: ${url}`);
@@ -72,7 +72,7 @@ export class MCPClient {
   /**
    * Connect to MCP server (auto-detect transport type)
    */
-  async connect() {
+  async connect () {
     if (this.config.stdio) {
       await this.connectStdio();
     } else if (this.config.sse) {
@@ -85,7 +85,7 @@ export class MCPClient {
   /**
    * Extract all metadata from MCP server
    */
-  async extractMetadata() {
+  async extractMetadata () {
     if (!this.client) {
       throw new Error('Client not connected. Call connect() first');
     }
@@ -138,7 +138,7 @@ export class MCPClient {
   /**
    * Save metadata to JSON file
    */
-  async saveMetadata(metadata) {
+  async saveMetadata (metadata) {
     const fileName = `meta/mcp-${this.config.name || 'server'}-meta.json`;
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const fullPath = path.join(__dirname, fileName);
@@ -156,7 +156,7 @@ export class MCPClient {
   /**
    * Disconnect from server
    */
-  async disconnect() {
+  async disconnect () {
     if (this.client) {
       await this.client.close();
       console.log('🔌 Disconnected from MCP server');
@@ -166,7 +166,7 @@ export class MCPClient {
   /**
    * Run complete extraction workflow
    */
-  async run() {
+  async run () {
     try {
       await this.connect();
       const metadata = await this.extractMetadata();
@@ -181,7 +181,7 @@ export class MCPClient {
 /**
  * Helper function to create and run MCP client
  */
-export async function extractMCPMetadata(config) {
+export async function extractMCPMetadata (config) {
   const client = new MCPClient(config);
   return await client.run();
 }

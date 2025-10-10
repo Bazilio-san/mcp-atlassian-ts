@@ -3,16 +3,16 @@
  * Creates multiple versions in JIRA projects in batch
  */
 
-import type { ToolWithHandler } from '../../types/tool-with-handler.js';
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ToolWithHandler } from '../../../../types';
 
 /**
  * Tool definition for jira_batch_create_versions
  */
 export const jira_batch_create_versions: ToolWithHandler = {
   name: 'jira_batch_create_versions',
-  description: `Create multiple versions in JIRA projects in batch`,
+  description: 'Create multiple versions in JIRA projects in batch',
   inputSchema: {
     type: 'object',
     properties: {
@@ -77,7 +77,7 @@ export const jira_batch_create_versions: ToolWithHandler = {
 /**
  * Handler function for jira_batch_create_versions
  */
-async function batchCreateVersionsHandler(args: any, context: ToolContext): Promise<any> {
+async function batchCreateVersionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
     const { versions } = args;
@@ -106,20 +106,20 @@ async function batchCreateVersionsHandler(args: any, context: ToolContext): Prom
     const errorResults = results.filter(r => r.error);
 
     let resultText =
-      `**Batch Version Creation Results**\n\n` +
+      '**Batch Version Creation Results**\n\n' +
       `**Total Versions:** ${versions.length}\n` +
       `**Successfully Created:** ${successResults.length}\n` +
       `**Errors:** ${errorResults.length}\n\n`;
 
     if (successResults.length > 0) {
-      resultText += `**Created Versions:**\n`;
+      resultText += '**Created Versions:**\n';
       successResults.forEach((version: any) => {
         resultText += `• **${version.name}** (ID: ${version.id})\n`;
       });
     }
 
     if (errorResults.length > 0) {
-      resultText += `\n**Errors:**\n`;
+      resultText += '\n**Errors:**\n';
       errorResults.forEach((error: any) => {
         resultText += `• **${error.version}**: ${error.error}\n`;
       });

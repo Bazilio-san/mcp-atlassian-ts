@@ -6,14 +6,14 @@ class ValidationEngine {
   /**
    * Validate response based on source type
    */
-  static validateResponse(response, testCase) {
+  static validateResponse (response, testCase) {
     return this.validateDirectApiResponse(response, testCase);
   }
 
   /**
    * Validate Direct API response
    */
-  static validateDirectApiResponse(response, testCase) {
+  static validateDirectApiResponse (response, testCase) {
     const result = {
       passed: true,
       details: {},
@@ -120,7 +120,7 @@ class ValidationEngine {
   /**
    * Validate object properties
    */
-  static validateProperties(data, expectedProperties) {
+  static validateProperties (data, expectedProperties) {
     const result = {
       valid: true,
       missingProperties: [],
