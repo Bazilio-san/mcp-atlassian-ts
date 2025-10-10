@@ -6,11 +6,13 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosR
 
 import { AuthenticationError } from '../errors/index.js';
 import { createLogger, getDebug } from '../utils/logger.js';
+import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from '../utils/http-logger.js';
 
 import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
 
 const logger = createLogger('auth');
 const debug = getDebug('headers-to-api');
+const debugHttp = getDebug('api-http');
 
 /**
  * Authentication manager for different auth methods
@@ -51,10 +53,23 @@ export class AuthenticationManager {
       error => Promise.reject(error),
     );
 
-    // Add response interceptor for error handling
+    // Add response interceptor for error handling and logging
     client.interceptors.response.use(
-      response => response,
+      response => {
+        // Log successful HTTP transaction
+        if (debugHttp.enabled) {
+          const toolName = getCurrentToolName();
+          logHttpTransaction(toolName, response.config, response);
+        }
+        return response;
+      },
       async error => {
+        // Log failed HTTP transaction
+        if (debugHttp.enabled) {
+          const toolName = getCurrentToolName();
+          logHttpTransaction(toolName, error.config, undefined, error);
+        }
+
         // Handle 401 errors by attempting token refresh if using OAuth
         if (error.response?.status === 401 && this.authConfig.type === 'oauth2') {
           try {
@@ -148,6 +163,7 @@ export class AuthenticationManager {
     try {
       logger.info('Testing authentication...');
 
+      setCurrentToolName('serverInfo');
       // Test with a simple API call
       const response = await this.httpClient.get('/rest/api/2/serverInfo', {
         baseURL: baseUrl,

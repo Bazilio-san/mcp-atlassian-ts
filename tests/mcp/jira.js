@@ -244,7 +244,7 @@ class JiraMcpHttpTester {
    * Run a single test case
    */
   async runSingleTest (testCase, index) {
-    console.log(chalk.cyan(`[${testCase.fullId}] Testing: ${testCase.toolName}`));
+    console.log(chalk.cyan(`[${testCase.fullId}] Testing: ${chalk.bgYellow(testCase.toolName)}`));
     console.log(chalk.dim(`  Description: ${testCase.description}`));
 
     const startTime = Date.now();
@@ -348,7 +348,8 @@ class JiraMcpHttpTester {
    */
   async logResultToFile (result) {
     const m = TEST_USE_EMOJI ? `_${result.marker}` : '';
-    const filename = `${result.fullId}_${result.toolName}.md`;
+    // const filename = `${result.fullId}_${result.toolName}.md`;
+    const filename = `${result.toolName}.md`;
     const filepath = path.join(RESULTS_DIR, filename);
 
     const content = this.formatResultAsMarkdown(result);

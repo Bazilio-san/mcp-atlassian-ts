@@ -8,6 +8,7 @@ import { getCache } from '../cache/index.js';
 import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 import { loadToolConfig, isToolEnabledByConfig, type ToolsConfig } from '../config/tool-config.js';
+import { setCurrentToolName } from '../utils/http-logger.js';
 
 import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -190,6 +191,9 @@ export class ToolRegistry {
 
     logger.info('Executing tool', { name, hasArgs: !!args && Object.keys(args).length > 0 });
 
+    // Set current tool name for HTTP logging context
+    setCurrentToolName(name);
+
     try {
       // Validate arguments against schema
       this.validateToolArguments(tool, args);
@@ -222,6 +226,9 @@ export class ToolRegistry {
       }
 
       throw new ToolExecutionError(name, error instanceof Error ? error.message : String(error));
+    } finally {
+      // Clear tool name from context
+      setCurrentToolName('unknown');
     }
   }
 
