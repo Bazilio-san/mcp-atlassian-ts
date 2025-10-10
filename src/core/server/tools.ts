@@ -7,34 +7,19 @@ import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
 import { getCache } from '../cache/index.js';
 import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
+import { loadToolConfig, isToolEnabledByConfig, type ToolsConfig } from '../config/tool-config.js';
 
 import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { appConfig } from '../../bootstrap/init-config.js';
 import type { ServiceMode } from './factory.js';
 
 /**
  * Check if a specific tool is enabled
+ * Uses config.yaml to determine tool availability
  */
-export function isToolEnabled (toolName: string): boolean {
-  let enabledTools: string | string[] = appConfig.features?.enabledTools || '';
-
-  // If enabledTools is a string (from env var), split it
-  if (typeof enabledTools === 'string') {
-    enabledTools = (enabledTools as string)
-      .split(',')
-      .map(tool => tool.trim())
-      .filter(tool => tool.length > 0);
-  } else if (Array.isArray(enabledTools)) {
-    enabledTools = [];
-  }
-
-  // If no tools are specified, all are enabled
-  if (enabledTools.length === 0) {
-    return true;
-  }
-
-  return enabledTools.includes(toolName);
+export function isToolEnabled (toolName: string, toolsConfig?: ToolsConfig | null): boolean {
+  // Check config.yaml for tool configuration
+  return isToolEnabledByConfig(toolName, toolsConfig ?? null);
 }
 
 // Import tool implementations
@@ -49,6 +34,7 @@ export class ToolRegistry {
   protected jiraTools: JiraToolsManager | null = null;
   protected confluenceTools: ConfluenceToolsManager | null = null;
   protected toolsMap: Map<string, Tool> = new Map();
+  protected toolsConfig: ToolsConfig | null = null;
 
   constructor (serviceConfig: JCConfig) {
     this.serviceConfig = serviceConfig;
@@ -76,18 +62,29 @@ export class ToolRegistry {
     try {
       logger.info('Initializing tools...');
 
+      // Load tool configuration from config.yaml
+      this.toolsConfig = loadToolConfig();
+      if (this.toolsConfig) {
+        logger.info('Using tool configuration from config.yaml');
+      }
+
       let jiraToolsCount = 0;
       let confluenceToolsCount = 0;
+      let jiraSkippedCount = 0;
+      let confluenceSkippedCount = 0;
 
       // Initialize and register JIRA tools if available
       if (this.jiraTools) {
         await this.jiraTools.initialize();
         const jiraTools = this.jiraTools.getAvailableTools();
         for (const tool of jiraTools) {
-          if (isToolEnabled(tool.name)) {
+          if (isToolEnabled(tool.name, this.toolsConfig)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered JIRA tool', { name: tool.name });
             jiraToolsCount++;
+          } else {
+            logger.debug('Skipped JIRA tool (disabled by config)', { name: tool.name });
+            jiraSkippedCount++;
           }
         }
       }
@@ -97,10 +94,13 @@ export class ToolRegistry {
         await this.confluenceTools.initialize();
         const confluenceTools = this.confluenceTools.getAvailableTools();
         for (const tool of confluenceTools) {
-          if (isToolEnabled(tool.name)) {
+          if (isToolEnabled(tool.name, this.toolsConfig)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered Confluence tool', { name: tool.name });
             confluenceToolsCount++;
+          } else {
+            logger.debug('Skipped Confluence tool (disabled by config)', { name: tool.name });
+            confluenceSkippedCount++;
           }
         }
       }
@@ -110,8 +110,9 @@ export class ToolRegistry {
 
       logger.info('Tools initialized', {
         total: this.toolsMap.size,
-        jira: jiraToolsCount,
-        confluence: confluenceToolsCount,
+        jira: { registered: jiraToolsCount, skipped: jiraSkippedCount },
+        confluence: { registered: confluenceToolsCount, skipped: confluenceSkippedCount },
+        configSource: this.toolsConfig ? 'config.yaml' : 'environment'
       });
     } catch (error) {
       logger.error('Failed to initialize tools', error instanceof Error ? error : new Error(String(error)));
@@ -439,6 +440,15 @@ export class ServiceToolRegistry extends ToolRegistry {
     try {
       logger.info('Initializing tools for service mode', { serviceMode: this.serviceMode });
 
+      // Load tool configuration from config.yaml
+      this.toolsConfig = loadToolConfig();
+      if (this.toolsConfig) {
+        logger.info('Using tool configuration from config.yaml for service mode');
+      }
+
+      let registeredCount = 0;
+      let skippedCount = 0;
+
       // Initialize only the relevant tool managers based on service mode
       if (this.serviceMode === 'jira' && this.jiraTools) {
         await this.jiraTools.initialize();
@@ -446,9 +456,13 @@ export class ServiceToolRegistry extends ToolRegistry {
         // Register JIRA tools
         const jiraTools = this.jiraTools.getAvailableTools();
         for (const tool of jiraTools) {
-          if (isToolEnabled(tool.name)) {
+          if (isToolEnabled(tool.name, this.toolsConfig)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered JIRA tool', { name: tool.name });
+            registeredCount++;
+          } else {
+            logger.debug('Skipped JIRA tool (disabled by config)', { name: tool.name });
+            skippedCount++;
           }
         }
       }
@@ -459,9 +473,13 @@ export class ServiceToolRegistry extends ToolRegistry {
         // Register Confluence tools
         const confluenceTools = this.confluenceTools.getAvailableTools();
         for (const tool of confluenceTools) {
-          if (isToolEnabled(tool.name)) {
+          if (isToolEnabled(tool.name, this.toolsConfig)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered Confluence tool', { name: tool.name });
+            registeredCount++;
+          } else {
+            logger.debug('Skipped Confluence tool (disabled by config)', { name: tool.name });
+            skippedCount++;
           }
         }
       }
@@ -471,17 +489,20 @@ export class ServiceToolRegistry extends ToolRegistry {
 
       // Count tools by service
       const jiraCount = this.serviceMode === 'jira' && this.jiraTools
-        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
+        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name, this.toolsConfig)).length
         : 0;
       const confluenceCount = this.serviceMode === 'confluence' && this.confluenceTools
-        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
+        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name, this.toolsConfig)).length
         : 0;
 
       logger.info('Service-specific tools initialized', {
         serviceMode: this.serviceMode,
         total: this.toolsMap.size,
+        registered: registeredCount,
+        skipped: skippedCount,
         jira: jiraCount,
         confluence: confluenceCount,
+        configSource: this.toolsConfig ? 'config.yaml' : 'environment'
       });
     } catch (error) {
       logger.error('Failed to initialize service-specific tools', error instanceof Error ? error : new Error(String(error)));

@@ -153,9 +153,7 @@ export const appConfig: IConfig = {
   },
 
   // Feature flags
-  features: {
-    enabledTools: getEnv('ENABLED_TOOLS', []),
-  },
+  features: {},
 };
 
 const { confluence, jira } = appConfig;

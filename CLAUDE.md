@@ -139,8 +139,26 @@ Environment configuration via `.env` file:
 - **Transport**: `TRANSPORT_TYPE` (stdio/http/sse), `SERVER_PORT` (default: 3000)
 - **Performance**: `CACHE_TTL_SECONDS`, `RATE_LIMIT_MAX_REQUESTS`
 - **Logging**: `LOG_LEVEL`, `LOG_PRETTY`
-- **Features**: `ENABLED_TOOLS` (comma-separated list of tools to enable)
 - **JIRA Custom Fields**: `JIRA_EPIC_LINK_FIELD_ID` (default: customfield_10014)
+
+### Tool Configuration
+Tools are configured via `config.yaml` file in the project root:
+
+```yaml
+usedInstruments:
+  jira:
+    include: ALL  # or specify list: [jira_get_issue, jira_create_issue]
+    exclude: []   # exclude specific tools even when include: ALL
+  confluence:
+    include: ALL  # or specify list: [confluence_get_page, confluence_search]
+    exclude: []   # exclude specific tools
+```
+
+**Configuration Options:**
+- `include: ALL` - Enable all tools for the service (default)
+- `include: [tool1, tool2]` - Enable only specified tools
+- `exclude: [tool3, tool4]` - Exclude specific tools (works with `include: ALL`)
+- Utility tools (`cache_clear`, `health_check`) are always enabled
 
 ### Authentication Structure
 The new authentication system uses a structured approach:
@@ -178,6 +196,7 @@ interface JiraConfig {
 - Production-ready error handling
 - Service-specific deployment options
 - Docker container support
+- Configurable tool selection via `config.yaml`
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

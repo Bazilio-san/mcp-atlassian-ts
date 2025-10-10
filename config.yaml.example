@@ -1,0 +1,36 @@
+# MCP Atlassian Tools Configuration
+# This file controls which tools are enabled for JIRA and Confluence
+
+usedInstruments:
+  jira:
+    # Include ALL to enable all tools, or specify a list of tool names
+    include: ALL
+    # Exclude specific tools (optional)
+    exclude: []
+
+    # Example of selective inclusion:
+    # include:
+    #   - jira_get_issue
+    #   - jira_search_issues
+    #   - jira_create_issue
+    #   - jira_update_issue
+    # exclude: []
+
+  confluence:
+    # Include ALL to enable all tools, or specify a list of tool names
+    include: ALL
+    # Exclude specific tools (optional)
+    exclude: []
+
+    # Example of selective inclusion:
+    # include:
+    #   - confluence_search
+    #   - confluence_get_page
+    #   - confluence_create_page
+    # exclude: []
+
+    # Example with exclusions:
+    # include: ALL
+    # exclude:
+    #   - confluence_delete_page
+    #   - confluence_update_page

@@ -77,3 +77,4 @@ local-*.*
 _api_responses/
 /tests/http/simple.http
 _logs/
+/config.yaml

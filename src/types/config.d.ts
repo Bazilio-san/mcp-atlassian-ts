@@ -89,7 +89,5 @@ export interface IConfig {
   ssl: ISslConfig;
 
   // Feature flags
-  features: {
-    enabledTools?: string[];
-  };
+  features: Record<string, never>;
 }

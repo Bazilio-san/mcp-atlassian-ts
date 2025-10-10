@@ -216,10 +216,35 @@ Utility: `cache_clear`
 - **Full mode** (default): Все 50 инструментов
 
 ### Фильтрация инструментов
-Через переменную окружения `ENABLED_TOOLS` можно включить только определенные инструменты:
-```bash
-ENABLED_TOOLS=jira_get_issue,jira_search_issues,confluence_get_page
+Управление списком доступных инструментов осуществляется через файл `config.yaml` в корне проекта:
+```yaml
+usedInstruments:
+  jira:
+    # Включить все инструменты
+    include: ALL
+    # Или только определенные
+    # include: [jira_get_issue, jira_search_issues, jira_create_issue]
+
+    # Исключить определенные инструменты (работает с include: ALL)
+    exclude: []
+    # exclude: [jira_delete_issue, jira_batch_create_issues]
+
+  confluence:
+    # Включить все инструменты
+    include: ALL
+    # Или только определенные
+    # include: [confluence_get_page, confluence_search, confluence_create_page]
+
+    # Исключить определенные инструменты
+    exclude: []
+    # exclude: [confluence_delete_page, confluence_update_page]
 ```
+
+**Возможности конфигурации:**
+- `include: ALL` - включить все инструменты сервиса (по умолчанию)
+- `include: [tool1, tool2]` - включить только указанные инструменты
+- `exclude: [tool3, tool4]` - исключить определенные инструменты (работает только с `include: ALL`)
+- Утилитарные инструменты (`cache_clear`, `health_check`, `cache_stats`) всегда доступны
 
 ---
 
