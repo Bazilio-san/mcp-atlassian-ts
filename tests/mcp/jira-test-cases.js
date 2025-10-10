@@ -5,6 +5,7 @@
  */
 
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from '../constants.js';
+import { loadToolConfig, isToolEnabledByConfig } from '../../dist/src/core/config/tool-config.js';
 
 /**
  * Test groups information for MCP tests
@@ -31,6 +32,48 @@ export class JiraMcpTestCases {
     this.testProjectKey = TEST_JIRA_PROJECT || 'TEST';
     this.testIssueKey = TEST_ISSUE_KEY || 'TEST-1';
     this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY || 'TEST-2';
+    this.toolConfig = null;
+    this.loadConfig();
+  }
+
+  /**
+   * Load tool configuration from config.yaml
+   */
+  loadConfig () {
+    try {
+      this.toolConfig = loadToolConfig();
+      if (this.toolConfig) {
+        console.log('Tool configuration loaded from config.yaml');
+      } else {
+        console.log('Using default configuration (all tools enabled)');
+      }
+    } catch (error) {
+      console.error('Failed to load tool configuration:', error.message);
+      this.toolConfig = null;
+    }
+  }
+
+  /**
+   * Check if a test case should be included based on tool configuration
+   */
+  isTestCaseEnabled (testCase) {
+    return isToolEnabledByConfig(testCase.toolName, this.toolConfig);
+  }
+
+  /**
+   * Filter test cases based on tool configuration
+   */
+  filterTestCasesByConfig (testCases) {
+    const filtered = testCases.filter(tc => this.isTestCaseEnabled(tc));
+
+    if (filtered.length < testCases.length) {
+      const excludedTools = testCases
+        .filter(tc => !this.isTestCaseEnabled(tc))
+        .map(tc => tc.toolName);
+      console.log(`Filtered out ${testCases.length - filtered.length} disabled tools: ${excludedTools.join(', ')}`);
+    }
+
+    return filtered;
   }
 
   /**
@@ -83,9 +126,7 @@ export class JiraMcpTestCases {
    * Issue Management test cases (9 tools)
    */
   getIssueManagementTestCases () {
-
-
-    return this.transformTestCases([
+    const testCases = [
       {
         fullId: '1-1',
         name: 'Get Issue Details',
@@ -177,16 +218,16 @@ export class JiraMcpTestCases {
         },
         description: 'Batch create multiple issues',
       },
-    ]);
+    ];
+
+    return this.transformTestCases(this.filterTestCasesByConfig(testCases));
   }
 
   /**
    * Project Management test cases (3 tools)
    */
   getProjectManagementTestCases () {
-
-
-    return this.transformTestCases([
+    const testCases = [
       {
         fullId: '2-1',
         name: 'Get All Projects',
@@ -212,7 +253,9 @@ export class JiraMcpTestCases {
         },
         description: 'Create project version',
       },
-    ]);
+    ];
+
+    return this.transformTestCases(this.filterTestCasesByConfig(testCases));
   }
 
   /**
@@ -451,9 +494,7 @@ export class JiraMcpTestCases {
    * Bulk Operations test cases (1 tool)
    */
   getBulkOperationsTestCases () {
-
-
-    return this.transformTestCases([
+    const testCases = [
       {
         fullId: '9-1',
         name: 'Batch Get Changelogs',
@@ -461,7 +502,9 @@ export class JiraMcpTestCases {
         params: { issueKeys: [this.testIssueKey, this.secondTestIssueKey] },
         description: 'Get changelogs for multiple issues',
       },
-    ]);
+    ];
+
+    return this.transformTestCases(this.filterTestCasesByConfig(testCases));
   }
 
   /**
@@ -524,10 +567,17 @@ export class JiraMcpTestCases {
 
   /**
    * Parse filter string and return matching test cases
+   * Respects tool configuration from config.yaml
    */
   parseFilterAndGetTestCases (filterString) {
     if (!filterString) {
-      return this.getAllTestCasesFlat();
+      // Return all enabled test cases when no filter
+      const allCases = this.getAllTestCasesFlat();
+      const enabledCases = this.filterTestCasesByConfig(allCases);
+      if (enabledCases.length < allCases.length) {
+        console.log(`\nFiltered to ${enabledCases.length} enabled tools out of ${allCases.length} total`);
+      }
+      return enabledCases;
     }
 
     const allTestCases = this.getAllTestCasesFlat();
@@ -550,7 +600,14 @@ export class JiraMcpTestCases {
       }
     });
 
-    return selectedTestCases.length > 0 ? selectedTestCases : allTestCases;
+    // Apply config filter to selected test cases
+    const enabledTestCases = this.filterTestCasesByConfig(selectedTestCases);
+
+    if (enabledTestCases.length < selectedTestCases.length) {
+      console.log(`\nFiltered ${selectedTestCases.length} selected tests to ${enabledTestCases.length} enabled tests`);
+    }
+
+    return enabledTestCases.length > 0 ? enabledTestCases : this.filterTestCasesByConfig(allTestCases);
   }
 }
 
