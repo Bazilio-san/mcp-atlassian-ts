@@ -13,54 +13,54 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from './shared/tool-context.js';
 
 // Import tool modules - Core tools
-import { jira_get_issue } from './tools/core/get-issue.js';
-import { jira_search_issues } from './tools/core/search-issues.js';
-import { jira_create_issue } from './tools/core/create-issue.js';
-import { jira_update_issue } from './tools/core/update-issue.js';
-import { jira_delete_issue } from './tools/core/delete-issue.js';
-import { jira_batch_create_issues } from './tools/core/batch-create-issues.js';
+import { jira_get_issue } from './tools/core/jira_get_issue.js';
+import { jira_search_issues } from './tools/core/jira_search_issues.js';
+import { jira_create_issue } from './tools/core/jira_create_issue.js';
+import { jira_update_issue } from './tools/core/jira_update_issue.js';
+import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
+import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
 
 // Import comment and transition tools
-import { jira_add_comment } from './tools/comments/add-comment.js';
-import { jira_get_transitions } from './tools/comments/get-transitions.js';
-import { jira_transition_issue } from './tools/comments/transition-issue.js';
+import { jira_add_comment } from './tools/comments/jira_add_comment.js';
+import { jira_get_transitions } from './tools/comments/jira_get_transitions.js';
+import { jira_transition_issue } from './tools/comments/jira_transition_issue.js';
 
 // Import project tools
-import { jira_get_projects } from './tools/projects/get-projects.js';
-import { jira_get_project_versions } from './tools/projects/get-project-versions.js';
-import { jira_create_version } from './tools/projects/create-version.js';
-import { jira_batch_create_versions } from './tools/projects/batch-create-versions.js';
+import { jira_get_projects } from './tools/projects/jira_get_projects.js';
+import { jira_get_project_versions } from './tools/projects/jira_get_project_versions.js';
+import { jira_create_version } from './tools/projects/jira_create_version.js';
+import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
 
 // Import user tools
-import { jira_get_user_profile } from './tools/users/get-user-profile.js';
+import { jira_get_user_profile } from './tools/users/jira_get_user_profile.js';
 
 // Import link tools
-import { jira_get_link_types } from './tools/links/get-link-types.js';
-import { jira_create_issue_link } from './tools/links/create-issue-link.js';
-import { jira_create_remote_issue_link } from './tools/links/create-remote-issue-link.js';
-import { jira_remove_issue_link } from './tools/links/remove-issue-link.js';
-import { jira_link_to_epic } from './tools/links/link-to-epic.js';
+import { jira_get_link_types } from './tools/links/jira_get_link_types.js';
+import { jira_create_issue_link } from './tools/links/jira_create_issue_link.js';
+import { jira_create_remote_issue_link } from './tools/links/jira_create_remote_issue_link.js';
+import { jira_remove_issue_link } from './tools/links/jira_remove_issue_link.js';
+import { jira_link_to_epic } from './tools/links/jira_link_to_epic.js';
 
 // Import worklog tools
-import { jira_get_worklog } from './tools/worklog/get-worklog.js';
-import { jira_add_worklog } from './tools/worklog/add-worklog.js';
+import { jira_get_worklog } from './tools/worklog/jira_get_worklog.js';
+import { jira_add_worklog } from './tools/worklog/jira_add_worklog.js';
 
 // Import attachment tools
-import { jira_download_attachments } from './tools/attachments/download-attachments.js';
+import { jira_download_attachments } from './tools/attachments/jira_download_attachments.js';
 
 // Import agile tools
-import { jira_get_agile_boards } from './tools/agile/get-agile-boards.js';
-import { jira_get_board_issues } from './tools/agile/get-board-issues.js';
-import { jira_get_sprints_from_board } from './tools/agile/get-sprints-from-board.js';
-import { jira_get_sprint_issues } from './tools/agile/get-sprint-issues.js';
-import { jira_create_sprint } from './tools/agile/create-sprint.js';
-import { jira_update_sprint } from './tools/agile/update-sprint.js';
+import { jira_get_agile_boards } from './tools/agile/jira_get_agile_boards.js';
+import { jira_get_board_issues } from './tools/agile/jira_get_board_issues.js';
+import { jira_get_sprints_from_board } from './tools/agile/jira_get_sprints_from_board.js';
+import { jira_get_sprint_issues } from './tools/agile/jira_get_sprint_issues.js';
+import { jira_create_sprint } from './tools/agile/jira_create_sprint.js';
+import { jira_update_sprint } from './tools/agile/jira_update_sprint.js';
 
 // Import metadata tools
-import { jira_search_fields } from './tools/metadata/search-fields.js';
+import { jira_search_fields } from './tools/metadata/jira_search_fields.js';
 
 // Import bulk operation tools
-import { jira_batch_get_changelogs } from './tools/bulk/batch-get-changelogs.js';
+import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
 
 /**
  * Modular JIRA Tools Manager
