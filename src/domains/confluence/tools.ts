@@ -812,7 +812,7 @@ Can be a single string or array of strings`,
       limit,
       excerpt,
       expand: this.normalizeToArray(expand),
-    });
+    }, headers);
 
     if (searchResult.results.length === 0) {
       return {
@@ -872,7 +872,7 @@ Can be a single string or array of strings`,
     const page = await this.client.getContent(pageId, {
       expand: expandFields,
       version,
-    });
+    }, headers);
 
     // Build result text
     let resultText = `**Confluence Page: ${page.title}**\n\n`;
@@ -934,7 +934,7 @@ Can be a single string or array of strings`,
 
     const pages = await this.client.getContentBySpaceAndTitle(spaceKey, title, {
       expand: this.normalizeToArray(expand)
-    });
+    }, headers);
 
     if (pages.length === 0) {
       return {
@@ -993,13 +993,13 @@ Can be a single string or array of strings`,
       pageInput.ancestors = [{id: parentId}];
     }
 
-    const createdPage = await this.client.createContent(pageInput);
+    const createdPage = await this.client.createContent(pageInput, headers);
 
     // Add labels if provided
     if (labels.length > 0) {
       for (const labelName of labels) {
         try {
-          await this.client.addLabel(createdPage.id, {prefix: 'global', name: labelName});
+          await this.client.addLabel(createdPage.id, {prefix: 'global', name: labelName}, headers);
         } catch (error) {
           logger.warn('Failed to add label', {pageId: createdPage.id, label: labelName, error});
         }
@@ -1034,7 +1034,7 @@ Can be a single string or array of strings`,
 
     const pageId = String(args.pageId)
     // Get current page to increment version
-    const currentPage = await this.client.getContent(pageId, {expand: ['version', 'space']});
+    const currentPage = await this.client.getContent(pageId, {expand: ['version', 'space']}, headers);
 
     // Build the update input
     const updateInput: any = {
@@ -1056,7 +1056,7 @@ Can be a single string or array of strings`,
       };
     }
 
-    const updatedPage = await this.client.updateContent(pageId, updateInput);
+    const updatedPage = await this.client.updateContent(pageId, updateInput, headers);
 
     // Update labels if provided
     if (labels) {
@@ -1064,7 +1064,7 @@ Can be a single string or array of strings`,
       // Note: This is a simplified approach; in production, you might want to be more selective
       for (const labelName of labels) {
         try {
-          await this.client.addLabel(pageId, {prefix: 'global', name: labelName});
+          await this.client.addLabel(pageId, {prefix: 'global', name: labelName}, headers);
         } catch (error) {
           logger.warn('Failed to add label', {pageId, label: labelName, error});
         }
@@ -1095,7 +1095,7 @@ Can be a single string or array of strings`,
       status,
       expand: this.normalizeToArray(expand),
       limit
-    });
+    }, headers);
 
     if (spacesResult.results.length === 0) {
       return {
@@ -1127,7 +1127,7 @@ Can be a single string or array of strings`,
 
     const space = await this.client.getSpace(spaceKey, {
       expand: this.normalizeToArray(expand)
-    });
+    }, headers);
 
     return {
       content: [
@@ -1163,7 +1163,7 @@ Can be a single string or array of strings`,
       status,
       expand: this.normalizeToArray(expand),
       limit,
-    });
+    }, headers);
 
     if (contentResult.results.length === 0) {
       return {
@@ -1214,7 +1214,7 @@ Can be a single string or array of strings`,
       commentInput.ancestors = [{id: parentCommentId}];
     }
 
-    const comment = await this.client.addComment(commentInput);
+    const comment = await this.client.addComment(commentInput, headers);
 
     return {
       content: [
@@ -1237,7 +1237,7 @@ Can be a single string or array of strings`,
   private async searchUsers(args: any, headers?: Record<string, string>) {
     const {query, limit = 50} = args;
 
-    const users = await this.client.searchUsers(query, limit);
+    const users = await this.client.searchUsers(query, limit, headers);
 
     if (users.length === 0) {
       return {
@@ -1276,7 +1276,7 @@ Can be a single string or array of strings`,
     const {label, prefix = 'global'} = args;
     const pageId = String(args.pageId);
 
-    await this.client.addLabel(pageId, {prefix, name: label});
+    await this.client.addLabel(pageId, {prefix, name: label}, headers);
 
     return {
       content: [
@@ -1297,7 +1297,7 @@ Can be a single string or array of strings`,
     const {prefix, limit = 50} = args;
     const pageId = String(args.pageId);
 
-    const labelsResult = await this.client.getLabels(pageId, {prefix, limit});
+    const labelsResult = await this.client.getLabels(pageId, {prefix, limit}, headers);
 
     if (labelsResult.results.length === 0) {
       return {
@@ -1334,7 +1334,7 @@ Can be a single string or array of strings`,
       spaceKey,
       expand: this.normalizeToArray(expand),
       limit
-    });
+    }, headers);
 
     if (pagesResult.results.length === 0) {
       return {
@@ -1376,7 +1376,7 @@ Can be a single string or array of strings`,
     const childrenResult = await this.client.getPageChildren(pageId, {
       expand: this.normalizeToArray(expand),
       limit
-    });
+    }, headers);
 
     if (childrenResult.results.length === 0) {
       return {
@@ -1419,7 +1419,7 @@ Can be a single string or array of strings`,
       location,
       expand: this.normalizeToArray(expand),
       limit
-    });
+    }, headers);
 
     if (commentsResult.results.length === 0) {
       return {
@@ -1457,7 +1457,7 @@ Can be a single string or array of strings`,
     const {permanent = false} = args;
     const pageId = String(args.pageId);
 
-    await this.client.deleteContent(pageId, permanent ? 'deleted' : 'trashed');
+    await this.client.deleteContent(pageId, permanent ? 'deleted' : 'trashed', headers);
 
     return {
       content: [
@@ -1479,7 +1479,7 @@ Can be a single string or array of strings`,
     const historyResult = await this.client.getContentHistory(pageId, {
       expand: this.normalizeToArray(expand),
       limit
-    });
+    }, headers);
 
     if (!historyResult.lastUpdated && !historyResult.previousVersion) {
       return {

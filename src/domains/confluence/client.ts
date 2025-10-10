@@ -272,7 +272,7 @@ export class ConfluenceClient {
           if (options.label?.length) params.label = options.label.join(',');
           if (options.expand?.length) params.expand = options.expand.join(',');
 
-          const response = await this.makeRequest("GET", '/wiki/rest/api/space', { params });
+          const response = await this.makeRequest("GET", '/wiki/rest/api/space', { params, headers });
           return response.data;
         },
         300
@@ -287,7 +287,8 @@ export class ConfluenceClient {
     spaceKey: string,
     options: {
       expand?: string[];
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<ConfluenceSpace> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'space', { spaceKey, ...options });
@@ -302,6 +303,7 @@ export class ConfluenceClient {
 
           const response = await this.makeRequest("GET", `/wiki/rest/api/space/${spaceKey}`, {
             params,
+            headers,
           });
 
           if (!response.data) {
@@ -327,7 +329,8 @@ export class ConfluenceClient {
       expand?: string[];
       offset?: number;
       limit?: number;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<{ results: ConfluencePage[]; size: number; offset: number; limit: number }> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'spaceContent', { spaceKey, ...options });
@@ -341,7 +344,7 @@ export class ConfluenceClient {
         };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.makeRequest("GET", '/wiki/rest/api/content', { params });
+        const response = await this.makeRequest("GET", '/wiki/rest/api/content', { params, headers });
         return response.data;
       });
     });
@@ -360,7 +363,8 @@ export class ConfluenceClient {
       limit?: number;
       location?: string;
       depth?: 'all' | string;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<{ results: ConfluenceComment[]; size: number }> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'comments', { contentId, ...options });
@@ -371,9 +375,9 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.makeRequest("GET", 
+        const response = await this.makeRequest("GET",
           `/wiki/rest/api/content/${contentId}/child/comment`,
-          { params }
+          { params, headers }
         );
         return response.data;
       });
@@ -383,7 +387,7 @@ export class ConfluenceClient {
   /**
    * Add comment to content
    */
-  async addComment(commentInput: ConfluenceCommentInput): Promise<ConfluenceComment> {
+  async addComment(commentInput: ConfluenceCommentInput, headers?: Record<string, string>): Promise<ConfluenceComment> {
     return withErrorHandling(async () => {
       logger.info('Adding Confluence comment', { containerId: commentInput.container.id });
 
@@ -391,7 +395,7 @@ export class ConfluenceClient {
         throw new ValidationError('Comment body is required');
       }
 
-      const response = await this.makeRequest("POST", '/wiki/rest/api/content', { data: commentInput });
+      const response = await this.makeRequest("POST", '/wiki/rest/api/content', { data: commentInput, headers });
 
       // Clear cache for the container content
       this.invalidateContentCache(commentInput.container.id);
@@ -406,12 +410,13 @@ export class ConfluenceClient {
   /**
    * Add label to content
    */
-  async addLabel(contentId: string, label: ConfluenceLabelInput): Promise<ConfluenceLabel> {
+  async addLabel(contentId: string, label: ConfluenceLabelInput, headers?: Record<string, string>): Promise<ConfluenceLabel> {
     return withErrorHandling(async () => {
       logger.info('Adding Confluence label', { contentId, label: label.name });
 
       const response = await this.makeRequest("POST", `/wiki/rest/api/content/${contentId}/label`, {
         data: [label],
+        headers,
       });
 
       // Clear cache for this content
@@ -424,11 +429,11 @@ export class ConfluenceClient {
   /**
    * Remove label from content
    */
-  async removeLabel(contentId: string, labelName: string): Promise<void> {
+  async removeLabel(contentId: string, labelName: string, headers?: Record<string, string>): Promise<void> {
     return withErrorHandling(async () => {
       logger.info('Removing Confluence label', { contentId, labelName });
 
-      await this.makeRequest("DELETE", `/wiki/rest/api/content/${contentId}/label/${labelName}`);
+      await this.makeRequest("DELETE", `/wiki/rest/api/content/${contentId}/label/${labelName}`, { headers });
 
       // Clear cache for this content
       this.invalidateContentCache(contentId);
@@ -448,7 +453,8 @@ export class ConfluenceClient {
       limit?: number;
       filename?: string;
       mediaType?: string;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<any> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'attachments', { contentId, ...options });
@@ -459,9 +465,9 @@ export class ConfluenceClient {
         const params: any = { ...options };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.makeRequest("GET", 
+        const response = await this.makeRequest("GET",
           `/wiki/rest/api/content/${contentId}/child/attachment`,
-          { params }
+          { params, headers }
         );
         return response.data;
       });
@@ -473,7 +479,7 @@ export class ConfluenceClient {
   /**
    * Search for users in Confluence
    */
-  async searchUsers(query: string, limit: number = 50): Promise<any[]> {
+  async searchUsers(query: string, limit: number = 50, headers?: Record<string, string>): Promise<any[]> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'userSearch', { query, limit });
 
@@ -484,6 +490,7 @@ export class ConfluenceClient {
 
           const response = await this.makeRequest("GET", '/wiki/rest/api/search/user', {
             params: { cql: `user.fullname ~ "${query}" OR user.email ~ "${query}"`, limit },
+            headers,
           });
 
           return response.data.results || [];
@@ -503,7 +510,8 @@ export class ConfluenceClient {
       prefix?: string;
       offset?: number;
       limit?: number;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<any> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'labels', { contentId, ...options });
@@ -513,6 +521,7 @@ export class ConfluenceClient {
 
         const response = await this.makeRequest("GET", `/wiki/rest/api/content/${contentId}/label`, {
           params: options,
+          headers,
         });
 
         return response.data;
@@ -530,7 +539,8 @@ export class ConfluenceClient {
       offset?: number;
       limit?: number;
       type?: string;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<any> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'pageChildren', { pageId, ...options });
@@ -543,6 +553,7 @@ export class ConfluenceClient {
 
         const response = await this.makeRequest("GET", `/wiki/rest/api/content/${pageId}/child/page`, {
           params,
+          headers,
         });
 
         return response.data;
@@ -554,7 +565,7 @@ export class ConfluenceClient {
   /**
    * Delete content
    */
-  async deleteContent(contentId: string, status?: 'trashed' | 'deleted'): Promise<void> {
+  async deleteContent(contentId: string, status?: 'trashed' | 'deleted', headers?: Record<string, string>): Promise<void> {
     return withErrorHandling(async () => {
       logger.info('Deleting Confluence content', { contentId, status });
 
@@ -565,10 +576,11 @@ export class ConfluenceClient {
             version: { number: 1 }, // Will be updated automatically
             status: 'trashed',
           },
+          headers,
         });
       } else {
         // Permanent deletion
-        await this.makeRequest("DELETE", `/wiki/rest/api/content/${contentId}`);
+        await this.makeRequest("DELETE", `/wiki/rest/api/content/${contentId}`, { headers });
       }
 
       this.invalidateContentCache(contentId);
@@ -585,7 +597,8 @@ export class ConfluenceClient {
       expand?: string[];
       offset?: number;
       limit?: number;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<any> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'pagesByLabel', { labelName, ...options });
@@ -606,7 +619,7 @@ export class ConfluenceClient {
         };
         if (options.expand?.length) params.expand = options.expand.join(',');
 
-        const response = await this.makeRequest("GET", '/wiki/rest/api/content/search', { params });
+        const response = await this.makeRequest("GET", '/wiki/rest/api/content/search', { params, headers });
         return response.data;
       });
     });
@@ -621,7 +634,8 @@ export class ConfluenceClient {
       expand?: string[];
       offset?: number;
       limit?: number;
-    } = {}
+    } = {},
+    headers?: Record<string, string>
   ): Promise<any> {
     return withErrorHandling(async () => {
       const cacheKey = generateCacheKey('confluence', 'contentHistory', { contentId, ...options });
@@ -634,6 +648,7 @@ export class ConfluenceClient {
 
         const response = await this.makeRequest("GET", `/wiki/rest/api/content/${contentId}/history`, {
           params,
+          headers,
         });
 
         return response.data;
