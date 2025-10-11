@@ -29,7 +29,8 @@ export const jira_get_agile_boards: ToolWithHandler = {
       },
       type: {
         type: 'string',
-        description: 'Filters boards by type. Valid values: scrum, kanban, simple',
+        description: 'Filters boards by type',
+        enum: ['scrum', 'kanban', 'simple'],
       },
       name: {
         type: 'string',

@@ -28,6 +28,9 @@ import { ToolRegistry } from './tools.js';
 
 const logger = createLogger('server');
 
+// MCP protocol date-version per spec; used for HTTP/Streamable HTTP header negotiation
+const MCP_PROTOCOL_VERSION = '2025-06-18';
+
 /**
  * MCP Atlassian Server with multiple transport support
  */
@@ -222,6 +225,20 @@ export class McpAtlassianServer {
       // Request logging
       this.app.use(createRequestLogger());
 
+      // MCP protocol version header for HTTP/Streamable HTTP per spec
+      this.app.use((req, res, next) => {
+        res.setHeader('MCP-Protocol-Version', MCP_PROTOCOL_VERSION);
+        // Expose the header to browsers in dev mode
+        if (process.env.NODE_ENV === 'development') {
+          const existing = res.getHeader('Access-Control-Expose-Headers');
+          const expose = Array.isArray(existing) ? existing.join(',') : (existing || '');
+          const values = new Set((expose as string).split(',').map(v => v.trim()).filter(Boolean));
+          values.add('MCP-Protocol-Version');
+          res.setHeader('Access-Control-Expose-Headers', Array.from(values).join(', '));
+        }
+        next();
+      });
+
       // JSON parsing
       this.app.use(express.json({ limit: '10mb' }));
       this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -244,6 +261,7 @@ export class McpAtlassianServer {
       // SSE endpoint for MCP communication
       this.app.get('/sse', async (req, res) => {
         try {
+          res.setHeader('MCP-Protocol-Version', MCP_PROTOCOL_VERSION);
           const transport = new SSEServerTransport('/sse', res);
           await this.server.connect(transport);
 

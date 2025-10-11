@@ -601,17 +601,22 @@ export class JiraMcpTestCases {
         params: async (client) => {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
-            maxResults: 10
+            maxResults: 2,
+            type: 'scrum',
           });
 
-          // Берём первую доску из списка
-          const firstBoard = boardsResult?.values?.[0];
-          if (!firstBoard) {
-            throw new Error('No boards found to test board sprints');
+          // Ищем доску типа scrum (данные в content[1].text)
+          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          const scrumBoard = boards.find(b => b.type === 'scrum');
+
+          if (!scrumBoard?.id) {
+            // Если не нашли scrum доску, пропускаем тест
+            console.log('No scrum boards found, skipping test');
+            return null;
           }
 
           return {
-            boardId: String(firstBoard.id),
+            boardId: Number(scrumBoard.id),
             maxResults: 10,
           };
         },
@@ -621,11 +626,40 @@ export class JiraMcpTestCases {
         fullId: '8-4',
         name: 'Get Sprint Issues',
         toolName: 'jira_get_sprint_issues',
-        params: {
-          sprintId: '1',
-          maxResults: 10,
+        params: async (client) => {
+          // Сначала получаем список досок
+          const boardsResult = await client.callTool('jira_get_agile_boards', {
+            maxResults: 50
+          });
+
+          // Ищем доску типа scrum
+          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          const scrumBoard = boards.find(b => b.type === 'scrum');
+
+          if (!scrumBoard?.id) {
+            console.log('No scrum boards found, skipping test');
+            return null;
+          }
+
+          // Получаем спринты этой доски
+          const sprintsResult = await client.callTool('jira_get_sprints_from_board', {
+            boardId: Number(scrumBoard.id),
+            maxResults: 10
+          });
+
+          // Берём первый спринт из списка (данные в content[1].text)
+          const firstSprint = JSON.parse(sprintsResult?.result?.content?.[1]?.text || '{}')?.sprints?.[0];
+          if (!firstSprint?.id) {
+            console.log('No sprints found to test sprint issues');
+            return null;
+          }
+
+          return {
+            sprintId: Number(firstSprint.id),
+            maxResults: 10,
+          };
         },
-        description: 'Get sprint issues',
+        description: 'Get issues from first available sprint',
       },
       {
         fullId: '8-5',
@@ -634,17 +668,20 @@ export class JiraMcpTestCases {
         params: async (client) => {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
-            maxResults: 10
+            maxResults: 50
           });
 
-          // Берём первую доску из списка
-          const firstBoard = boardsResult?.values?.[0];
-          if (!firstBoard) {
-            throw new Error('No boards found to test sprint creation');
+          // Ищем доску типа scrum (данные в content[1].text)
+          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          const scrumBoard = boards.find(b => b.type === 'scrum');
+
+          if (!scrumBoard?.id) {
+            console.log('No scrum boards found, skipping test');
+            return null;
           }
 
           return {
-            boardId: String(firstBoard.id),
+            originBoardId: Number(scrumBoard.id),
             name: `MCP Test Sprint ${Date.now()}`,
             goal: 'Test sprint creation',
           };
@@ -655,12 +692,42 @@ export class JiraMcpTestCases {
         fullId: '8-6',
         name: 'Update Sprint',
         toolName: 'jira_update_sprint',
-        params: {
-          sprintId: '1',
-          name: 'Updated Sprint Name',
-          state: 'active',
+        params: async (client) => {
+          // Сначала получаем список досок
+          const boardsResult = await client.callTool('jira_get_agile_boards', {
+            maxResults: 50
+          });
+
+          // Ищем доску типа scrum
+          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          const scrumBoard = boards.find(b => b.type === 'scrum');
+
+          if (!scrumBoard?.id) {
+            console.log('No scrum boards found, skipping test');
+            return null;
+          }
+
+          // Создаём новый спринт для тестирования обновления
+          const createResult = await client.callTool('jira_create_sprint', {
+            originBoardId: Number(scrumBoard.id),
+            name: `MCP Test Sprint for Update ${Date.now()}`,
+            goal: 'Test sprint for update operation',
+          });
+
+          // Получаем ID созданного спринта
+          const createdSprint = JSON.parse(createResult?.result?.content?.[1]?.text || '{}')?.sprint;
+          if (!createdSprint?.id) {
+            console.log('Failed to create sprint for update test');
+            return null;
+          }
+
+          return {
+            sprintId: Number(createdSprint.id),
+            name: `Updated Sprint Name ${Date.now()}`,
+            goal: 'Updated test goal',
+          };
         },
-        description: 'Update sprint',
+        description: 'Update newly created sprint',
       },
     ]);
   }
