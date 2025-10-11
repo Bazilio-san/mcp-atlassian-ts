@@ -46,7 +46,7 @@ export class AuthenticationManager {
         const configWithAuth = this.addAuthenticationHeaders(requestConfig);
         if (debug.enabled) {
           const headers = `\nheaders-to-api:\n${Object.entries(configWithAuth.headers).map(([k, v]) => `  ${k}: ${v}`).join('\n')}\n`;
-          console.log(headers)
+          console.log(headers);
         }
         return configWithAuth;
       },

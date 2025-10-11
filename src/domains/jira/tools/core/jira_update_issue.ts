@@ -97,9 +97,6 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
     // Make API call
     await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
 
-    // Invalidate cache for this issue
-    context.invalidateIssueCache(issueIdOrKey);
-
     // Format response for MCP
     return {
       content: [

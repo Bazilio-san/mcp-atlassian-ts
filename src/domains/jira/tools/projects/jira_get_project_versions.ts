@@ -17,12 +17,12 @@ export const jira_get_project_versions: ToolWithHandler = {
   inputSchema: {
     type: 'object',
     properties: {
-      projectKey: {
+      projectIdOrKey: {
         type: 'string',
         description: 'The project key or ID to get versions for (e.g. "TEST" or "10000")',
       },
     },
-    required: ['projectKey'],
+    required: ['projectIdOrKey'],
     additionalProperties: false,
   },
   annotations: {
@@ -41,16 +41,16 @@ export const jira_get_project_versions: ToolWithHandler = {
 async function getProjectVersionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
-    const { projectKey } = args;
+    const { projectIdOrKey } = args;
 
-    logger.info('Fetching JIRA project versions', { projectKey });
+    logger.info('Fetching JIRA project versions', { projectIdOrKey });
 
     // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'versions', { projectKey });
+    const cacheKey = generateCacheKey('jira', 'versions', { projectIdOrKey });
 
     // Fetch from cache or API
     const versions = await cache.getOrSet(cacheKey, async () => {
-      const response = await httpClient.get(`/rest/api/2/project/${projectKey}/versions`);
+      const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}/versions`);
       return response.data || [];
     });
 
@@ -59,7 +59,7 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
         content: [
           {
             type: 'text',
-            text: `**No versions found for project ${projectKey}**`,
+            text: `**No versions found for project ${projectIdOrKey}**`,
           },
         ],
       };
@@ -76,7 +76,7 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
       content: [
         {
           type: 'text',
-          text: `**Project Versions for ${projectKey}**\n\n${versionsList}`,
+          text: `**Project Versions for ${projectIdOrKey}**\n\n${versionsList}`,
         },
       ],
     };

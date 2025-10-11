@@ -5,7 +5,6 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -35,7 +34,7 @@ export const jira_get_agile_boards: ToolWithHandler = {
         type: 'string',
         description: 'Filters boards by name (case-insensitive)',
       },
-      projectKeyOrId: {
+      projectIdOrKey: {
         type: 'string',
         description: 'Filters boards by project key or ID',
       },
@@ -58,8 +57,8 @@ export const jira_get_agile_boards: ToolWithHandler = {
  */
 async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
-    const { startAt = 0, maxResults = 50, type, name, projectKeyOrId } = args;
+    const { httpClient, logger } = context;
+    const { startAt = 0, maxResults = 50, type, name, projectIdOrKey } = args;
 
     logger.info('Fetching JIRA agile boards', args);
 
@@ -67,17 +66,11 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
     const params: any = { startAt, maxResults };
     if (type) params.type = type;
     if (name) params.name = name;
-    if (projectKeyOrId) params.projectKeyOrId = projectKeyOrId;
+    if (projectIdOrKey) params.projectIdOrKey = projectIdOrKey;
 
-    // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'agileBoards', params);
-
-    // Fetch from cache or API
-    const boardsResult = await cache.getOrSet(cacheKey, async () => {
-      logger.info('Making API call to get agile boards');
-      const response = await httpClient.get('/rest/agile/1.0/board', { params });
-      return response.data;
-    });
+    logger.info('Making API call to get agile boards');
+    const response = await httpClient.get('/rest/agile/1.0/board', { params });
+    const boardsResult = response.data;
 
     if (!boardsResult.values || boardsResult.values.length === 0) {
       return {

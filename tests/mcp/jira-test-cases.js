@@ -9,10 +9,11 @@ import {
   TEST_ISSUE_KEY,
   TEST_JIRA_PROJECT,
   TEST_ISSUE_TYPE_NAME,
-  TEST_SECOND_ISSUE_KEY ,
+  TEST_SECOND_ISSUE_KEY,
   TEST_USERNAME,
   TEST_EPIC_ISSUE_KEY,
   JIRA_EPIC_LINK_FIELD_ID,
+  TEST_ISSUE_LINK_TYPE,
 } from '../constants.js';
 import { loadToolConfig, isToolEnabledByConfig } from '../../dist/src/core/config/tool-config.js';
 
@@ -166,7 +167,7 @@ export class JiraMcpTestCases {
         name: 'Create New Issue',
         toolName: 'jira_create_issue',
         params: {
-          project: this.testProjectKey,
+          projectIdOrKey: this.testProjectKey,
           issueType: TEST_ISSUE_TYPE_NAME,
           summary: 'MCP HTTP Test Issue',
           description: 'Created via MCP HTTP tester',
@@ -205,31 +206,29 @@ export class JiraMcpTestCases {
         name: 'Transition Issue Status',
         toolName: 'jira_transition_issue',
         params: async (client) => {
+          // const res = await client.callTool('jira_get_issue', { issueIdOrKey: this.testIssueKey });
+          // console.log(res.result.content[0].text);
+
           // Сначала получаем доступные переходы для задачи
-          try {
-            const { result: transitionsResult } = await client.callTool('jira_get_transitions', {
-              issueIdOrKey: this.testIssueKey,
-            });
 
-            // Проверяем, есть ли доступные переходы
-            if (!transitionsResult || !transitionsResult.transitions || transitionsResult.transitions.length === 0) {
-              console.log('  ℹ️  No transitions available for this issue');
-              return null; // Пропускаем тест
-            }
-
-            // Используем первый доступный переход
-            const firstTransition = transitionsResult.transitions[0];
-            console.log(`  ℹ️  Using transition: ${firstTransition.name} (ID: ${firstTransition.id})`);
-
-            return {
-              issueIdOrKey: this.testIssueKey,
-              transitionId: firstTransition.id,
-              comment: 'Transitioned via MCP test',
-            };
-          } catch (error) {
-            console.log(`  ⚠️  Failed to get transitions: ${error.message}`);
-            return null; // Пропускаем тест
+          const transitionsList = await client.callTool('jira_get_transitions', {
+            issueIdOrKey: this.testIssueKey,
+          });
+          // Проверяем, есть ли доступные переходы
+          if ((transitionsList?.result?.content?.length || 0) < 2) {
+            throw new Error('  ❌  No transitions available for this issue');
           }
+          const transitions = JSON.parse(transitionsList?.result?.content?.[1]?.text ?? '');
+
+          // Используем первый доступный переход
+          const firstTransition = transitions[0];
+          console.log(`  ℹ️  Using transition: ${firstTransition.name} (ID: ${firstTransition.id})`);
+
+          return {
+            issueIdOrKey: this.testIssueKey,
+            transitionId: firstTransition.id,
+            comment: 'Transitioned via MCP test',
+          };
         },
         description: 'Transition issue status (gets valid transition first)',
       },
@@ -241,30 +240,23 @@ export class JiraMcpTestCases {
           // First create a temporary issue to delete
           console.log('  ℹ️  Creating temporary issue for deletion test...');
           const createResult = await client.callTool('jira_create_issue', {
-            project: TEST_JIRA_PROJECT || 'TEST',
+            projectIdOrKey: TEST_JIRA_PROJECT || 'TEST',
             issueType: TEST_ISSUE_TYPE_NAME,
             summary: `Temp issue for delete test - ${Date.now()}`,
             description: 'This issue will be deleted immediately',
           });
-          const text = createResult?.result?.content?.[0]?.text ?? '';
+          const json = JSON.parse(createResult?.result?.content?.[0]?.text ?? '');
 
-          const isCreated = /Created Successfully/i.test(text);
-          if (!isCreated) {
+          const tmpIssueKey = json?.newIssue?.key;
+          if (!tmpIssueKey) {
             throw new Error('  ❌  Failed to create temporary issue for deletion test');
           }
 
-          // Ищем ключ JIRA вида ABC-123
-          const match = text.match(/\b[A-Z][A-Z0-9_]*-\d+\b/);
-          if (!match) {
-            throw new Error('  ❌  Failed to extract task key from response');
-          }
-
-          const tmpIssueKey = match[0];
           console.log(`  ℹ️  Delete just created issue: ${tmpIssueKey}`);
 
           return {
             issueIdOrKey: tmpIssueKey,
-            deleteSubtasks: false
+            deleteSubtasks: false,
           };
         },
         description: 'Delete issue (creates temp issue first)',
@@ -307,8 +299,8 @@ export class JiraMcpTestCases {
                 issueIdOrKey: this.testIssueKey,
                 fields: {
                   // Set epic link to null to remove it
-                  [JIRA_EPIC_LINK_FIELD_ID]: null
-                }
+                  [JIRA_EPIC_LINK_FIELD_ID]: null,
+                },
               });
               console.log(`  ℹ️  Cleanup: Removing issue ${this.testIssueKey} from epic ${this.testEpicIssueKey}`);
             } catch (cleanupError) {
@@ -345,7 +337,7 @@ export class JiraMcpTestCases {
         fullId: '2-3',
         name: 'Get Project Versions',
         toolName: 'jira_get_project_versions',
-        params: { projectKey: this.testProjectKey },
+        params: { projectIdOrKey: this.testProjectKey },
         description: 'Get project versions',
       },
       {
@@ -458,9 +450,10 @@ export class JiraMcpTestCases {
         name: 'Create Issue Link',
         toolName: 'jira_create_issue_link',
         params: {
-          linkType: 'Relationship',
+          linkType: TEST_ISSUE_LINK_TYPE,
           inwardIssue: this.testIssueKey,
           outwardIssue: this.secondTestIssueKey,
+          comment: `Test link ${new Date().toISOString()}`,
         },
         description: 'Create issue link',
       },
@@ -479,8 +472,43 @@ export class JiraMcpTestCases {
         fullId: '5-4',
         name: 'Remove Issue Link',
         toolName: 'jira_remove_issue_link',
-        params: { linkId: '10000' },
-        description: 'Remove issue link (will fail if not exists)',
+        params: async (client) => {
+          console.log('  ℹ️  Checking for existing issue links...');
+
+          // First, get the issue with links
+          const issueResult = await client.callTool('jira_get_issue', {
+            issueIdOrKey: this.testIssueKey,
+          });
+
+          const issueData = JSON.parse(issueResult?.result?.content?.[0]?.text ?? '{}');
+          const existingLinks = issueData?.jiraIssue?.issueLinks || [];
+
+          let linkId;
+
+          if (existingLinks.length) {
+            // Use the first existing link
+            linkId = existingLinks[0].id;
+            console.log(`  ℹ️  Found ${existingLinks.length} existing links, using link ID: ${linkId}`);
+          } else {
+            // Create a new link for testing
+            const params = {
+              linkType: TEST_ISSUE_LINK_TYPE,
+              inwardIssue: this.testIssueKey,
+              outwardIssue: this.secondTestIssueKey,
+              comment: `Test link created for removal test - ${Date.now()}`,
+            };
+            console.log(`  ℹ️  Only ${existingLinks.length} links found, creating a new link ${params.linkType} between ${
+              params.inwardIssue} and ${params.outwardIssue} for test...`);
+
+            const createLinkResult = await client.callTool('jira_create_issue_link', params);
+
+            // Extract the link ID from the response
+            linkId = JSON.parse(createLinkResult?.result?.content?.[1]?.text || '')?.link?.id;
+            console.log(`  ℹ️  Created test link with ID: ${linkId}`);
+          }
+          return { linkId };
+        },
+        description: 'Remove issue link (creates link first if needed)',
       },
     ]);
   }

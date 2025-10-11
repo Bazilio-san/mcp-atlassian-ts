@@ -5,7 +5,6 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -51,20 +50,14 @@ export const jira_get_worklog: ToolWithHandler = {
 async function getWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, startAt = 0, maxResults = 50 } = args;
-    const { httpClient, cache, logger } = context;
+    const { httpClient, logger } = context;
 
     logger.info('Fetching JIRA worklog entries', { issueIdOrKey });
 
-    // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'worklogs', { issueIdOrKey, startAt, maxResults });
-
-    // Fetch from cache or API
-    const worklogResult = await cache.getOrSet(cacheKey, async () => {
-      const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
-        params: { startAt, maxResults },
-      });
-      return response.data;
+    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
+      params: { startAt, maxResults },
     });
+    const worklogResult = response.data;
 
     if (worklogResult.worklogs.length === 0) {
       return {

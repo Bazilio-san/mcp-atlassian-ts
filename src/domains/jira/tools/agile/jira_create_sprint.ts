@@ -55,7 +55,7 @@ export const jira_create_sprint: ToolWithHandler = {
  */
 async function createSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, config } = context;
+    const { httpClient, logger, config } = context;
     const { name, originBoardId, goal, startDate, endDate } = args;
 
     logger.info('Creating JIRA sprint', { name, originBoardId, goal });
@@ -78,15 +78,6 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
     }
 
     const sprint = response.data;
-
-    // Clear related caches
-    cache.keys()
-      .filter(key =>
-        key.includes('jira:boardSprints') ||
-        key.includes('jira:agileBoards') ||
-        key.includes(`boardId:${originBoardId}`),
-      )
-      .forEach(key => cache.del(key));
 
     logger.info('Sprint created successfully', { sprintId: sprint.id, name: sprint.name });
 

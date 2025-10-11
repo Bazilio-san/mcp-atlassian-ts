@@ -5,7 +5,6 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -41,21 +40,16 @@ export const jira_download_attachments: ToolWithHandler = {
 async function downloadAttachmentsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
-    const { httpClient, cache, logger } = context;
+    const { httpClient, logger } = context;
 
     logger.info('Fetching JIRA attachments', { issueIdOrKey });
 
     // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'attachments', { issueIdOrKey });
 
-    // Fetch from cache or API
-    const attachments = await cache.getOrSet(cacheKey, async () => {
-      // Get issue with attachment expansion
-      const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, {
-        params: { expand: 'attachment' },
-      });
-      return response.data.fields.attachment || [];
+    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, {
+      params: { expand: 'attachment' },
     });
+    const attachments = response.data.fields.attachment || [];
 
     if (attachments.length === 0) {
       return {

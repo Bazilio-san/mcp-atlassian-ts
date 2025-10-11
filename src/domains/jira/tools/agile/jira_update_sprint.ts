@@ -63,7 +63,7 @@ export const jira_update_sprint: ToolWithHandler = {
  */
 async function updateSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, config } = context;
+    const { httpClient, logger, config } = context;
     const { sprintId, name, goal, state, startDate, endDate, completeDate } = args;
 
     logger.info('Updating JIRA sprint', { sprintId, name, state });
@@ -90,16 +90,6 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
     }
 
     const sprint = response.data;
-
-    // Clear related caches that might contain stale sprint data
-    cache.keys()
-      .filter(key =>
-        key.includes('jira:boardSprints') ||
-        key.includes('jira:sprintIssues') ||
-        key.includes('jira:agileBoards') ||
-        key.includes(`sprintId:${sprintId}`),
-      )
-      .forEach(key => cache.del(key));
 
     logger.info('Sprint updated successfully', { sprintId: sprint.id, name: sprint.name, state: sprint.state });
 

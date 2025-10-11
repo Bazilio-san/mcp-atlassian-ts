@@ -5,8 +5,8 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for getting a JIRA issue
@@ -56,57 +56,126 @@ An example issue key is ISSUE-1.`,
  */
 async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueIdOrKey, expand = [], fields } = args;
-    const { httpClient, cache, config, logger, normalizeToArray, formatDescription } = context;
-
+    const { issueIdOrKey } = args;
+    const { httpClient, config, logger, normalizeToArray } = context;
     logger.info('Fetching JIRA issue', { issueIdOrKey });
 
-    // Build options
-    const options = {
-      expand: normalizeToArray(expand),
-      fields: fields ? normalizeToArray(fields) : undefined,
+    const expandArray = args.expand && normalizeToArray(args.expand);
+    const fieldsArray = args.fields && normalizeToArray(args.fields);
+
+    // Fetch from API
+    const params: any = {};
+    if (expandArray?.length) params.expand = expandArray.join(',');
+    if (fieldsArray?.length) params.fields = fieldsArray.join(',');
+
+    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+    const issue = response.data;
+
+    if (!issue) {
+      throw new NotFoundError('Issue', issueIdOrKey);
+    }
+    const fields = issue.fields;
+    const jiraIssue: any = {
+      key: issue.key,
+      summary: fields.summary,
+      status: {
+        name: fields.status.name,
+        description: fields.status.description,
+      },
+      assignee: fields.assignee?.displayName || 'Unassigned',
+      reporter: fields.reporter.displayName,
+      created: new Date(fields.created).toLocaleString(),
+      updated: new Date(fields.updated).toLocaleString(),
+      priority: fields.priority?.name || 'None',
+      issueType: fields.issuetype.name,
+      directLink: `${config.url}/browse/${issue.key}`,
+      project: {
+        name: fields.project.name,
+        key: fields.project.key,
+      },
+      labels: fields.labels || [],
+      description: fields.description || '',
     };
+    const json = { jiraIssue };
 
-    // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'issue', { issueIdOrKey, ...options });
+    if (fields.comment?.comments?.length) {
+      jiraIssue.commentsCount = fields.comment?.total || 0;
+      jiraIssue.lastComments = fields.comment.comments.sort((a: any, b: any) => {
+        return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+      }).slice(0, 5).map((c: any) => {
+        return {
+          id: c.id,
+          author: c.author.displayName,
+          body: c.body,
+          created: new Date(c.created).toLocaleString(),
+          url: c.self,
+        };
+      });
+    }
 
-    // Fetch from cache or API
-    const issue = await cache.getOrSet(cacheKey, async () => {
-      const params: any = {};
-      if (options.expand?.length) params.expand = options.expand.join(',');
-      if (options.fields?.length) params.fields = options.fields.join(',');
+    if (fields.attachment?.length) {
+      jiraIssue.attachmentsCount = fields.attachment?.total || 0;
+      jiraIssue.attachments = fields.attachment.map((a: any) => {
+        return {
+          id: a.id,
+          filename: a.filename,
+          author: a.author.displayName,
+          created: new Date(a.created).toLocaleString(),
+          size: a.size,
+          mimeType: a.mimeType,
+          downloadUrl: a.content,
+        };
+      });
+    }
 
-      const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+    if (fields.subtasks?.length) {
+      jiraIssue.subtasks = fields.subtasks.map((s: any) => {
+        const f = s.fields;
+        return {
+          id: s.id,
+          key: s.key,
+          summary: f.summary,
+          statusName: f.status?.name,
+          priority: f.priority?.name || 'None',
+          issueType: f.issuetype?.name,
+        };
+      });
+    }
+    if (fields.fixVersions) {
+      jiraIssue.fixVersions = fields.fixVersions.map((v: any) => {
+        return {
+          id: v.id,
+          name: v.name,
+        };
+      });
+    }
+    if (fields.timetracking) {
+      jiraIssue.timetracking = fields.timetracking;
+    }
 
-      if (!response.data) {
-        throw new NotFoundError('Issue', issueIdOrKey);
-      }
+    // Add issue links if present
+    if (fields.issuelinks?.length) {
+      jiraIssue.issueLinks = fields.issuelinks.map((link: any) => {
+        return {
+          id: link.id,
+          type: link.type?.name || 'Unknown',
+          inwardIssue: link.inwardIssue ? {
+            key: link.inwardIssue.key,
+            summary: link.inwardIssue.fields?.summary || '',
+          } : undefined,
+          outwardIssue: link.outwardIssue ? {
+            key: link.outwardIssue.key,
+            summary: link.outwardIssue.fields?.summary || '',
+          } : undefined,
+        };
+      });
+    }
 
-      return response.data;
-    });
-
-    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**JIRA Issue: ${issue.key}**\n\n` +
-            `**Summary:** ${issue.fields.summary}\n` +
-            `**Status:** ${issue.fields.status.name}\n` +
-            `**Assignee:** ${issue.fields.assignee?.displayName || 'Unassigned'}\n` +
-            `**Reporter:** ${issue.fields.reporter.displayName}\n` +
-            `**Created:** ${new Date(issue.fields.created).toLocaleString()}\n` +
-            `**Updated:** ${new Date(issue.fields.updated).toLocaleString()}\n` +
-            `**Priority:** ${issue.fields.priority?.name || 'None'}\n` +
-            `**Issue Type:** ${issue.fields.issuetype.name}\n` +
-            `**Project:** ${issue.fields.project.name} (${issue.fields.project.key})\n${
-              issue.fields.labels?.length ? `**Labels:** ${issue.fields.labels.join(', ')}\n` : ''
-            }${
-              issue.fields.description
-                ? `\n**Description:**\n${formatDescription(issue.fields.description)}\n`
-                : ''
-            }\n**Direct Link:** ${config.url}/browse/${issue.key}`,
+          text: ppj(json),
         },
       ],
     };

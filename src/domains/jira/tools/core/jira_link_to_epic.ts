@@ -44,7 +44,7 @@ export const jira_link_to_epic: ToolWithHandler = {
 async function linkToEpicHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, epicKey } = args;
-    const { httpClient, config, logger, invalidateIssueCache } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Linking issue to epic', { issueIdOrKey, epicKey });
 
@@ -97,10 +97,6 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
         throw new Error(`Agile API failed and no Epic Link field configured: ${agileError.message}`);
       }
     }
-
-    // Invalidate cache for both issues
-    invalidateIssueCache(issueIdOrKey);
-    invalidateIssueCache(epicKey);
 
     // Format response for MCP
     return {

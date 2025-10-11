@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for jira_get_projects
@@ -81,15 +82,19 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
       };
     }
 
-    const projectsList = projects
-      .map((p: any) => `• **${p.name}** (${p.key}) - ${p.projectTypeKey}`)
-      .join('\n');
+    const json = projects.map((p: any) => ({
+      name: p.name,
+      key: p.key,
+      projectTypeKey: p.projectTypeKey,
+      description: p.description,
+    }));
 
     return {
       content: [
         {
           type: 'text',
-          text: `**JIRA Projects (${projects.length} found)**\n\n${projectsList}`,
+          // text: `**JIRA Projects (${projects.length} found)**\n\n${projectsList}`,
+          text: ppj(json),
         },
       ],
     };

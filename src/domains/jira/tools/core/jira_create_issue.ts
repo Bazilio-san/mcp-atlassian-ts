@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for creating a JIRA issue
@@ -16,13 +17,13 @@ export const jira_create_issue: ToolWithHandler = {
   inputSchema: {
     type: 'object',
     properties: {
-      project: {
+      projectIdOrKey: {
         type: 'string',
         description: 'Project key or ID',
       },
       issueType: {
         type: 'string',
-        description: 'Issue type name or ID (e.g., "Task", "Bug", "Story")',
+        description: 'Issue type name or ID (e.g., "Task", "Bug", "Story" or "1001")',
       },
       summary: {
         type: 'string',
@@ -58,7 +59,7 @@ export const jira_create_issue: ToolWithHandler = {
         additionalProperties: true,
       },
     },
-    required: ['project', 'issueType', 'summary'],
+    required: ['projectIdOrKey', 'issueType', 'summary'],
     additionalProperties: false,
   },
   annotations: {
@@ -77,7 +78,7 @@ export const jira_create_issue: ToolWithHandler = {
 async function createIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const {
-      project,
+      projectIdOrKey,
       issueType,
       summary,
       description,
@@ -87,12 +88,12 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
       components,
       customFields = {},
     } = args;
-    const { httpClient, config, logger, normalizeToArray, invalidateIssueCache } = context;
+    const { httpClient, config: _cfg, logger, normalizeToArray } = context;
 
-    logger.info('Creating JIRA issue', { project, issueType, summary });
+    logger.info('Creating JIRA issue', { projectIdOrKey, issueType, summary });
 
     // Validate required fields
-    if (!project) throw new ValidationError('Project is required');
+    if (!projectIdOrKey) throw new ValidationError('Project is required');
     if (!issueType) throw new ValidationError('Issue type is required');
     if (!summary) throw new ValidationError('Summary is required');
 
@@ -103,8 +104,8 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     // Build the issue input
     const issueInput: any = {
       fields: {
-        project: { key: project },
-        issuetype: { name: issueType },
+        project: { [/^\d+$/.test(projectIdOrKey) ? 'id' : 'key']: projectIdOrKey },
+        issuetype: { [/^\d+$/.test(issueType) ? 'id' : 'name']: issueType },
         summary,
         ...customFields,
       },
@@ -123,21 +124,25 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     const response = await httpClient.post('/rest/api/2/issue', issueInput);
     const createdIssue = response.data;
 
-    // Invalidate search cache since we have a new issue
-    invalidateIssueCache(createdIssue.key);
-
+    const json = {
+      success: true,
+      message: 'Issue created successfully',
+      newIssue: {
+        id: createdIssue.id,
+        key: createdIssue.key,
+        directLink: createdIssue.self,
+        summary,
+        project: {
+          [/^\d+$/.test(projectIdOrKey) ? 'id' : 'key']: projectIdOrKey,
+        },
+      },
+    };
     // Return formatted response
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**JIRA Issue Created Successfully**\n\n' +
-            `**Key:** ${createdIssue.key}\n` +
-            `**Summary:** ${summary}\n` +
-            `**Project:** ${project}\n` +
-            `**Issue Type:** ${issueType}\n` +
-            `\n**Direct Link:** ${config.url}/browse/${createdIssue.key}`,
+          text: ppj(json),
         },
       ],
     };

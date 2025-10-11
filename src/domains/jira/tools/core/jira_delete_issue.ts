@@ -45,7 +45,7 @@ export const jira_delete_issue: ToolWithHandler = {
 async function deleteIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, deleteSubtasks = false } = args;
-    const { httpClient, logger, invalidateIssueCache } = context;
+    const { httpClient, logger } = context;
 
     logger.info('Deleting JIRA issue', { issueIdOrKey, deleteSubtasks });
 
@@ -54,9 +54,6 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
 
     // Make API call
     await httpClient.delete(`/rest/api/2/issue/${issueIdOrKey}`, { params });
-
-    // Invalidate cache for this issue
-    invalidateIssueCache(issueIdOrKey);
 
     // Format response for MCP
     return {

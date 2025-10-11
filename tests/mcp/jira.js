@@ -31,7 +31,6 @@ if (process.env.TEST_ADD_X_HEADER) {
   const [key, value] = process.env.TEST_ADD_X_HEADER.split(':');
   if (key && value) {
     DEFAULT_CUSTOM_HEADERS[key.trim()] = value.trim();
-    console.log(chalk.cyan(`📋 Default custom header from .env: ${key.trim()}: ${value.trim()}`));
   }
 }
 
@@ -158,21 +157,12 @@ class JiraMcpHttpTester {
     const testCasesManager = new JiraMcpTestCases();
 
     // Parse filter and get matching test cases
-    const selectedTestCases = testCasesManager.parseFilterAndGetTestCases(this.testFilter);
-
-    this.testCases = selectedTestCases;
+    this.testCases = testCasesManager.parseFilterAndGetTestCases(this.testFilter);
 
     if (this.testFilter) {
-      console.log(chalk.blue(`\n📋 Filter: ${this.testFilter}`));
-      console.log(chalk.blue(`📋 Selected ${this.testCases.length} test cases\n`));
-
-      // Show selected test cases
-      selectedTestCases.forEach(tc => {
-        console.log(chalk.dim(`  ${tc.fullId}: ${tc.toolName} - ${tc.description}`));
-      });
-      console.log();
+      console.log(chalk.blue(`📋 Filter: ${this.testFilter} / Selected ${this.testCases.length} test cases`));
     } else {
-      console.log(chalk.blue(`\n📋 Initialized ${this.testCases.length} test cases (all)\n`));
+      console.log(chalk.blue(`📋 Initialized ${this.testCases.length} test cases (all)\n`));
     }
   }
 
@@ -180,21 +170,17 @@ class JiraMcpHttpTester {
    * Run all tests
    */
   async runAllTests () {
-    console.log(chalk.bold.cyan('='.repeat(80)));
     console.log(chalk.bold.cyan('JIRA MCP HTTP Tester'));
-    console.log(chalk.bold.cyan('='.repeat(80)));
+    console.log(chalk.cyan(`📋 Default custom header from .env: ${JSON.stringify(DEFAULT_CUSTOM_HEADERS)}}`));
     console.log();
 
     // Initialize client with default custom headers from .env
     this.client = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
 
     // Check server health
-    console.log(chalk.yellow('🏥 Checking MCP server health...'));
     try {
       const health = await this.client.health();
-      console.log(chalk.green('✓ MCP server is healthy'));
-      console.log(chalk.dim(JSON.stringify(health, null, 2)));
-      console.log();
+      console.log(chalk.green(`✓ MCP server is healthy: ${chalk.dim(JSON.stringify(health))}`));
     } catch (error) {
       console.log(chalk.red(`✗ MCP server health check failed: ${error.message}`));
       console.log(chalk.yellow('Make sure the MCP server is running on ' + MCP_SERVER_URL));
@@ -202,24 +188,19 @@ class JiraMcpHttpTester {
     }
 
     // Test ping
-    console.log(chalk.yellow('🏓 Testing MCP ping...'));
     try {
       const pong = await this.client.ping();
-      console.log(chalk.green('✓ Ping successful'));
-      console.log(chalk.dim(JSON.stringify(pong, null, 2)));
-      console.log();
+      console.log(chalk.green(`✓ Ping successful: ${chalk.dim(JSON.stringify(pong))}`));
     } catch (error) {
       console.log(chalk.red(`✗ Ping failed: ${error.message}`));
       process.exit(1);
     }
 
     // List available tools
-    console.log(chalk.yellow('🔧 Listing available JIRA tools...'));
     try {
       const toolsResult = await this.client.listTools();
       const jiraTools = toolsResult.tools.filter(t => t.name.startsWith('jira_'));
       console.log(chalk.green(`✓ Found ${jiraTools.length} JIRA tools`));
-      console.log();
     } catch (error) {
       console.log(chalk.red(`✗ Failed to list tools: ${error.message}`));
       process.exit(1);
@@ -244,8 +225,7 @@ class JiraMcpHttpTester {
    * Run a single test case
    */
   async runSingleTest (testCase, index) {
-    console.log(chalk.cyan(`[${testCase.fullId}] Testing: ${chalk.bgYellow(testCase.toolName)}`));
-    console.log(chalk.dim(`  Description: ${testCase.description}`));
+    console.log(chalk.cyan(`[${testCase.fullId}] Testing: ${chalk.bgYellow(testCase.toolName)} / ${chalk.dim(testCase.description)}`));
 
     const startTime = Date.now();
 
@@ -304,9 +284,8 @@ class JiraMcpHttpTester {
       result.requestHeaders = requestHeaders;
       result.status = 'passed';
 
-      console.log(chalk.green(`  ✅  Passed (${result.duration}ms)`));
-      console.log(chalk.dim(`  Response: ${JSON.stringify(response).substring(0, 100)}...`));
       result.marker = '✅';
+      console.log(chalk.green(`  ${result.marker}  Passed (${result.duration}ms) / ${chalk.dim(`  Response: ${JSON.stringify(response).substring(0, 100)}...`)}`));
 
       this.stats.passed++;
 
@@ -332,12 +311,12 @@ class JiraMcpHttpTester {
       if (this.isExpectedFailure(testCase.toolName, error.message)) {
         result.status = 'expected_failure';
         result.marker = '⚠';
-        console.log(chalk.yellow(`  ⚠ Expected failure (${result.duration}ms)`));
+        console.log(chalk.yellow(`  ${result.marker} Expected failure (${result.duration}ms)`));
         this.stats.skipped++;
       } else {
         result.status = 'failed';
         result.marker = '❌';
-        console.log(chalk.red(`  ❌  Failed (${result.duration}ms)`));
+        console.log(chalk.red(`  ${result.marker}  Failed (${result.duration}ms)`));
         console.log(chalk.red(`  Error: ${error.message}`));
         // Display detailed error information if available
         if (error.data && error.data.details) {
@@ -465,7 +444,7 @@ class JiraMcpHttpTester {
             text = parsedResponse;
             addText = `## Formatted Text 📋\n${mdText(textContent)}\n\n`;
           }
-          responseText = `## Response\n\n${mdJson(text)}\n\n${addText}`
+          responseText = `## Response\n\n${mdJson(text)}\n\n${addText}`;
         }
 
       } catch {
@@ -489,20 +468,15 @@ ${responseText}${errorText}`;
    * Generate summary report
    */
   async generateSummary () {
-    console.log(chalk.bold.cyan('\n' + '='.repeat(80)));
-    console.log(chalk.bold.cyan('Test Summary'));
-    console.log(chalk.bold.cyan('='.repeat(80)));
-    console.log();
-
-    console.log(chalk.white(`Total Tests:     ${this.stats.total}`));
-    console.log(chalk.green(`Passed:          ${this.stats.passed}`));
-    console.log(chalk.red(`Failed:          ${this.stats.failed}`));
-    console.log(chalk.yellow(`Expected Fails:  ${this.stats.skipped}`));
-    console.log();
-
     const successRate = ((this.stats.passed / this.stats.total) * 100).toFixed(1);
-    console.log(chalk.white(`Success Rate:    ${successRate}%`));
-    console.log();
+    console.log(chalk.bold.cyan('='.repeat(80)));
+    console.log(chalk.bold.cyan(`Test Summary :: ${chalk.white(`Success Rate: ${successRate}%`)}`));
+    console.log(chalk.white(`Total Tests: ${this.stats.total} / ${
+      chalk.green(`Passed: ${this.stats.passed}`)} / ${
+      chalk.red(`Failed: ${this.stats.failed}`)} / ${
+      chalk.yellow(`Expected Failures: ${this.stats.skipped}`)
+    }`));
+
 
     // Write summary file
     const summaryContent = this.generateSummaryMarkdown();
@@ -510,7 +484,6 @@ ${responseText}${errorText}`;
 
     try {
       await fs.writeFile(summaryPath, summaryContent, 'utf-8');
-      console.log(chalk.green(`✓ Summary written to ${summaryPath}`));
     } catch (error) {
       console.log(chalk.red(`✗ Failed to write summary: ${error.message}`));
     }
@@ -518,22 +491,17 @@ ${responseText}${errorText}`;
     console.log();
 
     if (this.stats.failed > 0) {
-      console.log(chalk.red('❌  Some tests failed'));
-      console.log();
-
       const failedTests = this.results.filter(r => r.status === 'failed');
-      console.log(chalk.red(`Failed tests (${failedTests.length}):`));
+      const filter = `--tests=${failedTests.map(t => t.toolName).join(',')}`;
+      console.log(chalk.red(`❌  Failed tests (${failedTests.length}): ${chalk.bgYellowBright(filter)}`));
       failedTests.forEach(t => {
         console.log(chalk.red(`  - ${t.toolName}: ${t.error}`));
       });
       console.log();
     } else {
       console.log(chalk.green('✅  All tests passed!'));
-      console.log();
     }
-
-    console.log(chalk.dim(`Results directory: ${RESULTS_DIR}`));
-    console.log();
+    // console.log(chalk.dim(`Results directory: ${RESULTS_DIR}`));
   }
 
   /**

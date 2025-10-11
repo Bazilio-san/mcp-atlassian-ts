@@ -13,13 +13,15 @@ import { ToolWithHandler } from '../../../../types';
  */
 export const jira_get_project: ToolWithHandler = {
   name: 'jira_get_project',
-  description: 'Get details of a specific JIRA project by key or ID',
+  description: `Get details of a specific JIRA project by key or ID. 
+Also returns the list of issue types available in the project (with their IDs) 
+so the LLM Agent can choose the correct issueType name when creating an issue.`,
   inputSchema: {
     type: 'object',
     properties: {
       projectIdOrKey: {
         type: 'string',
-        description: 'The project ID or project key',
+        description: 'The project key or ID',
       },
       expand: {
         type: 'array',

@@ -65,7 +65,7 @@ export const jira_add_worklog: ToolWithHandler = {
 async function addWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, timeSpent, comment, started, visibility } = args;
-    const { httpClient, config, logger, invalidateIssueCache } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Adding JIRA worklog', { issueIdOrKey, timeSpent });
 
@@ -77,9 +77,6 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
 
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/worklog`, worklogInput);
     const worklog = response.data;
-
-    // Clear cache for this issue
-    invalidateIssueCache(issueIdOrKey);
 
     return {
       content: [

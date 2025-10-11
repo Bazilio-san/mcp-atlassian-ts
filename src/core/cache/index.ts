@@ -6,7 +6,6 @@
 
 import NodeCache from 'node-cache';
 
-import { CacheError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
 
 

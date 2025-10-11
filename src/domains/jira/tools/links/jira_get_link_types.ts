@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for getting JIRA issue link types
@@ -51,22 +52,26 @@ async function getLinkTypesHandler (args: any, context: ToolContext): Promise<an
         content: [
           {
             type: 'text',
-            text: '**No issue link types found**',
+            text: ppj({ issueLinkTypes: [] }),
           },
         ],
       };
     }
 
-    const linkTypesList = linkTypes
-      .map((lt: any) => `• **${lt.name}**: ${lt.inward} ↔ ${lt.outward}`)
-      .join('\n');
+    // Format the link types for JSON response
+    const formattedLinkTypes = linkTypes.map((lt: any) => ({
+      id: lt.id,
+      name: lt.name,
+      inward: lt.inward,
+      outward: lt.outward,
+    }));
 
     // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: `**Available Issue Link Types**\n\n${linkTypesList}`,
+          text: ppj({ issueLinkTypes: formattedLinkTypes }),
         },
       ],
     };

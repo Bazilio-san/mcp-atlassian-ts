@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for creating a JIRA issue link
@@ -52,7 +53,7 @@ export const jira_create_issue_link: ToolWithHandler = {
 async function createIssueLinkHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { linkType, inwardIssue, outwardIssue, comment } = args;
-    const { httpClient, cache, logger, invalidateIssueCache } = context;
+    const { httpClient, cache, logger } = context;
 
     logger.info('Creating JIRA issue link', { linkType, inwardIssue, outwardIssue });
 
@@ -70,25 +71,41 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
     // Create the link
     await httpClient.post('/rest/api/2/issueLink', linkData);
 
-    // Invalidate cache for linked issues
-    invalidateIssueCache(inwardIssue);
-    invalidateIssueCache(outwardIssue);
+    // Getting the newly created link from the task data
+    const response = await httpClient.get(`/rest/api/2/issue/${inwardIssue}`);
 
+    let newLink: any;
+    const issuelinks = response.data.fields.issuelinks || [];
+    if (issuelinks.length) {
+      newLink = issuelinks.filter((link: any) => {
+        return link.type?.name === linkType && link.outwardIssue?.key === outwardIssue;
+      });
+    }
     // Clear search cache since links may affect search results
     cache.keys()
       .filter(key => key.includes('jira:search'))
       .forEach(key => cache.del(key));
 
-    // Format response for MCP
+
+    const link: any = {
+      id: newLink[0]?.id,
+      type: { name: linkType },
+      inwardIssue: { key: inwardIssue },
+      outwardIssue: { key: outwardIssue },
+    };
+    if (comment) {
+      link.comment = comment;
+    }
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Issue Link Created Successfully**\n\n' +
-            `**Link Type:** ${linkType}\n` +
-            `**From:** ${inwardIssue}\n` +
-            `**To:** ${outwardIssue}\n${comment ? `**Comment:** ${comment}\n` : ''}`,
+          text: 'Issue Link Created Successfully',
+        },
+        {
+          type: 'text',
+          text: ppj({ link }),
         },
       ],
     };

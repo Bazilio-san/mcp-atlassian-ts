@@ -56,7 +56,7 @@ export const jira_create_remote_issue_link: ToolWithHandler = {
 async function createRemoteIssueLinkHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, url, title, summary, iconUrl } = args;
-    const { httpClient, config, logger, invalidateIssueCache } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Creating JIRA remote issue link', { issueIdOrKey, url, title });
 
@@ -69,9 +69,6 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/remotelink`, {
       object: linkData,
     });
-
-    // Invalidate cache for the linked issue
-    invalidateIssueCache(issueIdOrKey);
 
     // Format response for MCP
     return {

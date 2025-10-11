@@ -92,7 +92,6 @@ export class JiraToolsManager {
       cache,
       config,
       logger,
-      invalidateIssueCache: this.invalidateIssueCache.bind(this),
       normalizeToArray: this.normalizeToArray.bind(this),
       formatDescription: this.formatDescription.bind(this),
       expandStringOrArray: this.expandStringOrArray.bind(this),
@@ -245,32 +244,6 @@ export class JiraToolsManager {
   }
 
   // === Utility Methods (used by tool modules via context) ===
-
-  /**
-   * Invalidate cache entries related to an issue
-   */
-  private invalidateIssueCache (issueKey: string): void {
-    const cache = this.context.cache;
-    const keys = cache.keys();
-
-    // Find and delete cache entries related to this issue or searches
-    const relatedKeys = keys.filter(
-      key =>
-        key.includes(issueKey) ||
-        key.includes('jira:search') ||
-        key.includes('jira:projects') ||
-        key.includes('jira:agile')
-    );
-
-    for (const key of relatedKeys) {
-      cache.del(key);
-    }
-
-    this.context.logger.debug('Cache invalidated for issue', {
-      issueKey,
-      keysCleared: relatedKeys.length,
-    });
-  }
 
   /**
    * Normalize string or array parameter to array

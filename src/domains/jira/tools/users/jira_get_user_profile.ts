@@ -67,7 +67,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
           params: { accountId: userIdOrEmail },
         });
         return response.data;
-      } catch (error: any) {
+      } catch (_error: any) {
         // If accountId fails, try username search
         try {
           const response = await httpClient.get('/rest/api/2/user', {
