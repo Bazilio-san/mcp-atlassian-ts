@@ -566,28 +566,39 @@ export class JiraMcpTestCases {
         fullId: '8-1',
         name: 'Get All Agile Boards',
         toolName: 'jira_get_agile_boards',
-        params: { maxResults: 10 },
+        params: {
+          maxResults: 10,
+        },
         description: 'Get all agile boards',
       },
       {
         fullId: '8-2',
         name: 'Get Board Issues',
         toolName: 'jira_get_board_issues',
-        params: { boardId: '1', maxResults: 10 },
+        params: {
+          boardId: '1',
+          maxResults: 10,
+        },
         description: 'Get board issues',
       },
       {
         fullId: '8-3',
         name: 'Get Board Sprints',
         toolName: 'jira_get_sprints_from_board',
-        params: { boardId: '1', maxResults: 10 },
+        params: {
+          boardId: '1',
+          maxResults: 10,
+        },
         description: 'Get board sprints',
       },
       {
         fullId: '8-4',
         name: 'Get Sprint Issues',
         toolName: 'jira_get_sprint_issues',
-        params: { sprintId: '1', maxResults: 10 },
+        params: {
+          sprintId: '1',
+          maxResults: 10,
+        },
         description: 'Get sprint issues',
       },
       {

@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text';
 
 /**
  * Tool definition for getting agile boards
@@ -83,24 +84,15 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
       };
     }
 
-    const boardsList = boardsResult.values
-      .map((board: any) =>
-        `• **${board.name}** (ID: ${board.id}) - ${board.type}${
-          board.location?.projectName ? ` | Project: ${board.location.projectName}` : ''
-        }`,
-      )
-      .join('\n');
-
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Found ${boardsResult.values.length} agile board(s):**\n\n` +
-            boardsList +
-            `\n\n**Total:** ${boardsResult.total} board(s) available${
-              boardsResult.isLast ? '' : ` (showing ${boardsResult.values.length})`
-            }`,
+          text: `Found ${boardsResult.values.length} agile board(s)`,
+        },
+        {
+          type: 'text',
+          text: ppj({ agileBoards: boardsResult.values }),
         },
       ],
     };
