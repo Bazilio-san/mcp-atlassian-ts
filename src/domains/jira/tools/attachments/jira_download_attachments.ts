@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for downloading JIRA attachments
@@ -52,33 +53,55 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
     const attachments = response.data.fields.attachment || [];
 
     if (attachments.length === 0) {
+      const json = {
+        issueIdOrKey,
+        attachments: [],
+        total: 0,
+      };
+
       return {
         content: [
           {
             type: 'text',
-            text: `**No attachments found for ${issueIdOrKey}**`,
+            text: ppj(json),
+          },
+          {
+            type: 'text',
+            text: `No attachments found for ${issueIdOrKey}`,
           },
         ],
       };
     }
 
-    const attachmentsList = attachments
-      .map(
-        (a: any) =>
-          `• **${a.filename}** (${Math.round(a.size / 1024)}KB) - ${new Date(a.created).toLocaleDateString()}\n` +
-          `  Download: ${a.content}\n` +
-          `  Author: ${a.author.displayName}`,
-      )
-      .join('\n\n');
+    const json = {
+      issueIdOrKey,
+      total: attachments.length,
+      attachments: attachments.map((a: any) => ({
+        id: a.id,
+        filename: a.filename,
+        size: a.size,
+        sizeKB: Math.round(a.size / 1024),
+        mimeType: a.mimeType,
+        created: a.created,
+        downloadUrl: a.content,
+        author: {
+          key: a.author.key,
+          name: a.author.name,
+          displayName: a.author.displayName,
+          emailAddress: a.author.emailAddress,
+        },
+      })),
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Attachments for ${issueIdOrKey}**\n\n` +
-            `**Total:** ${attachments.length} files\n\n` +
-            `${attachmentsList}`,
+          text: ppj(json),
+        },
+        {
+          type: 'text',
+          text: `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`,
         },
       ],
     };

@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for batch getting JIRA changelogs
@@ -78,60 +79,68 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
     });
 
     if (changelogs.values.length === 0) {
-      let errorText = '**No changelogs found for the specified issues**';
-      if (changelogs.errors && changelogs.errors.length > 0) {
-        errorText += '\n\n**Errors:**\n';
-        changelogs.errors.forEach((e: any) => {
-          errorText += `  • ${e.key}: ${e.error}\n`;
-        });
-      }
+      const json = {
+        issueKeys: normalizedKeys,
+        changelogs: [],
+        errors: changelogs.errors || [],
+        total: 0,
+      };
+
       return {
         content: [
           {
             type: 'text',
-            text: errorText,
+            text: ppj(json),
+          },
+          {
+            type: 'text',
+            text: `No changelogs found for the specified issues`,
           },
         ],
       };
     }
 
-    let resultText = `**Changelogs for ${normalizedKeys.length} Issues**\n\n`;
-
-    changelogs.values.forEach((issueChangelog: any) => {
-      const issueKey = issueChangelog.key;
-      const histories = issueChangelog.changelog?.values || issueChangelog.changelog?.histories || [];
-
-      resultText += `**${issueKey}** (${histories.length} changes)\n`;
-
-      if (histories.length > 0) {
-        const recentChanges = histories.slice(0, 3); // Show only recent changes
-        recentChanges.forEach((history: any) => {
-          const author = history.author?.displayName || 'Unknown';
-          const date = new Date(history.created).toLocaleDateString();
-          resultText += `  • ${date} by ${author}\n`;
-
-          history.items?.forEach((item: any) => {
-            resultText += `    - ${item.field}: ${item.fromString || 'None'} → ${item.toString || 'None'}\n`;
-          });
-        });
-      }
-
-      resultText += '\n';
-    });
-
-    // Add error information if any
-    if (changelogs.errors && changelogs.errors.length > 0) {
-      resultText += '**Failed to retrieve changelogs for:**\n';
-      changelogs.errors.forEach((e: any) => {
-        resultText += `  • ${e.key}: ${e.error}\n`;
-      });
-    }
+    // Build structured JSON
+    const json = {
+      issueKeys: normalizedKeys,
+      total: changelogs.values.length,
+      changelogs: changelogs.values.map((issueChangelog: any) => {
+        const histories = issueChangelog.changelog?.values || issueChangelog.changelog?.histories || [];
+        return {
+          issueKey: issueChangelog.key,
+          totalChanges: histories.length,
+          histories: histories.map((history: any) => ({
+            id: history.id,
+            created: history.created,
+            author: {
+              key: history.author?.key,
+              name: history.author?.name,
+              displayName: history.author?.displayName,
+              emailAddress: history.author?.emailAddress,
+            },
+            items: history.items?.map((item: any) => ({
+              field: item.field,
+              fieldtype: item.fieldtype,
+              from: item.from,
+              fromString: item.fromString,
+              to: item.to,
+              toString: item.toString,
+            })) || [],
+          })),
+        };
+      }),
+      errors: changelogs.errors || [],
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text: resultText,
+          text: ppj(json),
+        },
+        {
+          type: 'text',
+          text: `Retrieved changelogs for ${changelogs.values.length} of ${normalizedKeys.length} issue(s)`,
         },
       ],
     };

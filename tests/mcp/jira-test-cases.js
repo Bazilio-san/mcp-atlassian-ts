@@ -260,7 +260,7 @@ export class JiraMcpTestCases {
           if ((transitionsList?.result?.content?.length || 0) < 2) {
             throw new Error('  ❌  No transitions available for this issue');
           }
-          const transitions = JSON.parse(transitionsList?.result?.content?.[1]?.text ?? '');
+          const transitions = JSON.parse(transitionsList?.result?.content?.[0]?.text ?? '');
 
           // Используем первый доступный переход
           const firstTransition = transitions[0];
@@ -545,7 +545,7 @@ export class JiraMcpTestCases {
             const createLinkResult = await client.callTool('jira_create_issue_link', params);
 
             // Extract the link ID from the response
-            linkId = JSON.parse(createLinkResult?.result?.content?.[1]?.text || '')?.link?.id;
+            linkId = JSON.parse(createLinkResult?.result?.content?.[0]?.text || '')?.link?.id;
             console.log(`  ℹ️  Created test link with ID: ${linkId}`);
           }
           return { linkId };
@@ -624,7 +624,7 @@ export class JiraMcpTestCases {
           });
 
           // Берём первую доску из списка
-          const firstBoard = JSON.parse(boardsResult?.result?.content?.[1]?.text || '')?.agileBoards?.[0];
+          const firstBoard = JSON.parse(boardsResult?.result?.content?.[0]?.text || '')?.agileBoards?.[0];
           if (!firstBoard?.id) {
             throw new Error('No boards found to test board issues');
           }
@@ -647,8 +647,8 @@ export class JiraMcpTestCases {
             type: 'scrum',
           });
 
-          // Ищем доску типа scrum (данные в content[1].text)
-          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          // Ищем доску типа scrum (данные в content[0].text)
+          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -675,7 +675,7 @@ export class JiraMcpTestCases {
           });
 
           // Ищем доску типа scrum
-          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -689,8 +689,8 @@ export class JiraMcpTestCases {
             maxResults: 10,
           });
 
-          // Берём первый спринт из списка (данные в content[1].text)
-          const firstSprint = JSON.parse(sprintsResult?.result?.content?.[1]?.text || '{}')?.sprints?.[0];
+          // Берём первый спринт из списка
+          const firstSprint = JSON.parse(sprintsResult?.result?.content?.[0]?.text || '{}')?.sprints?.[0];
           if (!firstSprint?.id) {
             console.log('No sprints found to test sprint issues');
             return null;
@@ -713,8 +713,8 @@ export class JiraMcpTestCases {
             maxResults: 50,
           });
 
-          // Ищем доску типа scrum (данные в content[1].text)
-          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          // Ищем доску типа scrum
+          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -741,7 +741,7 @@ export class JiraMcpTestCases {
           });
 
           // Ищем доску типа scrum
-          const boards = JSON.parse(boardsResult?.result?.content?.[1]?.text || '{}')?.agileBoards || [];
+          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -757,7 +757,7 @@ export class JiraMcpTestCases {
           });
 
           // Получаем ID созданного спринта
-          const createdSprint = JSON.parse(createResult?.result?.content?.[1]?.text || '{}')?.sprint;
+          const createdSprint = JSON.parse(createResult?.result?.content?.[0]?.text || '{}')?.sprint;
           if (!createdSprint?.id) {
             console.log('Failed to create sprint for update test');
             return null;

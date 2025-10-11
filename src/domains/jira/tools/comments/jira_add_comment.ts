@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for adding a comment to a JIRA issue
@@ -73,18 +74,35 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
 
     const comment = response.data;
 
-    // Format response for MCP
+    // Build structured JSON
+    const json = {
+      issueIdOrKey,
+      comment: {
+        id: comment.id,
+        self: comment.self,
+        created: comment.created,
+        updated: comment.updated,
+        body: comment.body,
+        author: {
+          key: comment.author.key,
+          name: comment.author.name,
+          displayName: comment.author.displayName,
+          emailAddress: comment.author.emailAddress,
+        },
+        visibility: comment.visibility,
+        issueUrl: `${config.url}/browse/${issueIdOrKey}`,
+      },
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Comment Added Successfully**\n\n' +
-            `**Issue:** ${issueIdOrKey}\n` +
-            `**Author:** ${comment.author.displayName}\n` +
-            `**Created:** ${new Date(comment.created).toLocaleString()}\n` +
-            `**Comment:** ${body}\n` +
-            `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
+          text: ppj(json),
+        },
+        {
+          type: 'text',
+          text: `Comment added successfully to ${issueIdOrKey}`,
         },
       ],
     };

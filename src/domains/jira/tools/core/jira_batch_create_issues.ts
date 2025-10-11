@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for batch creating JIRA issues
@@ -119,32 +120,34 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     const successCount = result.issues?.length || 0;
     const errorCount = result.errors?.length || 0;
 
-    let resultText =
-      '**Batch Issue Creation Results**\n\n' +
-      `**Total Issues:** ${issues.length}\n` +
-      `**Successfully Created:** ${successCount}\n` +
-      `**Errors:** ${errorCount}\n\n`;
+    // Build structured JSON
+    const json = {
+      totalRequested: issues.length,
+      successCount,
+      errorCount,
+      createdIssues: result.issues?.map((issue: any) => ({
+        key: issue.key,
+        id: issue.id,
+        self: issue.self,
+        summary: issue.summary || null,
+      })) || [],
+      errors: result.errors?.map((error: any, index: number) => ({
+        issueIndex: index,
+        status: error.status,
+        errorMessages: error.elementErrors?.errorMessages || [],
+        fieldErrors: error.elementErrors?.errors || {},
+      })) || [],
+    };
 
-    if (result.issues?.length > 0) {
-      resultText += '**Created Issues:**\n';
-      result.issues.forEach((issue: any) => {
-        resultText += `• **${issue.key}**: ${issue.summary || 'No summary'}\n`;
-      });
-    }
-
-    if (result.errors?.length > 0) {
-      resultText += '\n**Errors:**\n';
-      result.errors.forEach((error: any, index: number) => {
-        resultText += `• Issue ${index + 1}: ${error.elementErrors?.errorMessages?.[0] || error.status}\n`;
-      });
-    }
-
-    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: resultText,
+          text: ppj(json),
+        },
+        {
+          type: 'text',
+          text: `Batch creation completed: ${successCount} created, ${errorCount} failed`,
         },
       ],
     };
