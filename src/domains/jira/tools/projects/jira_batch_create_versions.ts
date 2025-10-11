@@ -27,8 +27,8 @@ export const jira_batch_create_versions: ToolWithHandler = {
               description: 'Name of the version to create',
             },
             projectId: {
-              type: 'string',
-              description: 'Project ID or key where the version will be created',
+              type: 'number',
+              description: 'Project ID where the version will be created',
             },
             description: {
               type: 'string',

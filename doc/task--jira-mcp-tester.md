@@ -132,7 +132,7 @@ class McpHttpClient {
 
 **Project Management Tools** (~8 tools):
 - `jira_get_project` - информация о проекте
-- `jira_list_projects` - список проектов
+- `jira_get_projects` - список проектов
 - `jira_get_project_statuses` - статусы по проектам
 - `jira_get_project_versions` - версии проекта
 - `jira_create_version` - создание версии

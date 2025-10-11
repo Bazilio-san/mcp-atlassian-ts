@@ -21,9 +21,9 @@ export const jira_batch_create_issues: ToolWithHandler = {
         items: {
           type: 'object',
           properties: {
-            project: {
+            projectIdOrKey: {
               type: 'string',
-              description: 'Project key (e.g., PROJ)',
+              description: 'Project id or key (e.g., 1000 or PROJ)',
             },
             issueType: {
               type: 'string',
@@ -63,7 +63,7 @@ export const jira_batch_create_issues: ToolWithHandler = {
               default: {},
             },
           },
-          required: ['project', 'issueType', 'summary'],
+          required: ['projectIdOrKey', 'issueType', 'summary'],
           additionalProperties: false,
         },
         description: 'Array of issues to create',
@@ -96,7 +96,9 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     // Convert to the format expected by the JIRA API
     const issueInputs = issues.map((issue: any) => ({
       fields: {
-        project: { key: issue.project },
+        project: {
+          [/^\d+$/.test(issue.projectIdOrKey) ? 'id' : 'key']: issue.projectIdOrKey
+        },
         issuetype: { name: issue.issueType },
         summary: issue.summary,
         description: issue.description,

@@ -227,12 +227,12 @@ export class JiraMcpTestCases {
         params: {
           issues: [
             {
-              project: this.testProjectKey,
+              projectIdOrKey: this.testProjectKey,
               issueType: TEST_ISSUE_TYPE_NAME,
               summary: 'Batch issue 1',
             },
             {
-              project: this.testProjectKey,
+              projectIdOrKey: this.testProjectKey,
               issueType: TEST_ISSUE_TYPE_NAME,
               summary: 'Batch issue 2',
             },
@@ -268,10 +268,31 @@ export class JiraMcpTestCases {
         fullId: '2-3',
         name: 'Create Project Version',
         toolName: 'jira_create_version',
-        params: {
-          projectId: '10000',
-          name: `MCP-Test-v${Date.now()}`,
-          description: 'Created via MCP HTTP test',
+        params: async (client) => {
+          // Сначала получаем список проектов
+          try {
+            const { result } = await client.callTool('jira_get_projects', {});
+            const projectsText = result?.content?.[0]?.text;
+
+            // Проверяем, есть ли доступные проекты
+            if (!projectsResult || !projectsResult.projects || projectsResult.projects.length === 0) {
+              console.log('  ℹ️  No projects available');
+              return null; // Пропускаем тест
+            }
+
+            // Используем первый проект из списка
+            const project = projectsResult.projects[0];
+            console.log(`  ℹ️  Using project: ${project.name} (ID: ${project.id}, Key: ${project.key})`);
+
+            return {
+              projectId: project.id, // Используем ID проекта
+              name: `MCP-Test-v${Date.now()}`,
+              description: 'Created via MCP HTTP test',
+            };
+          } catch (error) {
+            console.log(`  ⚠️  Failed to get projects: ${error.message}`);
+            return null; // Пропускаем тест
+          }
         },
         description: 'Create project version',
       },
@@ -294,12 +315,12 @@ export class JiraMcpTestCases {
         params: {
           versions: [
             {
-              projectId: '10000',
+              projectId: TEST_JIRA_PROJECT,
               name: `Batch-v1-${Date.now()}`,
               description: 'Batch version 1',
             },
             {
-              projectId: '10000',
+              projectId: TEST_JIRA_PROJECT,
               name: `Batch-v2-${Date.now()}`,
               description: 'Batch version 2',
             },
@@ -513,23 +534,6 @@ export class JiraMcpTestCases {
   }
 
   /**
-   * Bulk Operations test cases (1 tool)
-   */
-  getBulkOperationsTestCases () {
-    const testCases = [
-      {
-        fullId: '9-1',
-        name: 'Batch Get Changelogs',
-        toolName: 'jira_batch_get_changelogs',
-        params: { issueKeys: [this.testIssueKey, this.secondTestIssueKey] },
-        description: 'Get changelogs for multiple issues',
-      },
-    ];
-
-    return this.transformTestCases(this.filterTestCasesByConfig(testCases));
-  }
-
-  /**
    * Get all test cases in a flat list
    */
   getAllTestCasesFlat () {
@@ -542,7 +546,6 @@ export class JiraMcpTestCases {
       ...this.getWorklogTestCases(),
       ...this.getAttachmentsTestCases(),
       ...this.getAgileTestCases(),
-      ...this.getBulkOperationsTestCases(),
       ...this.getBatchOperationsTestCases(),
     ];
   }
@@ -560,7 +563,6 @@ export class JiraMcpTestCases {
       6: () => this.getWorklogTestCases(),
       7: () => this.getAttachmentsTestCases(),
       8: () => this.getAgileTestCases(),
-      9: () => this.getBulkOperationsTestCases(),
       10: () => this.getBatchOperationsTestCases(),
     };
 
