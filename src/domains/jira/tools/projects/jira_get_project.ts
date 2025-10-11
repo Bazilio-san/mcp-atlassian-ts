@@ -47,6 +47,8 @@ export const jira_get_project: ToolWithHandler = {
   handler: getProjectHandler,
 };
 
+const FORMAT_AS_JSON = true;
+
 /**
  * Handler function for jira_get_project
  */
@@ -70,7 +72,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     const cacheKey = generateCacheKey('jira', 'project', {
       projectIdOrKey,
       expand: normalizeToArray(expand),
-      properties: normalizeToArray(properties)
+      properties: normalizeToArray(properties),
     });
 
     // Fetch from cache or API
@@ -90,72 +92,72 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       };
     }
 
-    // Format project details
-    let details = [
-      `**${project.name}** (${project.key})`,
-      `ID: ${project.id}`,
-      `Type: ${project.projectTypeKey}`,
-      `Style: ${project.style || 'N/A'}`,
-    ];
+    // Sanitize project to include only allowed fields
+    const filteredProject = (() => {
+      const p: any = project || {};
+      return {
+        id: p.id,
+        key: p.key,
+        name: p.name,
+        description: p.description,
+        projectTypeKey: p.projectTypeKey,
+        archived: p.archived,
+        url: p.url,
+        lead: p.lead ? { key: p.lead.key, name: p.lead.name, displayName: p.lead.displayName } : undefined,
+        issueTypes: Array.isArray(p.issueTypes)
+          ? p.issueTypes.map((t: any) => ({ id: t.id, description: t.description, name: t.name, subtask: t.subtask }))
+          : undefined,
+        versions: Array.isArray(p.versions)
+          ? p.versions.map((v: any) => ({ id: v.id, description: v.description, name: v.name, archived: v.archived, released: v.released }))
+          : undefined,
+      };
+    })();
 
-    if (project.lead) {
-      details.push(`Lead: ${project.lead.displayName || project.lead.name} (${project.lead.accountId || project.lead.key})`);
-    }
+    let text = '';
+    if (FORMAT_AS_JSON) {
+      text = JSON.stringify(filteredProject, null, 2);
+    } else {
+      // Format project details using only allowed fields
+      let details = [
+        `**${filteredProject.name}** (${filteredProject.key})`,
+        `ID: ${filteredProject.id}`,
+        `Type: ${filteredProject.projectTypeKey}`,
+        ...(filteredProject.archived !== undefined ? [`Archived: ${filteredProject.archived ? 'yes' : 'no'}`] : []),
+      ];
 
-    if (project.description) {
-      details.push(`\nDescription: ${project.description}`);
-    }
-
-    if (project.url) {
-      details.push(`URL: ${project.url}`);
-    }
-
-    if (project.avatarUrls) {
-      details.push(`Avatar: ${project.avatarUrls['48x48'] || project.avatarUrls['32x32'] || project.avatarUrls['16x16']}`);
-    }
-
-    if (project.issueTypes && project.issueTypes.length > 0) {
-      details.push(`\nIssue Types (${project.issueTypes.length}):`);
-      project.issueTypes.forEach((type: any) => {
-        details.push(`• ${type.name}${type.subtask ? ' (subtask)' : ''}`);
-      });
-    }
-
-    if (project.components && project.components.length > 0) {
-      details.push(`\nComponents (${project.components.length}):`);
-      project.components.forEach((comp: any) => {
-        details.push(`• ${comp.name}${comp.lead ? ` (Lead: ${comp.lead.displayName})` : ''}`);
-      });
-    }
-
-    if (project.versions && project.versions.length > 0) {
-      details.push(`\nVersions (${project.versions.length}):`);
-      project.versions.forEach((ver: any) => {
-        details.push(`• ${ver.name}${ver.released ? ' (released)' : ''}${ver.archived ? ' (archived)' : ''}`);
-      });
-    }
-
-    if (project.permissions) {
-      const permissionList = Object.entries(project.permissions)
-        .filter(([_, value]) => value === true)
-        .map(([key, _]) => key);
-      if (permissionList.length > 0) {
-        details.push(`\nPermissions: ${permissionList.join(', ')}`);
+      if (filteredProject.lead) {
+        const l = filteredProject.lead as any;
+        details.push(`Lead: ${l.displayName || l.name} (${l.key || ''})`.trim());
       }
-    }
 
-    if (project.properties && Object.keys(project.properties).length > 0) {
-      details.push('\nProperties:');
-      Object.entries(project.properties).forEach(([key, value]) => {
-        details.push(`• ${key}: ${JSON.stringify(value)}`);
-      });
-    }
+      if (filteredProject.description) {
+        details.push(`\nDescription: ${filteredProject.description}`);
+      }
 
+      if (filteredProject.url) {
+        details.push(`URL: ${filteredProject.url}`);
+      }
+
+      if (filteredProject.issueTypes && filteredProject.issueTypes.length > 0) {
+        details.push(`\nIssue Types (${filteredProject.issueTypes.length}):`);
+        (filteredProject.issueTypes as any[]).forEach((type: any) => {
+          details.push(`• ${type.name}${type.subtask ? ' (subtask)' : ''}`);
+        });
+      }
+
+      if (filteredProject.versions && filteredProject.versions.length > 0) {
+        details.push(`\nVersions (${filteredProject.versions.length}):`);
+        (filteredProject.versions as any[]).forEach((ver: any) => {
+          details.push(`• ${ver.name}${ver.released ? ' (released)' : ''}${ver.archived ? ' (archived)' : ''}`);
+        });
+      }
+      text = details.join('\n');
+    }
     return {
       content: [
         {
           type: 'text',
-          text: details.join('\n'),
+          text,
         },
       ],
     };

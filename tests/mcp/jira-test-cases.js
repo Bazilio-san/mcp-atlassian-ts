@@ -23,6 +23,16 @@ export const MCP_GROUP_INFO = {
   10: { name: 'BatchOperations', description: 'Batch Operations tools (2 tools)' },
 };
 
+const getProjectId = async (client) => {
+  const { result } = await client.callTool('jira_get_project', { projectIdOrKey: TEST_JIRA_PROJECT });
+  const project = JSON.parse(result?.content?.[0]?.text);
+  const projectId = Number(project.id);
+  if (!projectId) {
+    throw new Error(`⚠️  Failed to get id for project ${TEST_JIRA_PROJECT}`);
+  }
+  return projectId;
+};
+
 /**
  * JIRA MCP Test Cases
  * Each test case follows the pattern: {fullId}-{name}-{toolName}-{params}-{description}
@@ -276,30 +286,13 @@ export class JiraMcpTestCases {
         name: 'Create Project Version',
         toolName: 'jira_create_version',
         params: async (client) => {
-          // Сначала получаем список проектов
-          try {
-            const { result } = await client.callTool('jira_get_project', { projectIdOrKey: this.testProjectKey });
-            const projectsText = result?.content?.[0]?.text;
-
-            // Проверяем, есть ли доступные проекты
-            if (!projectsResult || !projectsResult.projects || projectsResult.projects.length === 0) {
-              console.log('  ℹ️  No projects available');
-              return null; // Пропускаем тест
-            }
-
-            // Используем первый проект из списка
-            const project = projectsResult.projects[0];
-            console.log(`  ℹ️  Using project: ${project.name} (ID: ${project.id}, Key: ${project.key})`);
-
-            return {
-              projectId: project.id, // Используем ID проекта
-              name: `MCP-Test-v${Date.now()}`,
-              description: 'Created via MCP HTTP test',
-            };
-          } catch (error) {
-            console.log(`  ⚠️  Failed to get projects: ${error.message}`);
-            return null; // Пропускаем тест
-          }
+          const projectId = await getProjectId(client);
+          console.log(`  ℹ️  Using project ID: ${projectId}`);
+          return {
+            projectId, // Используем ID проекта
+            name: `MCP-Test-v${Date.now()}`,
+            description: 'Created via MCP HTTP test',
+          };
         },
         description: 'Create project version',
       },
@@ -313,25 +306,28 @@ export class JiraMcpTestCases {
    */
   getBatchOperationsTestCases () {
 
-
     return this.transformTestCases([
       {
         fullId: '10-1',
         name: 'Batch Create Versions',
         toolName: 'jira_batch_create_versions',
-        params: {
-          versions: [
-            {
-              projectId: TEST_JIRA_PROJECT,
-              name: `Batch-v1-${Date.now()}`,
-              description: 'Batch version 1',
-            },
-            {
-              projectId: TEST_JIRA_PROJECT,
-              name: `Batch-v2-${Date.now()}`,
-              description: 'Batch version 2',
-            },
-          ],
+        params: async (client) => {
+          const projectId = await getProjectId(client);
+          console.log(`  ℹ️  Using project ID: ${projectId}`);
+          return {
+            versions: [
+              {
+                projectId,
+                name: `Batch-v1-${Date.now()}`,
+                description: 'Batch version 1',
+              },
+              {
+                projectId,
+                name: `Batch-v2-${Date.now()}`,
+                description: 'Batch version 2',
+              },
+            ],
+          };
         },
         description: 'Batch create versions',
       },
@@ -350,7 +346,6 @@ export class JiraMcpTestCases {
    */
   getUserManagementTestCases () {
 
-
     return this.transformTestCases([
       {
         fullId: '3-1',
@@ -367,7 +362,6 @@ export class JiraMcpTestCases {
    */
   getFieldsMetadataTestCases () {
 
-
     return this.transformTestCases([
       {
         fullId: '4-1',
@@ -383,7 +377,6 @@ export class JiraMcpTestCases {
    * Issue Links test cases (4 tools)
    */
   getIssueLinksTestCases () {
-
 
     return this.transformTestCases([
       {
@@ -440,7 +433,6 @@ export class JiraMcpTestCases {
    */
   getWorklogTestCases () {
 
-
     return this.transformTestCases([
       {
         fullId: '6-1',
@@ -468,7 +460,6 @@ export class JiraMcpTestCases {
    */
   getAttachmentsTestCases () {
 
-
     return this.transformTestCases([
       {
         fullId: '7-1',
@@ -484,7 +475,6 @@ export class JiraMcpTestCases {
    * Agile/Scrum test cases (6 tools)
    */
   getAgileTestCases () {
-
 
     return this.transformTestCases([
       {
@@ -582,7 +572,7 @@ export class JiraMcpTestCases {
   getTestCasesByIds (ids) {
     const allTestCases = this.getAllTestCasesFlat();
     return ids.map(id =>
-      allTestCases.find(tc => tc.fullId === id)
+      allTestCases.find(tc => tc.fullId === id),
     ).filter(Boolean);
   }
 
@@ -592,7 +582,7 @@ export class JiraMcpTestCases {
   getTestCasesByToolNames (toolNames) {
     const allTestCases = this.getAllTestCasesFlat();
     return toolNames.map(toolName =>
-      allTestCases.find(tc => tc.toolName === toolName)
+      allTestCases.find(tc => tc.toolName === toolName),
     ).filter(Boolean);
   }
 
