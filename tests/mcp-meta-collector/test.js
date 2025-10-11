@@ -117,7 +117,7 @@ async function runTests () {
   }
 
   // Print summary
-  console.log('\n' + '='.repeat(60));
+  console.log('='.repeat(60));
   console.log('📊 Test Summary');
   console.log('='.repeat(60));
 

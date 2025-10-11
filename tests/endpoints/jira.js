@@ -533,7 +533,7 @@ class JiraDirectApiExecutor {
       'Content-Type': 'application/json',
       ...this.customHeaders,
     };
-    const { type, token, username, password } = this.auth
+    const { type, token, username, password } = this.auth;
     if (type === 'token') {
       headers['Authorization'] = `Bearer ${token}`;
     } else {

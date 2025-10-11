@@ -6,7 +6,13 @@
  */
 
 import { appConfig } from '../../dist/src/bootstrap/init-config.js';
-import { TEST_ISSUE_KEY, TEST_SECOND_ISSUE_KEY, TEST_ISSUE_TYPE_NAME, TEST_JIRA_PROJECT, TEST_ISSUE_LINK_TYPE } from '../constants.js';
+import {
+  TEST_ISSUE_KEY,
+  TEST_SECOND_ISSUE_KEY,
+  TEST_ISSUE_TYPE_NAME,
+  TEST_JIRA_PROJECT,
+  TEST_ISSUE_LINK_TYPE
+} from '../constants.js';
 import { incl, isObj, inclOneOf } from './core/utils.js';
 
 /**

@@ -889,7 +889,7 @@
             "type": "string",
             "description": "Board name filter"
           },
-          "projectKeyOrId": {
+          "projectIdOrKey": {
             "type": "string",
             "description": "Filter by project"
           }

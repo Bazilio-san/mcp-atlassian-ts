@@ -191,11 +191,17 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 #| `POST` | `/issue/{issueIdOrKey}/transitions` | Change issue status |
 
 ### Issue status change example:
-POST /rest/api/2/issue/TEST-1/transitions
+POST {{baseUrl}}/rest/api/2/issue/TEST-1/transitions
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 {
   "transition": { "id": "31" }
 }
+
+
+### Possible issue transitions
+GET {{baseUrl}}/rest/api/2/issue/AITECH-5/transitions
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ###
 
