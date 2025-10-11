@@ -52,19 +52,44 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
 
     // Fetch from cache or API
     const changelogs = await cache.getOrSet(cacheKey, async () => {
-      // For Cloud instances, use the bulk API
-      const response = await httpClient.post('/rest/api/2/issue/changelog/list', {
-        issueIds: normalizedKeys,
+      // Fetch changelogs individually for each issue (works for both Server and Cloud)
+      const changelogPromises = normalizedKeys.map(async (issueKey) => {
+        try {
+          const response = await httpClient.get(`/rest/api/2/issue/${issueKey}/changelog`);
+          return {
+            key: issueKey,
+            changelog: response.data,
+          };
+        } catch (error: any) {
+          logger.warn(`Failed to fetch changelog for ${issueKey}`, { error: error.message });
+          return {
+            key: issueKey,
+            changelog: null,
+            error: error.message,
+          };
+        }
       });
-      return response.data;
+
+      const results = await Promise.all(changelogPromises);
+      return {
+        values: results.filter(r => r.changelog !== null),
+        errors: results.filter(r => r.error).map(r => ({ key: r.key, error: r.error })),
+      };
     });
 
     if (changelogs.values.length === 0) {
+      let errorText = '**No changelogs found for the specified issues**';
+      if (changelogs.errors && changelogs.errors.length > 0) {
+        errorText += '\n\n**Errors:**\n';
+        changelogs.errors.forEach((e: any) => {
+          errorText += `  • ${e.key}: ${e.error}\n`;
+        });
+      }
       return {
         content: [
           {
             type: 'text',
-            text: '**No changelogs found for the specified issues**',
+            text: errorText,
           },
         ],
       };
@@ -74,7 +99,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
 
     changelogs.values.forEach((issueChangelog: any) => {
       const issueKey = issueChangelog.key;
-      const histories = issueChangelog.changelog?.histories || [];
+      const histories = issueChangelog.changelog?.values || issueChangelog.changelog?.histories || [];
 
       resultText += `**${issueKey}** (${histories.length} changes)\n`;
 
@@ -93,6 +118,14 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
 
       resultText += '\n';
     });
+
+    // Add error information if any
+    if (changelogs.errors && changelogs.errors.length > 0) {
+      resultText += '**Failed to retrieve changelogs for:**\n';
+      changelogs.errors.forEach((e: any) => {
+        resultText += `  • ${e.key}: ${e.error}\n`;
+      });
+    }
 
     return {
       content: [

@@ -254,6 +254,15 @@ class JiraMcpHttpTester {
 
     // Resolve parameters if they are a function
     let resolvedParams = testCase.params;
+
+    // Skip test if params is null
+    if (testCase.params === null) {
+      console.log(chalk.yellow('  ⏭️  Skipped - test requires manual setup'));
+      this.stats.skipped++;
+      this.stats.total++;
+      return;
+    }
+
     if (typeof testCase.params === 'function') {
       try {
         resolvedParams = await testCase.params(testClient);
@@ -300,6 +309,11 @@ class JiraMcpHttpTester {
       result.marker = '✅';
 
       this.stats.passed++;
+
+      // Run cleanup if defined
+      if (testCase.cleanup && typeof testCase.cleanup === 'function') {
+        await testCase.cleanup(testClient, result);
+      }
     } catch (error) {
       result.duration = Date.now() - startTime;
       result.error = error.message;

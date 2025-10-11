@@ -28,6 +28,7 @@ export class JiraServer extends McpAtlassianServer {
         } = {},
         url,
         maxResults,
+        epicLinkFieldId,
       },
       cache,
       logger: { level: logLevel },
@@ -57,6 +58,9 @@ export class JiraServer extends McpAtlassianServer {
     }
 
     const jiraConfig: JCConfig = { url, auth, maxResults };
+    if (epicLinkFieldId) {
+      jiraConfig.epicLinkFieldId = epicLinkFieldId;
+    }
 
     // Initialize parent with service mode configuration
     super(serverConfig, jiraConfig);

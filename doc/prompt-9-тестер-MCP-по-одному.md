@@ -127,6 +127,56 @@
 - При формировании списка: использовать fallback значения `field.name || field.id || 'Unnamed field'`
 - Добавить проверку по полю `field.id` как дополнительный критерий поиска
 
+## Проблемы с API эндпоинтами в зависимости от версии JIRA
+
+**Проблема:** Некоторые API эндпоинты доступны только в JIRA Cloud, но не в Server/Data Center версиях.
+
+**Симптомы:**
+- Ошибка 404: `Resource with identifier 'unknown' not found`
+- Ошибка для эндпоинта `/rest/api/2/issue/changelog/list` (только Cloud)
+
+**Решение для jira_batch_get_changelogs:**
+Вместо использования bulk API (только Cloud), делать индивидуальные запросы для каждого issue:
+```javascript
+const changelogPromises = normalizedKeys.map(async (issueKey) => {
+  try {
+    const response = await httpClient.get(`/rest/api/2/issue/${issueKey}/changelog`);
+    return { key: issueKey, changelog: response.data };
+  } catch (error) {
+    logger.warn(`Failed to fetch changelog for ${issueKey}`, { error: error.message });
+    return { key: issueKey, changelog: null, error: error.message };
+  }
+});
+const results = await Promise.all(changelogPromises);
+```
+
+## Проблемы с Epic Link в jira_link_to_epic
+
+**Проблема:** Поле Epic Link может быть недоступно или иметь разный ID в разных инсталляциях JIRA.
+
+**Симптомы:**
+- Ошибка: `Field 'customfield_10014' cannot be set. It is not on the appropriate screen`
+- Epic не найден или issue не найден
+
+**Решение:**
+Использовать Agile API как основной метод, Epic Link field как fallback:
+```javascript
+try {
+  // Основной метод - Agile API
+  await httpClient.post(`/rest/agile/1.0/epic/${epicKey}/issue`, {
+    issues: [issueIdOrKey]
+  });
+} catch (agileError) {
+  // Fallback - Epic Link field
+  const epicLinkFieldId = config.epicLinkFieldId;
+  if (epicLinkFieldId) {
+    await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, {
+      fields: { [epicLinkFieldId]: epicKey }
+    });
+  }
+}
+```
+
 ## Тест jira_create_version - использование несуществующего projectId
 
 **Проблема:** Тест использовал хардкод projectId='10000', который может не существовать в системе.

@@ -8,58 +8,64 @@ import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
- * Tool definition for updating a JIRA issue
+ * Create tool definition for updating a JIRA issue with dynamic epicLinkFieldId
  */
-export const jira_update_issue: ToolWithHandler = {
-  name: 'jira_update_issue',
-  description: 'Update an existing JIRA issue',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      issueIdOrKey: {
-        type: 'string',
-        description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
+export function jira_update_issue (epicLinkFieldId?: string): ToolWithHandler {
+  const epicLinkInfo = epicLinkFieldId
+    ? `\nTo unlink an issue from an Epic, set custom field "${epicLinkFieldId}" to null`
+    : '';
+
+  return {
+    name: 'jira_update_issue',
+    description: `Update a JIRA issue fields: summary, description, assignee, priority, labels, customFields${epicLinkInfo}`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        issueIdOrKey: {
+          type: 'string',
+          description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
+        },
+        summary: {
+          type: 'string',
+          description: 'Updated summary/title',
+        },
+        description: {
+          type: 'string',
+          description: 'Updated description',
+        },
+        assignee: {
+          type: 'string',
+          description: 'New assignee account ID or email',
+        },
+        priority: {
+          type: 'string',
+          description: 'New priority name or ID',
+        },
+        labels: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Labels to set (replaces existing). e.g.: ["bug", "urgent"]',
+          default: [],
+        },
+        customFields: {
+          type: 'object',
+          description: 'Custom field values as key-value pairs',
+          default: {},
+        },
       },
-      summary: {
-        type: 'string',
-        description: 'Updated summary/title',
-      },
-      description: {
-        type: 'string',
-        description: 'Updated description',
-      },
-      assignee: {
-        type: 'string',
-        description: 'New assignee account ID or email',
-      },
-      priority: {
-        type: 'string',
-        description: 'New priority name or ID',
-      },
-      labels: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Labels to set (replaces existing). e.g.: ["bug", "urgent"]',
-        default: [],
-      },
-      customFields: {
-        type: 'object',
-        description: 'Custom field values as key-value pairs',
-        default: {},
-      },
+      required: ['issueIdOrKey'],
+      additionalProperties: false,
     },
-    required: ['issueIdOrKey'],
-    additionalProperties: false,
-  },
-  annotations: {
-    title: 'Update existing JIRA issue',
-    readOnlyHint: false,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-  },
-  handler: updateIssueHandler,
-};
+    annotations: {
+      title: 'Update existing JIRA issue',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    handler: updateIssueHandler,
+  };
+}
 
 /**
  * Handler function for updating a JIRA issue

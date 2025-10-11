@@ -4,12 +4,15 @@
  * Numbered format following pattern from tests/endpoints/jira-test-cases.js
  */
 
+import chalk from 'chalk';
 import {
   TEST_ISSUE_KEY,
   TEST_JIRA_PROJECT,
   TEST_ISSUE_TYPE_NAME,
   TEST_SECOND_ISSUE_KEY ,
   TEST_USERNAME,
+  TEST_EPIC_ISSUE_KEY,
+  JIRA_EPIC_LINK_FIELD_ID,
 } from '../constants.js';
 import { loadToolConfig, isToolEnabledByConfig } from '../../dist/src/core/config/tool-config.js';
 
@@ -48,6 +51,7 @@ export class JiraMcpTestCases {
     this.testProjectKey = TEST_JIRA_PROJECT || 'TEST';
     this.testIssueKey = TEST_ISSUE_KEY || 'TEST-1';
     this.secondTestIssueKey = TEST_SECOND_ISSUE_KEY || 'TEST-2';
+    this.testEpicIssueKey = TEST_EPIC_ISSUE_KEY || 'TEST-3';
     this.toolConfig = null;
     this.loadConfig();
   }
@@ -256,6 +260,34 @@ export class JiraMcpTestCases {
         },
         description: 'Batch create multiple issues',
       },
+      {
+        fullId: '1-10',
+        name: 'Link Issue to Epic',
+        toolName: 'jira_link_to_epic',
+        params: {
+          issueIdOrKey: this.testIssueKey,
+          epicKey: this.testEpicIssueKey,
+        },
+        description: 'Link issue to epic',
+        cleanup: async (client, result) => {
+          // Remove issue from epic after test
+          if (result && result.status === 'passed') {
+            try {
+              // Use update issue to remove epic link
+              await client.callTool('jira_update_issue', {
+                issueIdOrKey: this.testIssueKey,
+                fields: {
+                  // Set epic link to null to remove it
+                  [JIRA_EPIC_LINK_FIELD_ID]: null
+                }
+              });
+              console.log(`  ℹ️  Cleanup: Removing issue ${this.testIssueKey} from epic ${this.testEpicIssueKey}`);
+            } catch (cleanupError) {
+              console.log(chalk.yellow(`    Cleanup warning: Could not remove issue from epic: ${cleanupError.message}`));
+            }
+          }
+        },
+      },
     ];
 
     return this.transformTestCases(this.filterTestCasesByConfig(testCases));
@@ -357,7 +389,7 @@ export class JiraMcpTestCases {
         fullId: '3-1',
         name: 'Get User Profile',
         toolName: 'jira_get_user_profile',
-        params: { userIdOrEmail: 'ashapovalov' },
+        params: { userIdOrEmail: TEST_USERNAME },
         description: 'Get user profile',
       },
     ]);
@@ -420,16 +452,6 @@ export class JiraMcpTestCases {
         toolName: 'jira_remove_issue_link',
         params: { linkId: '10000' },
         description: 'Remove issue link (will fail if not exists)',
-      },
-      {
-        fullId: '5-5',
-        name: 'Link Issue to Epic',
-        toolName: 'jira_link_to_epic',
-        params: {
-          issueIdOrKey: this.testIssueKey,
-          epicKey: this.secondTestIssueKey,
-        },
-        description: 'Link issue to epic',
       },
     ]);
   }

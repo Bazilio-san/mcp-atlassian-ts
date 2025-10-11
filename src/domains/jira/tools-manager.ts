@@ -19,6 +19,7 @@ import { jira_create_issue } from './tools/core/jira_create_issue.js';
 import { jira_update_issue } from './tools/core/jira_update_issue.js';
 import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
 import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
+import { jira_link_to_epic } from './tools/core/jira_link_to_epic.js';
 
 // Import comment and transition tools
 import { jira_add_comment } from './tools/comments/jira_add_comment.js';
@@ -40,7 +41,6 @@ import { jira_get_link_types } from './tools/links/jira_get_link_types.js';
 import { jira_create_issue_link } from './tools/links/jira_create_issue_link.js';
 import { jira_create_remote_issue_link } from './tools/links/jira_create_remote_issue_link.js';
 import { jira_remove_issue_link } from './tools/links/jira_remove_issue_link.js';
-import { jira_link_to_epic } from './tools/links/jira_link_to_epic.js';
 
 // Import worklog tools
 import { jira_get_worklog } from './tools/worklog/jira_get_worklog.js';
@@ -104,9 +104,10 @@ export class JiraToolsManager {
       jira_get_issue,
       jira_search_issues,
       jira_create_issue,
-      jira_update_issue,
+      jira_update_issue(config.epicLinkFieldId), // Create jira_update_issue with dynamic epicLinkFieldId
       jira_delete_issue,
       jira_batch_create_issues,
+      jira_link_to_epic,
 
       // Comment and transition tools
       jira_add_comment,
@@ -128,7 +129,6 @@ export class JiraToolsManager {
       jira_create_issue_link,
       jira_create_remote_issue_link,
       jira_remove_issue_link,
-      jira_link_to_epic,
 
       // Worklog tools
       jira_get_worklog,
