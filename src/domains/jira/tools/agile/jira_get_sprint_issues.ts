@@ -5,8 +5,8 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for getting sprint issues
@@ -71,7 +71,7 @@ export const jira_get_sprint_issues: ToolWithHandler = {
  */
 async function getSprintIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, normalizeToArray, config } = context;
+    const { httpClient, logger, normalizeToArray, config } = context;
     const { sprintId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;
 
     logger.info('Fetching JIRA sprint issues', { sprintId, maxResults, jql });
@@ -87,20 +87,14 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
     if (normalizedFields.length) params.fields = normalizedFields.join(',');
     if (normalizedExpand.length) params.expand = normalizedExpand.join(',');
 
-    // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'sprintIssues', { sprintId, ...params });
+    logger.info('Making API call to get sprint issues');
+    const response = await httpClient.get(`/rest/agile/1.0/sprint/${sprintId}/issue`, { params });
 
-    // Fetch from cache or API
-    const issuesResult = await cache.getOrSet(cacheKey, async () => {
-      logger.info('Making API call to get sprint issues');
-      const response = await httpClient.get(`/rest/agile/1.0/sprint/${sprintId}/issue`, { params });
+    if (!response.data) {
+      throw new NotFoundError('Sprint', sprintId.toString());
+    }
 
-      if (!response.data) {
-        throw new NotFoundError('Sprint', sprintId.toString());
-      }
-
-      return response.data;
-    });
+    const issuesResult = response.data;
 
     if (!issuesResult.issues || issuesResult.issues.length === 0) {
       return {
@@ -113,35 +107,47 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
       };
     }
 
-    const issuesList = issuesResult.issues
-      .map((issue: any) => {
-        let statusDetails = issue.fields.status.name;
-        if (issue.fields.resolution) {
-          statusDetails += ` (${issue.fields.resolution.name})`;
-        }
+    // Приводим issues к унифицированной структуре, как в jira_get_board_issues.ts
+    const issues = issuesResult.issues.map((issue: any) => {
+      const f = issue.fields || {};
+      const statusName = f.status?.name;
+      const status =
+        f.resolution?.name ? `${statusName} (${f.resolution.name})` : statusName;
 
-        return (
-          `• **${issue.key}** - ${issue.fields.summary}\n` +
-          `  Status: ${statusDetails} | ` +
-          `Assignee: ${issue.fields.assignee?.displayName || 'Unassigned'} | ` +
-          `Type: ${issue.fields.issuetype.name}${
-            issue.fields.priority ? ` | Priority: ${issue.fields.priority.name}` : ''
-          }${issue.fields.customfield_10016 ? ` | Story Points: ${issue.fields.customfield_10016}` : ''}\n` +
-          `  Link: ${config.url}/browse/${issue.key}`
-        );
-      })
-      .join('\n\n');
+      return {
+        key: issue.key,
+        summary: f.summary,
+        status,
+        assignee: f.assignee?.displayName || 'Unassigned',
+        reporter: f.reporter?.displayName || 'Unassigned',
+        type: {
+          name: f.issuetype?.name,
+        },
+        priority: f.priority?.name,
+        link: `${config.url}/browse/${issue.key}`,
+        project: {
+          key: f.project?.key,
+          name: f.project?.name,
+        },
+        // Доп. поле спринтовой метрики (если есть)
+        storyPoints: f.customfield_10016,
+      };
+    });
+
+    // Первый элемент контента — краткое резюме (как в board issues)
+    const summaryText =
+      `Found ${issuesResult.issues.length} issue(s) in sprint ${sprintId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`;
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Found ${issuesResult.issues.length} issue(s) in sprint ${sprintId}:**\n\n` +
-            issuesList +
-            `\n\n**Total:** ${issuesResult.total} issue(s) available${
-              issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`
-            }`,
+          text: summaryText,
+        },
+        {
+          type: 'text',
+          text: ppj({ issues }),
         },
       ],
     };

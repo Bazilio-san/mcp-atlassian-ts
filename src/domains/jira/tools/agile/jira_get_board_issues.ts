@@ -5,8 +5,8 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for getting board issues
@@ -71,7 +71,7 @@ export const jira_get_board_issues: ToolWithHandler = {
  */
 async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, normalizeToArray, config } = context;
+    const { httpClient, logger, normalizeToArray, config } = context;
     const { boardId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;
 
     logger.info('Fetching JIRA board issues', { boardId, maxResults, jql });
@@ -87,20 +87,14 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
     if (normalizedFields.length) params.fields = normalizedFields.join(',');
     if (normalizedExpand.length) params.expand = normalizedExpand.join(',');
 
-    // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'boardIssues', { boardId, ...params });
+    logger.info('Making API call to get board issues');
+    const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/issue`, { params });
 
-    // Fetch from cache or API
-    const issuesResult = await cache.getOrSet(cacheKey, async () => {
-      logger.info('Making API call to get board issues');
-      const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/issue`, { params });
+    if (!response.data) {
+      throw new NotFoundError('Board', boardId.toString());
+    }
 
-      if (!response.data) {
-        throw new NotFoundError('Board', boardId.toString());
-      }
-
-      return response.data;
-    });
+    const issuesResult = response.data;
 
     if (!issuesResult.issues || issuesResult.issues.length === 0) {
       return {
@@ -113,28 +107,36 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
       };
     }
 
-    const issuesList = issuesResult.issues
-      .map((issue: any) =>
-        `• **${issue.key}** - ${issue.fields.summary}\n` +
-        `  Status: ${issue.fields.status.name} | ` +
-        `Assignee: ${issue.fields.assignee?.displayName || 'Unassigned'} | ` +
-        `Type: ${issue.fields.issuetype.name}${
-          issue.fields.priority ? ` | Priority: ${issue.fields.priority.name}` : ''
-        }\n` +
-        `  Link: ${config.url}/browse/${issue.key}`,
-      )
-      .join('\n\n');
+    const issues = issuesResult.issues.map((issue: any) => {
+      const f = issue.fields || {};
+      return {
+        key: issue.key,
+        summary: f.summary,
+        status: f.status?.name,
+        assignee: f.assignee?.displayName || 'Unassigned',
+        reporter: f.reporter?.displayName || 'Unassigned',
+        type: {
+          name: f.issuetype?.name
+        },
+        priority: f.priority?.name,
+        link: `${config.url}/browse/${issue.key}`,
+        project: {
+          key: f.project?.key,
+          name: f.project?.name
+        }
+      };
+    });
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Found ${issuesResult.issues.length} issue(s) on board ${boardId}:**\n\n` +
-            issuesList +
-            `\n\n**Total:** ${issuesResult.total} issue(s) available${
-              issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`
-            }`,
+          text: `Found ${issuesResult.issues.length} issue(s) on board ${boardId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
+        },
+        {
+          type: 'text',
+          text: ppj({ issues }),
         },
       ],
     };

@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
-import { ppj } from '../../../../core/utils/text';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for getting agile boards

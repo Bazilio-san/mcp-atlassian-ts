@@ -575,21 +575,47 @@ export class JiraMcpTestCases {
         fullId: '8-2',
         name: 'Get Board Issues',
         toolName: 'jira_get_board_issues',
-        params: {
-          boardId: '1',
-          maxResults: 10,
+        params: async (client) => {
+          // Сначала получаем список досок
+          const boardsResult = await client.callTool('jira_get_agile_boards', {
+            maxResults: 10
+          });
+
+          // Берём первую доску из списка
+          const firstBoard = JSON.parse(boardsResult?.result?.content?.[1]?.text || '')?.agileBoards?.[0];
+          if (!firstBoard?.id) {
+            throw new Error('No boards found to test board issues');
+          }
+
+          return {
+            boardId: Number(firstBoard.id),
+            maxResults: 10,
+          };
         },
-        description: 'Get board issues',
+        description: 'Get board issues for the first available board',
       },
       {
         fullId: '8-3',
         name: 'Get Board Sprints',
         toolName: 'jira_get_sprints_from_board',
-        params: {
-          boardId: '1',
-          maxResults: 10,
+        params: async (client) => {
+          // Сначала получаем список досок
+          const boardsResult = await client.callTool('jira_get_agile_boards', {
+            maxResults: 10
+          });
+
+          // Берём первую доску из списка
+          const firstBoard = boardsResult?.values?.[0];
+          if (!firstBoard) {
+            throw new Error('No boards found to test board sprints');
+          }
+
+          return {
+            boardId: String(firstBoard.id),
+            maxResults: 10,
+          };
         },
-        description: 'Get board sprints',
+        description: 'Get board sprints for the first available board',
       },
       {
         fullId: '8-4',
@@ -605,12 +631,25 @@ export class JiraMcpTestCases {
         fullId: '8-5',
         name: 'Create New Sprint',
         toolName: 'jira_create_sprint',
-        params: {
-          boardId: '1',
-          name: `MCP Test Sprint ${Date.now()}`,
-          goal: 'Test sprint creation',
+        params: async (client) => {
+          // Сначала получаем список досок
+          const boardsResult = await client.callTool('jira_get_agile_boards', {
+            maxResults: 10
+          });
+
+          // Берём первую доску из списка
+          const firstBoard = boardsResult?.values?.[0];
+          if (!firstBoard) {
+            throw new Error('No boards found to test sprint creation');
+          }
+
+          return {
+            boardId: String(firstBoard.id),
+            name: `MCP Test Sprint ${Date.now()}`,
+            goal: 'Test sprint creation',
+          };
         },
-        description: 'Create new sprint',
+        description: 'Create new sprint for the first available board',
       },
       {
         fullId: '8-6',

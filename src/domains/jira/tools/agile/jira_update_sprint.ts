@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for updating a sprint
@@ -93,35 +94,31 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
 
     logger.info('Sprint updated successfully', { sprintId: sprint.id, name: sprint.name, state: sprint.state });
 
-    // Format dates for display
-    let dateInfo = '';
-    if (sprint.startDate && sprint.endDate) {
-      const startFormatted = new Date(sprint.startDate).toLocaleDateString();
-      const endFormatted = new Date(sprint.endDate).toLocaleDateString();
-      dateInfo = ` (${startFormatted} - ${endFormatted})`;
-    } else if (sprint.startDate) {
-      const startFormatted = new Date(sprint.startDate).toLocaleDateString();
-      dateInfo = ` (Starts: ${startFormatted})`;
-    }
+    const fmtD = (v: string) => v ? new Date(v).toLocaleDateString() : null;
 
-    // Add complete date if present
-    if (sprint.completeDate) {
-      const completeFormatted = new Date(sprint.completeDate).toLocaleDateString();
-      dateInfo += ` (Completed: ${completeFormatted})`;
-    }
+    const json = {
+      sprint: {
+        id: sprint.id,
+        name: sprint.name,
+        state: sprint.state,
+        originBoardId: sprint.originBoardId,
+        goal: sprint.goal || '',
+        startDate: fmtD(sprint.startDate),
+        endDate: fmtD(sprint.endDate),
+        completeDate: fmtD(sprint.completeDate),
+        url: `${config.url}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
+      },
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Sprint Updated Successfully!**\n\n' +
-            `**Name:** ${sprint.name}\n` +
-            `**ID:** ${sprint.id}\n` +
-            `**State:** ${sprint.state}\n` +
-            `**Board ID:** ${sprint.originBoardId}${dateInfo}\n` +
-            `${sprint.goal ? `**Goal:** ${sprint.goal}\n` : ''}` +
-            `\n**Sprint URL:** ${config.url}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
+          text: 'Sprint updated successfully',
+        },
+        {
+          type: 'text',
+          text: ppj(json),
         },
       ],
     };

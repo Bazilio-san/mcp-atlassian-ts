@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for getting sprints from board
@@ -89,34 +90,53 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
       };
     }
 
-    const sprintsList = sprintsResult.values
-      .map((sprint: any) => {
-        let dateInfo = '';
-        if (sprint.startDate && sprint.endDate) {
-          const startDate = new Date(sprint.startDate).toLocaleDateString();
-          const endDate = new Date(sprint.endDate).toLocaleDateString();
-          dateInfo = ` (${startDate} - ${endDate})`;
-        } else if (sprint.startDate) {
-          const startDate = new Date(sprint.startDate).toLocaleDateString();
-          dateInfo = ` (Started: ${startDate})`;
-        }
 
-        return `• **${sprint.name}** (ID: ${sprint.id}) - ${sprint.state}${dateInfo}${
-          sprint.goal ? `\n  Goal: ${sprint.goal}` : ''
-        }`;
-      })
+    // Приводим данные к унифицированной структуре и формируем список
+    const sprints = sprintsResult.values.map((sprint: any) => {
+      let dateInfo = '';
+      if (sprint.startDate && sprint.endDate) {
+        const startDate = new Date(sprint.startDate).toLocaleDateString();
+        const endDate = new Date(sprint.endDate).toLocaleDateString();
+        dateInfo = ` (${startDate} - ${endDate})`;
+      } else if (sprint.startDate) {
+        const startDate = new Date(sprint.startDate).toLocaleDateString();
+        dateInfo = ` (Started: ${startDate})`;
+      }
+
+      return {
+        id: sprint.id,
+        name: sprint.name,
+        state: sprint.state,
+        startDate: sprint.startDate || null,
+        endDate: sprint.endDate || null,
+        goal: sprint.goal || '',
+        boardId,
+        dateInfo, // пригодится для человекочитаемого списка
+      };
+    });
+
+    const sprintsList = sprints
+      .map((s: any) =>
+        `• **${s.name}** (ID: ${s.id}) - ${s.state}${s.dateInfo}${
+          s.goal ? `\n  Goal: ${s.goal}` : ''
+        }`,
+      )
       .join('\n\n');
+
+    // Первый элемент — краткое резюме, второй — JSON
+    const summaryText =
+      `Found ${sprintsResult.values.length} sprint(s) on board ${boardId}
+Total: ${sprintsResult.total || sprintsResult.values.length} sprint(s) available${sprintsResult.isLast ? '' : ` (showing ${sprintsResult.values.length})`}`;
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Found ${sprintsResult.values.length} sprint(s) on board ${boardId}:**\n\n` +
-            sprintsList +
-            `\n\n**Total:** ${sprintsResult.total || sprintsResult.values.length} sprint(s) available${
-              sprintsResult.isLast ? '' : ` (showing ${sprintsResult.values.length})`
-            }`,
+          text: summaryText + '\n\n' + sprintsList,
+        },
+        {
+          type: 'text',
+          text: ppj({ sprints }),
         },
       ],
     };
