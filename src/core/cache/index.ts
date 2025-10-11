@@ -199,25 +199,38 @@ export class CacheManager {
    * Get or set pattern - execute function if key doesn't exist
    */
   async getOrSet<T> (key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T> {
+    // Try to get from cache first (outside try-catch to separate cache errors from factory errors)
     try {
-      // Try to get from cache first
       const cached = this.get<T>(key);
       if (cached !== undefined) {
         return cached;
       }
-
-      // Execute factory function
-      logger.debug('Cache miss - executing factory function', { key });
-      const value = await factory();
-
-      // Store result in cache
-      this.set(key, value, ttlSeconds);
-
-      return value;
     } catch (error) {
-      logger.error('Cache getOrSet error', error instanceof Error ? error : new Error(String(error)), { key });
-      throw new CacheError(`Failed to get or set cache value for key: ${key}`);
+      // Cache read error - log but continue to factory
+      logger.error('Cache get error during getOrSet', error instanceof Error ? error : new Error(String(error)), { key });
     }
+
+    // Execute factory function
+    logger.debug('Cache miss - executing factory function', { key });
+    let value: T;
+
+    try {
+      value = await factory();
+    } catch (error) {
+      // Factory function error - rethrow as is (don't wrap in CacheError)
+      logger.error('Factory function error in getOrSet', error instanceof Error ? error : new Error(String(error)), { key });
+      throw error;
+    }
+
+    // Store result in cache (errors here are non-critical)
+    try {
+      this.set(key, value, ttlSeconds);
+    } catch (error) {
+      // Cache write error - log but return value anyway
+      logger.error('Cache set error during getOrSet', error instanceof Error ? error : new Error(String(error)), { key });
+    }
+
+    return value;
   }
 
   /**

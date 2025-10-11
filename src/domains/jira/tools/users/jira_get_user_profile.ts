@@ -50,23 +50,42 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
 
     // Fetch from cache or API
     const user = await cache.getOrSet(cacheKey, async () => {
-      // Try by account ID first, then by email
+      // Check if the input looks like an email
+      const isEmail = userIdOrEmail.includes('@');
+
+      // If it looks like an email, search directly by username/email
+      if (isEmail) {
+        const response = await httpClient.get('/rest/api/2/user', {
+          params: { username: userIdOrEmail },
+        });
+        return response.data;
+      }
+
+      // Otherwise try as accountId first
       try {
         const response = await httpClient.get('/rest/api/2/user', {
           params: { accountId: userIdOrEmail },
         });
         return response.data;
-      } catch {
-        // Fallback to email search
-        const searchResponse = await httpClient.get('/rest/api/2/user/search', {
-          params: { query: userIdOrEmail, maxResults: 1 },
-        });
+      } catch (error: any) {
+        // If accountId fails, try username search
+        try {
+          const response = await httpClient.get('/rest/api/2/user', {
+            params: { username: userIdOrEmail },
+          });
+          return response.data;
+        } catch {
+          // Last resort - try user search with query
+          const searchResponse = await httpClient.get('/rest/api/2/user/search', {
+            params: { username: userIdOrEmail, maxResults: 1 },
+          });
 
-        if (!searchResponse.data || searchResponse.data.length === 0) {
-          throw new Error(`User not found: ${userIdOrEmail}`);
+          if (!searchResponse.data || searchResponse.data.length === 0) {
+            throw new Error(`User not found: ${userIdOrEmail}`);
+          }
+
+          return searchResponse.data[0];
         }
-
-        return searchResponse.data[0];
       }
     });
 

@@ -4,7 +4,13 @@
  * Numbered format following pattern from tests/endpoints/jira-test-cases.js
  */
 
-import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from '../constants.js';
+import {
+  TEST_ISSUE_KEY,
+  TEST_JIRA_PROJECT,
+  TEST_ISSUE_TYPE_NAME,
+  TEST_SECOND_ISSUE_KEY ,
+  TEST_USERNAME,
+} from '../constants.js';
 import { loadToolConfig, isToolEnabledByConfig } from '../../dist/src/core/config/tool-config.js';
 
 /**
@@ -351,7 +357,7 @@ export class JiraMcpTestCases {
         fullId: '3-1',
         name: 'Get User Profile',
         toolName: 'jira_get_user_profile',
-        params: { userIdOrEmail: '12345' },
+        params: { userIdOrEmail: 'ashapovalov' },
         description: 'Get user profile',
       },
     ]);

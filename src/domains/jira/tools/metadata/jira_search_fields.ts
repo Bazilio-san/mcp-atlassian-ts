@@ -55,8 +55,9 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
       if (query) {
         allFields = allFields.filter(
           (field: any) =>
-            field.name.toLowerCase().includes(query.toLowerCase()) ||
-            field.key.toLowerCase().includes(query.toLowerCase())
+            (field.name && field.name.toLowerCase().includes(query.toLowerCase())) ||
+            (field.key && field.key.toLowerCase().includes(query.toLowerCase())) ||
+            (field.id && field.id.toLowerCase().includes(query.toLowerCase()))
         );
       }
 
@@ -75,7 +76,12 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
     }
 
     const fieldsList = fields
-      .map((field: any) => `• **${field.name}** (${field.key}) - ${field.schema?.type || 'unknown type'}`)
+      .map((field: any) => {
+        const name = field.name || field.id || 'Unnamed field';
+        const key = field.key || field.id || 'no-key';
+        const type = field.schema?.type || 'unknown type';
+        return `• **${name}** (${key}) - ${type}`;
+      })
       .join('\n');
 
     return {
