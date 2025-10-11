@@ -89,11 +89,11 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
       content: [
         {
           type: 'text',
-          text: `Found ${boardsResult.values.length} agile board(s)`,
+          text: ppj({ agileBoards: boardsResult.values }),
         },
         {
           type: 'text',
-          text: ppj({ agileBoards: boardsResult.values }),
+          text: `Found ${boardsResult.values.length} agile board(s)`,
         },
       ],
     };

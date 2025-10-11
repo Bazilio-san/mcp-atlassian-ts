@@ -131,12 +131,12 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
       content: [
         {
           type: 'text',
-          text: `Found ${issuesResult.issues.length} issue(s) on board ${boardId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
+          text: ppj({ issues }),
         },
         {
           type: 'text',
-          text: ppj({ issues }),
+          text: `Found ${issuesResult.issues.length} issue(s) on board ${boardId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
         },
       ],
     };

@@ -75,11 +75,11 @@ async function getTransitionsHandler (args: any, context: ToolContext): Promise<
       content: [
         {
           type: 'text',
-          text: `Available Transitions for ${issueIdOrKey}`,
+          text: ppj(transitionsList),
         },
         {
           type: 'text',
-          text: ppj(transitionsList),
+          text: `Available Transitions for ${issueIdOrKey}`,
         },
       ],
     };

@@ -132,11 +132,11 @@ Total: ${sprintsResult.total || sprintsResult.values.length} sprint(s) available
       content: [
         {
           type: 'text',
-          text: summaryText + '\n\n' + sprintsList,
+          text: ppj({ sprints }),
         },
         {
           type: 'text',
-          text: ppj({ sprints }),
+          text: summaryText + '\n\n' + sprintsList,
         },
       ],
     };

@@ -114,11 +114,11 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
       content: [
         {
           type: 'text',
-          text: 'Sprint updated successfully',
+          text: ppj(json),
         },
         {
           type: 'text',
-          text: ppj(json),
+          text: 'Sprint updated successfully',
         },
       ],
     };

@@ -101,11 +101,11 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
       content: [
         {
           type: 'text',
-          text: 'Issue Link Created Successfully',
+          text: ppj({ link }),
         },
         {
           type: 'text',
-          text: ppj({ link }),
+          text: 'Issue Link Created Successfully',
         },
       ],
     };

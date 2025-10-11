@@ -100,11 +100,11 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
       content: [
         {
           type: 'text',
-          text: 'Sprint created successfully',
+          text: ppj(json),
         },
         {
           type: 'text',
-          text: ppj(json),
+          text: 'Sprint created successfully',
         },
       ],
     };

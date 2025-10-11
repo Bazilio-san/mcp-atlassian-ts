@@ -57,7 +57,7 @@ async function removeIssueLinkHandler (args: any, context: ToolContext): Promise
       content: [
         {
           type: 'text',
-          text: `**Issue Link Removed Successfully**\n\n**Link ID:** ${linkId}`,
+          text: `Issue Link Removed Successfully\nLink ID: ${linkId}`,
         },
       ],
     };

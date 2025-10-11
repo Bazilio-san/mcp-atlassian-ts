@@ -96,6 +96,10 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
           // text: `**JIRA Projects (${projects.length} found)**\n\n${projectsList}`,
           text: ppj(json),
         },
+        {
+          type: 'text',
+          text: `JIRA Projects (${projects.length} found)`,
+        },
       ],
     };
   });

@@ -143,11 +143,11 @@ Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (s
       content: [
         {
           type: 'text',
-          text: summaryText,
+          text: ppj({ issues }),
         },
         {
           type: 'text',
-          text: ppj({ issues }),
+          text: summaryText,
         },
       ],
     };
