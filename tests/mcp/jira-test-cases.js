@@ -12,7 +12,7 @@ import { loadToolConfig, isToolEnabledByConfig } from '../../dist/src/core/confi
  */
 export const MCP_GROUP_INFO = {
   1: { name: 'IssueManagement', description: 'Issue Management tools (9 tools)' },
-  2: { name: 'ProjectManagement', description: 'Project Management tools (3 tools)' },
+  2: { name: 'ProjectManagement', description: 'Project Management tools (4 tools)' },
   3: { name: 'UserManagement', description: 'User Management tools (1 tool)' },
   4: { name: 'FieldsMetadata', description: 'Fields and Metadata tools (1 tool)' },
   5: { name: 'IssueLinks', description: 'Issue Links tools (4 tools)' },
@@ -246,7 +246,7 @@ export class JiraMcpTestCases {
   }
 
   /**
-   * Project Management test cases (3 tools)
+   * Project Management test cases (4 tools)
    */
   getProjectManagementTestCases () {
     const testCases = [
@@ -259,19 +259,26 @@ export class JiraMcpTestCases {
       },
       {
         fullId: '2-2',
+        name: 'Get Project Details',
+        toolName: 'jira_get_project',
+        params: { projectIdOrKey: this.testProjectKey },
+        description: 'Get specific project details',
+      },
+      {
+        fullId: '2-3',
         name: 'Get Project Versions',
         toolName: 'jira_get_project_versions',
         params: { projectKey: this.testProjectKey },
         description: 'Get project versions',
       },
       {
-        fullId: '2-3',
+        fullId: '2-4',
         name: 'Create Project Version',
         toolName: 'jira_create_version',
         params: async (client) => {
           // Сначала получаем список проектов
           try {
-            const { result } = await client.callTool('jira_get_projects', {});
+            const { result } = await client.callTool('jira_get_project', { projectIdOrKey: this.testProjectKey });
             const projectsText = result?.content?.[0]?.text;
 
             // Проверяем, есть ли доступные проекты

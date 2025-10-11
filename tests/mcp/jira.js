@@ -259,7 +259,7 @@ class JiraMcpHttpTester {
         resolvedParams = await testCase.params(testClient);
         if (resolvedParams === null) {
           // Test was skipped
-          console.log(chalk.yellow(`  ⏭️  Skipped - unable to resolve parameters`));
+          console.log(chalk.yellow('  ⏭️  Skipped - unable to resolve parameters'));
           this.stats.skipped++;
           this.stats.total++;
           return;
