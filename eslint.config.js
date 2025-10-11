@@ -35,6 +35,7 @@ export default [
       '@typescript-eslint/no-unsafe-member-access': 'off',
       'import/no-default-export': 'error',
       // Formatting rules
+      'semi': ['error', 'always'],
       'quotes': ['error', 'single', { 'avoidEscape': true }],
       'space-before-function-paren': ['error', {
         'anonymous': 'always',
@@ -63,6 +64,7 @@ export default [
     rules: {
       'import/no-default-export': 'off',
       // Formatting rules
+      'semi': ['error', 'always'],
       'quotes': ['error', 'single', { 'avoidEscape': true }],
       'space-before-function-paren': ['error', {
         'anonymous': 'always',
