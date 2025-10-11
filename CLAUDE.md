@@ -142,14 +142,18 @@ Environment configuration via `.env` file:
 - **JIRA Custom Fields**: `JIRA_EPIC_LINK_FIELD_ID` (default: customfield_10014)
 
 ### Tool Configuration
-Tools are configured via `config.yaml` file in the project root:
+Tools are configured via `config.yaml` file in the project root. The configuration now mirrors the appConfig structure:
 
 ```yaml
-usedInstruments:
-  jira:
+jira:
+  # ... other JIRA settings ...
+  usedInstruments:
     include: ALL  # or specify list: [jira_get_issue, jira_create_issue]
     exclude: []   # exclude specific tools even when include: ALL
-  confluence:
+
+confluence:
+  # ... other Confluence settings ...
+  usedInstruments:
     include: ALL  # or specify list: [confluence_get_page, confluence_search]
     exclude: []   # exclude specific tools
 ```
@@ -159,6 +163,7 @@ usedInstruments:
 - `include: [tool1, tool2]` - Enable only specified tools
 - `exclude: [tool3, tool4]` - Exclude specific tools (works with `include: ALL`)
 - Utility tools (`cache_clear`, `health_check`) are always enabled
+- All settings in `config.yaml` override environment variables
 
 ### Authentication Structure
 The new authentication system uses a structured approach:

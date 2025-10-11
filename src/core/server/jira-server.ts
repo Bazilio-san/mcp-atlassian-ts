@@ -7,7 +7,7 @@ import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
-import { hasStringValue } from '../../bootstrap/init-config.js';
+import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 
 const logger = createLogger('jira-server');
 
@@ -91,7 +91,7 @@ export class JiraServer extends McpAtlassianServer {
     return {
       status: 'ok',
       service: 'mcp-atlassian-jira',
-      version: '2.0.0',
+      version: appConfig.version,
       serviceMode: 'jira',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),

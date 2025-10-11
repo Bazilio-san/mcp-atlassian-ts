@@ -25,6 +25,7 @@ import { createErrorResponse, McpAtlassianError, ServerError } from '../errors/i
 import { getCache } from '../cache/index.js';
 import { createAuthenticationManager } from '../auth/index.js';
 import { ToolRegistry } from './tools.js';
+import { appConfig } from '../../bootstrap/init-config.js';
 
 const logger = createLogger('server');
 
@@ -49,8 +50,8 @@ export class McpAtlassianServer {
     // Initialize MCP server
     this.server = new Server(
       {
-        name: 'mcp-atlassian-ts',
-        version: '2.0.0',
+        name: appConfig.name,
+        version: appConfig.version,
       },
       {
         capabilities: {
@@ -465,8 +466,8 @@ export class McpAtlassianServer {
   protected getHealthCheckInfo (): any {
     return {
       status: 'ok',
-      service: 'mcp-atlassian-ts',
-      version: '2.0.0',
+      service: appConfig.name,
+      version: appConfig.version,
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     };

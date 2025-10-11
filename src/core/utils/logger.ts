@@ -4,7 +4,6 @@
 
 import pino from 'pino';
 import type { LogContext } from '../../types/index.js';
-import { appConfig } from '../../bootstrap/init-config.js';
 
 // Sensitive data patterns to mask
 const SENSITIVE_PATTERNS = [
@@ -72,8 +71,12 @@ function maskSensitiveData (data: any): any {
  * Create a pino logger instance
  */
 function createPinoLogger () {
+  // Get log level from environment to avoid circular dependency
+  // The actual config will be loaded later in init-config.ts
+  const logLevel = process.env.LOG_LEVEL || 'info';
+
   const pinoConfig: pino.LoggerOptions = {
-    level: appConfig.logger.level || 'info',
+    level: logLevel,
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: {
       level (label) {

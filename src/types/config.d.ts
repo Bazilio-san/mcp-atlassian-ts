@@ -50,8 +50,14 @@ export interface ICacheConfig {
   maxItems: number;
 }
 
-// JIRA & Confluence configuration
-export interface IJCConfig {
+// Tool configuration
+export interface IToolsConfig {
+  include: 'ALL' | string[];
+  exclude: string[];
+}
+
+// JIRA configuration
+export interface IJiraConfig {
   url: string;
   auth?: {
     basic?: IBasicAuth;
@@ -60,7 +66,23 @@ export interface IJCConfig {
   };
   maxResults: number;
   epicLinkFieldId?: string;
+  usedInstruments?: IToolsConfig;
 }
+
+// Confluence configuration
+export interface IConfluenceConfig {
+  url: string;
+  auth?: {
+    basic?: IBasicAuth;
+    pat?: string;
+    oauth2?: IOAuth2Auth;
+  };
+  maxResults: number;
+  usedInstruments?: IToolsConfig;
+}
+
+// Legacy alias for backward compatibility
+export type IJCConfig = IJiraConfig | IConfluenceConfig;
 
 // SSL/TLS configuration
 export interface ISslConfig {
@@ -79,8 +101,8 @@ export interface IConfig {
   server: IServerConfig;
 
   // Service-specific settings
-  jira: IJCConfig;
-  confluence: IJCConfig;
+  jira: IJiraConfig;
+  confluence: IConfluenceConfig;
 
   // Infrastructure settings
   logger: ILoggerConfig;

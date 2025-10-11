@@ -7,7 +7,7 @@ import { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
-import { hasStringValue } from '../../bootstrap/init-config.js';
+import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 
 const logger = createLogger('confluence-server');
 
@@ -87,7 +87,7 @@ export class ConfluenceServer extends McpAtlassianServer {
     return {
       status: 'ok',
       service: 'mcp-atlassian-confluence',
-      version: '2.0.0',
+      version: appConfig.version,
       serviceMode: 'confluence',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),

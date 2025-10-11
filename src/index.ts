@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * MCP Atlassian TypeScript Server - Main Entry Point
+ * MCP Atlassian TS Server - Main Entry Point
  *
  * A comprehensive TypeScript implementation of the MCP server for
  * Atlassian JIRA and Confluence with modern architecture and features.
@@ -49,7 +49,7 @@ function parseCliArguments (): { serviceMode?: ServiceMode; help?: boolean } {
  */
 function displayHelp (): void {
   console.log(`
-MCP Atlassian TypeScript Server v2.0.0
+${appConfig.productName} Server v${appConfig.version}
 
 Usage: npm start [-- [OPTIONS]]
 
@@ -122,7 +122,7 @@ async function main (cliServiceMode?: ServiceMode) {
       throw new ServerError('Service mode is required. Set MCP_SERVICE environment variable or use --service flag');
     }
 
-    logger.info('Starting MCP Atlassian TypeScript Server v2.0.0', { serviceMode });
+    logger.info(`Starting ${appConfig.productName} Server v${appConfig.version}`, { serviceMode });
 
     // Configuration is already loaded and validated in init-config.ts
     const { server: { transportType, port }, jira, confluence, cache } = appConfig;
@@ -254,7 +254,7 @@ function displayBanner (serviceMode: ServiceMode) {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║    MCP Atlassian TypeScript Server v2.0.0                    ║
+║    ${appConfig.productName} Server v${appConfig.version}                    ║
 ║    Modern, Type-safe, Production-ready                       ║
 ║                                                              ║
 ║    ${serviceDescription.padEnd(56)} ║

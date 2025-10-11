@@ -7,6 +7,7 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosR
 import { AuthenticationError } from '../errors/index.js';
 import { createLogger, getDebug } from '../utils/logger.js';
 import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from '../utils/http-logger.js';
+import { appConfig } from '../../bootstrap/init-config.js';
 
 import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
 
@@ -35,7 +36,7 @@ export class AuthenticationManager {
       timeout: config.timeout,
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'MCP-Atlassian-TypeScript/2.0.0',
+        'User-Agent': `${appConfig.name}/${appConfig.version}`,
         ...config.headers,
       },
     });

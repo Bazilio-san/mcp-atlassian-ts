@@ -7,7 +7,7 @@ import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
 import { getCache } from '../cache/index.js';
 import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors/index.js';
 import { createLogger } from '../utils/logger.js';
-import { loadToolConfig, isToolEnabledByConfig, type ToolsConfig } from '../config/tool-config.js';
+import { isToolEnabledByConfig } from '../../bootstrap/init-config.js';
 import { setCurrentToolName } from '../utils/http-logger.js';
 
 import type { JCConfig } from '../../types/index.js';
@@ -18,9 +18,9 @@ import type { ServiceMode } from './factory.js';
  * Check if a specific tool is enabled
  * Uses config.yaml to determine tool availability
  */
-export function isToolEnabled (toolName: string, toolsConfig?: ToolsConfig | null): boolean {
+export function isToolEnabled (toolName: string): boolean {
   // Check config.yaml for tool configuration
-  return isToolEnabledByConfig(toolName, toolsConfig ?? null);
+  return isToolEnabledByConfig(toolName);
 }
 
 // Import tool implementations
@@ -35,7 +35,6 @@ export class ToolRegistry {
   protected jiraTools: JiraToolsManager | null = null;
   protected confluenceTools: ConfluenceToolsManager | null = null;
   protected toolsMap: Map<string, Tool> = new Map();
-  protected toolsConfig: ToolsConfig | null = null;
 
   constructor (serviceConfig: JCConfig) {
     this.serviceConfig = serviceConfig;
@@ -63,11 +62,8 @@ export class ToolRegistry {
     try {
       logger.info('Initializing tools...');
 
-      // Load tool configuration from config.yaml
-      this.toolsConfig = loadToolConfig();
-      if (this.toolsConfig) {
-        logger.info('Using tool configuration from config.yaml');
-      }
+      // Configuration is now loaded from init-config.ts
+      logger.info('Initializing tools with configuration');
 
       let jiraToolsCount = 0;
       let confluenceToolsCount = 0;
@@ -79,7 +75,7 @@ export class ToolRegistry {
         await this.jiraTools.initialize();
         const jiraTools = this.jiraTools.getAvailableTools();
         for (const tool of jiraTools) {
-          if (isToolEnabled(tool.name, this.toolsConfig)) {
+          if (isToolEnabled(tool.name)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered JIRA tool', { name: tool.name });
             jiraToolsCount++;
@@ -95,7 +91,7 @@ export class ToolRegistry {
         await this.confluenceTools.initialize();
         const confluenceTools = this.confluenceTools.getAvailableTools();
         for (const tool of confluenceTools) {
-          if (isToolEnabled(tool.name, this.toolsConfig)) {
+          if (isToolEnabled(tool.name)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered Confluence tool', { name: tool.name });
             confluenceToolsCount++;
@@ -113,7 +109,7 @@ export class ToolRegistry {
         total: this.toolsMap.size,
         jira: { registered: jiraToolsCount, skipped: jiraSkippedCount },
         confluence: { registered: confluenceToolsCount, skipped: confluenceSkippedCount },
-        configSource: this.toolsConfig ? 'config.yaml' : 'environment'
+        configSource: 'unified'
       });
     } catch (error) {
       logger.error('Failed to initialize tools', error instanceof Error ? error : new Error(String(error)));
@@ -447,11 +443,8 @@ export class ServiceToolRegistry extends ToolRegistry {
     try {
       logger.info('Initializing tools for service mode', { serviceMode: this.serviceMode });
 
-      // Load tool configuration from config.yaml
-      this.toolsConfig = loadToolConfig();
-      if (this.toolsConfig) {
-        logger.info('Using tool configuration from config.yaml for service mode');
-      }
+      // Configuration is now loaded from init-config.ts
+      logger.info('Initializing service-specific tools with configuration');
 
       let registeredCount = 0;
       let skippedCount = 0;
@@ -463,7 +456,7 @@ export class ServiceToolRegistry extends ToolRegistry {
         // Register JIRA tools
         const jiraTools = this.jiraTools.getAvailableTools();
         for (const tool of jiraTools) {
-          if (isToolEnabled(tool.name, this.toolsConfig)) {
+          if (isToolEnabled(tool.name)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered JIRA tool', { name: tool.name });
             registeredCount++;
@@ -480,7 +473,7 @@ export class ServiceToolRegistry extends ToolRegistry {
         // Register Confluence tools
         const confluenceTools = this.confluenceTools.getAvailableTools();
         for (const tool of confluenceTools) {
-          if (isToolEnabled(tool.name, this.toolsConfig)) {
+          if (isToolEnabled(tool.name)) {
             this.toolsMap.set(tool.name, tool);
             logger.debug('Registered Confluence tool', { name: tool.name });
             registeredCount++;
@@ -496,10 +489,10 @@ export class ServiceToolRegistry extends ToolRegistry {
 
       // Count tools by service
       const jiraCount = this.serviceMode === 'jira' && this.jiraTools
-        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name, this.toolsConfig)).length
+        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
         : 0;
       const confluenceCount = this.serviceMode === 'confluence' && this.confluenceTools
-        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name, this.toolsConfig)).length
+        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
         : 0;
 
       logger.info('Service-specific tools initialized', {
@@ -509,7 +502,7 @@ export class ServiceToolRegistry extends ToolRegistry {
         skipped: skippedCount,
         jira: jiraCount,
         confluence: confluenceCount,
-        configSource: this.toolsConfig ? 'config.yaml' : 'environment'
+        configSource: 'unified'
       });
     } catch (error) {
       logger.error('Failed to initialize service-specific tools', error instanceof Error ? error : new Error(String(error)));
