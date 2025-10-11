@@ -361,13 +361,13 @@ class JiraMcpHttpTester {
    */
   isExpectedFailure (toolName, errorMessage) {
     const expectedFailures = {
-      'jira_delete_issue': ['not found', 'does not exist'],
-      'jira_remove_issue_link': ['not found', 'does not exist'],
-      'jira_get_board_issues': ['not found', 'Board'],
-      'jira_get_sprints_from_board': ['not found', 'Board'],
-      'jira_get_sprint_issues': ['not found', 'Sprint'],
-      'jira_create_sprint': ['not found', 'Board'],
-      'jira_update_sprint': ['not found', 'Sprint'],
+      // 'jira_delete_issue': ['not found', 'does not exist'],
+      // 'jira_remove_issue_link': ['not found', 'does not exist'],
+      // 'jira_get_board_issues': ['not found', 'Board'],
+      // 'jira_get_sprints_from_board': ['not found', 'Board'],
+      // 'jira_get_sprint_issues': ['not found', 'Sprint'],
+      // 'jira_create_sprint': ['not found', 'Board'],
+      // 'jira_update_sprint': ['not found', 'Sprint'],
     };
 
     const patterns = expectedFailures[toolName];

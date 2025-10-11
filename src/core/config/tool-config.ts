@@ -52,7 +52,7 @@ export function loadToolConfig (): ToolsConfig | null {
       confluence: normalizeServiceConfig(config.usedInstruments.confluence, 'confluence')
     };
 
-    logger.info('Tool configuration loaded from config.yaml', {
+    logger.debug('Tool configuration loaded from config.yaml', {
       jira: {
         include: Array.isArray(toolsConfig.jira.include) ? toolsConfig.jira.include.length : 'ALL',
         exclude: toolsConfig.jira.exclude.length

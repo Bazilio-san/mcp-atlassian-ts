@@ -237,8 +237,37 @@ export class JiraMcpTestCases {
         fullId: '1-8',
         name: 'Delete Issue',
         toolName: 'jira_delete_issue',
-        params: { issueIdOrKey: 'TEST-DELETE', deleteSubtasks: false },
-        description: 'Delete issue (will fail if not exists)',
+        params: async (client) => {
+          // First create a temporary issue to delete
+          console.log('  ℹ️  Creating temporary issue for deletion test...');
+          const createResult = await client.callTool('jira_create_issue', {
+            project: TEST_JIRA_PROJECT || 'TEST',
+            issueType: TEST_ISSUE_TYPE_NAME,
+            summary: `Temp issue for delete test - ${Date.now()}`,
+            description: 'This issue will be deleted immediately',
+          });
+          const text = createResult?.result?.content?.[0]?.text ?? '';
+
+          const isCreated = /Created Successfully/i.test(text);
+          if (!isCreated) {
+            throw new Error('  ❌  Failed to create temporary issue for deletion test');
+          }
+
+          // Ищем ключ JIRA вида ABC-123
+          const match = text.match(/\b[A-Z][A-Z0-9_]*-\d+\b/);
+          if (!match) {
+            throw new Error('  ❌  Failed to extract task key from response');
+          }
+
+          const tmpIssueKey = match[0];
+          console.log(`  ℹ️  Delete just created issue: ${tmpIssueKey}`);
+
+          return {
+            issueIdOrKey: tmpIssueKey,
+            deleteSubtasks: false
+          };
+        },
+        description: 'Delete issue (creates temp issue first)',
       },
       {
         fullId: '1-9',
