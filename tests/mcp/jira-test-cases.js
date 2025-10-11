@@ -15,7 +15,49 @@ import {
   JIRA_EPIC_LINK_FIELD_ID,
   TEST_ISSUE_LINK_TYPE,
 } from '../constants.js';
-import { loadToolConfig, isToolEnabledByConfig } from '../../dist/src/core/config/tool-config.js';
+import fs from 'fs';
+import yaml from 'yaml';
+import path from 'path';
+
+// Tool config functions adapted for new config structure
+function loadToolConfig () {
+  try {
+    const configPath = path.resolve(process.cwd(), 'config.yaml');
+    if (!fs.existsSync(configPath)) {
+      return null;
+    }
+    const configFile = fs.readFileSync(configPath, 'utf8');
+    const config = yaml.parse(configFile);
+    return config;
+  } catch (error) {
+    console.error('Failed to load config.yaml:', error);
+    return null;
+  }
+}
+
+function isToolEnabledByConfig (toolName, config) {
+  if (!config) return true; // Default to enabled if no config
+
+  // Determine service from tool name
+  const service = toolName.startsWith('jira_') ? 'jira' :
+    toolName.startsWith('confluence_') ? 'confluence' : null;
+
+  if (!service || !config[service]) return true;
+
+  const usedInstruments = config[service].usedInstruments;
+  if (!usedInstruments) return true;
+
+  // Check if tool is in include list
+  if (usedInstruments.include === 'ALL') {
+    // Check if tool is excluded
+    return !usedInstruments.exclude?.includes(toolName);
+  } else if (Array.isArray(usedInstruments.include)) {
+    // Tool must be explicitly included
+    return usedInstruments.include.includes(toolName);
+  }
+
+  return true; // Default to enabled
+}
 
 /**
  * Test groups information for MCP tests
@@ -578,7 +620,7 @@ export class JiraMcpTestCases {
         params: async (client) => {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
-            maxResults: 10
+            maxResults: 10,
           });
 
           // Берём первую доску из списка
@@ -629,7 +671,7 @@ export class JiraMcpTestCases {
         params: async (client) => {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
-            maxResults: 50
+            maxResults: 50,
           });
 
           // Ищем доску типа scrum
@@ -644,7 +686,7 @@ export class JiraMcpTestCases {
           // Получаем спринты этой доски
           const sprintsResult = await client.callTool('jira_get_sprints_from_board', {
             boardId: Number(scrumBoard.id),
-            maxResults: 10
+            maxResults: 10,
           });
 
           // Берём первый спринт из списка (данные в content[1].text)
@@ -668,7 +710,7 @@ export class JiraMcpTestCases {
         params: async (client) => {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
-            maxResults: 50
+            maxResults: 50,
           });
 
           // Ищем доску типа scrum (данные в content[1].text)
@@ -682,7 +724,7 @@ export class JiraMcpTestCases {
 
           return {
             originBoardId: Number(scrumBoard.id),
-            name: `MCP Test Sprint ${Date.now()}`,
+            name: `Test ${Date.now() % 10000}`, // Shortened to fit 30 char limit
             goal: 'Test sprint creation',
           };
         },
@@ -695,7 +737,7 @@ export class JiraMcpTestCases {
         params: async (client) => {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
-            maxResults: 50
+            maxResults: 50,
           });
 
           // Ищем доску типа scrum
@@ -710,7 +752,7 @@ export class JiraMcpTestCases {
           // Создаём новый спринт для тестирования обновления
           const createResult = await client.callTool('jira_create_sprint', {
             originBoardId: Number(scrumBoard.id),
-            name: `MCP Test Sprint for Update ${Date.now()}`,
+            name: `Upd ${Date.now() % 10000}`, // Shortened to fit 30 char limit
             goal: 'Test sprint for update operation',
           });
 
@@ -721,10 +763,16 @@ export class JiraMcpTestCases {
             return null;
           }
 
+          const now = new Date();
+          const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
           return {
             sprintId: Number(createdSprint.id),
-            name: `Updated Sprint Name ${Date.now()}`,
+            name: `Updated ${Date.now() % 10000}`, // Shortened to fit 30 char limit
             goal: 'Updated test goal',
+            state: 'active', // Required by JIRA API
+            startDate: now.toISOString(), // Required when changing state to active
+            endDate: endDate.toISOString(),
           };
         },
         description: 'Update newly created sprint',

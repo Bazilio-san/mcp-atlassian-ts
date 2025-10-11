@@ -24,7 +24,7 @@ import { jira_link_to_epic } from './tools/core/jira_link_to_epic.js';
 // Import comment and transition tools
 import { jira_add_comment } from './tools/comments/jira_add_comment.js';
 import { jira_get_transitions } from './tools/comments/jira_get_transitions.js';
-import { jira_transition_issue } from './tools/comments/jira_transition_issue.js';
+import { jira_transition_issue } from './tools/core/jira_transition_issue.js';
 
 // Import project tools
 import { jira_get_projects } from './tools/projects/jira_get_projects.js';

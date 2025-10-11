@@ -249,14 +249,59 @@ class JiraMcpHttpTester {
         if (resolvedParams === null) {
           // Test was skipped
           console.log(chalk.yellow('  ⏭️  Skipped - unable to resolve parameters'));
+
+          // Create a result entry for the skipped test
+          const skippedResult = {
+            fullId: testCase.fullId,
+            toolName: testCase.toolName,
+            description: testCase.description,
+            parameters: null,
+            timestamp: new Date().toISOString(),
+            duration: Date.now() - startTime,
+            status: 'skipped',
+            response: null,
+            error: 'Unable to resolve parameters',
+            marker: '⏭️'
+          };
+
+          this.results.push(skippedResult);
           this.stats.skipped++;
           this.stats.total++;
+
+          // Log result to individual file
+          await this.logResultToFile(skippedResult);
+
           return;
         }
       } catch (error) {
         console.log(chalk.red(`  ❌  Failed to resolve parameters: ${error.message}`));
+        // Display detailed error information if available
+        if (error.data && error.data.details) {
+          console.log(chalk.red(`  Details: ${JSON.stringify(error.data.details, null, 2)}`));
+        }
+
+        // Create a result entry for the failed parameter resolution
+        const failedResult = {
+          fullId: testCase.fullId,
+          toolName: testCase.toolName,
+          description: testCase.description,
+          parameters: null,
+          timestamp: new Date().toISOString(),
+          duration: Date.now() - startTime,
+          status: 'failed',
+          response: null,
+          error: `Failed to resolve parameters: ${error.message}`,
+          errorDetails: error.data && error.data.details ? error.data.details : null,
+          marker: '❌'
+        };
+
+        this.results.push(failedResult);
         this.stats.failed++;
         this.stats.total++;
+
+        // Log result to individual file
+        await this.logResultToFile(failedResult);
+
         return;
       }
     }
