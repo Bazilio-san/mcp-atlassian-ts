@@ -23,9 +23,9 @@ const nulFile = path.join(projectRoot, 'nul');
 if (fs.existsSync(nulFile)) {
   try {
     fs.unlinkSync(nulFile);
-    console.log('✅ Removed "nul" file from project root');
+    console.log('✅  Removed "nul" file from project root');
   } catch (error) {
-    console.error('❌ Error removing "nul" file:', error.message);
+    console.error('❌  Error removing "nul" file:', error.message);
     process.exit(1);
   }
 } else {
@@ -42,7 +42,7 @@ accidentalFiles.forEach(fileName => {
       const stats = fs.statSync(filePath);
       if (stats.isFile()) {
         fs.unlinkSync(filePath);
-        console.log(`✅ Removed "${fileName}" file from project root`);
+        console.log(`✅  Removed "${fileName}" file from project root`);
       }
     } catch (error) {
       console.error(`⚠️  Could not remove "${fileName}":`, error.message);

@@ -1,17 +1,19 @@
 // Типы данных для поиска проектов JIRA с помощью векторного поиска
 
+import { TKeyName } from '../../../../../types';
+
 export interface IssueType {
   id: string;
   name: string;
 }
 
-export interface JiraProjectWithIssueTypes {
+export interface JiraProjectWithIssueTypes { // VVR
   key: string;
   name: string;
   issueTypes: IssueType[];
 }
 
-export interface JiraProjectSearchResult extends JiraProjectWithIssueTypes {
+export interface TKeyNameScore extends TKeyName {
   score?: number;  // Косинусное расстояние (0 = идеальное совпадение)
 }
 
@@ -37,7 +39,7 @@ export const SYM_TR_RU_KEY_UC = Symbol('SYM_TR_RU_KEY_UC');
 export const SYM_TR_RU_NAME_LC = Symbol('SYM_TR_RU_NAME_LC');
 export const SYM_TR_NAME_UC = Symbol('SYM_TR_NAME_UC');
 
-export type JiraProjectWithSymbols = JiraProjectWithIssueTypes & {
+export type JiraProjectWithSymbols = TKeyName & {
   [SYM_KEY_LC]: string;
   [SYM_NAME_LC]: string;
   [SYM_TR_RU_KEY_LC]: string;

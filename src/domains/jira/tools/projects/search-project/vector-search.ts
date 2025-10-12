@@ -1,11 +1,9 @@
 // Векторный поиск для проектов JIRA
-// Адаптировано из multi-bot проекта
 
 import { transliterate, transliterateRU } from './transliterate.js';
 import { fillEmbeddingsCore, estimateTokens, type TEmbeddingArray } from './embeddings.js';
 import {
-  type JiraProjectWithIssueTypes,
-  type JiraProjectSearchResult,
+  type TKeyNameScore,
   type ProjectEmbeddingRecord,
   type JiraProjectWithSymbols,
   SYM_KEY_LC,
@@ -15,6 +13,7 @@ import {
   SYM_TR_RU_NAME_LC,
   SYM_TR_NAME_UC,
 } from './types.js';
+import { TKeyName } from '../../../../../types';
 
 // Интерфейс для векторной БД
 export interface IVectorDB {
@@ -60,6 +59,43 @@ export class ProjectVectorSearch {
   }
 
   /**
+   * Обновление кеша проектов без векторного поиска (только для fallback режима)
+   * Используется когда OpenAI недоступен, но нужны свежие данные для точного поиска
+   */
+  async updateCacheOnlyForFallback (projects: TKeyName[]): Promise<void> {
+    console.log('📥  Updating project cache for fallback search...');
+    console.log(`   Loading ${projects.length} projects from JIRA API`);
+
+    // Создаем проекты с символами для точного поиска
+    const projectsWithSymbols: JiraProjectWithSymbols[] = projects.map(project => {
+      const keyLC = project.key.toLowerCase();
+      const nameLC = project.name.toLowerCase();
+      const keyRuLC = transliterateRU(keyLC);
+
+      return {
+        ...project,
+        [SYM_KEY_LC]: keyLC,
+        [SYM_NAME_LC]: nameLC,
+        [SYM_TR_RU_KEY_LC]: keyRuLC,
+        [SYM_TR_RU_KEY_UC]: keyRuLC.toUpperCase(),
+        [SYM_TR_NAME_UC]: transliterate(project.name).toUpperCase(),
+        [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC),
+      };
+    });
+
+    // Обновляем только кеш в памяти (без векторной БД)
+    this.projectsCache.clear();
+    projectsWithSymbols.forEach(p => {
+      this.projectsCache.set(p.key, p);
+    });
+    this.cacheExpireTime = Date.now() + this.cacheTTL;
+
+    console.log('✅  Project cache updated successfully for fallback search');
+    console.log(`   📊  Projects loaded: ${projectsWithSymbols.length}`);
+    console.log('   🔍  Exact/substring search available for all projects\n');
+  }
+
+  /**
    * Ожидание завершения восстановления кеша
    */
   async waitForRestore (): Promise<void> {
@@ -73,45 +109,64 @@ export class ProjectVectorSearch {
    * Восстановление кеша проектов из векторной БД
    */
   private async restoreCacheFromDB (): Promise<void> {
-    // Получаем все ключи проектов из БД
-    const projectKeys = await this.vectorDB.getAllProjectKeys();
+    try {
+      // Получаем все ключи проектов из БД
+      const projectKeys = await this.vectorDB.getAllProjectKeys();
 
-    if (projectKeys.length === 0) {
-      return;
+      if (projectKeys.length === 0) {
+        console.debug('No projects found in vector DB cache');
+        return;
+      }
+
+      console.debug(`Restoring ${projectKeys.length} projects from vector DB cache...`);
+
+      // Получаем проект по первому результату поиска для восстановления имени
+      // Используем небольшой хак - ищем по ключу проекта чтобы получить его имя
+      let restoredCount = 0;
+      for (const key of projectKeys) {
+        try {
+          // Ищем записи для этого проекта
+          const results = await this.vectorDB.search([0], 100, 10);
+          const projectResult = results.find(r => r.key === key);
+
+          const name = projectResult?.name || key;
+
+          const projectWithSymbols: JiraProjectWithSymbols = {
+            key,
+            name,
+            [SYM_KEY_LC]: key.toLowerCase(),
+            [SYM_NAME_LC]: name.toLowerCase(),
+            [SYM_TR_RU_KEY_LC]: transliterate(key).toLowerCase(),
+            [SYM_TR_RU_KEY_UC]: transliterate(key).toUpperCase(),
+            [SYM_TR_RU_NAME_LC]: transliterate(name).toLowerCase(),
+            [SYM_TR_NAME_UC]: transliterate(name).toUpperCase(),
+          };
+
+          this.projectsCache.set(key, projectWithSymbols);
+          restoredCount++;
+        } catch (error) {
+          console.debug(`Failed to restore project ${key}:`, error);
+          // Продолжаем с другими проектами
+        }
+      }
+
+      this.cacheExpireTime = Date.now() + this.cacheTTL;
+
+      if (restoredCount > 0) {
+        console.debug(`✅  Restored ${restoredCount}/${projectKeys.length} projects from vector DB cache`);
+      } else {
+        console.debug('❌  Failed to restore any projects from vector DB cache');
+      }
+    } catch (error) {
+      console.debug('Failed to restore cache from DB:', error);
+      // Не блокируем работу, просто кеш будет пустой
     }
-
-    // Получаем проект по первому результату поиска для восстановления имени
-    // Используем небольшой хак - ищем по ключу проекта чтобы получить его имя
-    for (const key of projectKeys) {
-      // Ищем записи для этого проекта
-      const results = await this.vectorDB.search([0], 100, 10);
-      const projectResult = results.find(r => r.key === key);
-
-      const name = projectResult?.name || key;
-
-      const projectWithSymbols: JiraProjectWithSymbols = {
-        key,
-        name,
-        issueTypes: ['Task', 'Bug', 'Story'] as any[], // Стандартные типы
-        [SYM_KEY_LC]: key.toLowerCase(),
-        [SYM_NAME_LC]: name.toLowerCase(),
-        [SYM_TR_RU_KEY_LC]: transliterate(key).toLowerCase(),
-        [SYM_TR_RU_KEY_UC]: transliterate(key).toUpperCase(),
-        [SYM_TR_RU_NAME_LC]: transliterate(name).toLowerCase(),
-        [SYM_TR_NAME_UC]: transliterate(name).toUpperCase(),
-      };
-
-      this.projectsCache.set(key, projectWithSymbols);
-    }
-
-    this.cacheExpireTime = Date.now() + this.cacheTTL;
-    console.debug(`Restored ${projectKeys.length} projects from vector DB`);
   }
 
   /**
    * Обновление кеша проектов и их вариаций
    */
-  async updateProjectsCache (projects: JiraProjectWithIssueTypes[]): Promise<void> {
+  async updateProjectsCache (projects: TKeyName[]): Promise<void> {
     const now = Date.now();
 
     // Создаем проекты с символами для вариаций
@@ -163,11 +218,7 @@ export class ProjectVectorSearch {
       // Обновляем если:
       // - Проект новый
       // - Изменилось имя проекта
-      // - Изменился список issueTypes
-      if (isNew ||
-        !existingProject ||
-        existingProject.name !== project.name ||
-        JSON.stringify(existingProject.issueTypes) !== JSON.stringify(project.issueTypes)) {
+      if (isNew || !existingProject || existingProject.name !== project.name) {
         projectsToUpdate.push(project);
       }
     }
@@ -184,7 +235,7 @@ export class ProjectVectorSearch {
       return;
     }
 
-    console.log(`\n📊 Updating vector DB: ${projectsToUpdate.length} projects to process`);
+    console.log(`🔄  Updating vector index: ${projectsToUpdate.length} projects to process...`);
 
     // Создаем вариации для каждого проекта
     const variations: ProjectEmbeddingRecord[] = [];
@@ -221,7 +272,7 @@ export class ProjectVectorSearch {
       });
     }
 
-    console.log(`📝 Total variations to embed: ${variations.length}`);
+    console.log(`   📝 Generating embeddings for ${variations.length} text variations...`);
 
     // Генерируем эмбеддинги пакетами
     const batchTokenLimit = 8000; // Лимит токенов на батч
@@ -240,39 +291,55 @@ export class ProjectVectorSearch {
       recordsWithEmbeddings.push(record);
       processedCount++;
 
-      // Выводим прогресс с откатом каретки
+      // Выводим прогресс с откатом каретки (\r) - числа меняются в одной строке
       const progress = Math.round((processedCount / variations.length) * 100);
       const elapsed = Math.round((Date.now() - startTime) / 1000);
-      process.stdout.write(`\r⚡ Embedding progress: ${processedCount}/${variations.length} (${progress}%) - ${elapsed}s`);
+      const estimatedTotal = variations.length > 0 ? Math.round(((Date.now() - startTime) / processedCount) * variations.length / 1000) : 0;
+
+      // Прогресс-бар: ⬛ для выполненного, ⬜ для оставшегося
+      const barLength = 20;
+      const filled = Math.floor((progress / 100) * barLength);
+      const progressBar = '⬛'.repeat(filled) + '⬜'.repeat(barLength - filled);
+
+      process.stdout.write(`\r   ⚡ [${progressBar}] ${progress}% | ${processedCount}/${variations.length} | ⏱️ ${elapsed}s / ~${estimatedTotal}s total`);
     }
 
-    // Переход на новую строку после завершения
-    console.log('');
+    // Переход на новую строку после завершения с очисткой
+    const totalTime = Math.round((Date.now() - startTime) / 1000);
+    process.stdout.write(`\r   ✅  Embeddings generated successfully in ${totalTime}s${' '.repeat(30)}\n`);
 
     // Сохраняем в БД
     if (recordsWithEmbeddings.length > 0) {
+      console.log('   💾 Saving to vector database...');
       await this.vectorDB.upsertRecords(recordsWithEmbeddings);
 
-      // Выводим диагностику
-      // Сначала выведем то, что мы точно знаем
+      // Краткая статистика об обновленных данных
       const insertedProjects = new Set(recordsWithEmbeddings.map(r => r.key));
-      console.log('\n✅ Vector DB updated successfully:');
-      console.log(`   📊 Records inserted: ${recordsWithEmbeddings.length}`);
-      console.log(`   🏢 Unique projects inserted: ${insertedProjects.size}`);
-      console.log(`   📝 Records per project: ~${Math.round(recordsWithEmbeddings.length / insertedProjects.size)}`);
+      const avgRecordsPerProject = Math.round(recordsWithEmbeddings.length / insertedProjects.size);
 
-      // Попробуем получить общую статистику из БД
+      console.log('\n✅  Vector index update completed successfully!');
+      console.log(`   📊  Updated projects: ${insertedProjects.size}`);
+      console.log(`   📝  Total records: ${recordsWithEmbeddings.length} (~${avgRecordsPerProject} per project)`);
+
+      // Попробуем получить общую статистику из БД (общее количество)
       try {
         const allKeys = await this.vectorDB.getAllProjectKeys();
-        if (allKeys.length > 0) {
-          const uniqueProjects = new Set(allKeys);
-          console.log('\n   📈 Total in DB after update:');
-          console.log(`      Total unique projects: ${uniqueProjects.size}`);
-          console.log(`      Projects: ${Array.from(uniqueProjects).slice(0, 5).join(', ')}${uniqueProjects.size > 5 ? '...' : ''}`);
+        const uniqueProjects = new Set(allKeys);
+        console.log(`   🗄️  Total projects in index: ${uniqueProjects.size}`);
+
+        // Показываем примеры обновленных проектов (первые 3)
+        const projectSamples = Array.from(insertedProjects).slice(0, 3);
+        if (projectSamples.length > 0) {
+          const sampleText = projectSamples.join(', ') + (insertedProjects.size > 3 ? `... +${insertedProjects.size - 3} more` : '');
+          console.log(`   🔄  Updated: ${sampleText}`);
         }
       } catch (error) {
         console.debug('Could not retrieve total DB stats:', error);
+        // Если не можем получить общую статистику, показываем что знаем точно
+        console.log(`   ✅  Successfully updated ${insertedProjects.size} projects`);
       }
+    } else {
+      console.log('\n✅  No records to update - all projects are up to date');
     }
   }
 
@@ -283,7 +350,7 @@ export class ProjectVectorSearch {
     query: string,
     limit = 5,
     threshold = 0.7,
-  ): Promise<JiraProjectSearchResult[]> {
+  ): Promise<TKeyNameScore[]> {
     // Ждем завершения восстановления кеша
     await this.waitForRestore();
 
@@ -293,66 +360,112 @@ export class ProjectVectorSearch {
 
     const normalizedQuery = query.toLowerCase().trim();
 
-    // Проверяем точное совпадение в кеше
+    // Сначала всегда проверяем точное совпадение в кеше
+    const exactMatches = this.exactSearch(normalizedQuery, limit);
+    if (exactMatches.length > 0) {
+      // Если нашли точные совпадения, возвращаем их
+      return exactMatches;
+    }
+
+    // Попробуем векторный поиск
+    try {
+      // Создаем эмбеддинг для запроса
+      const [embedding] = await this.getEmbeddingsFn([query]);
+      if (!embedding) {
+        console.debug('Failed to create embedding for query, falling back to substring search');
+        return this.substringSearch(normalizedQuery, limit);
+      }
+
+      // Выполняем векторный поиск
+      const results = await this.vectorDB.search(embedding, limit, threshold);
+
+      // Дополняем результаты данными из кеша
+      const projectResults: TKeyNameScore[] = [];
+      const addedKeys = new Set<string>();
+
+      for (const result of results) {
+        if (addedKeys.has(result.key)) continue;
+
+        const project = this.projectsCache.get(result.key);
+        if (project) {
+          projectResults.push({
+            key: result.key,
+            name: result.name,
+            score: Math.round(result.score * 10000) / 10000, // Округляем до 4 знаков
+          });
+          addedKeys.add(result.key);
+        }
+      }
+
+      // Если векторный поиск не дал результатов, пробуем substring поиск
+      if (projectResults.length === 0) {
+        console.debug('Vector search returned no results, falling back to substring search');
+        return this.substringSearch(normalizedQuery, limit);
+      }
+
+      return projectResults;
+    } catch (error) {
+      console.debug('Vector search failed, falling back to substring search:', error);
+      return this.substringSearch(normalizedQuery, limit);
+    }
+  }
+
+  /**
+   * Точный поиск по всем вариациям проекта
+   */
+  private exactSearch (normalizedQuery: string, _limit: number): TKeyNameScore[] {
     for (const project of this.projectsCache.values()) {
       const variations = [
-        project.key,
-        project.name,
+        project.key.toLowerCase(),
+        project.name.toLowerCase(),
         project[SYM_KEY_LC],
         project[SYM_NAME_LC],
         project[SYM_TR_RU_KEY_LC],
-        project[SYM_TR_RU_KEY_UC],
+        project[SYM_TR_RU_KEY_UC]?.toLowerCase(),
         project[SYM_TR_RU_NAME_LC],
-        project[SYM_TR_NAME_UC],
+        project[SYM_TR_NAME_UC]?.toLowerCase(),
       ];
 
       if (variations.some(v => v === normalizedQuery)) {
         return [{
           key: project.key,
           name: project.name,
-          issueTypes: project.issueTypes,
-          score: 0, // Точное совпадение
+          score: 1, // Точное совпадение
         }];
       }
     }
+    return [];
+  }
 
-    // Векторный поиск
-    // Создаем эмбеддинг для запроса
-    const [embedding] = await this.getEmbeddingsFn([query]);
-    if (!embedding) {
-      console.error('Failed to create embedding for query:', query);
-      return [];
-    }
+  /**
+   * Поиск подстрок (fallback когда векторный поиск недоступен)
+   */
+  private substringSearch (normalizedQuery: string, limit: number): TKeyNameScore[] {
+    const matches: TKeyNameScore[] = [];
 
-    // Выполняем поиск
-    const results = await this.vectorDB.search(embedding, limit, threshold);
+    for (const project of this.projectsCache.values()) {
+      const keyMatch = project[SYM_KEY_LC].includes(normalizedQuery);
+      const nameMatch = project[SYM_NAME_LC].includes(normalizedQuery);
 
-    // Дополняем результаты данными из кеша
-    const projectResults: JiraProjectSearchResult[] = [];
-    const addedKeys = new Set<string>();
-
-    for (const result of results) {
-      if (addedKeys.has(result.key)) continue;
-
-      const project = this.projectsCache.get(result.key);
-      if (project) {
-        projectResults.push({
-          key: result.key,
-          name: result.name,
-          issueTypes: project.issueTypes,
-          score: Math.round(result.score * 10000) / 10000, // Округляем до 4 знаков
+      if (keyMatch || nameMatch) {
+        matches.push({
+          key: project.key,
+          name: project.name,
+          score: keyMatch ? 0.9 : 0.8, // Приоритет для совпадений по ключу
         });
-        addedKeys.add(result.key);
       }
     }
 
-    return projectResults;
+    // Сортируем по score (ключи проекта выше) и ограничиваем количество
+    return matches
+      .sort((a, b) => (b.score || 0) - (a.score || 0) || a.key.localeCompare(b.key))
+      .slice(0, limit);
   }
 
   /**
    * Получение всех проектов (для wildcard поиска)
    */
-  async getAllProjects (): Promise<JiraProjectSearchResult[]> {
+  async getAllProjects (): Promise<TKeyNameScore[]> {
     // Ждем завершения восстановления кеша
     await this.waitForRestore();
 
@@ -362,7 +475,6 @@ export class ProjectVectorSearch {
       .map(p => ({
         key: p.key,
         name: p.name,
-        issueTypes: p.issueTypes,
         score: 0,
       }));
   }

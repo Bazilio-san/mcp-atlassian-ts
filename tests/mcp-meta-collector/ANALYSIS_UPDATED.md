@@ -171,10 +171,10 @@
 
 | Операция | readOnly | destructive | idempotent | Инструменты |
 |----------|----------|-------------|------------|-------------|
-| **GET** | ✅ true | ❌ false | ✅ true | get_issue, search_issues, get_projects, get_worklog |
-| **CREATE** | ❌ false | ❌ false | ❌ false | create_issue, add_comment, create_page |
-| **UPDATE** | ❌ false | ❌ false | ✅ true | update_issue, transition_issue, update_page |
-| **DELETE** | ❌ false | ✅ true | ✅ true | delete_issue, remove_issue_link, delete_page |
+| **GET** | ✅  true | ❌  false | ✅  true | get_issue, search_issues, get_projects, get_worklog |
+| **CREATE** | ❌  false | ❌  false | ❌  false | create_issue, add_comment, create_page |
+| **UPDATE** | ❌  false | ❌  false | ✅  true | update_issue, transition_issue, update_page |
+| **DELETE** | ❌  false | ✅  true | ✅  true | delete_issue, remove_issue_link, delete_page |
 
 ### 2. Улучшенные Descriptions с примерами
 

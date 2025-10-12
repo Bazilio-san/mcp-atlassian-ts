@@ -463,15 +463,15 @@ class JiraDirectApiExecutor {
             if (deleteResponse.status === 204 || deleteResponse.status === 200) {
               deletedCount++;
             } else {
-              console.error(`  ❌ Failed to delete remote link ${link.id}: Status ${deleteResponse.status}`);
+              console.error(`  ❌  Failed to delete remote link ${link.id}: Status ${deleteResponse.status}`);
             }
           } catch (err) {
-            console.error(`  ❌ Error deleting remote link ${link.id}:`, err.message);
+            console.error(`  ❌  Error deleting remote link ${link.id}:`, err.message);
           }
         }
 
         if (deletedCount > 0) {
-          console.log(`  ✅ Deleted ${deletedCount} remote links, kept 1`);
+          console.log(`  ✅  Deleted ${deletedCount} remote links, kept 1`);
         }
         return deletedCount;
       } else if (remoteLinks && remoteLinks.length === 1) {
@@ -484,7 +484,7 @@ class JiraDirectApiExecutor {
 
       return 0;
     } catch (error) {
-      console.error('❌ Failed to cleanup remote links:', error.message);
+      console.error('❌  Failed to cleanup remote links:', error.message);
       return 0;
     }
   }

@@ -38,7 +38,7 @@ export class MCPClient {
     });
 
     await this.client.connect(this.transport);
-    console.log('✅ Connected via STDIO');
+    console.log('✅  Connected via STDIO');
   }
 
   /**
@@ -66,7 +66,7 @@ export class MCPClient {
     });
 
     await this.client.connect(this.transport);
-    console.log('✅ Connected via SSE');
+    console.log('✅  Connected via SSE');
   }
 
   /**
@@ -130,7 +130,7 @@ export class MCPClient {
 
       return metadata;
     } catch (error) {
-      console.error('❌ Error extracting metadata:', error.message);
+      console.error('❌  Error extracting metadata:', error.message);
       throw error;
     }
   }

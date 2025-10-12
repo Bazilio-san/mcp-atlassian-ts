@@ -89,7 +89,7 @@ async function runTests () {
     const result = await extractMCPMetadata(atlassianStdioConfig);
     results.push({ name: 'Atlassian (STDIO)', success: true, ...result });
   } catch (error) {
-    console.error(`❌ Failed: ${error.message}`);
+    console.error(`❌  Failed: ${error.message}`);
     results.push({ name: 'Atlassian (STDIO)', success: false, error: error.message });
   }
 
@@ -100,7 +100,7 @@ async function runTests () {
     const result = await extractMCPMetadata(finamConfig);
     results.push({ name: 'FINAM (SSE)', success: true, ...result });
   } catch (error) {
-    console.error(`❌ Failed: ${error.message}`);
+    console.error(`❌  Failed: ${error.message}`);
     results.push({ name: 'FINAM (SSE)', success: false, error: error.message });
   }
   */
@@ -112,7 +112,7 @@ async function runTests () {
     const result = await extractMCPMetadata(localAtlassianConfig);
     results.push({ name: 'Local Atlassian (STDIO)', success: true, ...result });
   } catch (error) {
-    console.error(`❌ Failed: ${error.message}`);
+    console.error(`❌  Failed: ${error.message}`);
     results.push({ name: 'Local Atlassian (STDIO)', success: false, error: error.message });
   }
 
@@ -131,7 +131,7 @@ async function runTests () {
       console.log(`   📝 Prompts: ${result.metadata.prompts?.length || 0}`);
       console.log(`   📂 Resources: ${result.metadata.resources?.length || 0}`);
     } else {
-      console.log(`   ❌ Error: ${result.error}`);
+      console.log(`   ❌  Error: ${result.error}`);
     }
   });
 

@@ -118,7 +118,7 @@ async function runComprehensiveTest () {
     let vectorSearch = await initializeVectorSearch();
 
     if (!vectorSearch) {
-      console.error(`${colors.red}❌ Failed to initialize vector search${colors.reset}`);
+      console.error(`${colors.red}❌  Failed to initialize vector search${colors.reset}`);
       process.exit(1);
     }
 
@@ -138,7 +138,7 @@ async function runComprehensiveTest () {
 
     await updateProjectsIndex(TEST_PROJECTS);
 
-    console.log(`\n${colors.green}✅ Vector index updated${colors.reset}`);
+    console.log(`\n${colors.green}✅  Vector index updated${colors.reset}`);
 
     // ========== ФАЗА 3: Повторная инициализация из памяти ==========
     console.log(`\n${colors.yellow}💾 PHASE 3: Re-initialize from persisted data${colors.reset}`);
@@ -151,7 +151,7 @@ async function runComprehensiveTest () {
     vectorSearch = await initializeVectorSearch();
 
     if (!vectorSearch) {
-      console.error(`${colors.red}❌ Failed to re-initialize vector search${colors.reset}`);
+      console.error(`${colors.red}❌  Failed to re-initialize vector search${colors.reset}`);
       process.exit(1);
     }
 
@@ -175,10 +175,10 @@ async function runComprehensiveTest () {
     console.log(`${colors.cyan}Total:${colors.reset} ${colors.green}${totalPassed}/${totalTests} tests passed${colors.reset}`);
 
     if (totalFailed === 0) {
-      console.log(`\n${colors.green}✅ ALL TESTS PASSED!${colors.reset}`);
+      console.log(`\n${colors.green}✅  ALL TESTS PASSED!${colors.reset}`);
       console.log(`${colors.gray}Vector search with in-memory store and persistence works correctly.${colors.reset}`);
     } else {
-      console.log(`\n${colors.red}❌ SOME TESTS FAILED${colors.reset}`);
+      console.log(`\n${colors.red}❌  SOME TESTS FAILED${colors.reset}`);
       console.log(`${colors.gray}Please check the implementation.${colors.reset}`);
     }
 
@@ -187,7 +187,7 @@ async function runComprehensiveTest () {
     process.exit(totalFailed === 0 ? 0 : 1);
 
   } catch (error) {
-    console.error(`\n${colors.red}❌ Test failed with error:${colors.reset}`, error);
+    console.error(`\n${colors.red}❌  Test failed with error:${colors.reset}`, error);
     console.error(error.stack);
     process.exit(1);
   }

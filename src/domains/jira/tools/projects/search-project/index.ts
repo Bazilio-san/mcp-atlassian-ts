@@ -5,10 +5,8 @@ import { appConfig } from '../../../../../bootstrap/init-config.js';
 import { createOpenAIClient, getEmbeddings, EMBEDDING_MODELS } from './openai-client.js';
 import { ProjectVectorSearch } from './vector-search.js';
 import { InMemoryVectorStore } from './in-memory-store.js';
-import type {
-  JiraProjectWithIssueTypes,
-  JiraProjectSearchResult,
-} from './types.js';
+import { PROJECT_DB_PATH } from '../../../constants.js';
+import { TKeyName } from '../../../../../types';
 
 // Singleton для векторного поиска
 let projectSearch: ProjectVectorSearch | null = null;
@@ -27,9 +25,15 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
 
   // Проверяем наличие конфигурации OpenAI
   if (!appConfig.openai?.apiKey) {
-    console.warn('OpenAI API key not configured. Vector search will be disabled.');
+    console.warn('\n🚫 OpenAI API key not configured');
+    console.warn('   Vector search is DISABLED. Using exact match search only.');
+    console.warn('   To enable vector search, set OPENAI_API_KEY in .env or config.yaml');
+    console.warn('   Project search will work with exact matching, no semantic/fuzzy search.\n');
     return null;
   }
+
+  console.log('\n🔧 Initializing vector search...');
+  console.log('   Checking OpenAI connectivity...');
 
   try {
     // Создаем OpenAI клиент
@@ -38,8 +42,25 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
       appConfig.openai.baseURL,
     );
 
+    // Тестируем подключение к OpenAI небольшим запросом
+    console.log('   Testing OpenAI API connection...');
+    const testModel = appConfig.openai?.model || EMBEDDING_MODELS.SMALL.model;
+    const testDimensions = appConfig.openai?.dimensions || EMBEDDING_MODELS.SMALL.dimensions;
+
+    try {
+      const testResult = await getEmbeddings(openaiClient, ['test'], testModel, testDimensions);
+      if (!testResult.embeddings || testResult.embeddings.length === 0) {
+        throw new Error('Empty response from OpenAI API');
+      }
+      console.log('   ✅  OpenAI API is accessible');
+    } catch (testError: any) {
+      console.error(`   ❌  OpenAI API test failed: ${testError?.message || testError}`);
+      throw testError;
+    }
+
     // Создаем векторное хранилище
-    const vectorDB = new InMemoryVectorStore('./data/vector-store');
+    console.log('   Initializing vector database...');
+    const vectorDB = new InMemoryVectorStore(PROJECT_DB_PATH);
 
     // Создаем функцию для получения эмбеддингов
     const getEmbeddingsFn = async (texts: string[]) => {
@@ -53,11 +74,60 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
     // Создаем экземпляр векторного поиска
     projectSearch = new ProjectVectorSearch(vectorDB, getEmbeddingsFn);
 
-    console.info('Vector search initialized successfully');
+    console.log('\n✅  Vector search initialized successfully');
+    console.log(`   Model: ${appConfig.openai?.model || EMBEDDING_MODELS.SMALL.model}`);
+    console.log(`   Dimensions: ${appConfig.openai?.dimensions || EMBEDDING_MODELS.SMALL.dimensions}`);
+    console.log(`   Vector DB path: ${PROJECT_DB_PATH}`);
+    console.log('   Semantic search: ENABLED\n');
     return projectSearch;
-  } catch (error) {
-    console.error('Failed to initialize vector search:', error);
+  } catch (error: any) {
+    console.error('\n❌  Failed to initialize vector search');
+    if (error?.response?.status === 401) {
+      console.error('   Invalid OpenAI API key. Please check your credentials.');
+      console.error('   Make sure OPENAI_API_KEY is set correctly in .env or config.yaml');
+    } else if (error?.response?.status === 429) {
+      console.error('   OpenAI API rate limit exceeded. Please try again later.');
+    } else if (error?.response?.status === 503 || error?.response?.status === 502) {
+      console.error('   OpenAI API is temporarily unavailable. Please try again later.');
+    } else if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
+      console.error('   Cannot connect to OpenAI API. Please check your network connection.');
+    } else if (error?.code === 'ETIMEDOUT') {
+      console.error('   OpenAI API request timed out. Please check your network connection.');
+    } else {
+      console.error('   Error:', error?.message || error);
+    }
+    console.warn('   Falling back to exact match search only.');
+    console.warn('   Project search will work but without semantic/fuzzy capabilities.\n');
     return null;
+  }
+}
+
+/**
+ * Обновление кеша проектов для fallback поиска (когда векторный поиск недоступен)
+ */
+export async function updateProjectsCacheForFallback (
+  projects: TKeyName[],
+): Promise<void> {
+  if (!projectSearch) {
+    console.warn('⚠️  Vector search not available. Creating fallback cache...');
+
+    // Создаем минимальный векторный поиск только для кеширования проектов
+    // Без OpenAI, только для точного поиска
+    const { InMemoryVectorStore } = await import('./in-memory-store.js');
+    const vectorDB = new InMemoryVectorStore(PROJECT_DB_PATH);
+
+    // Создаем dummy функцию для эмбеддингов (не будет вызываться)
+    const dummyEmbeddingsFn = async () => [null];
+
+    const { ProjectVectorSearch } = await import('./vector-search.js');
+    projectSearch = new ProjectVectorSearch(vectorDB, dummyEmbeddingsFn);
+
+    console.log('📦 Created fallback project cache instance');
+  }
+
+  // Обновляем кеш без векторного поиска
+  if (projectSearch) {
+    await (projectSearch as any).updateCacheOnlyForFallback(projects);
   }
 }
 
@@ -66,11 +136,12 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
  * Обновляет не чаще чем раз в 10 минут
  */
 export async function updateProjectsIndex (
-  projects: JiraProjectWithIssueTypes[],
+  projects: TKeyName[],
   forceUpdate = false,
 ): Promise<void> {
   if (!projectSearch) {
-    console.debug('Vector search not available, skipping index update');
+    console.debug('Vector search not available, using fallback cache update');
+    await updateProjectsCacheForFallback(projects);
     return;
   }
 
@@ -85,19 +156,34 @@ export async function updateProjectsIndex (
   }
 
   try {
-    console.log(`Updating vector index with ${projects.length} projects`);
+    console.log('🔄  Starting vector index update...');
+    console.log(`   Processing ${projects.length} projects from JIRA`);
+
+    const updateStartTime = Date.now();
     await projectSearch.updateProjectsCache(projects);
+    const updateDuration = Math.round((Date.now() - updateStartTime) / 1000);
+
     lastUpdateTime = now;
 
-    // Логируем статистику
-    const stats = {
-      projectsCount: projects.length,
-      lastUpdate: new Date(lastUpdateTime).toISOString(),
-      nextUpdate: new Date(lastUpdateTime + UPDATE_INTERVAL_MS).toISOString(),
-    };
-    console.debug('Vector index updated:', stats);
-  } catch (error) {
-    console.error('Failed to update projects index:', error);
+    // Логируем итоговую статистику обновления
+    const nextUpdateTime = new Date(lastUpdateTime + UPDATE_INTERVAL_MS);
+    const nextUpdateMinutes = Math.round(UPDATE_INTERVAL_MS / 60000);
+
+    console.log(`🎉  Vector index update completed in ${updateDuration}s`);
+    console.log(`   ⏰  Next automatic update: in ${nextUpdateMinutes} minutes (${nextUpdateTime.toLocaleTimeString()})`);
+    console.log('   🔍  Project search is ready with semantic capabilities!\n');
+  } catch (error: any) {
+    console.error('❌  Failed to update projects index');
+    if (error?.response?.status === 401) {
+      console.error('   OpenAI API authentication failed. Check your API key.');
+    } else if (error?.response?.status === 429) {
+      console.error('   OpenAI API rate limit exceeded. Will retry later.');
+    } else if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
+      console.error('   Network connection to OpenAI failed.');
+    } else {
+      console.error(`   Error: ${error?.message || error}`);
+    }
+    console.warn('   Will retry on next search request or manual update.\n');
   }
 }
 
@@ -107,7 +193,7 @@ export async function updateProjectsIndex (
 export async function searchProjects (
   query: string,
   limit = 5,
-): Promise<JiraProjectSearchResult[]> {
+): Promise<TKeyName[]> {
   if (!projectSearch) {
     console.debug('Vector search not available');
     return [];
@@ -170,12 +256,6 @@ export async function clearVectorIndex (): Promise<void> {
   }
 }
 
-// Экспортируем все необходимое для использования в инструменте
-export {
-  type JiraProjectWithIssueTypes,
-  type JiraProjectSearchResult,
-} from './types.js';
-
 /**
  * Сброс синглтона для переинициализации (для тестов)
  */
@@ -184,9 +264,3 @@ export function resetVectorSearchSingleton (): void {
   openaiClient = null;
   lastUpdateTime = 0;
 }
-
-export { ProjectVectorSearch } from './vector-search.js';
-export { InMemoryVectorStore } from './in-memory-store.js';
-
-// Экспорт clearVectorIndex с альтернативным именем для тестов
-export { clearVectorIndex as clearVectorDB } from './index.js';

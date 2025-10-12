@@ -4,7 +4,7 @@ Tool for extracting metadata from MCP (Model Context Protocol) servers, includin
 
 ## Features
 
-- ✅ Supports both **STDIO** and **HTTP/SSE** transports
+- ✅  Supports both **STDIO** and **HTTP/SSE** transports
 - 📦 Extracts all tool signatures with full parameter details
 - 📝 Retrieves available prompts
 - 📂 Lists server resources

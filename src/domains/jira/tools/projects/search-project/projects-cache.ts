@@ -1,15 +1,19 @@
 /* eslint-disable camelcase */
 import type { AxiosInstance } from 'axios';
 import {
-  IJiraIssueType,
-  TKeyNameIssues,
-  TErrorKeyNameIssuesResult,
-  IJiraCreateMetaResponse, IJiraProject,
+  TErrorProjKeyNameResult,
+  IJiraCreateMetaResponse, IJiraProject, TKeyName,
 } from '../../../../../types/index.js';
 import { createLogger } from '../../../../../core/utils/logger.js';
 import { transliterate, transliterateRU } from '../../../../../core/utils/text.js';
+import { createAuthenticationManager } from '../../../../../core/auth/index.js';
+import { appConfig } from '../../../../../bootstrap/init-config.js';
+import type { AuthConfig } from '../../../../../types/index.js';
 // Lazy import для избежания циклических зависимостей
 let updateProjectsIndex: any;
+
+// Standalone power HTTP client
+let powerHttpClient: AxiosInstance | null = null;
 
 const logger = createLogger('JIRA_PROJECTS');
 
@@ -22,10 +26,10 @@ const SYM_TR_NAME_UC = Symbol('SYM_TR_NAME_UC');
 
 
 const projectsCache: {
-  cache: TKeyNameIssues[] | null;
-  hash: { [key: string]: TKeyNameIssues } | null;
+  cache: TKeyName[] | null;
+  hash: { [key: string]: TKeyName } | null;
   expire: number;
-  cachePromise: Promise<TErrorKeyNameIssuesResult> | null;
+  cachePromise: Promise<TErrorProjKeyNameResult> | null;
 } = {
   cache: null,
   hash: null,
@@ -35,8 +39,44 @@ const projectsCache: {
 
 const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
+// Initialize power HTTP client
+const initializePowerHttpClient = (): void => {
+  if (!powerHttpClient && appConfig.jira?.powerEndpoint?.baseUrl && appConfig.jira?.powerEndpoint?.auth) {
+    const powerAuth = appConfig.jira.powerEndpoint.auth;
+
+    // Transform config auth to AuthConfig format
+    let authConfig: AuthConfig;
+    if (powerAuth.basic?.username && powerAuth.basic?.password) {
+      authConfig = {
+        type: 'basic' as const,
+        username: powerAuth.basic.username,
+        password: powerAuth.basic.password
+      };
+    } else if (powerAuth.pat) {
+      authConfig = {
+        type: 'pat' as const,
+        token: powerAuth.pat
+      };
+    } else if (powerAuth.oauth2) {
+      authConfig = {
+        ...powerAuth.oauth2,
+        type: 'oauth2' as const
+      };
+    } else {
+      throw new Error('No valid power endpoint authentication configured');
+    }
+
+    const authManager = createAuthenticationManager(
+      authConfig,
+      appConfig.jira.powerEndpoint.baseUrl
+    );
+    powerHttpClient = authManager.getHttpClient();
+    logger.info('Power HTTP client initialized for JIRA projects');
+  }
+};
+
 // Получить все проекты (пространства) Jira (с кешированием)
-export const getJiraProjects = async (httpClient: AxiosInstance): Promise<TErrorKeyNameIssuesResult> => {
+export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
   const now = Date.now();
   // Return cached if not expired
   if (projectsCache.cache && now < projectsCache.expire) {
@@ -49,10 +89,17 @@ export const getJiraProjects = async (httpClient: AxiosInstance): Promise<TError
   // Otherwise, fetch and populate cache
   projectsCache.cachePromise = (async () => {
     try {
-      const res = await httpClient.get<IJiraCreateMetaResponse>('/rest/api/2/issue/createmeta');
-      const { projects } = res.data;
+      // Initialize power HTTP client if needed
+      initializePowerHttpClient();
+
+      if (!powerHttpClient) {
+        throw new Error('Power HTTP client not available for JIRA projects');
+      }
+
+      const res = await powerHttpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project');
+      const projects = res.data;
       const result = Array.isArray(projects)
-        ? projects.map(({ key, name, issuetypes }: IJiraProject) => {
+        ? projects.map(({ key, name }: IJiraProject) => {
           const keyLC = key.toLowerCase();
           const nameLC = name.toLowerCase();
           const keyRuLC = transliterateRU(keyLC);
@@ -64,18 +111,13 @@ export const getJiraProjects = async (httpClient: AxiosInstance): Promise<TError
             [SYM_TR_RU_KEY_LC]: keyRuLC,
             [SYM_TR_RU_KEY_UC]: keyRuLC.toUpperCase(),
             [SYM_TR_NAME_UC]: transliterate(name).toUpperCase(),
-            [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC),
-            issueTypes: (issuetypes || []).map((it: IJiraIssueType) => ({ id: it.id, name: it.name })),
+            [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC)
           };
         })
         : [];
       // Обновляем индекс векторного поиска если он доступен
       if (typeof updateProjectsIndex === 'function') {
-        const projectsForIndex = result.map(p => ({
-          key: p.key,
-          name: p.name,
-          issueTypes: p.issueTypes,
-        }));
+        const projectsForIndex = result.map(({ key, name }) => ({ key, name }));
         updateProjectsIndex(projectsForIndex).catch((err: any) => {
           logger.error('Failed to update vector index', err);
         });

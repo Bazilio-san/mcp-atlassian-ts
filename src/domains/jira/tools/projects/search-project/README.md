@@ -38,7 +38,7 @@ src/
 
 - Встраиваемая векторная БД
 - Нативная TypeScript поддержка
-- Хранит векторы в `./data/vector-store/`
+- Хранит векторы в `./_data/vector-store/`
 - Поддержка косинусного расстояния
 - Не требует внешних серверов
 
@@ -259,7 +259,7 @@ import { searchProjects } from './JiraBlueFindProjects/index.js';
 
 // Поиск по запросу
 const results = await searchProjects('aitech', 5);
-// Возвращает: [{ key: 'AITECH', name: 'AI Tech Platform', score: 0.96, issueTypes: [...] }]
+// Возвращает: [{ key: 'AITECH', name: 'AI Tech Platform', score: 0.96 }]
 
 // Wildcard поиск (все проекты)
 const allProjects = await searchProjects('*');

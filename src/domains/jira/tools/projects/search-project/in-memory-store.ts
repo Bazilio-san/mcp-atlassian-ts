@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from '
 import { join, dirname } from 'path';
 import type { IVectorDB } from './vector-search.js';
 import type { ProjectEmbeddingRecord } from './types.js';
+import { PROJECT_DB_PATH } from '../../../constants.js';
 
 interface InMemoryRecord {
   key: string;
@@ -21,7 +22,7 @@ export class InMemoryVectorStore implements IVectorDB {
   private cache: Map<string, InMemoryRecord[]> = new Map();
   private readonly dataFile: string;
 
-  constructor (basePath = './_data/vector-store') {
+  constructor (basePath = PROJECT_DB_PATH) {
     this.dataFile = join(basePath, 'vectors.txt');
 
     // Создаем директорию если её нет
@@ -211,7 +212,7 @@ export class InMemoryVectorStore implements IVectorDB {
           key: bestRecord.key,
           name: bestRecord.name,
           searchText: bestRecord.searchText,
-          score: bestScore,
+          score: 1 - (Math.min(bestScore, 2) / 2),
         });
       }
     }

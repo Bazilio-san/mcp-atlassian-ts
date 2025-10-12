@@ -301,6 +301,11 @@ export type TJiraProjectId = string;
 
 export type TIdName = { id: string, name: string };
 
+export interface TKeyName {
+  key: string,
+  name: string,
+}
+
 export interface TKeyNameIssues {
   key: string,
   name: string,
@@ -308,10 +313,10 @@ export interface TKeyNameIssues {
   cs?: number,
 }
 
-export interface TErrorKeyNameIssuesResult {
+export interface TErrorProjKeyNameResult {
   error?: any,
-  result: TKeyNameIssues[]
-  hash: { [key: string]: TKeyNameIssues }
+  result: TKeyName[]
+  hash: { [key: string]: TKeyName }
 }
 
 export interface IJiraCreateMetaResponse {

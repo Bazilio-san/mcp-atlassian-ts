@@ -1954,7 +1954,7 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith(
   }
 
   runStandaloneEmulator().catch(error => {
-    console.error('❌ Error:', error.message);
+    console.error('❌  Error:', error.message);
     process.exit(1);
   });
 }

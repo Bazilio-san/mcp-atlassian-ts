@@ -147,13 +147,13 @@
 
 | Тип операции | readOnly | destructive | idempotent | openWorld |
 |--------------|----------|-------------|------------|-----------|
-| **GET операции** | ✅ true | ❌ false | ✅ true | ❌ false |
+| **GET операции** | ✅  true | ❌  false | ✅  true | ❌  false |
 | `jira_get_issue`, `jira_search_issues`, `jira_get_projects` |||
-| **CREATE операции** | ❌ false | ❌ false | ❌ false | ❌ false |
+| **CREATE операции** | ❌  false | ❌  false | ❌  false | ❌  false |
 | `jira_create_issue`, `jira_add_comment` ||||
-| **UPDATE операции** | ❌ false | ❌ false | ✅ true | ❌ false |
+| **UPDATE операции** | ❌  false | ❌  false | ✅  true | ❌  false |
 | `jira_update_issue`, `jira_transition_issue` ||||
-| **DELETE операции** | ❌ false | ✅ true | ✅ true | ❌ false |
+| **DELETE операции** | ❌  false | ✅  true | ✅  true | ❌  false |
 | `jira_delete_issue`, `jira_remove_issue_link` ||||
 
 **Задача для Claude Code:**

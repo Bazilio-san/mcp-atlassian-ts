@@ -233,7 +233,7 @@ class ResourceManager {
           error: error.message,
         });
         if (this.verbose) {
-          console.error(`  ❌ Failed: ${error.message}`);
+          console.error(`  ❌  Failed: ${error.message}`);
         }
       }
     }

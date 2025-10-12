@@ -27,7 +27,7 @@ so the LLM Agent can choose the correct issueType name when creating an issue.`,
       expand: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Additional fields to expand (e.g. ["description", "lead", "issueTypes", "url", "projectKeys", "permissions", "insight", "properties"])',
+        description: 'Additional fields to expand (e.g. ["description", "issueTypes", "lead", "issueTypeHierarchy" ])',
         default: [],
       },
       properties: {
@@ -55,13 +55,10 @@ so the LLM Agent can choose the correct issueType name when creating an issue.`,
  */
 async function getProjectHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { powerHttpClient, httpClient, cache, logger, normalizeToArray } = context;
+    const { httpClient, cache, logger, normalizeToArray } = context;
     const { projectIdOrKey, expand, properties } = args;
 
     logger.info('Fetching JIRA project details', { projectIdOrKey, expand, properties });
-
-    // Use power client if available for general project data
-    const client = powerHttpClient || httpClient;
 
     // Build query parameters
     const params: any = {};
@@ -81,7 +78,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
     // Fetch from cache or API
     const project = await cache.getOrSet(cacheKey, async () => {
-      const response = await client.get(`/rest/api/2/project/${projectIdOrKey}`, { params });
+      const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}`, { params });
       return response.data;
     });
 

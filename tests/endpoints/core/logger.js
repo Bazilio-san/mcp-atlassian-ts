@@ -94,7 +94,7 @@ ${triQ}
 
       fs.writeFileSync(filepath, mdContent, 'utf8');
     } catch (error) {
-      console.error(`❌ Failed to log API response for test ${testId}:`, error.message);
+      console.error(`❌  Failed to log API response for test ${testId}:`, error.message);
     }
   }
 
@@ -238,7 +238,7 @@ ${triQ}
         console.log(`🗑️ Cleared ${files.length} API response logs`);
       }
     } catch (error) {
-      console.error('❌ Failed to clear API response logs:', error.message);
+      console.error('❌  Failed to clear API response logs:', error.message);
     }
   }
 
@@ -255,7 +255,7 @@ ${triQ}
       const files = fs.readdirSync(this.logDir);
       return files.filter(file => file.endsWith('.md')).length;
     } catch (error) {
-      console.error('❌ Failed to count API response logs:', error.message);
+      console.error('❌  Failed to count API response logs:', error.message);
       return 0;
     }
   }
