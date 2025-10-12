@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -67,21 +68,31 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
     if (comment) {
       transitionData.comment = { body: comment };
     }
+    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
+    const transitions = response.data.transitions;
 
     // Make API call to transition issue
     await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/transitions`, transitionData);
 
     // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'transition_issue',
+      message:  `Issue ${issueIdOrKey} transitioned successfully (transition ID: ${transitionId})`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      transitionId: transitionId,
+      transitionName: transitions.find((t: any) => t.id === transitionId)?.name || undefined,
+      comment: comment || null,
+      fields: fields,
+      link: `${config.url}/browse/${issueIdOrKey}`,
+      timestamp: new Date().toISOString()
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Issue Transitioned Successfully**\n\n' +
-            `**Issue:** ${issueIdOrKey}\n` +
-            `**Transition ID:** ${transitionId}\n${
-              comment ? `**Comment:** ${comment}\n` : ''
-            }\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
+          text: ppj(json),
         },
       ],
     };

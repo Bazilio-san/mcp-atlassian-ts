@@ -53,28 +53,21 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
     const attachments = response.data.fields.attachment || [];
 
     if (attachments.length === 0) {
-      const json = {
-        issueIdOrKey,
-        attachments: [],
-        total: 0,
-      };
-
       return {
         content: [
           {
             type: 'text',
-            text: ppj(json),
-          },
-          {
-            type: 'text',
-            text: `No attachments found for ${issueIdOrKey}`,
+            text: `No attachments found for issue ${issueIdOrKey}`,
           },
         ],
       };
     }
 
     const json = {
-      issueIdOrKey,
+      success: true,
+      operation: 'batch_get_changelogs',
+      message:  `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,
       attachments: attachments.map((a: any) => ({
         id: a.id,
@@ -98,10 +91,6 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
         {
           type: 'text',
           text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`,
         },
       ],
     };

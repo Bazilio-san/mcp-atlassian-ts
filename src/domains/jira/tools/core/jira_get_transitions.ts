@@ -48,38 +48,29 @@ async function getTransitionsHandler (args: any, context: ToolContext): Promise<
     const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
     const transitions = response.data.transitions;
 
-    // Handle empty transitions
-    if (transitions.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `No transitions available for issue ${issueIdOrKey}`,
-          },
-        ],
-      };
-    }
+    const json = {
+      success: true,
+      operation: 'get_transitions',
+      message: transitions.length
+        ? `Available Transitions for issue ${issueIdOrKey}`
+        : `No transitions available for issue ${issueIdOrKey}`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      transitions: transitions.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        to: {
+          id: t.to.id,
+          name: t.to.name,
+          description: t.to.description,
+        },
+      })),
+    };
 
-    const transitionsList = transitions.map((t: any) => ({
-      id: t.id,
-      name: t.name,
-      to: {
-        id: t.to.id,
-        name: t.to.name,
-        description: t.to.description,
-      },
-    }));
-
-    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: ppj(transitionsList),
-        },
-        {
-          type: 'text',
-          text: `Available Transitions for ${issueIdOrKey}`,
+          text: ppj(json),
         },
       ],
     };

@@ -122,6 +122,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
 
     // Build structured JSON
     const json = {
+      operation: 'batch_create_issues',
       totalRequested: issues.length,
       successCount,
       errorCount,
@@ -144,10 +145,6 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
         {
           type: 'text',
           text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: `Batch creation completed: ${successCount} created, ${errorCount} failed`,
         },
       ],
     };

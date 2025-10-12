@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -100,8 +101,21 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
 
     // Handle empty results
     if (searchResult.issues.length === 0) {
+      const emptyResult = {
+        operation: 'search_issues',
+        jql: jql,
+        total: 0,
+        issues: [],
+        searchUrl: `${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
+        timestamp: new Date().toISOString()
+      };
+
       return {
         content: [
+          {
+            type: 'text',
+            text: ppj(emptyResult),
+          },
           {
             type: 'text',
             text: `No issues found for JQL: ${jql}`,
@@ -110,22 +124,31 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
       };
     }
 
-    // Format issues list
-    const issuesList = searchResult.issues
-      .map((issue: any) => `• **${issue.key}**: ${issue.fields.summary} (${issue.fields.status.name})`)
-      .join('\n');
+    // Format search results as JSON
+    const json = {
+      success: true,
+      operation: 'search_issues',
+      message: `Found ${searchResult.total} issues (showing ${searchResult.issues.length})`,
+      jql: jql,
+      total: searchResult.total,
+      showing: searchResult.issues.length,
+      issues: searchResult.issues.map((issue: any) => ({
+        key: issue.key,
+        summary: issue.fields.summary,
+        status: issue.fields.status.name,
+        assignee: issue.fields.assignee ? issue.fields.assignee.displayName : 'Unassigned',
+        priority: issue.fields.priority ? issue.fields.priority.name : 'None',
+        issueType: issue.fields.issuetype ? issue.fields.issuetype.name : 'Unknown'
+      })),
+      searchUrl: `${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
+      timestamp: new Date().toISOString()
+    };
 
-    // Return formatted response
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**JIRA Search Results**\n\n' +
-            `**JQL:** ${jql}\n` +
-            `**Found:** ${searchResult.total} issues (showing ${searchResult.issues.length})\n\n` +
-            `${issuesList}\n\n` +
-            `**Search URL:** ${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
+          text: ppj(json),
         },
       ],
     };

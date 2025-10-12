@@ -78,3 +78,4 @@ _api_responses/
 /tests/http/simple.http
 _logs/
 /config.yaml
+/glm.ps1

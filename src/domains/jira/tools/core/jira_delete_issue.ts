@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -56,14 +57,20 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
     await httpClient.delete(`/rest/api/2/issue/${issueIdOrKey}`, { params });
 
     // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'delete_issue',
+      message: 'Issue deleted successfully',
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      isSubtasksDeleted: deleteSubtasks,
+      timestamp: new Date().toISOString()
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**JIRA Issue Deleted Successfully**\n\n' +
-            `**Key:** ${issueIdOrKey}\n` +
-            `**Subtasks Deleted:** ${deleteSubtasks ? 'Yes' : 'No'}`,
+          text: ppj(json),
         },
       ],
     };

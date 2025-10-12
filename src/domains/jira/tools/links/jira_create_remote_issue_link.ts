@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -70,18 +71,25 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
       object: linkData,
     });
 
-    // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'create_remote_issue_link',
+      message: `Remote link "${title}" created successfully for issue ${issueIdOrKey} (ID: ${response.data.id})`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      linkId: response.data.id,
+      linkTitle: title,
+      url: url,
+      summary: summary || null,
+      iconUrl: iconUrl || null,
+      issueLink: `${config.url}/browse/${issueIdOrKey}`,
+      timestamp: new Date().toISOString(),
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Remote Issue Link Created Successfully**\n\n' +
-            `**Issue:** ${issueIdOrKey}\n` +
-            `**Link Title:** ${title}\n` +
-            `**URL:** ${url}\n` +
-            `**Link ID:** ${response.data.id}\n` +
-            `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
+          text: ppj(json),
         },
       ],
     };

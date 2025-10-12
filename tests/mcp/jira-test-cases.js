@@ -77,8 +77,8 @@ export const MCP_GROUP_INFO = {
 
 const getProjectId = async (client) => {
   const { result } = await client.callTool('jira_get_project', { projectIdOrKey: TEST_JIRA_PROJECT });
-  const project = JSON.parse(result?.content?.[0]?.text);
-  const projectId = Number(project.id);
+  const data = JSON.parse(result?.content?.[0]?.text);
+  const projectId = Number(data?.project?.id);
   if (!projectId) {
     throw new Error(`⚠️  Failed to get id for project ${TEST_JIRA_PROJECT}`);
   }
@@ -253,14 +253,15 @@ export class JiraMcpTestCases {
 
           // Сначала получаем доступные переходы для задачи
 
-          const transitionsList = await client.callTool('jira_get_transitions', {
+          const result = await client.callTool('jira_get_transitions', {
             issueIdOrKey: this.testIssueKey,
           });
+          const data = result?.result?.content?.[0]?.text || '';
           // Проверяем, есть ли доступные переходы
-          if ((transitionsList?.result?.content?.length || 0) < 2) {
+          if (!data) {
             throw new Error('  ❌  No transitions available for this issue');
           }
-          const transitions = JSON.parse(transitionsList?.result?.content?.[0]?.text ?? '');
+          const { transitions } = JSON.parse(data);
 
           // Используем первый доступный переход
           const firstTransition = transitions[0];
@@ -452,7 +453,7 @@ export class JiraMcpTestCases {
         fullId: '3-1',
         name: 'Get User Profile',
         toolName: 'jira_get_user_profile',
-        params: { userIdOrEmail: TEST_USERNAME },
+        params: { usernameOrEmail: TEST_USERNAME },
         description: 'Get user profile',
       },
     ]);

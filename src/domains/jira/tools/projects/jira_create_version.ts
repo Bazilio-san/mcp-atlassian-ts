@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -79,15 +80,28 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
     // Invalidate project versions cache
     cache.keys().filter(key => key.includes('versions')).forEach(key => cache.del(key));
 
+    const json = {
+      success: true,
+      operation: 'create_version',
+      message: `Version "${version.name}" created successfully (ID: ${version.id})`,
+      version: {
+        id: version.id,
+        name: version.name,
+        projectId: versionData.projectId,
+        description: versionData.description || null,
+        releaseDate: versionData.releaseDate || null,
+        startDate: versionData.startDate || null,
+        archived: versionData.archived || false,
+        released: versionData.released || false
+      },
+      timestamp: new Date().toISOString()
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Version Created Successfully**\n\n' +
-            `**Name:** ${version.name}\n` +
-            `**ID:** ${version.id}\n` +
-            `**Project:** ${versionData.projectId}\n${versionData.description ? `**Description:** ${versionData.description}\n` : ''}${versionData.releaseDate ? `**Release Date:** ${versionData.releaseDate}\n` : ''}`,
+          text: ppj(json),
         },
       ],
     };

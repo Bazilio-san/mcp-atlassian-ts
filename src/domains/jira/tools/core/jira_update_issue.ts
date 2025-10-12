@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -97,16 +98,22 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
     // Make API call
     await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
 
-    // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'update_issue',
+      message:  `JIRA issue ${issueIdOrKey} updated successfully`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      updatedFields: Object.keys(updateData.fields),
+      fieldValues: updateData.fields,
+      link: `${config.url}/browse/${issueIdOrKey}`,
+      timestamp: new Date().toISOString()
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**JIRA Issue Updated Successfully**\n\n' +
-            `**Key:** ${issueIdOrKey}\n` +
-            `Updated fields: ${Object.keys(updateData.fields).join(', ')}\n` +
-            `\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
+          text: ppj(json),
         },
       ],
     };

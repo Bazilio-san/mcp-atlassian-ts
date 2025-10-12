@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -78,18 +79,33 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/worklog`, worklogInput);
     const worklog = response.data;
 
+    const json = {
+      success: true,
+      operation: 'add_worklog',
+      message: `Worklog added successfully to ${issueIdOrKey}: ${timeSpent} by ${worklog.author.displayName}`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      worklog: {
+        id: worklog.id,
+        timeSpent: timeSpent,
+        timeSpentSeconds: worklog.timeSpentSeconds,
+        comment: comment || null,
+        started: worklog.started,
+        author: {
+          accountId: worklog.author.accountId,
+          displayName: worklog.author.displayName,
+          emailAddress: worklog.author.emailAddress || null,
+        },
+        visibility: visibility || null,
+      },
+      link: `${config.url}/browse/${issueIdOrKey}`,
+      timestamp: new Date().toISOString(),
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Worklog Added Successfully**\n\n' +
-            `**Issue:** ${issueIdOrKey}\n` +
-            `**Time Spent:** ${timeSpent}\n` +
-            `**Author:** ${worklog.author.displayName}\n` +
-            `**Started:** ${new Date(worklog.started).toLocaleString()}\n${
-              comment ? `**Comment:** ${comment}\n` : ''
-            }\n**Direct Link:** ${config.url}/browse/${issueIdOrKey}`,
+          text: ppj(json),
         },
       ],
     };

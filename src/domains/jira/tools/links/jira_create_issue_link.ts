@@ -23,11 +23,11 @@ export const jira_create_issue_link: ToolWithHandler = {
       },
       inwardIssue: {
         type: 'string',
-        description: 'Key of the inward issue',
+        description: 'ID or key of the inward issue',
       },
       outwardIssue: {
         type: 'string',
-        description: 'Key of the outward issue',
+        description: 'ID or key of the outward issue',
       },
       comment: {
         type: 'string',
@@ -60,8 +60,12 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
     // Build link data
     const linkData: any = {
       type: { name: linkType },
-      inwardIssue: { key: inwardIssue },
-      outwardIssue: { key: outwardIssue },
+      inwardIssue: {
+        [/^\d+$/.test(inwardIssue) ? 'id' : 'key']: inwardIssue,
+      },
+      outwardIssue: {
+        [/^\d+$/.test(outwardIssue) ? 'id' : 'key']: outwardIssue,
+      },
     };
 
     if (comment) {
@@ -86,26 +90,22 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
       .filter(key => key.includes('jira:search'))
       .forEach(key => cache.del(key));
 
-
-    const link: any = {
-      id: newLink[0]?.id,
-      type: { name: linkType },
-      inwardIssue: { key: inwardIssue },
-      outwardIssue: { key: outwardIssue },
+    const json = {
+      success: true,
+      operation: 'create_issue_link',
+      message: 'Issue Link Created Successfully',
+      link: {
+        id: newLink[0]?.id,
+        ...linkData,
+        type: { name: linkType },
+      },
     };
-    if (comment) {
-      link.comment = comment;
-    }
 
     return {
       content: [
         {
           type: 'text',
-          text: ppj({ link }),
-        },
-        {
-          type: 'text',
-          text: 'Issue Link Created Successfully',
+          text: ppj(json),
         },
       ],
     };

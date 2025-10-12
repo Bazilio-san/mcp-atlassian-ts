@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -54,29 +55,30 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
       return response.data || [];
     });
 
-    if (versions.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `**No versions found for project ${projectIdOrKey}**`,
-          },
-        ],
-      };
-    }
-
-    const versionsList = versions
-      .map(
-        (v: any) =>
-          `• **${v.name}** ${v.released ? '(Released)' : '(Unreleased)'} ${v.archived ? '[Archived]' : ''}`,
-      )
-      .join('\n');
+    const json = {
+      success: true,
+      operation: 'get_project_versions',
+      message: versions.length
+        ? `Found ${versions.length} versions for project ${projectIdOrKey}`
+        : `No versions found for project ${projectIdOrKey}`,
+      [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
+      total: versions.length,
+      versions: versions.map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        description: v.description || null,
+        released: v.released || false,
+        archived: v.archived || false,
+        releaseDate: v.releaseDate || null,
+        startDate: v.startDate || null,
+      })),
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text: `**Project Versions for ${projectIdOrKey}**\n\n${versionsList}`,
+          text: ppj(json),
         },
       ],
     };

@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -99,17 +100,24 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
     }
 
     // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'link_to_epic',
+      message: `Issue ${issueIdOrKey} successfully linked to epic ${epicKey}`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      epicKey: epicKey,
+      links: {
+        issue: `${config.url}/browse/${issueIdOrKey}`,
+        epic: `${config.url}/browse/${epicKey}`
+      },
+      timestamp: new Date().toISOString()
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**Issue Linked to Epic Successfully**\n\n' +
-            `**Issue:** ${issueIdOrKey}\n` +
-            `**Epic:** ${epicKey}\n` +
-            '\n**Direct Links:**\n' +
-            `• Issue: ${config.url}/browse/${issueIdOrKey}\n` +
-            `• Epic: ${config.url}/browse/${epicKey}`,
+          text: ppj(json),
         },
       ],
     };

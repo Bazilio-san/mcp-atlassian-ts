@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -60,33 +61,59 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
     const worklogResult = response.data;
 
     if (worklogResult.worklogs.length === 0) {
+      const emptyResult = {
+        operation: 'get_worklog',
+        issueKey: issueIdOrKey,
+        total: 0,
+        showing: 0,
+        worklogs: [],
+        timestamp: new Date().toISOString()
+      };
+
       return {
         content: [
           {
             type: 'text',
-            text: `**No worklog entries found for ${issueIdOrKey}**`,
+            text: ppj(emptyResult),
+          },
+          {
+            type: 'text',
+            text: `No worklog entries found for ${issueIdOrKey}`,
           },
         ],
       };
     }
 
-    const worklogList = worklogResult.worklogs
-      .map(
-        (w: any) =>
-          `• **${w.author.displayName}**: ${w.timeSpent} on ${new Date(w.started).toLocaleDateString()}\n${
-            w.comment ? `  Comment: ${w.comment}\n` : ''
-          }`,
-      )
-      .join('\n');
+    const json = {
+      success: true,
+      operation: 'get_worklog',
+      text: `Found ${worklogResult.total} worklog entries for ${issueIdOrKey} (showing ${worklogResult.worklogs.length})`,
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      total: worklogResult.total,
+      showing: worklogResult.worklogs.length,
+      worklogs: worklogResult.worklogs.map((w: any) => ({
+        id: w.id,
+        timeSpent: w.timeSpent,
+        timeSpentSeconds: w.timeSpentSeconds,
+        comment: w.comment || null,
+        started: w.started,
+        created: w.created,
+        updated: w.updated,
+        author: {
+          accountId: w.author.accountId,
+          displayName: w.author.displayName,
+          emailAddress: w.author.emailAddress || null
+        },
+        visibility: w.visibility || null
+      })),
+      timestamp: new Date().toISOString()
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**Worklog Entries for ${issueIdOrKey}**\n\n` +
-            `**Total:** ${worklogResult.total} entries (showing ${worklogResult.worklogs.length})\n\n` +
-            `${worklogList}`,
+          text: ppj(json),
         },
       ],
     };

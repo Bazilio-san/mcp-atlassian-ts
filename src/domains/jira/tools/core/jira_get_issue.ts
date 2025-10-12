@@ -96,7 +96,11 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       labels: fields.labels || [],
       description: fields.description || '',
     };
-    const json = { jiraIssue };
+    const json = {
+      success: true,
+      operation: 'get_issue',
+      jiraIssue
+    };
 
     if (fields.comment?.comments?.length) {
       jiraIssue.commentsCount = fields.comment?.total || 0;

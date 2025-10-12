@@ -82,6 +82,9 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
     const fmtD = (v: string) => (v ? new Date(v).toLocaleDateString() : null);
 
     const json = {
+      success: true,
+      operation: 'create_sprint',
+      message: 'Sprint created successfully',
       sprint: {
         id: sprint.id,
         name: sprint.name,
@@ -95,16 +98,11 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
       },
     };
 
-
     return {
       content: [
         {
           type: 'text',
           text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: 'Sprint created successfully',
         },
       ],
     };

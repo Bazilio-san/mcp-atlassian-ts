@@ -115,28 +115,20 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
       };
     });
 
-    const sprintsList = sprints
-      .map((s: any) =>
-        `• **${s.name}** (ID: ${s.id}) - ${s.state}${s.dateInfo}${
-          s.goal ? `\n  Goal: ${s.goal}` : ''
-        }`,
-      )
-      .join('\n\n');
-
-    // Первый элемент — краткое резюме, второй — JSON
-    const summaryText =
-      `Found ${sprintsResult.values.length} sprint(s) on board ${boardId}
-Total: ${sprintsResult.total || sprintsResult.values.length} sprint(s) available${sprintsResult.isLast ? '' : ` (showing ${sprintsResult.values.length})`}`;
+    const json = {
+      success: true,
+      operation: 'get_sprints_from_board',
+      message: `Found ${sprintsResult.values.length} sprint(s) on board ${boardId}
+Total: ${sprintsResult.total || sprintsResult.values.length} sprint(s) available${
+        sprintsResult.isLast ? '' : ` (showing ${sprintsResult.values.length})`}`,
+      sprints,
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text: ppj({ sprints }),
-        },
-        {
-          type: 'text',
-          text: summaryText + '\n\n' + sprintsList,
+          text: ppj(json),
         },
       ],
     };

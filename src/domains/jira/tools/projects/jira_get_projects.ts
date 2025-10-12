@@ -76,7 +76,7 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
         content: [
           {
             type: 'text',
-            text: '**No JIRA projects found**',
+            text: 'No JIRA projects found',
           },
         ],
       };

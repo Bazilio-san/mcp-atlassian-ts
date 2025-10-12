@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -105,31 +106,33 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
     const successResults = results.filter(r => !r.error);
     const errorResults = results.filter(r => r.error);
 
-    let resultText =
-      '**Batch Version Creation Results**\n\n' +
-      `**Total Versions:** ${versions.length}\n` +
-      `**Successfully Created:** ${successResults.length}\n` +
-      `**Errors:** ${errorResults.length}\n\n`;
+    const json = {
+      operation: 'batch_create_versions',
+      message: `Batch created ${successResults.length}/${versions.length} versions${errorResults.length > 0 ? ` (${errorResults.length} errors)` : ''}`,
+      total: versions.length,
+      successful: successResults.length,
+      errors: errorResults.length,
+      createdVersions: successResults.map((version: any) => ({
+        id: version.id,
+        name: version.name,
+        projectId: version.projectId,
+        description: version.description || null,
+        archived: version.archived || false,
+        released: version.released || false,
+      })),
+      failedVersions: errorResults.map((error: any) => ({
+        name: error.version,
+        error: error.error,
+      })),
+      timestamp: new Date().toISOString(),
+    };
 
-    if (successResults.length > 0) {
-      resultText += '**Created Versions:**\n';
-      successResults.forEach((version: any) => {
-        resultText += `• **${version.name}** (ID: ${version.id})\n`;
-      });
-    }
-
-    if (errorResults.length > 0) {
-      resultText += '\n**Errors:**\n';
-      errorResults.forEach((error: any) => {
-        resultText += `• **${error.version}**: ${error.error}\n`;
-      });
-    }
 
     return {
       content: [
         {
           type: 'text',
-          text: resultText,
+          text: ppj(json),
         },
       ],
     };

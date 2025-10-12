@@ -32,7 +32,7 @@ export const jira_get_link_types: ToolWithHandler = {
 /**
  * Handler function for getting JIRA issue link types
  */
-async function getLinkTypesHandler (args: any, context: ToolContext): Promise<any> {
+async function getLinkTypesHandler (_args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger } = context;
 
@@ -47,31 +47,22 @@ async function getLinkTypesHandler (args: any, context: ToolContext): Promise<an
       return response.data.issueLinkTypes || [];
     }, 600); // Cache for 10 minutes
 
-    if (linkTypes.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: ppj({ issueLinkTypes: [] }),
-          },
-        ],
-      };
-    }
+    const json = {
+      success: true,
+      operation: 'get_link_types',
+      issueLinkTypes: linkTypes.map((lt: any) => ({
+        id: lt.id,
+        name: lt.name,
+        inward: lt.inward,
+        outward: lt.outward,
+      })),
+    };
 
-    // Format the link types for JSON response
-    const formattedLinkTypes = linkTypes.map((lt: any) => ({
-      id: lt.id,
-      name: lt.name,
-      inward: lt.inward,
-      outward: lt.outward,
-    }));
-
-    // Format response for MCP
     return {
       content: [
         {
           type: 'text',
-          text: ppj({ issueLinkTypes: formattedLinkTypes }),
+          text: ppj(json),
         },
       ],
     };

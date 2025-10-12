@@ -94,7 +94,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
           },
           {
             type: 'text',
-            text: `No changelogs found for the specified issues`,
+            text: 'No changelogs found for the specified issues',
           },
         ],
       };
@@ -102,6 +102,9 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
 
     // Build structured JSON
     const json = {
+      success: true,
+      operation: 'batch_get_changelogs',
+      message:  `Retrieved changelogs for ${changelogs.values.length} of ${normalizedKeys.length} issue(s)`,
       issueKeys: normalizedKeys,
       total: changelogs.values.length,
       changelogs: changelogs.values.map((issueChangelog: any) => {
@@ -137,10 +140,6 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
         {
           type: 'text',
           text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: `Retrieved changelogs for ${changelogs.values.length} of ${normalizedKeys.length} issue(s)`,
         },
       ],
     };

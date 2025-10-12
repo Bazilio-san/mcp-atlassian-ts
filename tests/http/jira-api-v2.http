@@ -203,6 +203,12 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/2/issue/AITECH-5/transitions
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+
+### Possible issue transitions
+GET {{baseUrl}}/rest/api/2/issue/AITECH-5/transitions?includeUnavailableTransitions=false&skipRemoteOnlyCondition=true
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+
 ###
 
 #5. Users

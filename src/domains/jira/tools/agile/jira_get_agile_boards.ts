@@ -79,21 +79,24 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
         content: [
           {
             type: 'text',
-            text: '**No agile boards found**',
+            text: 'No agile boards found',
           },
         ],
       };
     }
 
+    const json = {
+      success: true,
+      operation: 'get_agile_boards',
+      message: `Found ${boardsResult.values.length} agile board(s)`,
+      agileBoards: boardsResult.values,
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text: ppj({ agileBoards: boardsResult.values }),
-        },
-        {
-          type: 'text',
-          text: `Found ${boardsResult.values.length} agile board(s)`,
+          text: ppj(json),
         },
       ],
     };

@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -17,12 +18,12 @@ export const jira_get_user_profile: ToolWithHandler = {
   inputSchema: {
     type: 'object',
     properties: {
-      userIdOrEmail: {
+      usernameOrEmail: {
         type: 'string',
         description: 'User account ID or email address',
       },
     },
-    required: ['userIdOrEmail'],
+    required: ['usernameOrEmail'],
     additionalProperties: false,
   },
   annotations: {
@@ -40,23 +41,23 @@ export const jira_get_user_profile: ToolWithHandler = {
  */
 async function getUserProfileHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { userIdOrEmail } = args;
+    const { usernameOrEmail } = args;
     const { httpClient, cache, logger } = context;
 
-    logger.info('Fetching JIRA user profile', { userIdOrEmail });
+    logger.info('Fetching JIRA user profile', { usernameOrEmail });
 
     // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'user', { userIdOrEmail });
+    const cacheKey = generateCacheKey('jira', 'user', { usernameOrEmail });
 
     // Fetch from cache or API
     const user = await cache.getOrSet(cacheKey, async () => {
       // Check if the input looks like an email
-      const isEmail = userIdOrEmail.includes('@');
+      const isEmail = usernameOrEmail.includes('@');
 
       // If it looks like an email, search directly by username/email
       if (isEmail) {
         const response = await httpClient.get('/rest/api/2/user', {
-          params: { username: userIdOrEmail },
+          params: { username: usernameOrEmail },
         });
         return response.data;
       }
@@ -64,24 +65,24 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
       // Otherwise try as accountId first
       try {
         const response = await httpClient.get('/rest/api/2/user', {
-          params: { accountId: userIdOrEmail },
+          params: { accountId: usernameOrEmail },
         });
         return response.data;
       } catch (_error: any) {
         // If accountId fails, try username search
         try {
           const response = await httpClient.get('/rest/api/2/user', {
-            params: { username: userIdOrEmail },
+            params: { username: usernameOrEmail },
           });
           return response.data;
         } catch {
           // Last resort - try user search with query
           const searchResponse = await httpClient.get('/rest/api/2/user/search', {
-            params: { username: userIdOrEmail, maxResults: 1 },
+            params: { username: usernameOrEmail, maxResults: 1 },
           });
 
           if (!searchResponse.data || searchResponse.data.length === 0) {
-            throw new Error(`User not found: ${userIdOrEmail}`);
+            throw new Error(`User not found: ${usernameOrEmail}`);
           }
 
           return searchResponse.data[0];
@@ -90,19 +91,29 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
     });
 
     // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'get_user_profile',
+      [/@/.test(usernameOrEmail) ? 'email' : 'login']: usernameOrEmail,
+      message: `User profile retrieved: ${user.displayName} (${user.accountId})`,
+      user: {
+        accountId: user.accountId,
+        displayName: user.displayName,
+        emailAddress: user.emailAddress || null,
+        active: user.active || false,
+        timeZone: user.timeZone || null,
+        avatarUrls: user.avatarUrls || null,
+        key: user.key || null,
+        name: user.name || null,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text:
-            '**JIRA User Profile**\n\n' +
-            `**Display Name:** ${user.displayName}\n` +
-            `**Account ID:** ${user.accountId}\n` +
-            `**Email:** ${user.emailAddress || 'Not available'}\n` +
-            `**Active:** ${user.active ? 'Yes' : 'No'}\n` +
-            `**Time Zone:** ${user.timeZone || 'Not set'}\n${
-              user.avatarUrls ? `**Avatar:** ${user.avatarUrls['48x48']}\n` : ''
-            }`,
+          text: ppj(json),
         },
       ],
     };

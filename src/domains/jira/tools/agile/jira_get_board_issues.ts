@@ -116,27 +116,30 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
         assignee: f.assignee?.displayName || 'Unassigned',
         reporter: f.reporter?.displayName || 'Unassigned',
         type: {
-          name: f.issuetype?.name
+          name: f.issuetype?.name,
         },
         priority: f.priority?.name,
         link: `${config.url}/browse/${issue.key}`,
         project: {
           key: f.project?.key,
-          name: f.project?.name
-        }
+          name: f.project?.name,
+        },
       };
     });
+
+    const json = {
+      success: true,
+      operation: 'get_board_issues',
+      message: `Found ${issuesResult.issues.length} issue(s) on board ${boardId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
+      issues,
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text: ppj({ issues }),
-        },
-        {
-          type: 'text',
-          text: `Found ${issuesResult.issues.length} issue(s) on board ${boardId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
+          text: ppj(json),
         },
       ],
     };

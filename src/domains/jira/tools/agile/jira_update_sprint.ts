@@ -97,6 +97,9 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
     const fmtD = (v: string) => v ? new Date(v).toLocaleDateString() : null;
 
     const json = {
+      success: true,
+      operation: 'update_sprint',
+      message: 'Sprint updated successfully',
       sprint: {
         id: sprint.id,
         name: sprint.name,
@@ -115,10 +118,6 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
         {
           type: 'text',
           text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: 'Sprint updated successfully',
         },
       ],
     };

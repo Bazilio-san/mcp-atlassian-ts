@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for removing a JIRA issue link
@@ -52,12 +53,17 @@ async function removeIssueLinkHandler (args: any, context: ToolContext): Promise
       .filter(key => key.includes('jira:search'))
       .forEach(key => cache.del(key));
 
-    // Format response for MCP
+    const json = {
+      success: true,
+      operation: 'remove_issue_link',
+      imessage: `Issue Link Removed Successfully\nLink ID: ${linkId}`,
+    };
+
     return {
       content: [
         {
           type: 'text',
-          text: `Issue Link Removed Successfully\nLink ID: ${linkId}`,
+          text: ppj(json),
         },
       ],
     };

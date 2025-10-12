@@ -126,6 +126,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
 
     const json = {
       success: true,
+      operation: 'create_issue',
       message: 'Issue created successfully',
       newIssue: {
         id: createdIssue.id,

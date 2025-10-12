@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -60,37 +61,38 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
             (field.id && field.id.toLowerCase().includes(query.toLowerCase()))
         );
       }
-
       return allFields;
     });
 
-    if (fields.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: query ? `No fields found matching "${query}"` : 'No fields found',
-          },
-        ],
-      };
-    }
+    const q = query ? ` matching "${query}"` : '';
+    const message = fields.length
+      ? `Found ${fields.length} JIRA fields${q}`
+      : `No fields found${q}`;
 
-    const fieldsList = fields
-      .map((field: any) => {
-        const name = field.name || field.id || 'Unnamed field';
-        const key = field.key || field.id || 'no-key';
-        const type = field.schema?.type || 'unknown type';
-        return `• **${name}** (${key}) - ${type}`;
-      })
-      .join('\n');
+
+    const json = {
+      success: true,
+      operation: 'search_fields',
+      message,
+      query: query || null,
+      total: fields.length,
+      fields: fields.map((field: any) => ({
+        id: field.id,
+        key: field.key || field.id,
+        name: field.name || field.id || 'Unnamed field',
+        type: field.schema?.type || 'unknown',
+        custom: field.custom || false,
+        orderable: field.orderable || false,
+        searchable: field.searchable || false
+      })),
+      timestamp: new Date().toISOString()
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text:
-            `**JIRA Fields ${query ? `matching "${query}"` : ''}**\n\n` +
-            `**Found:** ${fields.length} fields\n\n${fieldsList}`,
+          text: ppj(json),
         },
       ],
     };

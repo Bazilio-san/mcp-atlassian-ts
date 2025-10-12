@@ -134,20 +134,19 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
       };
     });
 
-    // Первый элемент контента — краткое резюме (как в board issues)
-    const summaryText =
-      `Found ${issuesResult.issues.length} issue(s) in sprint ${sprintId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`;
+    const json = {
+      success: true,
+      operation: 'get_sprint_issues',
+      message: `Found ${issuesResult.issues.length} issue(s) in sprint ${sprintId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
+      issues,
+    };
 
     return {
       content: [
         {
           type: 'text',
-          text: ppj({ issues }),
-        },
-        {
-          type: 'text',
-          text: summaryText,
+          text: ppj(json),
         },
       ],
     };

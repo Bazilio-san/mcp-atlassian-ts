@@ -6,6 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
+import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -49,8 +50,6 @@ so the LLM Agent can choose the correct issueType name when creating an issue.`,
   handler: getProjectHandler,
 };
 
-const FORMAT_AS_JSON = true;
-
 /**
  * Handler function for jira_get_project
  */
@@ -84,11 +83,18 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     });
 
     if (!project) {
+      const json = {
+        found: false,
+        operation: 'get_project',
+        message: 'Project not found',
+        [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
+      };
+
       return {
         content: [
           {
             type: 'text',
-            text: `**Project not found: ${projectIdOrKey}**`,
+            text: ppj(json),
           },
         ],
       };
@@ -115,51 +121,18 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       };
     })();
 
-    let text = '';
-    if (FORMAT_AS_JSON) {
-      text = JSON.stringify(filteredProject, null, 2);
-    } else {
-      // Format project details using only allowed fields
-      let details = [
-        `**${filteredProject.name}** (${filteredProject.key})`,
-        `ID: ${filteredProject.id}`,
-        `Type: ${filteredProject.projectTypeKey}`,
-        ...(filteredProject.archived !== undefined ? [`Archived: ${filteredProject.archived ? 'yes' : 'no'}`] : []),
-      ];
+    const json = {
+      found: true,
+      operation: 'get_project',
+      message: `Project details retrieved: ${filteredProject.name} (${filteredProject.key})`,
+      project: filteredProject,
+    };
 
-      if (filteredProject.lead) {
-        const l = filteredProject.lead as any;
-        details.push(`Lead: ${l.displayName || l.name} (${l.key || ''})`.trim());
-      }
-
-      if (filteredProject.description) {
-        details.push(`\nDescription: ${filteredProject.description}`);
-      }
-
-      if (filteredProject.url) {
-        details.push(`URL: ${filteredProject.url}`);
-      }
-
-      if (filteredProject.issueTypes && filteredProject.issueTypes.length > 0) {
-        details.push(`\nIssue Types (${filteredProject.issueTypes.length}):`);
-        (filteredProject.issueTypes as any[]).forEach((type: any) => {
-          details.push(`• ${type.name}${type.subtask ? ' (subtask)' : ''}`);
-        });
-      }
-
-      if (filteredProject.versions && filteredProject.versions.length > 0) {
-        details.push(`\nVersions (${filteredProject.versions.length}):`);
-        (filteredProject.versions as any[]).forEach((ver: any) => {
-          details.push(`• ${ver.name}${ver.released ? ' (released)' : ''}${ver.archived ? ' (archived)' : ''}`);
-        });
-      }
-      text = details.join('\n');
-    }
     return {
       content: [
         {
           type: 'text',
-          text,
+          text: ppj(json),
         },
       ],
     };

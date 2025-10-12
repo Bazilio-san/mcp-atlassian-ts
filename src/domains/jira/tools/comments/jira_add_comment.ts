@@ -76,7 +76,10 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
 
     // Build structured JSON
     const json = {
-      issueIdOrKey,
+      success: true,
+      operation: 'add_comment',
+      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      message: `Comment added successfully to ${issueIdOrKey}`,
       comment: {
         id: comment.id,
         self: comment.self,
@@ -99,10 +102,6 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
         {
           type: 'text',
           text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: `Comment added successfully to ${issueIdOrKey}`,
         },
       ],
     };
