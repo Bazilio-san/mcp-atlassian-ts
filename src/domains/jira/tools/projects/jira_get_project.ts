@@ -55,10 +55,13 @@ so the LLM Agent can choose the correct issueType name when creating an issue.`,
  */
 async function getProjectHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, normalizeToArray } = context;
+    const { powerHttpClient, httpClient, cache, logger, normalizeToArray } = context;
     const { projectIdOrKey, expand, properties } = args;
 
     logger.info('Fetching JIRA project details', { projectIdOrKey, expand, properties });
+
+    // Use power client if available for general project data
+    const client = powerHttpClient || httpClient;
 
     // Build query parameters
     const params: any = {};
@@ -78,7 +81,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
     // Fetch from cache or API
     const project = await cache.getOrSet(cacheKey, async () => {
-      const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}`, { params });
+      const response = await client.get(`/rest/api/2/project/${projectIdOrKey}`, { params });
       return response.data;
     });
 
@@ -106,10 +109,10 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         url: p.url,
         lead: p.lead ? { key: p.lead.key, name: p.lead.name, displayName: p.lead.displayName } : undefined,
         issueTypes: Array.isArray(p.issueTypes)
-          ? p.issueTypes.map((t: any) => ({ id: t.id, description: t.description, name: t.name, subtask: t.subtask }))
+          ? p.issueTypes.map(({ id, name, description, subtask }: any) => ({ id, name, description, subtask }))
           : undefined,
         versions: Array.isArray(p.versions)
-          ? p.versions.map((v: any) => ({ id: v.id, description: v.description, name: v.name, archived: v.archived, released: v.released }))
+          ? p.versions.map(({ id, name, description, archived, released }: any) => ({ id, name, description, archived, released }))
           : undefined,
       };
     })();

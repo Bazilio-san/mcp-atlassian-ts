@@ -49,6 +49,16 @@ export interface IToolsConfig {
   exclude: string[];
 }
 
+// Power endpoint configuration
+export interface IPowerEndpoint {
+  baseUrl: string;
+  auth: {
+    basic?: IBasicAuth;
+    pat?: string;
+    oauth2?: IOAuth2Auth;
+  };
+}
+
 // JIRA configuration
 export interface IJiraConfig {
   url: string;
@@ -60,6 +70,7 @@ export interface IJiraConfig {
   maxResults: number;
   epicLinkFieldId?: string;
   usedInstruments?: IToolsConfig;
+  powerEndpoint?: IPowerEndpoint;
 }
 
 // Confluence configuration

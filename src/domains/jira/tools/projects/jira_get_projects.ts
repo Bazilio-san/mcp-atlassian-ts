@@ -8,7 +8,6 @@ import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for jira_get_projects
@@ -49,10 +48,13 @@ export const jira_get_projects: ToolWithHandler = {
  */
 async function getProjectsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, normalizeToArray } = context;
+    const { powerHttpClient, httpClient, cache, logger, normalizeToArray } = context;
     const { expand, recent } = args;
 
     logger.info('Fetching JIRA projects', { expand, recent });
+
+    // Use power client if available for general project data
+    const client = powerHttpClient || httpClient;
 
     // Build query parameters
     const params: any = {};
@@ -68,40 +70,19 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
 
     // Fetch from cache or API
     const projects = await cache.getOrSet(cacheKey, async () => {
-      const response = await httpClient.get('/rest/api/2/project', { params });
+      const response = await client.get('/rest/api/2/project', { params });
       return response.data || [];
     });
 
-    if (projects.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'No JIRA projects found',
-          },
-        ],
-      };
-    }
-
-    const json = projects.map((p: any) => ({
-      name: p.name,
-      key: p.key,
-      projectTypeKey: p.projectTypeKey,
-      description: p.description,
-    }));
-
-    return {
-      content: [
-        {
-          type: 'text',
-          // text: `**JIRA Projects (${projects.length} found)**\n\n${projectsList}`,
-          text: ppj(json),
-        },
-        {
-          type: 'text',
-          text: `JIRA Projects (${projects.length} found)`,
-        },
-      ],
+    const json = {
+      found: !!projects.length,
+      operation: 'get_projects',
+      message: projects.length
+        ? `JIRA Projects (${projects.length} found)`
+        : 'No JIRA projects found',
+      projects: projects.map(({ key, name, description, projectTypeKey }: any) => ({ key, name, description, projectTypeKey })),
     };
+
+    return formatToolResult(json);
   });
 }

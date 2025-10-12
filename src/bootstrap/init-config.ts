@@ -213,6 +213,53 @@ function buildConfig (): IConfig {
       if (jiraTools) {
         jiraConfig.usedInstruments = jiraTools;
       }
+
+      // Power endpoint configuration
+      const powerBaseUrl = getEnv('JIRA_POWER_BASE_URL') || yaml?.jira?.powerEndpoint?.baseUrl;
+      if (hasValue(powerBaseUrl)) {
+        const powerAuth: any = {};
+
+        // Power endpoint basic auth
+        const powerUsername = getEnv('JIRA_POWER_USER') || yaml?.jira?.powerEndpoint?.auth?.basic?.username;
+        const powerPassword = getEnv('JIRA_POWER_PASS') || yaml?.jira?.powerEndpoint?.auth?.basic?.password;
+
+        if (hasValue(powerUsername) && hasValue(powerPassword)) {
+          powerAuth.basic = { username: powerUsername, password: powerPassword };
+        }
+
+        // Power endpoint PAT
+        const powerPat = getEnv('JIRA_POWER_PAT') || yaml?.jira?.powerEndpoint?.auth?.pat;
+        if (hasValue(powerPat)) {
+          powerAuth.pat = powerPat;
+        }
+
+        // Power endpoint OAuth2
+        const powerClientId = getEnv('JIRA_POWER_OAUTH_CLIENT_ID') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.clientId;
+        const powerClientSecret = getEnv('JIRA_POWER_OAUTH_CLIENT_SECRET') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.clientSecret;
+        const powerAccessToken = getEnv('JIRA_POWER_OAUTH_ACCESS_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.accessToken;
+
+        if (hasValue(powerClientId) && hasValue(powerClientSecret) && hasValue(powerAccessToken)) {
+          powerAuth.oauth2 = {
+            type: 'oauth2' as const,
+            clientId: powerClientId,
+            clientSecret: powerClientSecret,
+            accessToken: powerAccessToken,
+            ...(hasValue(getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken) &&
+                { refreshToken: getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken }),
+            ...(hasValue(getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri) &&
+                { redirectUri: getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri }),
+          };
+        }
+
+        // Only add powerEndpoint if auth is configured
+        if (Object.keys(powerAuth).length > 0) {
+          jiraConfig.powerEndpoint = {
+            baseUrl: powerBaseUrl,
+            auth: powerAuth
+          };
+        }
+      }
+
       return jiraConfig;
     })(),
 

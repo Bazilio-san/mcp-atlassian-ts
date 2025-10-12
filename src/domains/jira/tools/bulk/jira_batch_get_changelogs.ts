@@ -79,33 +79,13 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
       };
     });
 
-    if (changelogs.values.length === 0) {
-      const json = {
-        issueKeys: normalizedKeys,
-        changelogs: [],
-        errors: changelogs.errors || [],
-        total: 0,
-      };
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: ppj(json),
-          },
-          {
-            type: 'text',
-            text: 'No changelogs found for the specified issues',
-          },
-        ],
-      };
-    }
-
     // Build structured JSON
     const json = {
       success: true,
       operation: 'batch_get_changelogs',
-      message:  `Retrieved changelogs for ${changelogs.values.length} of ${normalizedKeys.length} issue(s)`,
+      message: changelogs.values.length
+        ? `Retrieved changelogs for ${changelogs.values.length} of ${normalizedKeys.length} issue(s)`
+        : 'No changelogs found for the specified issues',
       issueKeys: normalizedKeys,
       total: changelogs.values.length,
       changelogs: changelogs.values.map((issueChangelog: any) => {
@@ -113,36 +93,24 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
         return {
           issueKey: issueChangelog.key,
           totalChanges: histories.length,
-          histories: histories.map((history: any) => ({
-            id: history.id,
-            created: history.created,
-            author: {
-              key: history.author?.key,
-              name: history.author?.name,
-              displayName: history.author?.displayName,
-              emailAddress: history.author?.emailAddress,
-            },
-            items: history.items?.map((item: any) => ({
-              field: item.field,
-              fieldtype: item.fieldtype,
-              from: item.from,
-              fromString: item.fromString,
-              to: item.to,
-              toString: item.toString,
-            })) || [],
-          })),
+          histories: histories.map(({ id, created, author, items }: any) => {
+            return {
+              id,
+              created,
+              author: {
+                key: author?.key,
+                name: author?.name,
+                displayName: author?.displayName,
+                emailAddress: author?.emailAddress,
+              },
+              items: items?.map(({ field, fieldtype, from, fromString, to, toString }: any) => ({ field, fieldtype, from, fromString, to, toString })) || [],
+            };
+          }),
         };
       }),
       errors: changelogs.errors || [],
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }

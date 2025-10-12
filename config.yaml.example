@@ -15,6 +15,12 @@ usedInstruments:
     #   - jira_create_issue
     #   - jira_update_issue
     # exclude: []
+    # powerEndpoint:
+    #   baseUrl: <power_base_url> # env: JIRA_POWER_BASE_URL
+    #   auth:
+    #     basic:
+    #       username: <power_username> # env: JIRA_POWER_USER
+    #       password: <power_password> # env: JIRA_POWER_PASS
 
   confluence:
     # Include ALL to enable all tools, or specify a list of tool names
@@ -34,3 +40,15 @@ usedInstruments:
     # exclude:
     #   - confluence_delete_page
     #   - confluence_update_page
+    # powerEndpoint:
+    #   baseUrl: <power_base_url> # env: CONFLUENCE_POWER_BASE_URL
+    #   auth:
+    #     basic:
+    #       username: <power_username> # env: CONFLUENCE_POWER_USER
+    #       password: <power_password> # env: CONFLUENCE_POWER_PASS
+openAi:
+  apiKey: <apiKey>
+  apiKeyName: <apiKeyName>
+  baseURL: <baseURL>
+  rateLimits:
+    requestsPerMinute: 1000

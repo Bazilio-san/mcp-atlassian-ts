@@ -41,16 +41,19 @@ export const jira_search_fields: ToolWithHandler = {
 async function searchFieldsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { query } = args;
-    const { httpClient, cache, logger } = context;
+    const { httpClient, powerHttpClient, cache, logger } = context;
 
     logger.info('Searching JIRA fields', { query });
+
+    // Use power client if available for general field metadata
+    const client = powerHttpClient || httpClient;
 
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'fields', { query });
 
     // Fetch from cache or API
     const fields = await cache.getOrSet(cacheKey, async () => {
-      const response = await httpClient.get('/rest/api/2/field');
+      const response = await client.get('/rest/api/2/field');
       let allFields = response.data;
 
       if (query) {

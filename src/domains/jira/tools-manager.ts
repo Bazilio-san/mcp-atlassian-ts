@@ -11,6 +11,7 @@ import { ToolExecutionError } from '../../core/errors/index.js';
 import type { JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from './shared/tool-context.js';
+import type { AxiosInstance } from 'axios';
 
 // Import tool modules - Core tools
 import { jira_get_issue } from './tools/core/jira_get_issue.js';
@@ -20,6 +21,7 @@ import { jira_update_issue } from './tools/core/jira_update_issue.js';
 import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
 import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
 import { jira_link_to_epic } from './tools/core/jira_link_to_epic.js';
+import { jira_find_epic } from './tools/core/jira_find_epic.js';
 
 // Import comment and transition tools
 import { jira_add_comment } from './tools/comments/jira_add_comment.js';
@@ -86,9 +88,23 @@ export class JiraToolsManager {
     const cache = getCache();
     const logger = createLogger('jira-tools');
 
+    // Create power HTTP client if configured
+    let powerHttpClient: AxiosInstance | undefined;
+    if (config.powerEndpoint?.baseUrl && config.powerEndpoint?.auth) {
+      const powerAuthManager = createAuthenticationManager(
+        config.powerEndpoint.auth,
+        config.powerEndpoint.baseUrl
+      );
+      powerHttpClient = powerAuthManager.getHttpClient();
+      logger.info('Power endpoint configured for JIRA', {
+        baseUrl: config.powerEndpoint.baseUrl
+      });
+    }
+
     // Create tool context
     this.context = {
       httpClient,
+      ...(powerHttpClient && { powerHttpClient }),
       cache,
       config,
       logger,
@@ -107,6 +123,7 @@ export class JiraToolsManager {
       jira_delete_issue,
       jira_batch_create_issues,
       jira_link_to_epic,
+      jira_find_epic,
 
       // Comment and transition tools
       jira_add_comment,

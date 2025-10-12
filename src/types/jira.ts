@@ -7,22 +7,29 @@ export interface JiraIssue {
   id: string;
   key: string;
   self: string;
-  fields: JiraIssueFields;
+  fields: IJiraIssueFields;
   expand?: string;
-  transitions?: JiraTransition[];
+  transitions?: IJiraTransition[];
+}
+// /issue/createmeta
+interface IJiraAvatarUrls {
+  '48x48': string;
+  '24x24': string;
+  '16x16': string;
+  '32x32': string;
 }
 
-export interface JiraIssueFields {
+export interface IJiraIssueFields {
   summary: string;
   description?: any; // Can be string or ADF
-  status: JiraStatus;
-  priority?: JiraPriority;
-  assignee?: JiraUser;
-  reporter: JiraUser;
+  status: IJiraStatus;
+  priority?: IJiraPriority;
+  assignee?: IJiraUser;
+  reporter: IJiraUser;
   created: string;
   updated: string;
-  issuetype: JiraIssueType;
-  project: JiraProject;
+  issuetype: IJiraIssueType;
+  project: IJiraProject;
   labels?: string[];
   components?: JiraComponent[];
   fixVersions?: JiraVersion[];
@@ -42,21 +49,16 @@ export interface JiraIssueFields {
   [key: string]: any;
 }
 
-export interface JiraUser {
+export interface IJiraUser {
   self: string;
   accountId: string;
   displayName: string;
   emailAddress?: string;
-  avatarUrls?: {
-    '48x48': string;
-    '24x24': string;
-    '16x16': string;
-    '32x32': string;
-  };
+  avatarUrls?: IJiraAvatarUrls;
   active: boolean;
 }
 
-export interface JiraStatus {
+export interface IJiraStatus {
   id: string;
   name: string;
   description: string;
@@ -69,13 +71,14 @@ export interface JiraStatus {
   };
 }
 
-export interface JiraPriority {
+export interface IJiraPriority {
   id: string;
   name: string;
   iconUrl: string;
 }
 
-export interface JiraIssueType {
+export interface IJiraIssueType {
+  self: string;
   id: string;
   name: string;
   description: string;
@@ -83,29 +86,24 @@ export interface JiraIssueType {
   subtask: boolean;
 }
 
-export interface JiraProject {
+export interface IJiraProject {
   id: string;
   key: string;
   name: string;
   description?: string;
-  lead?: JiraUser;
+  lead?: IJiraUser;
   projectTypeKey: string;
-  avatarUrls?: {
-    '48x48': string;
-    '24x24': string;
-    '16x16': string;
-    '32x32': string;
-  };
+  avatarUrls?: IJiraAvatarUrls;
   components?: JiraComponent[];
   versions?: JiraVersion[];
-  issueTypes?: JiraIssueType[];
+  issuetypes?: IJiraIssueType[]; // VVA
 }
 
 export interface JiraComponent {
   id: string;
   name: string;
   description?: string;
-  lead?: JiraUser;
+  lead?: IJiraUser;
   assigneeType: string;
   realAssigneeType: string;
   isAssigneeTypeValid: boolean;
@@ -123,7 +121,7 @@ export interface JiraVersion {
 
 export interface JiraComment {
   id: string;
-  author: JiraUser;
+  author: IJiraUser;
   body: any; // Can be string or ADF
   created: string;
   updated: string;
@@ -135,7 +133,7 @@ export interface JiraComment {
 
 export interface JiraWorklog {
   id: string;
-  author: JiraUser;
+  author: IJiraUser;
   comment?: any; // Can be string or ADF
   created: string;
   updated: string;
@@ -151,7 +149,7 @@ export interface JiraWorklog {
 export interface JiraAttachment {
   id: string;
   filename: string;
-  author: JiraUser;
+  author: IJiraUser;
   created: string;
   size: number;
   mimeType: string;
@@ -159,18 +157,18 @@ export interface JiraAttachment {
   thumbnail?: string;
 }
 
-export interface JiraTransition {
+export interface IJiraTransition {
   id: string;
   name: string;
-  to: JiraStatus;
+  to: IJiraStatus;
   hasScreen: boolean;
   isGlobal: boolean;
   isInitial: boolean;
   isConditional: boolean;
-  fields?: Record<string, JiraTransitionField>;
+  fields?: Record<string, IJiraTransitionField>;
 }
 
-export interface JiraTransitionField {
+export interface IJiraTransitionField {
   required: boolean;
   schema: {
     type: string;
@@ -185,7 +183,7 @@ export interface JiraTransitionField {
 }
 
 // Search types
-export interface JiraSearchRequest {
+export interface IJiraSearchRequest {
   jql: string;
   startAt?: number;
   maxResults?: number;
@@ -196,17 +194,17 @@ export interface JiraSearchRequest {
   validateQuery?: 'strict' | 'warn' | 'none';
 }
 
-export interface JiraSearchResponse {
+export interface IJiraSearchResponse {
   expand: string;
   startAt: number;
   maxResults: number;
   total: number;
   issues: JiraIssue[];
   names?: Record<string, string>;
-  schema?: Record<string, JiraFieldSchema>;
+  schema?: Record<string, IJiraFieldSchema>;
 }
 
-export interface JiraFieldSchema {
+export interface IJiraFieldSchema {
   type: string;
   items?: string;
   system?: string;
@@ -215,8 +213,8 @@ export interface JiraFieldSchema {
 }
 
 // Create/Update types
-export interface JiraIssueInput {
-  fields: Partial<JiraIssueFields> & {
+export interface IJiraIssueInput {
+  fields: Partial<IJiraIssueFields> & {
     summary: string;
     issuetype: { id: string } | { name: string };
     project: { id: string } | { key: string };
@@ -228,7 +226,7 @@ export interface JiraIssueInput {
   }>;
 }
 
-export interface JiraCommentInput {
+export interface IJiraCommentInput {
   body: any; // String or ADF
   visibility?: {
     type: 'group' | 'role';
@@ -240,7 +238,7 @@ export interface JiraCommentInput {
   }>;
 }
 
-export interface JiraWorklogInput {
+export interface IJiraWorklogInput {
   comment?: any; // String or ADF
   timeSpent: string; // e.g., "1h 30m"
   started?: string; // ISO 8601
@@ -255,7 +253,7 @@ export interface JiraWorklogInput {
 }
 
 // Board and Sprint types (Agile)
-export interface JiraBoard {
+export interface IJiraBoard {
   id: number;
   self: string;
   name: string;
@@ -271,7 +269,7 @@ export interface JiraBoard {
   };
 }
 
-export interface JiraSprint {
+export interface IJiraSprint {
   id: number;
   self: string;
   state: 'future' | 'active' | 'closed';
@@ -283,7 +281,7 @@ export interface JiraSprint {
   goal?: string;
 }
 
-export interface JiraEpic {
+export interface IJiraEpic {
   id: number;
   key: string;
   self: string;
@@ -296,7 +294,27 @@ export interface JiraEpic {
 }
 
 // Utility types for JIRA operations
-export type JiraIssueKey = string;
-export type JiraProjectKey = string;
-export type JiraIssueId = string;
-export type JiraProjectId = string;
+export type TJiraIssueKey = string;
+export type TJiraProjectKey = string;
+export type TJiraIssueId = string;
+export type TJiraProjectId = string;
+
+export type TIdName = { id: string, name: string };
+
+export interface TKeyNameIssues {
+  key: string,
+  name: string,
+  issueTypes: TIdName[],
+  cs?: number,
+}
+
+export interface TErrorKeyNameIssuesResult {
+  error?: any,
+  result: TKeyNameIssues[]
+  hash: { [key: string]: TKeyNameIssues }
+}
+
+export interface IJiraCreateMetaResponse {
+  expand: string;
+  projects: IJiraProject[];
+}

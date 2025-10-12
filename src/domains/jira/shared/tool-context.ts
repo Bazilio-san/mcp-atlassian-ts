@@ -16,6 +16,12 @@ export interface ToolContext {
   httpClient: AxiosInstance;
 
   /**
+   * Power HTTP client for privileged operations (optional)
+   * Used for getting general data like projects, priorities, etc.
+   */
+  powerHttpClient?: AxiosInstance;
+
+  /**
    * Cache instance with same interface as current implementation
    */
   cache: {

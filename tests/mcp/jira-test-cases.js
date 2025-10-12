@@ -63,7 +63,7 @@ function isToolEnabledByConfig (toolName, config) {
  * Test groups information for MCP tests
  */
 export const MCP_GROUP_INFO = {
-  1: { name: 'IssueManagement', description: 'Issue Management tools (9 tools)' },
+  1: { name: 'IssueManagement', description: 'Issue Management tools (10 tools)' },
   2: { name: 'ProjectManagement', description: 'Project Management tools (4 tools)' },
   3: { name: 'UserManagement', description: 'User Management tools (1 tool)' },
   4: { name: 'FieldsMetadata', description: 'Fields and Metadata tools (1 tool)' },
@@ -326,6 +326,17 @@ export class JiraMcpTestCases {
       },
       {
         fullId: '1-10',
+        name: 'Find Epics in Project',
+        toolName: 'jira_find_epic',
+        params: {
+          projectKey: this.testProjectKey,
+          includeCompleted: false,
+          maxResults: 10,
+        },
+        description: 'Find epics in project',
+      },
+      {
+        fullId: '1-11',
         name: 'Link Issue to Epic',
         toolName: 'jira_link_to_epic',
         params: {
