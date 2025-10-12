@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { phraseSimilarity } from "./string-similarity";
 
 const JIRA_BASE_URL = 'https://jira.finam.ru';
 const username = 'vpupkimn';

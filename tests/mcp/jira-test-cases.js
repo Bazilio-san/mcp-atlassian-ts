@@ -64,7 +64,7 @@ function isToolEnabledByConfig (toolName, config) {
  */
 export const MCP_GROUP_INFO = {
   1: { name: 'IssueManagement', description: 'Issue Management tools (10 tools)' },
-  2: { name: 'ProjectManagement', description: 'Project Management tools (4 tools)' },
+  2: { name: 'ProjectManagement', description: 'Project Management tools (5 tools)' },
   3: { name: 'UserManagement', description: 'User Management tools (1 tool)' },
   4: { name: 'FieldsMetadata', description: 'Fields and Metadata tools (1 tool)' },
   5: { name: 'IssueLinks', description: 'Issue Links tools (4 tools)' },
@@ -396,6 +396,13 @@ export class JiraMcpTestCases {
       },
       {
         fullId: '2-4',
+        name: 'Find Project by Name',
+        toolName: 'jira_find_project',
+        params: { query: 'аитех', limit: 5 },
+        description: 'Find project using semantic search',
+      },
+      {
+        fullId: '2-5',
         name: 'Create Project Version',
         toolName: 'jira_create_version',
         params: async (client) => {

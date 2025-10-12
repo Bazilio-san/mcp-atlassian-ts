@@ -34,6 +34,7 @@ import { jira_get_project } from './tools/projects/jira_get_project.js';
 import { jira_get_project_versions } from './tools/projects/jira_get_project_versions.js';
 import { jira_create_version } from './tools/projects/jira_create_version.js';
 import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
+import { jira_find_project } from './tools/projects/jira_find_project.js';
 
 // Import user tools
 import { jira_get_user_profile } from './tools/users/jira_get_user_profile.js';
@@ -93,11 +94,11 @@ export class JiraToolsManager {
     if (config.powerEndpoint?.baseUrl && config.powerEndpoint?.auth) {
       const powerAuthManager = createAuthenticationManager(
         config.powerEndpoint.auth,
-        config.powerEndpoint.baseUrl
+        config.powerEndpoint.baseUrl,
       );
       powerHttpClient = powerAuthManager.getHttpClient();
       logger.info('Power endpoint configured for JIRA', {
-        baseUrl: config.powerEndpoint.baseUrl
+        baseUrl: config.powerEndpoint.baseUrl,
       });
     }
 
@@ -136,6 +137,7 @@ export class JiraToolsManager {
       jira_get_project_versions,
       jira_create_version,
       jira_batch_create_versions,
+      jira_find_project,
 
       // User tools
       jira_get_user_profile,
@@ -201,7 +203,7 @@ export class JiraToolsManager {
   async executeTool (
     toolName: string,
     args: Record<string, any>,
-    customHeaders?: Record<string, string>
+    customHeaders?: Record<string, string>,
   ): Promise<any> {
     const tool = this.tools.get(toolName);
     if (!tool || !tool.handler) {
@@ -223,7 +225,7 @@ export class JiraToolsManager {
           }
           return config;
         },
-        error => Promise.reject(error)
+        error => Promise.reject(error),
       );
 
       // Create context with custom HTTP client

@@ -5,9 +5,11 @@ import {
   TKeyNameIssues,
   TErrorKeyNameIssuesResult,
   IJiraCreateMetaResponse, IJiraProject,
-} from '../../../../../types';
-import { createLogger } from '../../../../../core/utils/logger';
-import { transliterate, transliterateRU } from '../../../../../core/utils/text';
+} from '../../../../../types/index.js';
+import { createLogger } from '../../../../../core/utils/logger.js';
+import { transliterate, transliterateRU } from '../../../../../core/utils/text.js';
+// Lazy import для избежания циклических зависимостей
+let updateProjectsIndex: any;
 
 const logger = createLogger('JIRA_PROJECTS');
 
@@ -67,7 +69,17 @@ export const getJiraProjects = async (httpClient: AxiosInstance): Promise<TError
           };
         })
         : [];
-      // updateJiraBlueProjectsRag(result).then(() => 0); VVA -------------------
+      // Обновляем индекс векторного поиска если он доступен
+      if (typeof updateProjectsIndex === 'function') {
+        const projectsForIndex = result.map(p => ({
+          key: p.key,
+          name: p.name,
+          issueTypes: p.issueTypes,
+        }));
+        updateProjectsIndex(projectsForIndex).catch((err: any) => {
+          logger.error('Failed to update vector index', err);
+        });
+      }
       projectsCache.cache = result;
       projectsCache.hash = {};
       result.forEach((item) => {
@@ -92,4 +104,9 @@ export const clearProjectsCache = (): void => {
   projectsCache.expire = 0;
   projectsCache.cachePromise = null;
   logger.debug('Projects cache cleared');
+};
+
+// Set the function to update vector index (to avoid circular dependencies)
+export const setUpdateProjectsIndexFunction = (fn: any): void => {
+  updateProjectsIndex = fn;
 };

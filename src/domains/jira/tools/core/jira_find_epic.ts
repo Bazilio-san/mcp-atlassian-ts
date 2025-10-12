@@ -49,7 +49,7 @@ export const jira_find_epic: ToolWithHandler = {
 /**
  * Handler function for finding JIRA epics
  */
-async function findEpicHandler(args: any, context: ToolContext): Promise<any> {
+async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { projectKey, includeCompleted = false, maxResults = 1000 } = args;
     const { httpClient, config, logger } = context;

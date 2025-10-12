@@ -110,7 +110,7 @@ function tokenSimilarity (tokensA: string[], tokensB: string[]): number {
 
   // предсчёт попарных похожестей токенов
   const sim: number[][] = Array.from({ length: n }, (_, i) =>
-    Array.from({ length: m }, (__, j) => charSimilarity(tokensA[i]!, tokensB[j]!))
+    Array.from({ length: m }, (__, j) => charSimilarity(tokensA[i]!, tokensB[j]!)),
   );
 
   const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0) as number[]);
@@ -150,6 +150,7 @@ export function isClose (a: string, b: string, threshold = 0.72): boolean {
 if (typeof require !== 'undefined' && require.main === module) {
   const tests: Array<[string, string]> = [
     ['задача', 'подзадача'],
+
     ['aitex', 'AITECH'],
     ['aitex', 'AI TECH'],
     ['aitex', 'AI'],
