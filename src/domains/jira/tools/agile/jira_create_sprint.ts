@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
-import { ppj } from '../../../../core/utils/text.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 
 /**
  * Tool definition for creating a sprint
@@ -98,13 +98,6 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
       },
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }

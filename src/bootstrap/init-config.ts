@@ -255,6 +255,9 @@ function buildConfig (): IConfig {
 
     // Feature flags
     features: yaml?.features || {},
+
+    // Response format configuration
+    isReturnJson: getValue('IS_RETURN_JSON', ['isReturnJson'], false),
   };
 }
 

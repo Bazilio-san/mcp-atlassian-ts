@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
-import { ppj } from '../../../../core/utils/text.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 
 /**
  * Tool definition for updating a sprint
@@ -113,13 +113,6 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
       },
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }

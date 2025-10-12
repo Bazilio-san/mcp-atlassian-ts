@@ -8,11 +8,6 @@ export interface IBasicAuth {
   password?: string;
 }
 
-export interface IPatAuth {
-  type: 'pat';
-  token: string;
-}
-
 export interface IOAuth2Auth {
   type: 'oauth2';
   clientId: string;
@@ -21,8 +16,6 @@ export interface IOAuth2Auth {
   refreshToken?: string;
   redirectUri?: string;
 }
-
-export type IAuthConfig = IBasicAuth | IPatAuth | IOAuth2Auth;
 
 // Server configuration
 export interface IServerConfig {
@@ -81,9 +74,6 @@ export interface IConfluenceConfig {
   usedInstruments?: IToolsConfig;
 }
 
-// Legacy alias for backward compatibility
-export type IJCConfig = IJiraConfig | IConfluenceConfig;
-
 // SSL/TLS configuration
 export interface ISslConfig {
   rejectUnauthorized: boolean;
@@ -112,4 +102,5 @@ export interface IConfig {
 
   // Feature flags
   features: Record<string, never>;
+  isReturnJson: boolean;
 }

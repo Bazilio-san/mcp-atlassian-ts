@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
-import { ppj } from '../../../../core/utils/text.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 
 /**
  * Tool definition for downloading JIRA attachments
@@ -86,13 +86,6 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
       })),
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }

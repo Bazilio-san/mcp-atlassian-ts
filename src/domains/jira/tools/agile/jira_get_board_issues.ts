@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
-import { ppj } from '../../../../core/utils/text.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 
 /**
  * Tool definition for getting board issues
@@ -135,13 +135,6 @@ Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (s
       issues,
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }

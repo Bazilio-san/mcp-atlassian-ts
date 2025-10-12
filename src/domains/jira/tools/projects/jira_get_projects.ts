@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { ToolWithHandler } from '../../../../types';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ppj } from '../../../../core/utils/text.js';
 
 /**

@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
-import { ppj } from '../../../../core/utils/text.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 
 /**
  * Tool definition for removing a JIRA issue link
@@ -59,13 +59,6 @@ async function removeIssueLinkHandler (args: any, context: ToolContext): Promise
       imessage: `Issue Link Removed Successfully\nLink ID: ${linkId}`,
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }

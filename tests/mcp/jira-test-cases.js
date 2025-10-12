@@ -727,6 +727,8 @@ export class JiraMcpTestCases {
             originBoardId: Number(scrumBoard.id),
             name: `Test ${Date.now() % 10000}`, // Shortened to fit 30 char limit
             goal: 'Test sprint creation',
+            startDate: (new Date()).toISOString(), // 'Start date of the sprint in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.'
+            endDate: (new Date()).toISOString(),
           };
         },
         description: 'Create new sprint for the first available board',

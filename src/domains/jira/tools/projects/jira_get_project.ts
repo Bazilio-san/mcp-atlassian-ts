@@ -6,7 +6,7 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
-import { ppj } from '../../../../core/utils/text.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -90,14 +90,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
       };
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: ppj(json),
-          },
-        ],
-      };
+      return formatToolResult(json);
     }
 
     // Sanitize project to include only allowed fields
@@ -128,13 +121,6 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       project: filteredProject,
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: ppj(json),
-        },
-      ],
-    };
+    return formatToolResult(json);
   });
 }
