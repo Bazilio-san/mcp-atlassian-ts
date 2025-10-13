@@ -7,33 +7,25 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { getCachedPriorities } from '../../shared/priority-service.js';
-// VVA jira_find_project
-/**
- * Export the factory function so tools can be created with fresh priorities
- */
+
 export function createJiraCreateIssueTool (): ToolWithHandler {
   return {
     name: 'jira_create_issue',
-    description:  `
-Create a new issue (task, bug, story, etc.) in JIRA.
+    description:  `Create a new issue (task, bug, story, etc.) in JIRA.
 
-### Workflow:
-1. Collect minimum required information:
-   - projectIdOrKey (preferably project Key)
-   - issueType
-   - summary
-2. If project is not specified, ask the user for clarification.
-3. Use the 'jira_find_project' tool to obtain the exact project key.
-4. With this project key, use 'jira_get_project' tool to list available issue types.
-5. For bug reports, encourage user to provide detailed reproduction steps in the description.
-6. If assignee or reporter are not specified — leave blank. If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
-7. Display all collected parameters for confirmation before creation.
-8. Upon user confirmation, call jira_create_issue with the final parameters.
+Workflow:
+1) Collect or receive: projectIdOrKey, issueType, summary.
+2) If project is not specified, ask the user for clarification.
+3) Use the 'jira_find_project' tool to obtain the exact project key.
+4) With this project key, use 'jira_get_project' tool to list available issue types.
+5) For bug reports, encourage user to provide detailed reproduction steps in the description.
+6) If assignee or reporter are not specified - leave blank. If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
+7) Display all collected parameters for confirmation before creation.
+8) If issue is under an Epic, use 'jira_find_epic' to pick epic’s issue key and pass it as epicKey.
+9) Upon user confirmation, call jira_create_issue with the final parameters.
 
-### Notes:
-- For epics and components, use names or IDs as returned by jira_get_project.
-`
+Non-interactive mode:
+If called by another agent (without user input), skip clarification and confirmation steps. Use available data only.`
     ,
     inputSchema: {
       type: 'object',
@@ -45,7 +37,7 @@ Create a new issue (task, bug, story, etc.) in JIRA.
         issueType: {
           type: 'string',
           description: `Issue type name or ID.
-When searching for a project by jira_find_project tool will return a list of available issue types.
+When using 'jira_find_project', the response includes available issue types to choose from.
 Among them you need to choose the right one.`,
         },
         summary: {
@@ -64,13 +56,14 @@ If not indicated explicitly, form a short title according to the description`,
         },
         reporter: {
           type: 'string',
-          description: 'Optional. The Jira username/login of the author of issue. E.g.: joe_smith',
+          description: 'Optional. The Jira username/login of the issue reporter. E.g.: joe_smith',
         },
         priority: {
           type: 'string',
           description: `Optional. The priority level of the issue.
-If the user indicated priority, find the most suitable from the enum. And if no one suits, choose null`,
-          enum: getCachedPriorities(), // Dynamic priority enum
+If the user indicated priority, find the most suitable from the MCP resource jira://priorities.
+Access the resource to get available priority names, then choose the most appropriate one. If none suit, choose null.`,
+          nullable: true,
         },
         labels: {
           type: 'array',
