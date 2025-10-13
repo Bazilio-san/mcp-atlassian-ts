@@ -163,7 +163,6 @@ class McpHttpClient {
 - `jira_get_current_user` - текущий пользователь
 - `jira_search_users` - поиск пользователей
 - `jira_get_assignable_users` - назначаемые пользователи
-- `jira_get_priorities` - приоритеты
 - `jira_get_statuses` - статусы
 - `jira_get_issue_types` - типы issues
 - `jira_get_fields` - поля

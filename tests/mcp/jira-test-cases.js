@@ -478,7 +478,7 @@ export class JiraMcpTestCases {
         fullId: '3-1',
         name: 'Get User Profile',
         toolName: 'jira_get_user_profile',
-        params: { usernameOrEmail: TEST_USERNAME },
+        params: { login: TEST_USERNAME },
         description: 'Get user profile',
       },
     ]);
@@ -496,13 +496,6 @@ export class JiraMcpTestCases {
         toolName: 'jira_search_fields',
         params: { query: 'summary' },
         description: 'Search JIRA fields',
-      },
-      {
-        fullId: '4-2',
-        name: 'Get JIRA Priorities',
-        toolName: 'jira_get_priorities',
-        params: {},
-        description: 'Get all available JIRA priorities',
       },
     ]);
   }

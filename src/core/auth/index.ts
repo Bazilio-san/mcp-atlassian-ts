@@ -177,10 +177,6 @@ export class AuthenticationManager {
 
       return false;
     } catch (error: Error | any) {
-      if (error?.status === 412) { // VVQ Stub
-        logger.info('Authentication test successful');
-        return true;
-      }
       logger.error('Authentication test failed', error instanceof Error ? error : new Error(String(error)));
       return false;
     }

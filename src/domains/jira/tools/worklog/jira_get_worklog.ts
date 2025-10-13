@@ -6,7 +6,6 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -59,40 +58,18 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
     const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
       params: { startAt, maxResults },
     });
-    const worklogResult = response.data;
-
-    if (worklogResult.worklogs.length === 0) {
-      const emptyResult = {
-        operation: 'get_worklog',
-        issueKey: issueIdOrKey,
-        total: 0,
-        showing: 0,
-        worklogs: [],
-        timestamp: new Date().toISOString(),
-      };
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: ppj(emptyResult),
-          },
-          {
-            type: 'text',
-            text: `No worklog entries found for ${issueIdOrKey}`,
-          },
-        ],
-      };
-    }
+    const { worklogs = [], total = 0 } = response.data || {};
 
     const json = {
       success: true,
       operation: 'get_worklog',
-      text: `Found ${worklogResult.total} worklog entries for ${issueIdOrKey} (showing ${worklogResult.worklogs.length})`,
+      text: worklogs.length
+        ? `Found ${total} worklog entries for ${issueIdOrKey} (showing ${worklogs.length})`
+        : `No worklog entries found for ${issueIdOrKey}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      total: worklogResult.total,
-      showing: worklogResult.worklogs.length,
-      worklogs: worklogResult.worklogs.map((w: any) => ({
+      total,
+      showing: worklogs.length,
+      worklogs: worklogs.map((w: any) => ({
         id: w.id,
         timeSpent: w.timeSpent,
         timeSpentSeconds: w.timeSpentSeconds,

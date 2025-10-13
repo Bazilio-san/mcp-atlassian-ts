@@ -74,7 +74,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
       const result: TKeyName[] = [];
 
       if (Array.isArray(projects)) {
-        projects.forEach(({ key, name }: IJiraProject) => { // VVA Добавить id
+        projects.forEach(({ key, name }: IJiraProject) => {
           const project: TKeyName = { key, name };
           result.push(project);
 

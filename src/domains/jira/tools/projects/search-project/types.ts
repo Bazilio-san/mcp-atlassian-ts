@@ -7,12 +7,6 @@ export interface IssueType {
   name: string;
 }
 
-export interface JiraProjectWithIssueTypes { // VVR
-  key: string;
-  name: string;
-  issueTypes: IssueType[];
-}
-
 export interface TKeyNameScore extends TKeyName {
   score?: number;  // Схожесть строк (1.0 = идеальное совпадение)
 }

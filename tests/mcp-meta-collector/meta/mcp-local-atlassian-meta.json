@@ -354,13 +354,13 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "usernameOrEmail": {
+          "login": {
             "type": "string",
             "description": "User account ID or email address"
           }
         },
         "required": [
-          "usernameOrEmail"
+          "login"
         ],
         "additionalProperties": false
       },

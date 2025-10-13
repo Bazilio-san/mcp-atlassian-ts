@@ -1,12 +1,12 @@
 /**
  * JIRA tool module: Get User Profile
- * Retrieves detailed user profile information by account ID or email
+ * Retrieves detailed user profile information by account ID or username
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
-import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import type { ToolContext } from '../../shared/tool-context';
+import { withErrorHandling } from '../../../../core/errors';
+import { generateCacheKey } from '../../../../core/cache';
+import { formatToolResult } from '../../../../core/utils/formatToolResult';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -14,16 +14,16 @@ import { ToolWithHandler } from '../../../../types';
  */
 export const jira_get_user_profile: ToolWithHandler = {
   name: 'jira_get_user_profile',
-  description: 'Get detailed user profile information by account ID or email',
+  description: 'Get detailed user profile information by account ID or username',
   inputSchema: {
     type: 'object',
     properties: {
-      usernameOrEmail: {
+      login: {
         type: 'string',
-        description: 'User account ID or email address',
+        description: 'User account ID or username',
       },
     },
-    required: ['usernameOrEmail'],
+    required: ['login'],
     additionalProperties: false,
   },
   annotations: {
@@ -41,48 +41,37 @@ export const jira_get_user_profile: ToolWithHandler = {
  */
 async function getUserProfileHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { usernameOrEmail } = args;
+    const { login } = args;
     const { httpClient, cache, logger } = context;
 
-    logger.info('Fetching JIRA user profile', { usernameOrEmail });
+    logger.info('Fetching JIRA user profile', { login });
 
     // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'user', { usernameOrEmail });
+    const cacheKey = generateCacheKey('jira', 'user', { login });
 
     // Fetch from cache or API
     const user = await cache.getOrSet(cacheKey, async () => {
-      // Check if the input looks like an email
-      const isEmail = usernameOrEmail.includes('@');
-
-      // If it looks like an email, search directly by username/email
-      if (isEmail) {
-        const response = await httpClient.get('/rest/api/2/user', {
-          params: { username: usernameOrEmail },
-        });
-        return response.data;
-      }
-
       // Otherwise try as accountId first
       try {
         const response = await httpClient.get('/rest/api/2/user', {
-          params: { accountId: usernameOrEmail },
+          params: { accountId: login },
         });
         return response.data;
-      } catch (_error: any) {
+      } catch {
         // If accountId fails, try username search
         try {
           const response = await httpClient.get('/rest/api/2/user', {
-            params: { username: usernameOrEmail },
+            params: { username: login },
           });
           return response.data;
         } catch {
           // Last resort - try user search with query
           const searchResponse = await httpClient.get('/rest/api/2/user/search', {
-            params: { username: usernameOrEmail, maxResults: 1 },
+            params: { username: login, maxResults: 1 },
           });
 
-          if (!searchResponse.data || searchResponse.data.length === 0) {
-            throw new Error(`User not found: ${usernameOrEmail}`);
+          if (!searchResponse.data?.length) {
+            throw new Error(`User not found: ${login}`);
           }
 
           return searchResponse.data[0];
@@ -94,17 +83,17 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
     const json = {
       success: true,
       operation: 'get_user_profile',
-      [/@/.test(usernameOrEmail) ? 'email' : 'login']: usernameOrEmail,
-      message: `User profile retrieved: ${user.displayName} (${user.accountId})`,
+      login,
+      message: `User profile retrieved`,
       user: {
         accountId: user.accountId,
         displayName: user.displayName,
-        emailAddress: user.emailAddress || null,
+        emailAddress: user.emailAddress || undefined,
         active: user.active || false,
-        timeZone: user.timeZone || null,
-        avatarUrls: user.avatarUrls || null,
-        key: user.key || null,
-        name: user.name || null,
+        timeZone: user.timeZone || undefined,
+        avatarUrls: user.avatarUrls || undefined,
+        key: user.key || undefined,
+        name: user.name || undefined,
       },
       timestamp: new Date().toISOString(),
     };

@@ -96,7 +96,7 @@ export interface IJiraProject {
   avatarUrls?: IJiraAvatarUrls;
   components?: JiraComponent[];
   versions?: JiraVersion[];
-  issuetypes?: IJiraIssueType[]; // VVA
+  issuetypes?: IJiraIssueType[];
 }
 
 export interface JiraComponent {

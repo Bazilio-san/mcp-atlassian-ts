@@ -7,7 +7,6 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors/index.js';
 import { generateCacheKey } from '../../../../core/cache/index.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { ppj } from '../../../../core/utils/text.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -99,45 +98,22 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
         }
 
         const response = await httpClient.get('/rest/api/2/search', { params });
-        return response.data;
+        return response.data || [];
       },
       60, // Cache for 1 minute
     );
-
-    // Handle empty results
-    if (searchResult.issues.length === 0) {
-      const emptyResult = {
-        operation: 'search_issues',
-        jql: jql,
-        total: 0,
-        issues: [],
-        searchUrl: `${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
-        timestamp: new Date().toISOString(),
-      };
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: ppj(emptyResult),
-          },
-          {
-            type: 'text',
-            text: `No issues found for JQL: ${jql}`,
-          },
-        ],
-      };
-    }
 
     // Format search results as JSON
     const json = {
       success: true,
       operation: 'search_issues',
-      message: `Found ${searchResult.total} issues (showing ${searchResult.issues.length})`,
+      message: searchResult.issues.length
+        ? `Found ${searchResult.total} issues (showing ${searchResult.issues.length})`
+        : `No issues found`,
       jql: jql,
-      total: searchResult.total,
+      total: searchResult.total || 0,
       showing: searchResult.issues.length,
-      issues: searchResult.issues.map((issue: any) => ({
+      issues: (searchResult.issues || []).map((issue: any) => ({
         key: issue.key,
         summary: issue.fields.summary,
         status: issue.fields.status.name,
