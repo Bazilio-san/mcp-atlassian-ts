@@ -1,6 +1,6 @@
 {
   "name": "mcp-atlassian-ts",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture",
   "main": "dist/src/index.js",
   "type": "module",

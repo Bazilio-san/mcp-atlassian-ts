@@ -39,8 +39,9 @@ const projectsCache: {
 
 const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// Initialize power HTTP client
+// Initialize power HTTP client or fallback to regular auth
 const initializePowerHttpClient = (): void => {
+  // Try power endpoint first
   if (!powerHttpClient && appConfig.jira?.powerEndpoint?.baseUrl && appConfig.jira?.powerEndpoint?.auth) {
     const powerAuth = appConfig.jira.powerEndpoint.auth;
 
@@ -73,6 +74,38 @@ const initializePowerHttpClient = (): void => {
     powerHttpClient = authManager.getHttpClient();
     logger.info('Power HTTP client initialized for JIRA projects');
   }
+  // Fallback to regular JIRA auth if no power endpoint configured
+  else if (!powerHttpClient && appConfig.jira?.url && appConfig.jira?.auth) {
+    logger.info('Power endpoint not configured, using regular JIRA auth for projects');
+
+    // Transform regular config auth to AuthConfig format
+    let authConfig: AuthConfig;
+    const jiraAuth = appConfig.jira.auth;
+
+    if (jiraAuth.basic?.username && jiraAuth.basic?.password) {
+      authConfig = {
+        type: 'basic' as const,
+        username: jiraAuth.basic.username,
+        password: jiraAuth.basic.password
+      };
+    } else if (jiraAuth.pat) {
+      authConfig = {
+        type: 'pat' as const,
+        token: jiraAuth.pat
+      };
+    } else if (jiraAuth.oauth2) {
+      authConfig = {
+        ...jiraAuth.oauth2,
+        type: 'oauth2' as const
+      };
+    } else {
+      throw new Error('No valid JIRA authentication configured');
+    }
+
+    const authManager = createAuthenticationManager(authConfig, appConfig.jira.url);
+    powerHttpClient = authManager.getHttpClient();
+    logger.info('Fallback HTTP client initialized for JIRA projects');
+  }
 };
 
 // Получить все проекты (пространства) Jira (с кешированием)
@@ -93,7 +126,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
       initializePowerHttpClient();
 
       if (!powerHttpClient) {
-        throw new Error('Power HTTP client not available for JIRA projects');
+        throw new Error('HTTP client not available for JIRA projects - check authentication configuration');
       }
 
       const res = await powerHttpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project');

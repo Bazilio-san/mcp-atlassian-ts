@@ -144,9 +144,16 @@ export class InMemoryVectorStore implements IVectorDB {
   async upsertRecords (records: ProjectEmbeddingRecord[]): Promise<void> {
     if (records.length === 0) return;
 
+    console.debug(`📝 upsertRecords: received ${records.length} records`);
+    let validRecords = 0;
+
     // Преобразуем и добавляем записи
     for (const record of records) {
-      if (!record.embedding) continue;
+      if (!record.embedding) {
+        console.debug(`❌ Record without embedding: ${record.key} - ${record.searchText}`);
+        continue;
+      }
+      validRecords++;
 
       const inMemoryRecord: InMemoryRecord = {
         key: record.key,
@@ -177,6 +184,7 @@ export class InMemoryVectorStore implements IVectorDB {
     }
 
     // Сохраняем на диск после каждого обновления
+    console.debug(`💾 upsertRecords: ${validRecords} valid records to save`);
     this.saveToDisk();
   }
 
@@ -201,7 +209,7 @@ export class InMemoryVectorStore implements IVectorDB {
         const similarity = this.cosineSimilarity(queryVector, record.vector);
         const distance = 1 - similarity; // Преобразуем в расстояние
 
-        if (distance < bestScore && distance <= threshold) {
+        if (distance < bestScore && similarity >= threshold) {
           bestScore = distance;
           bestRecord = record;
         }
@@ -218,9 +226,10 @@ export class InMemoryVectorStore implements IVectorDB {
     }
 
     // Сортируем по близости и возвращаем топ N
-    return results
+    const ret = results
       .sort((a, b) => a.score - b.score)
       .slice(0, limit);
+    return ret;
   }
 
   /**

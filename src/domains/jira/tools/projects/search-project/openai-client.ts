@@ -12,7 +12,7 @@ export const EMBEDDING_MODELS = {
   },
   SMALL: {
     model: 'text-embedding-3-large',
-    dimensions: 256,  // Уменьшенная размерность для экономии памяти
+    dimensions: 1536,  // Установили 1536 для чистоты эксперимента
   },
 };
 
@@ -43,8 +43,8 @@ export function createOpenAIClient (apiKey: string, baseURL?: string): OpenAI {
 export async function getEmbeddings (
   client: OpenAI,
   texts: string[],
-  model = EMBEDDING_MODELS.SMALL.model,
-  dimensions = EMBEDDING_MODELS.SMALL.dimensions,
+  model = EMBEDDING_MODELS.DEFAULT.model,
+  dimensions = EMBEDDING_MODELS.DEFAULT.dimensions,
 ): Promise<IEmbeddingResult> {
   if (!texts.length) {
     return {

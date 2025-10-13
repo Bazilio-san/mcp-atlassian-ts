@@ -36,6 +36,7 @@ import { jira_create_version } from './tools/projects/jira_create_version.js';
 import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
 import { jira_find_project } from './tools/projects/jira_find_project.js';
 import { jira_force_update_projects_index } from './tools/projects/jira_force_update_projects_index.js';
+import { jira_get_epics_for_project } from './tools/projects/jira_get_epics_for_project.js';
 
 // Import user tools
 import { jira_get_user_profile } from './tools/users/jira_get_user_profile.js';
@@ -63,6 +64,7 @@ import { jira_update_sprint } from './tools/agile/jira_update_sprint.js';
 
 // Import metadata tools
 import { jira_search_fields } from './tools/metadata/jira_search_fields.js';
+import { jira_get_priorities } from './tools/metadata/jira_get_priorities.js';
 
 // Import bulk operation tools
 import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
@@ -140,6 +142,7 @@ export class JiraToolsManager {
       jira_batch_create_versions,
       jira_find_project,
       jira_force_update_projects_index,
+      jira_get_epics_for_project,
 
       // User tools
       jira_get_user_profile,
@@ -167,6 +170,7 @@ export class JiraToolsManager {
 
       // Metadata tools
       jira_search_fields,
+      jira_get_priorities,
 
       // Bulk operation tools
       jira_batch_get_changelogs,

@@ -126,7 +126,7 @@ export class ProjectVectorSearch {
       for (const key of projectKeys) {
         try {
           // Ищем записи для этого проекта
-          const results = await this.vectorDB.search([0], 100, 10);
+          const results = await this.vectorDB.search([0], 10, 10);
           const projectResult = results.find(r => r.key === key);
 
           const name = projectResult?.name || key;
@@ -348,8 +348,7 @@ export class ProjectVectorSearch {
    */
   async searchProjects (
     query: string,
-    limit = 5,
-    threshold = 0.7,
+    limit = 7,
   ): Promise<TKeyNameScore[]> {
     // Ждем завершения восстановления кеша
     await this.waitForRestore();
@@ -360,14 +359,10 @@ export class ProjectVectorSearch {
 
     const normalizedQuery = query.toLowerCase().trim();
 
-    // Сначала всегда проверяем точное совпадение в кеше
+    // Сначала проверяем точное совпадение в кеше
     const exactMatches = this.exactSearch(normalizedQuery, limit);
-    if (exactMatches.length > 0) {
-      // Если нашли точные совпадения, возвращаем их
-      return exactMatches;
-    }
 
-    // Попробуем векторный поиск
+    // Всегда выполняем векторный поиск для поиска похожих проектов
     try {
       // Создаем эмбеддинг для запроса
       const [embedding] = await this.getEmbeddingsFn([query]);
@@ -376,34 +371,52 @@ export class ProjectVectorSearch {
         return this.substringSearch(normalizedQuery, limit);
       }
 
-      // Выполняем векторный поиск
-      const results = await this.vectorDB.search(embedding, limit, threshold);
+      // Выполняем векторный поиск без threshold - всегда возвращаем лучшие результаты
+      const results = await this.vectorDB.search(embedding, limit, 0.0);
 
-      // Дополняем результаты данными из кеша
+      // DEBUG: выводим сырые результаты векторного поиска
+      console.debug(`Vector search for "${query}": found ${results.length} results`);
+      if (results.length > 0) {
+        const allResultsDebug = results.map(r => `${r.key}(${Math.round(r.score * 10000) / 10000})`).join(', ');
+        console.debug(`Raw vector scores: ${allResultsDebug}`);
+      }
+
+      // Комбинируем точные и векторные результаты
       const projectResults: TKeyNameScore[] = [];
       const addedKeys = new Set<string>();
 
+      // Сначала добавляем точные совпадения с максимальным score
+      for (const exact of exactMatches) {
+        if (!addedKeys.has(exact.key)) {
+          projectResults.push({
+            key: exact.key,
+            name: exact.name,
+            score: 1.0, // Точные совпадения всегда имеют максимальный score
+          });
+          addedKeys.add(exact.key);
+        }
+      }
+
+      // Затем добавляем векторные результаты (исключая уже добавленные)
       for (const result of results) {
         if (addedKeys.has(result.key)) continue;
 
         const project = this.projectsCache.get(result.key);
         if (project) {
+          const finalScore = Math.round(result.score * 10000) / 10000; // Округляем до 4 знаков
           projectResults.push({
             key: result.key,
             name: result.name,
-            score: Math.round(result.score * 10000) / 10000, // Округляем до 4 знаков
+            score: finalScore,
           });
           addedKeys.add(result.key);
         }
       }
 
-      // Если векторный поиск не дал результатов, пробуем substring поиск
-      if (projectResults.length === 0) {
-        console.debug('Vector search returned no results, falling back to substring search');
-        return this.substringSearch(normalizedQuery, limit);
-      }
-
-      return projectResults;
+      // Сортируем по score (убывание) и ограничиваем количество
+      return projectResults
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, limit);
     } catch (error) {
       console.debug('Vector search failed, falling back to substring search:', error);
       return this.substringSearch(normalizedQuery, limit);
@@ -475,7 +488,7 @@ export class ProjectVectorSearch {
       .map(p => ({
         key: p.key,
         name: p.name,
-        score: 0,
+        score: 1, // Wildcard search - все проекты имеют максимальный score
       }));
   }
 

@@ -369,7 +369,7 @@ export class JiraMcpTestCases {
   }
 
   /**
-   * Project Management test cases (4 tools)
+   * Project Management test cases (5 tools)
    */
   getProjectManagementTestCases () {
     const testCases = [
@@ -415,6 +415,13 @@ export class JiraMcpTestCases {
           };
         },
         description: 'Create project version',
+      },
+      {
+        fullId: '2-6',
+        name: 'Get Epics for Project',
+        toolName: 'jira_get_epics_for_project',
+        params: { projectKey: this.testProjectKey, maxResults: 10 },
+        description: 'Get active epics for a project',
       },
     ];
 
@@ -478,7 +485,7 @@ export class JiraMcpTestCases {
   }
 
   /**
-   * Fields and Metadata test cases (1 tool)
+   * Fields and Metadata test cases (2 tools)
    */
   getFieldsMetadataTestCases () {
 
@@ -489,6 +496,13 @@ export class JiraMcpTestCases {
         toolName: 'jira_search_fields',
         params: { query: 'summary' },
         description: 'Search JIRA fields',
+      },
+      {
+        fullId: '4-2',
+        name: 'Get JIRA Priorities',
+        toolName: 'jira_get_priorities',
+        params: {},
+        description: 'Get all available JIRA priorities',
       },
     ]);
   }

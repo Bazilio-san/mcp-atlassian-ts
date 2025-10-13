@@ -44,8 +44,8 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
 
     // Тестируем подключение к OpenAI небольшим запросом
     console.log('   Testing OpenAI API connection...');
-    const testModel = appConfig.openai?.model || EMBEDDING_MODELS.SMALL.model;
-    const testDimensions = appConfig.openai?.dimensions || EMBEDDING_MODELS.SMALL.dimensions;
+    const testModel = appConfig.openai?.model || EMBEDDING_MODELS.DEFAULT.model;
+    const testDimensions = appConfig.openai?.dimensions || EMBEDDING_MODELS.DEFAULT.dimensions;
 
     try {
       const testResult = await getEmbeddings(openaiClient, ['test'], testModel, testDimensions);
@@ -64,8 +64,8 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
 
     // Создаем функцию для получения эмбеддингов
     const getEmbeddingsFn = async (texts: string[]) => {
-      const model = appConfig.openai?.model || EMBEDDING_MODELS.SMALL.model;
-      const dimensions = appConfig.openai?.dimensions || EMBEDDING_MODELS.SMALL.dimensions;
+      const model = appConfig.openai?.model || EMBEDDING_MODELS.DEFAULT.model;
+      const dimensions = appConfig.openai?.dimensions || EMBEDDING_MODELS.DEFAULT.dimensions;
 
       const result = await getEmbeddings(openaiClient, texts, model, dimensions);
       return result.embeddings;
@@ -75,8 +75,8 @@ export async function initializeVectorSearch (): Promise<ProjectVectorSearch | n
     projectSearch = new ProjectVectorSearch(vectorDB, getEmbeddingsFn);
 
     console.log('\n✅  Vector search initialized successfully');
-    console.log(`   Model: ${appConfig.openai?.model || EMBEDDING_MODELS.SMALL.model}`);
-    console.log(`   Dimensions: ${appConfig.openai?.dimensions || EMBEDDING_MODELS.SMALL.dimensions}`);
+    console.log(`   Model: ${appConfig.openai?.model || EMBEDDING_MODELS.DEFAULT.model}`);
+    console.log(`   Dimensions: ${appConfig.openai?.dimensions || EMBEDDING_MODELS.DEFAULT.dimensions}`);
     console.log(`   Vector DB path: ${PROJECT_DB_PATH}`);
     console.log('   Semantic search: ENABLED\n');
     return projectSearch;

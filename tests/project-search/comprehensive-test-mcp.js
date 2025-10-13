@@ -28,15 +28,14 @@ const colors = {
 // Тестовые запросы с ожидаемыми результатами
 // Эти будут адаптированы под реальные проекты после их получения
 const TEST_QUERIES = [
-  { query: '*', description: 'Get all projects (wildcard)', expectResults: true },
-  { query: 'TEST', description: 'Exact uppercase match', expectResults: true },
-  { query: 'test', description: 'Lowercase match', expectResults: true },
-  { query: 'DEMO', description: 'Demo project', expectResults: true },
+  { query: 'CARDDEV', description: 'Exact uppercase match', expectResults: true },
+  { query: 'CARDDEw', description: 'Exact uppercase match', expectResults: true },
   { query: 'AI', description: 'Partial match', expectResults: true },
+  { query: 'аитех', description: 'Exact uppercase match', expectResults: true },
+  { query: 'айтех', description: 'Exact uppercase match', expectResults: true },
+  { query: 'AITEX', description: 'Exact uppercase match', expectResults: true },
   { query: 'NonExistentProject123456', description: 'Non-existent project', expectResults: false },
-  { query: 'proj', description: 'Common partial word', expectResults: true },
-  { query: 'тест', description: 'Cyrillic transliteration', expectResults: true },
-  { query: 'демо', description: 'Cyrillic demo', expectResults: true },
+  { query: '*', description: 'Get all projects (wildcard)', expectResults: true },
 ];
 
 /**
@@ -157,7 +156,7 @@ async function testProjectSearch (client, query, description) {
       query: query,
     });
 
-    // Проверяем результат
+    // Проверяем результат - правильная структура: result.matches
     let projects = [];
     if (typeof result === 'string') {
       // Если результат - строка, пытаемся найти JSON внутри
@@ -167,8 +166,20 @@ async function testProjectSearch (client, query, description) {
       }
     } else if (Array.isArray(result)) {
       projects = result;
+    } else if (result && result.matches) {
+      projects = result.matches;
     } else if (result && result.projects) {
       projects = result.projects;
+    }
+
+    // Выводим первые 5 кандидатов по убыванию score для отладки
+    if (projects.length > 0) {
+      const top5 = projects
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, 5)
+        .map(p => `${p.key}(${p.score || 0})`)
+        .join(', ');
+      console.log(`   ${colors.gray}Top 5: ${top5}${colors.reset}`);
     }
 
     return {

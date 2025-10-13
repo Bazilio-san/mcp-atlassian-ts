@@ -44,10 +44,16 @@ export function fillEmbeddingsCore<TIn extends Record<string, any>> (
       }
 
       const embeddings = await getEmbeddingsFn(batchTexts);
-      const out = batchItems.map((item, i) => ({
-        ...(item as any),
-        embedding: (embeddings[i] as TEmbeddingArray) ?? null,
-      }));
+      console.debug(`🔧 fillEmbeddings: got ${embeddings.length} embeddings for ${batchItems.length} items`);
+      console.debug(`🔧 First embedding: ${embeddings[0] ? `length=${embeddings[0].length}` : 'null'}`);
+      const out = batchItems.map((item, i) => {
+        const embedding = (embeddings[i] as TEmbeddingArray) ?? null;
+        console.debug(`🔧 Item ${i}: ${item.searchText} -> embedding: ${embedding ? `length=${embedding.length}` : 'null'}`);
+        return {
+          ...(item as any),
+          embedding,
+        };
+      });
 
       // reset
       batchItems = [];

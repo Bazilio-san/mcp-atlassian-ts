@@ -80,3 +80,5 @@ _api_responses/
 _logs/
 /config.yaml
 /glm.ps1
+vectors.txt
+
