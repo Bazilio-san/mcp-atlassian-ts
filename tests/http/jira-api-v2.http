@@ -90,7 +90,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 
-### Issue creation example:
+### create Issue:
 POST {{baseUrl}}/rest/api/2/issue
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 Content-Type: application/json
@@ -102,7 +102,7 @@ Content-Type: application/json
     },
     "summary": "TEST-AITECH-2",
     "issuetype": {
-      "name": "Task+"
+      "name": "Задача+"
     },
     "description": "Three maidens by the window\nSpinning late in the evening",
     "assignee": {

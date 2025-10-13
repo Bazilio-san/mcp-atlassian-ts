@@ -22,20 +22,3 @@ export interface ProjectSearchOptions {
   limit?: number;
   threshold?: number; // Порог схожести строк (по умолчанию 0.72)
 }
-
-// Символы для кеширования вариаций текста
-export const SYM_KEY_LC = Symbol('SYM_KEY_LC');
-export const SYM_NAME_LC = Symbol('SYM_NAME_LC');
-export const SYM_TR_RU_KEY_LC = Symbol('SYM_TR_RU_KEY_LC');
-export const SYM_TR_RU_KEY_UC = Symbol('SYM_TR_RU_KEY_UC');
-export const SYM_TR_RU_NAME_LC = Symbol('SYM_TR_RU_NAME_LC');
-export const SYM_TR_NAME_UC = Symbol('SYM_TR_NAME_UC');
-
-export type JiraProjectWithSymbols = TKeyName & {
-  [SYM_KEY_LC]: string;
-  [SYM_NAME_LC]: string;
-  [SYM_TR_RU_KEY_LC]: string;
-  [SYM_TR_RU_KEY_UC]: string;
-  [SYM_TR_RU_NAME_LC]: string;
-  [SYM_TR_NAME_UC]: string;
-};

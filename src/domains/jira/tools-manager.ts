@@ -16,7 +16,7 @@ import type { AxiosInstance } from 'axios';
 // Import tool modules - Core tools
 import { jira_get_issue } from './tools/core/jira_get_issue.js';
 import { jira_search_issues } from './tools/core/jira_search_issues.js';
-import { jira_create_issue } from './tools/core/jira_create_issue.js';
+import { createJiraCreateIssueTool } from './tools/core/jira_create_issue.js';
 import { jira_update_issue } from './tools/core/jira_update_issue.js';
 import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
 import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
@@ -69,6 +69,11 @@ import { jira_get_priorities } from './tools/metadata/jira_get_priorities.js';
 // Import bulk operation tools
 import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
 
+// Import priority service
+import { fetchAndCachePriorities } from './shared/priority-service.js';
+// Import projects cache initialization
+import { initializeProjectsCache } from './tools/projects/search-project/projects-cache.js';
+
 /**
  * Modular JIRA Tools Manager
  */
@@ -117,13 +122,54 @@ export class JiraToolsManager {
       expandStringOrArray: this.expandStringOrArray.bind(this),
     };
 
-    // Register all tools with their handlers
+    // Initialize tools storage
+    this.tools = new Map();
+    this.toolsArray = [];
+
+    // Build initial tools list (will be updated after priority fetch)
+    this.buildToolsList(config.epicLinkFieldId);
+  }
+
+  /**
+   * Initialize JIRA tools manager (for compatibility)
+   */
+  async initialize (): Promise<void> {
+    this.context.logger.info('JIRA tools manager initializing...');
+
+    // Initialize projects cache with HTTP client
+    initializeProjectsCache(this.context);
+    this.context.logger.info('Projects cache initialized');
+
+    // Fetch and cache priorities during initialization
+    try {
+      await fetchAndCachePriorities(this.context);
+      this.context.logger.info('Priority enum initialized successfully');
+    } catch (error) {
+      this.context.logger.warn('Failed to initialize priority enum, using fallback',
+        error instanceof Error ? error : new Error(String(error)));
+    }
+
+    this.context.logger.info('JIRA tools manager initialized');
+
+    // Rebuild tools with fresh priorities after fetch
+    this.buildToolsList(this.context.config.epicLinkFieldId);
+  }
+
+  /**
+   * Build or rebuild the tools list (used during construction and after priority fetch)
+   */
+  private buildToolsList (epicLinkFieldId?: string): void {
+    // Clear existing tools
+    this.tools.clear();
+    this.toolsArray = [];
+
+    // Register all tools with their handlers - re-import to get fresh priorities
     const toolInstances = [
       // Core tools
       jira_get_issue,
       jira_search_issues,
-      jira_create_issue,
-      jira_update_issue(config.epicLinkFieldId), // Create jira_update_issue with dynamic epicLinkFieldId
+      createJiraCreateIssueTool(), // Create fresh instance with current priorities
+      jira_update_issue(epicLinkFieldId), // Create jira_update_issue with dynamic epicLinkFieldId
       jira_delete_issue,
       jira_batch_create_issues,
       jira_link_to_epic,
@@ -177,23 +223,12 @@ export class JiraToolsManager {
     ];
 
     // Create maps for fast lookup
-    this.tools = new Map();
-    this.toolsArray = [];
-
     for (const tool of toolInstances) {
       this.tools.set(tool.name, tool);
       // Create Tool without handler for the array
       const { handler: _foo, ...toolWithoutHandler } = tool;
       this.toolsArray.push(toolWithoutHandler as Tool);
     }
-  }
-
-  /**
-   * Initialize JIRA tools manager (for compatibility)
-   */
-  async initialize (): Promise<void> {
-    this.context.logger.info('JIRA tools manager initialized');
-    // Any async initialization can go here if needed
   }
 
   /**

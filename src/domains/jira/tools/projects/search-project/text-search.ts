@@ -1,90 +1,55 @@
 // In-memory текстовый поиск с использованием string similarity
-// Заменяет векторный поиск на поиск по близости строк
+// Использует оптимизированную структуру кеша с предвычисленными вариантами
 
-import { transliterate, transliterateRU } from '../../../../../core/utils/transliterate';
-import { phraseSimilarity } from '../../../../../core/utils/string-similarity';
-import {
-  type TKeyNameScore,
-  type JiraProjectWithSymbols,
-  SYM_KEY_LC,
-  SYM_NAME_LC,
-  SYM_TR_RU_KEY_LC,
-  SYM_TR_RU_KEY_UC,
-  SYM_TR_RU_NAME_LC,
-  SYM_TR_NAME_UC,
-} from './types.js';
-import { TKeyName } from '../../../../../types';
+import { phraseSimilarity } from '../../../../../core/utils/string-similarity.js';
+import { type TKeyNameScore } from './types.js';
+import { type TKeyName } from '../../../../../types';
+import { getOptimizedProjectsCache, type ProjectCacheEntry } from './projects-cache.js';
 
 /**
  * Класс для управления текстовым поиском проектов на основе string similarity
+ * Теперь использует оптимизированный кеш с предвычисленными вариантами
  */
 export class ProjectTextSearch {
-  private projectsCache: Map<string, JiraProjectWithSymbols> = new Map();
-  private cacheExpireTime = 0;
-  private readonly cacheTTL = 60 * 60 * 1000; // 1 час
-
   constructor () {
-    // Ничего не инициализируем, работаем только в памяти
+    // Кеш теперь управляется в projects-cache.ts
   }
 
   /**
-   * Обновление кеша проектов
+   * Обновление кеша проектов - больше не требуется,
+   * кеш управляется централизованно в projects-cache.ts
    */
   async updateProjectsCache (projects: TKeyName[]): Promise<void> {
-    console.log('📥  Updating project cache for text search...');
-    console.log(`   Loading ${projects.length} projects from JIRA API`);
-
-    // Создаем проекты с символами для вариаций
-    const projectsWithSymbols: JiraProjectWithSymbols[] = projects.map(project => {
-      const keyLC = project.key.toLowerCase();
-      const nameLC = project.name.toLowerCase();
-      const keyRuLC = transliterateRU(keyLC);
-
-      return {
-        ...project,
-        [SYM_KEY_LC]: keyLC,
-        [SYM_NAME_LC]: nameLC,
-        [SYM_TR_RU_KEY_LC]: keyRuLC,
-        [SYM_TR_RU_KEY_UC]: keyRuLC.toUpperCase(),
-        [SYM_TR_NAME_UC]: transliterate(project.name).toUpperCase(),
-        [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC),
-      };
-    });
-
-    // Обновляем кеш
-    this.projectsCache.clear();
-    projectsWithSymbols.forEach(p => {
-      this.projectsCache.set(p.key, p);
-    });
-    this.cacheExpireTime = Date.now() + this.cacheTTL;
-
-    console.log('✅  Project cache updated successfully for text search');
-    console.log(`   📊  Projects loaded: ${projectsWithSymbols.length}`);
-    console.log('   🔍  Text similarity search available for all projects\n');
+    console.log('📥  Text search now uses optimized centralized cache...');
+    console.log(`   ${projects.length} projects available for search`);
+    console.log('✅  Text similarity search ready\n');
   }
 
   /**
-   * Проверка актуальности кеша
+   * Проверка актуальности кеша - делегируется в projects-cache
    */
   isCacheValid (): boolean {
-    return Date.now() < this.cacheExpireTime && this.projectsCache.size > 0;
+    const cache = getOptimizedProjectsCache();
+    return cache !== null && Object.keys(cache).length > 0;
   }
 
   /**
    * Поиск проектов по запросу с использованием string similarity
    */
-  async searchProjects (
-    query: string,
-    limit = 5,
-  ): Promise<TKeyNameScore[]> {
+  async searchProjects (query: string, limit = 5): Promise<TKeyNameScore[]> {
     if (!query || !query.trim()) {
+      return [];
+    }
+
+    const cache = getOptimizedProjectsCache();
+    if (!cache) {
       return [];
     }
 
     const normalizedQuery = query.toLowerCase().trim();
 
     // Сначала проверяем точное совпадение
-    const exactMatches = this.exactSearch(normalizedQuery);
+    const exactMatches = this.exactSearch(normalizedQuery, cache);
     if (exactMatches.length > 0) {
       return exactMatches.slice(0, limit);
     }
@@ -92,14 +57,13 @@ export class ProjectTextSearch {
     // Ищем по близости строк для всех проектов
     const results: Array<{ key: string; name: string; score: number }> = [];
 
-    for (const project of this.projectsCache.values()) {
-      const similarities = this.calculateSimilarities(normalizedQuery, project);
-      const maxSimilarity = Math.max(...similarities);
+    for (const entry of Object.values(cache)) {
+      const maxSimilarity = this.calculateSimilarities(normalizedQuery, entry.variants);
 
-      if (maxSimilarity > 0.3) { // Порог схожести
+      if (maxSimilarity > 0.33) { // Порог схожести
         results.push({
-          key: project.key,
-          name: project.name,
+          key: entry.project.key,
+          name: entry.project.name,
           score: maxSimilarity,
         });
       }
@@ -114,25 +78,19 @@ export class ProjectTextSearch {
   /**
    * Точный поиск по всем вариациям проекта
    */
-  private exactSearch (normalizedQuery: string): TKeyNameScore[] {
+  private exactSearch (normalizedQuery: string, cache: { [key: string]: ProjectCacheEntry }): TKeyNameScore[] {
     const matches: TKeyNameScore[] = [];
 
-    for (const project of this.projectsCache.values()) {
-      const variations = [
-        project.key.toLowerCase(),
-        project.name.toLowerCase(),
-        project[SYM_KEY_LC],
-        project[SYM_NAME_LC],
-        project[SYM_TR_RU_KEY_LC],
-        project[SYM_TR_RU_KEY_UC]?.toLowerCase(),
-        project[SYM_TR_RU_NAME_LC],
-        project[SYM_TR_NAME_UC]?.toLowerCase(),
-      ];
+    for (const entry of Object.values(cache)) {
+      // Проверяем точное совпадение среди всех вариантов
+      const hasExactMatch = entry.variants.some(variant =>
+        variant.toLowerCase() === normalizedQuery
+      );
 
-      if (variations.some(v => v === normalizedQuery)) {
+      if (hasExactMatch) {
         matches.push({
-          key: project.key,
-          name: project.name,
+          key: entry.project.key,
+          name: entry.project.name,
           score: 1.0, // Точное совпадение
         });
       }
@@ -142,28 +100,25 @@ export class ProjectTextSearch {
   }
 
   /**
-   * Вычисление схожести запроса с вариациями проекта
+   * Вычисление максимальной схожести запроса с вариациями проекта
    */
-  private calculateSimilarities (query: string, project: JiraProjectWithSymbols): number[] {
-    const variations = [
-      project.key.toLowerCase(),
-      project.name.toLowerCase(),
-      project[SYM_KEY_LC],
-      project[SYM_NAME_LC],
-      project[SYM_TR_RU_KEY_LC],
-      project[SYM_TR_RU_KEY_UC]?.toLowerCase(),
-      project[SYM_TR_RU_NAME_LC],
-      project[SYM_TR_NAME_UC]?.toLowerCase(),
-    ];
-
-    return variations.map(variation => phraseSimilarity(query, variation));
+  private calculateSimilarities (query: string, variants: string[]): number {
+    const similarities = variants.map(variant =>
+      phraseSimilarity(query, variant.toLowerCase())
+    );
+    return Math.max(...similarities);
   }
 
   /**
    * Получение всех проектов (для wildcard поиска)
    */
   async getAllProjects (): Promise<TKeyNameScore[]> {
-    const projects = Array.from(this.projectsCache.values());
+    const cache = getOptimizedProjectsCache();
+    if (!cache) {
+      return [];
+    }
+
+    const projects = Object.values(cache).map(entry => entry.project);
     return projects
       .sort((a, b) => a.key.localeCompare(b.key))
       .map(p => ({
@@ -174,10 +129,10 @@ export class ProjectTextSearch {
   }
 
   /**
-   * Очистка кеша
+   * Очистка кеша - теперь делегируется в projects-cache
    */
   async clear (): Promise<void> {
-    this.projectsCache.clear();
-    this.cacheExpireTime = 0;
+    // Кеш теперь управляется централизованно в projects-cache.ts
+    console.log('Cache is now managed centrally in projects-cache.ts');
   }
 }

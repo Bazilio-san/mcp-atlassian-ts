@@ -5,107 +5,44 @@ import {
   IJiraCreateMetaResponse, IJiraProject, TKeyName,
 } from '../../../../../types/index.js';
 import { createLogger } from '../../../../../core/utils/logger.js';
-import { createAuthenticationManager } from '../../../../../core/auth/index.js';
-import { appConfig } from '../../../../../bootstrap/init-config.js';
-import type { AuthConfig } from '../../../../../types/index.js';
-import { transliterate, transliterateRU } from '../../../../../core/utils/transliterate.js';
+import { transliterate, transliterateRU, enToRuVariants } from '../../../../../core/utils/transliterate.js';
+import type { ToolContext } from '../../../shared/tool-context.js';
+
 // Lazy import для избежания циклических зависимостей
 let updateProjectsIndex: any;
 
-// Standalone power HTTP client
-let powerHttpClient: AxiosInstance | null = null;
+// HTTP client from ToolContext (passed via initialization)
+let httpClient: AxiosInstance | null = null;
 
 const logger = createLogger('JIRA_PROJECTS');
 
-const SYM_KEY_LC = Symbol('SYM_KEY_LC');
-const SYM_NAME_LC = Symbol('SYM_NAME_LC');
-const SYM_TR_RU_KEY_LC = Symbol('SYM_TR_RU_KEY_LC');
-const SYM_TR_RU_KEY_UC = Symbol('SYM_TR_RU_KEY_UC');
-const SYM_TR_RU_NAME_LC = Symbol('SYM_TR_RU_NAME_LC');
-const SYM_TR_NAME_UC = Symbol('SYM_TR_NAME_UC');
-
+// Новая оптимизированная структура кеша
+interface ProjectCacheEntry {
+  project: TKeyName;
+  variants: string[];
+}
 
 const projectsCache: {
-  cache: TKeyName[] | null;
-  hash: { [key: string]: TKeyName } | null;
+  cache: {
+    [key: string]: ProjectCacheEntry;
+  } | null;
   expire: number;
   cachePromise: Promise<TErrorProjKeyNameResult> | null;
 } = {
   cache: null,
-  hash: null,
   expire: 0,
   cachePromise: null,
 };
 
 const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// Initialize power HTTP client or fallback to regular auth
-const initializePowerHttpClient = (): void => {
-  // Try power endpoint first
-  if (!powerHttpClient && appConfig.jira?.powerEndpoint?.baseUrl && appConfig.jira?.powerEndpoint?.auth) {
-    const powerAuth = appConfig.jira.powerEndpoint.auth;
-
-    // Transform config auth to AuthConfig format
-    let authConfig: AuthConfig;
-    if (powerAuth.basic?.username && powerAuth.basic?.password) {
-      authConfig = {
-        type: 'basic' as const,
-        username: powerAuth.basic.username,
-        password: powerAuth.basic.password,
-      };
-    } else if (powerAuth.pat) {
-      authConfig = {
-        type: 'pat' as const,
-        token: powerAuth.pat,
-      };
-    } else if (powerAuth.oauth2) {
-      authConfig = {
-        ...powerAuth.oauth2,
-        type: 'oauth2' as const,
-      };
-    } else {
-      throw new Error('No valid power endpoint authentication configured');
-    }
-
-    const authManager = createAuthenticationManager(
-      authConfig,
-      appConfig.jira.powerEndpoint.baseUrl,
-    );
-    powerHttpClient = authManager.getHttpClient();
-    logger.info('Power HTTP client initialized for JIRA projects');
-  }
-  // Fallback to regular JIRA auth if no power endpoint configured
-  else if (!powerHttpClient && appConfig.jira?.url && appConfig.jira?.auth) {
-    logger.info('Power endpoint not configured, using regular JIRA auth for projects');
-
-    // Transform regular config auth to AuthConfig format
-    let authConfig: AuthConfig;
-    const jiraAuth = appConfig.jira.auth;
-
-    if (jiraAuth.basic?.username && jiraAuth.basic?.password) {
-      authConfig = {
-        type: 'basic' as const,
-        username: jiraAuth.basic.username,
-        password: jiraAuth.basic.password,
-      };
-    } else if (jiraAuth.pat) {
-      authConfig = {
-        type: 'pat' as const,
-        token: jiraAuth.pat,
-      };
-    } else if (jiraAuth.oauth2) {
-      authConfig = {
-        ...jiraAuth.oauth2,
-        type: 'oauth2' as const,
-      };
-    } else {
-      throw new Error('No valid JIRA authentication configured');
-    }
-
-    const authManager = createAuthenticationManager(authConfig, appConfig.jira.url);
-    powerHttpClient = authManager.getHttpClient();
-    logger.info('Fallback HTTP client initialized for JIRA projects');
-  }
+// Initialize projects cache with ToolContext
+export const initializeProjectsCache = (context: ToolContext): void => {
+  // Use powerHttpClient if available, otherwise use regular httpClient
+  httpClient = context.powerHttpClient || context.httpClient;
+  logger.info('Projects cache initialized with HTTP client', {
+    usingPowerEndpoint: !!context.powerHttpClient,
+  });
 };
 
 // Получить все проекты (пространства) Jira (с кешированием)
@@ -113,7 +50,10 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
   const now = Date.now();
   // Return cached if not expired
   if (projectsCache.cache && now < projectsCache.expire) {
-    return { error: null, result: projectsCache.cache, hash: projectsCache.hash! };
+    const cachedProjects = Object.values(projectsCache.cache).map(entry => entry.project);
+    const hash: { [key: string]: TKeyName } = {};
+    cachedProjects.forEach(p => { hash[p.key] = p; });
+    return { error: null, result: cachedProjects, hash };
   }
   // If a request is already in flight, reuse it
   if (projectsCache.cachePromise) {
@@ -122,46 +62,63 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
   // Otherwise, fetch and populate cache
   projectsCache.cachePromise = (async () => {
     try {
-      // Initialize power HTTP client if needed
-      initializePowerHttpClient();
-
-      if (!powerHttpClient) {
-        throw new Error('HTTP client not available for JIRA projects - check authentication configuration');
+      if (!httpClient) {
+        throw new Error('Projects cache not initialized - call initializeProjectsCache() first');
       }
 
-      const res = await powerHttpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project');
+      const res = await httpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project');
       const projects = res.data;
-      const result = Array.isArray(projects)
-        ? projects.map(({ key, name }: IJiraProject) => {
+
+      // Создаем новую структуру кеша с вариантами
+      const cacheEntries: { [key: string]: ProjectCacheEntry } = {};
+      const result: TKeyName[] = [];
+
+      if (Array.isArray(projects)) {
+        projects.forEach(({ key, name }: IJiraProject) => { // VVA Добавить id
+          const project: TKeyName = { key, name };
+          result.push(project);
+
+          // Создаем все варианты для поиска
           const keyLC = key.toLowerCase();
           const nameLC = name.toLowerCase();
-          const keyRuLC = transliterateRU(keyLC);
-          return {
-            key,
-            name,
-            [SYM_KEY_LC]: keyLC,
-            [SYM_NAME_LC]: nameLC,
-            [SYM_TR_RU_KEY_LC]: keyRuLC,
-            [SYM_TR_RU_KEY_UC]: keyRuLC.toUpperCase(),
-            [SYM_TR_NAME_UC]: transliterate(name).toUpperCase(),
-            [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC),
+          const keyRuVariants = enToRuVariants(keyLC);
+          const nameRuVariants = enToRuVariants(nameLC);
+
+          const variants = [
+            // Оригинальные
+            key, name,
+            // Lowercase
+            keyLC, nameLC,
+            // Транслитерация
+            transliterate(key), transliterate(name),
+            transliterateRU(keyLC), transliterateRU(nameLC),
+            // Все русские варианты
+            ...keyRuVariants,
+            ...nameRuVariants,
+          ].filter(Boolean); // убираем пустые
+
+          cacheEntries[key] = {
+            project,
+            variants: [...new Set(variants)], // убираем дубликаты
           };
-        })
-        : [];
+        });
+      }
+
       // Обновляем индекс векторного поиска если он доступен
       if (typeof updateProjectsIndex === 'function') {
-        const projectsForIndex = result.map(({ key, name }) => ({ key, name }));
-        updateProjectsIndex(projectsForIndex).catch((err: any) => {
+        updateProjectsIndex(result).catch((err: any) => {
           logger.error('Failed to update vector index', err);
         });
       }
-      projectsCache.cache = result;
-      projectsCache.hash = {};
-      result.forEach((item) => {
-        projectsCache.hash![item.key] = item;
-      });
+
+      projectsCache.cache = cacheEntries;
       projectsCache.expire = Date.now() + PROJECTS_TTL_MS;
-      return { error: null, result, hash: projectsCache.hash };
+
+      // Создаем hash для обратной совместимости
+      const hash: { [key: string]: TKeyName } = {};
+      result.forEach(p => { hash[p.key] = p; });
+
+      return { error: null, result, hash };
     } catch (err) {
       logger.error('Failed to fetch JIRA projects', err as Error);
       return { error: err, result: [], hash: {} };
@@ -175,7 +132,6 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
 // Clear projects cache (useful for testing or manual refresh)
 export const clearProjectsCache = (): void => {
   projectsCache.cache = null;
-  projectsCache.hash = null;
   projectsCache.expire = 0;
   projectsCache.cachePromise = null;
   logger.debug('Projects cache cleared');
@@ -185,3 +141,11 @@ export const clearProjectsCache = (): void => {
 export const setUpdateProjectsIndexFunction = (fn: any): void => {
   updateProjectsIndex = fn;
 };
+
+// Get optimized projects cache for search
+export const getOptimizedProjectsCache = (): { [key: string]: ProjectCacheEntry } | null => {
+  return projectsCache.cache;
+};
+
+// Export ProjectCacheEntry type for use in text-search
+export type { ProjectCacheEntry };

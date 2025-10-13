@@ -62,9 +62,6 @@ async function getPrioritiesHandler (args: any, context: ToolContext): Promise<a
         id: priority.id,
         name: priority.name,
         description: priority.description,
-        statusColor: priority.statusColor,
-        iconUrl: priority.iconUrl,
-        self: priority.self,
       })),
       timestamp: new Date().toISOString(),
     };

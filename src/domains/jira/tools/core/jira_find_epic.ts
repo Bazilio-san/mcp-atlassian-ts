@@ -13,8 +13,8 @@ import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
  */
 export const jira_find_epic: ToolWithHandler = {
   name: 'jira_find_epic',
-  description: `Retrieves list of epics by project key.
-  Use this when user asks to create a JIRA task, after clarifying the key of project, or when getting an error like "Epic with name ... not found in project".`,
+  description: `Use this tool when a user asks to create a task under a specific epic and the project key is already known. 
+It fetches the project’s epics so you can pick the exact epic key. For each epic it returns: key, epicName, summary, status, url.`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -68,13 +68,13 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     const epicNameFieldId = (config as any).customFields?.epicName || 'customfield_10011';
 
     // Search for epics
-    const params = {
+    const requestBody = {
       jql: jqlParts.join(' AND '),
-      fields: `summary,${epicNameFieldId},status,created,updated`,
+      fields: [`summary`, epicNameFieldId, `status`, `created`, `updated`],
       maxResults,
     };
 
-    const response = await httpClient.get('/rest/api/2/search', { params });
+    const response = await httpClient.post('/rest/api/2/search', requestBody); // VVT
 
     if (!response.data || !Array.isArray(response.data.issues)) {
       return formatToolResult([]);

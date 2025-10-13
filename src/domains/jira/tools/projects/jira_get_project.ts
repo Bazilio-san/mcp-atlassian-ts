@@ -14,9 +14,18 @@ import { ToolWithHandler } from '../../../../types';
  */
 export const jira_get_project: ToolWithHandler = {
   name: 'jira_get_project',
-  description: `Get details of a specific JIRA project by key or ID. 
-Also returns the list of issue types available in the project (with their IDs) 
-so the LLM Agent can choose the correct issueType name when creating an issue.`,
+  description: `Returns details of a specific JIRA project by key or ID: 
+id, 
+key,
+name,
+description,
+url,
+issueTypes: {id, name, description, subtask)[], // list of issue types available in the project so the LLM Agent can choose the correct issueType name when creating an issue
+projectTypeKey,
+archived,
+lead?: {key, name, displayName},
+versions?: {id, name, description, archived, released}[]
+`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -94,7 +103,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     }
 
     // Sanitize project to include only allowed fields
-    const filteredProject = (() => {
+    const filteredProject: FilteredProject = (() => {
       const p: any = project || {};
       return {
         id: p.id,
@@ -104,10 +113,14 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         projectTypeKey: p.projectTypeKey,
         archived: p.archived,
         url: p.url,
-        lead: p.lead ? { key: p.lead.key, name: p.lead.name, displayName: p.lead.displayName } : undefined,
         issueTypes: Array.isArray(p.issueTypes)
           ? p.issueTypes.map(({ id, name, description, subtask }: any) => ({ id, name, description, subtask }))
           : undefined,
+        lead: p.lead ? {
+          key: p.lead.key,
+          name: p.lead.name,
+          displayName: p.lead.displayName,
+        } : undefined,
         versions: Array.isArray(p.versions)
           ? p.versions.map(({ id, name, description, archived, released }: any) => ({ id, name, description, archived, released }))
           : undefined,
@@ -123,4 +136,32 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
     return formatToolResult(json);
   });
+}
+
+interface FilteredProject {
+  id?: string | number;
+  key?: string;
+  name?: string;
+  description?: string;
+  projectTypeKey?: string;
+  archived?: boolean;
+  url?: string;
+  issueTypes?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    subtask?: boolean;
+  }[];
+  lead?: {
+    key?: string;
+    name?: string;
+    displayName?: string;
+  } | undefined;
+  versions?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    archived?: boolean;
+    released?: boolean;
+  }[];
 }
