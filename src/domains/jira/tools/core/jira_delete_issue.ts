@@ -63,7 +63,7 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
       message: 'Issue deleted successfully',
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       isSubtasksDeleted: deleteSubtasks,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

@@ -87,7 +87,7 @@ When true, provides cleaner Markdown output instead of raw HTML`,
         cacheKey,
         async () => {
           const params: any = {
-            expand: expandFields.join(',')
+            expand: expandFields.join(','),
           };
           if (version) {
             params.version = version;
@@ -96,7 +96,7 @@ When true, provides cleaner Markdown output instead of raw HTML`,
           const response = await context.httpClient.get(`/rest/api/content/${pageId}`, { params });
           return response.data;
         },
-        600 // 10 minutes cache for page content
+        600, // 10 minutes cache for page content
       );
 
       // Build result text
@@ -153,14 +153,16 @@ When true, provides cleaner Markdown output instead of raw HTML`,
         ],
       };
     });
-  }
+  },
 };
 
 /**
  * Convert Confluence HTML storage format to Markdown
  */
 function htmlToMarkdown (html: string): string {
-  if (!html) return '';
+  if (!html) {
+    return '';
+  }
 
   let markdown = html
     // Headers
@@ -223,7 +225,9 @@ function htmlToMarkdown (html: string): string {
 
 function formatContent (content: string): string {
   // Basic formatting for storage format content
-  if (!content) return '';
+  if (!content) {
+    return '';
+  }
 
   // Remove common Confluence storage format tags for better readability
   return content

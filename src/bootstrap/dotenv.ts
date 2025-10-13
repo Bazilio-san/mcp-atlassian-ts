@@ -5,7 +5,7 @@ const generalEnv = dotenv.config();
 
 // Load secret environment variables from suffixed file
 const suffixEnv = process.env.SUFFIX_ENV;
-const secretEnv = suffixEnv 
+const secretEnv = suffixEnv
   ? dotenv.config({ path: `.env.${suffixEnv}` })
   : { parsed: {} };
 
@@ -13,6 +13,6 @@ const secretEnv = suffixEnv
 export const dotEnvResult = {
   parsed: {
     ...generalEnv.parsed,
-    ...secretEnv.parsed
-  }
+    ...secretEnv.parsed,
+  },
 };

@@ -69,12 +69,12 @@ Examples: With limit = 50: 0 (items 1–50), 50 (items 51–100), 100 (items 101
               start: offset,
               limit,
               excerpt,
-              expand: context.normalizeToArray(expand).join(',')
-            }
+              expand: context.normalizeToArray(expand).join(','),
+            },
           });
           return response.data;
         },
-        300 // 5 minutes cache for search results
+        300, // 5 minutes cache for search results
       );
 
       if (searchResult.results.length === 0) {
@@ -112,5 +112,5 @@ Examples: With limit = 50: 0 (items 1–50), 50 (items 51–100), 100 (items 101
         ],
       };
     });
-  }
+  },
 };

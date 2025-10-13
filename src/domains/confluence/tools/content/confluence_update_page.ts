@@ -75,7 +75,7 @@ Examples: "Updated API documentation", "Fixed typos", "Added new section"`,
 
       // Get current page to increment version
       const currentPageResponse = await context.httpClient.get(`/rest/api/content/${pageId}`, {
-        params: { expand: 'version,space' }
+        params: { expand: 'version,space' },
       });
       const currentPage = currentPageResponse.data;
 
@@ -113,7 +113,7 @@ Examples: "Updated API documentation", "Fixed typos", "Added new section"`,
           try {
             await context.httpClient.post(`/rest/api/content/${pageId}/label`, {
               prefix: 'global',
-              name: labelName
+              name: labelName,
             });
           } catch (error) {
             context.logger.warn('Failed to add label', { pageId, label: labelName, error });
@@ -136,5 +136,5 @@ Examples: "Updated API documentation", "Fixed typos", "Added new section"`,
         ],
       };
     });
-  }
+  },
 };

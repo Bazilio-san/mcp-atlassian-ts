@@ -36,9 +36,9 @@ Examples: "PROJ", "TEAM", "DOC"`,
 
       const response = await context.httpClient.get(`/rest/api/space/${spaceKey}`, {
         params: {
-          expand: context.normalizeToArray(expand).join(',')
+          expand: context.normalizeToArray(expand).join(','),
         },
-        ...(context.customHeaders && { headers: context.customHeaders })
+        ...(context.customHeaders && { headers: context.customHeaders }),
       });
 
       const space = response.data;
@@ -62,5 +62,5 @@ Examples: "PROJ", "TEAM", "DOC"`,
         ],
       };
     });
-  }
+  },
 };

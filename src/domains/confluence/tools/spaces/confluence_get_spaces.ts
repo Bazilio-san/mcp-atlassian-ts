@@ -51,9 +51,9 @@ export const confluence_get_spaces: ConfluenceToolWithHandler = {
           type,
           status,
           expand: context.normalizeToArray(expand).join(','),
-          limit
+          limit,
         },
-        ...(context.customHeaders && { headers: context.customHeaders })
+        ...(context.customHeaders && { headers: context.customHeaders }),
       });
 
       const spaces = spacesResult.data;
@@ -82,5 +82,5 @@ export const confluence_get_spaces: ConfluenceToolWithHandler = {
         ],
       };
     });
-  }
+  },
 };

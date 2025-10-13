@@ -51,7 +51,9 @@ function getEnv (key: string, defaultValue: any = undefined): any {
  * Check if a string value is meaningful (not empty, not just asterisks)
  */
 function hasValue (value: any): boolean {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string') {
+    return false;
+  }
   const cleaned = value.replace(/\*+/g, '').trim();
   return cleaned.length > 0;
 }
@@ -104,11 +106,13 @@ function buildAuthConfig (prefix: 'JIRA' | 'CONFLUENCE', yamlAuth?: any) {
  * Normalize tools configuration
  */
 function normalizeToolsConfig (config: any): IToolsConfig | undefined {
-  if (!config) return undefined;
+  if (!config) {
+    return undefined;
+  }
 
   const result: IToolsConfig = {
     include: 'ALL',
-    exclude: []
+    exclude: [],
   };
 
   // Handle include
@@ -169,16 +173,20 @@ function buildConfig (): IConfig {
   const yaml = loadYamlConfig();
 
   // Helper to get value with priority: env > yaml > default
-  const getValue = <T>(envKey: string, yamlPath: string[], defaultValue: T): T => {
+  const getValue = <T> (envKey: string, yamlPath: string[], defaultValue: T): T => {
     const envValue = getEnv(envKey, undefined);
-    if (envValue !== undefined) return envValue;
+    if (envValue !== undefined) {
+      return envValue;
+    }
 
     // Navigate through yaml path
     let yamlValue = yaml;
     for (const key of yamlPath) {
       yamlValue = yamlValue?.[key];
     }
-    if (yamlValue !== undefined && yamlValue !== null) return yamlValue;
+    if (yamlValue !== undefined && yamlValue !== null) {
+      return yamlValue;
+    }
 
     return defaultValue;
   };
@@ -245,9 +253,9 @@ function buildConfig (): IConfig {
             clientSecret: powerClientSecret,
             accessToken: powerAccessToken,
             ...(hasValue(getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken) &&
-                { refreshToken: getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken }),
+              { refreshToken: getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken }),
             ...(hasValue(getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri) &&
-                { redirectUri: getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri }),
+              { redirectUri: getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri }),
           };
         }
 
@@ -255,7 +263,7 @@ function buildConfig (): IConfig {
         if (Object.keys(powerAuth).length > 0) {
           jiraConfig.powerEndpoint = {
             baseUrl: powerBaseUrl,
-            auth: powerAuth
+            auth: powerAuth,
           };
         }
       }
@@ -373,8 +381,8 @@ validateConfig();
 export function isToolEnabledByConfig (toolName: string): boolean {
   // Determine which service this tool belongs to
   const service = toolName.startsWith('jira_') ? 'jira' :
-                 toolName.startsWith('confluence_') ? 'confluence' :
-                 null;
+    toolName.startsWith('confluence_') ? 'confluence' :
+      null;
 
   // Utility tools are always enabled
   if (!service) {

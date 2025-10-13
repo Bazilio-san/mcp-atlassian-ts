@@ -109,7 +109,7 @@ export class ToolRegistry {
         total: this.toolsMap.size,
         jira: { registered: jiraToolsCount, skipped: jiraSkippedCount },
         confluence: { registered: confluenceToolsCount, skipped: confluenceSkippedCount },
-        configSource: 'unified'
+        configSource: 'unified',
       });
     } catch (error) {
       logger.error('Failed to initialize tools', error instanceof Error ? error : new Error(String(error)));
@@ -243,7 +243,7 @@ export class ToolRegistry {
           const matchingKeys = keys.filter(key =>
             pattern.includes('*')
               ? new RegExp(pattern.replace(/\*/g, '.*')).test(key)
-              : key.includes(pattern)
+              : key.includes(pattern),
           );
 
           for (const key of matchingKeys) {
@@ -374,7 +374,7 @@ export class ToolRegistry {
 
         if (expectedType !== actualType && value !== null && value !== undefined) {
           throw new ValidationError(
-            `Invalid type for parameter ${key}: expected ${expectedType}, got ${actualType}`
+            `Invalid type for parameter ${key}: expected ${expectedType}, got ${actualType}`,
           );
         }
       }
@@ -502,7 +502,7 @@ export class ServiceToolRegistry extends ToolRegistry {
         skipped: skippedCount,
         jira: jiraCount,
         confluence: confluenceCount,
-        configSource: 'unified'
+        configSource: 'unified',
       });
     } catch (error) {
       logger.error('Failed to initialize service-specific tools', error instanceof Error ? error : new Error(String(error)));

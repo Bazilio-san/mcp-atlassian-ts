@@ -97,7 +97,7 @@ Examples: ["core-documentation", "api"]`,
           try {
             await context.httpClient.post(`/rest/api/content/${createdPage.id}/label`, {
               prefix: 'global',
-              name: labelName
+              name: labelName,
             });
           } catch (error) {
             context.logger.warn('Failed to add label', { pageId: createdPage.id, label: labelName, error });
@@ -121,5 +121,5 @@ Examples: ["core-documentation", "api"]`,
         ],
       };
     });
-  }
+  },
 };

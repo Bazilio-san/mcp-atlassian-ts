@@ -67,7 +67,7 @@ Examples: "PROJ", "TEAM", "DOC"`,
           expand: context.normalizeToArray(expand).join(','),
           limit,
         },
-        ...(context.customHeaders && { headers: context.customHeaders })
+        ...(context.customHeaders && { headers: context.customHeaders }),
       });
 
       const contentResult = response.data;
@@ -86,7 +86,7 @@ Examples: "PROJ", "TEAM", "DOC"`,
       const contentList = contentResult.results
         .map(
           (content: any) =>
-            `• **${content.title}** (v${content.version.number}) - ${new Date(content.version.when).toLocaleDateString()}`
+            `• **${content.title}** (v${content.version.number}) - ${new Date(content.version.when).toLocaleDateString()}`,
         )
         .join('\n');
 
@@ -102,5 +102,5 @@ Examples: "PROJ", "TEAM", "DOC"`,
         ],
       };
     });
-  }
+  },
 };

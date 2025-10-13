@@ -92,9 +92,9 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
         releaseDate: versionData.releaseDate || null,
         startDate: versionData.startDate || null,
         archived: versionData.archived || false,
-        released: versionData.released || false
+        released: versionData.released || false,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

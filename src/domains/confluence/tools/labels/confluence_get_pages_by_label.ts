@@ -78,7 +78,7 @@ export const confluence_get_pages_by_label: ConfluenceToolWithHandler = {
       // Search pages via HTTP client
       const response = await context.httpClient.get(
         '/rest/api/search',
-        axiosConfig
+        axiosConfig,
       );
 
       const pagesResult = response.data;
@@ -103,7 +103,7 @@ export const confluence_get_pages_by_label: ConfluenceToolWithHandler = {
               `  Version: ${page.version?.number || 'N/A'} - ${page.version?.when ? new Date(page.version.when).toLocaleDateString() : 'N/A'}\n` +
               `  URL: ${context.config.url}/wiki/spaces/${result.space?.key || 'UNKNOWN'}/pages/${page.id}`
             );
-          }
+          },
         )
         .join('\n\n');
 

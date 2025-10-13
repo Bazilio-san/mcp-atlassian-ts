@@ -89,11 +89,21 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
     // Build update data
     const updateData: any = { fields: { ...customFields } };
 
-    if (summary) updateData.fields.summary = summary;
-    if (description) updateData.fields.description = description;
-    if (assignee) updateData.fields.assignee = { accountId: assignee };
-    if (priority) updateData.fields.priority = { name: priority };
-    if (labels) updateData.fields.labels = normalizeToArray(labels);
+    if (summary) {
+      updateData.fields.summary = summary;
+    }
+    if (description) {
+      updateData.fields.description = description;
+    }
+    if (assignee) {
+      updateData.fields.assignee = { accountId: assignee };
+    }
+    if (priority) {
+      updateData.fields.priority = { name: priority };
+    }
+    if (labels) {
+      updateData.fields.labels = normalizeToArray(labels);
+    }
 
     // Make API call
     await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
@@ -101,12 +111,12 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
     const json = {
       success: true,
       operation: 'update_issue',
-      message:  `JIRA issue ${issueIdOrKey} updated successfully`,
+      message: `JIRA issue ${issueIdOrKey} updated successfully`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       updatedFields: Object.keys(updateData.fields),
       fieldValues: updateData.fields,
       link: `${config.url}/browse/${issueIdOrKey}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

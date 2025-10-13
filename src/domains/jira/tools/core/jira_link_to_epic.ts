@@ -55,7 +55,7 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
 
       // Use the Agile API to link issue to epic
       await httpClient.post(`/rest/agile/1.0/epic/${epicKey}/issue`, {
-        issues: [issueIdOrKey]
+        issues: [issueIdOrKey],
       });
 
       logger.info('Successfully linked using Agile API');
@@ -66,7 +66,7 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       logger.info('Epic Link field configuration', {
         epicLinkFieldId,
         configuredValue: config.epicLinkFieldId,
-        envValue: process.env.JIRA_EPIC_LINK_FIELD_ID
+        envValue: process.env.JIRA_EPIC_LINK_FIELD_ID,
       });
 
       if (epicLinkFieldId) {
@@ -86,8 +86,8 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
         } catch (fieldError: any) {
           // If both methods fail, provide comprehensive error
           const errorMessage = fieldError.response?.data?.errors?.[epicLinkFieldId] ||
-                               fieldError.message ||
-                               'Failed to link issue to epic';
+            fieldError.message ||
+            'Failed to link issue to epic';
           throw new Error(`Unable to link issue to epic. ${errorMessage}. Epic: ${epicKey}, Issue: ${issueIdOrKey}`);
         }
       } else {
@@ -108,9 +108,9 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       epicKey: epicKey,
       links: {
         issue: `${config.url}/browse/${issueIdOrKey}`,
-        epic: `${config.url}/browse/${epicKey}`
+        epic: `${config.url}/browse/${epicKey}`,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

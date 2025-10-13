@@ -66,7 +66,7 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
     const json = {
       success: true,
       operation: 'batch_get_changelogs',
-      message:  `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`,
+      message: `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,
       attachments: attachments.map((a: any) => ({

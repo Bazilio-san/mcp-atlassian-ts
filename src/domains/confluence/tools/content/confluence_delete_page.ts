@@ -44,7 +44,7 @@ export const confluence_delete_page: ToolWithHandler = {
         status: status,
         version: {
           number: 1, // Required for status change
-        }
+        },
       });
 
       // Invalidate cache for this page
@@ -62,5 +62,5 @@ export const confluence_delete_page: ToolWithHandler = {
         ],
       };
     });
-  }
+  },
 };

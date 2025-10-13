@@ -36,16 +36,16 @@ function loadToolConfig () {
 }
 
 function isToolEnabledByConfig (toolName, config) {
-  if (!config) return true; // Default to enabled if no config
+  if (!config) {return true;} // Default to enabled if no config
 
   // Determine service from tool name
   const service = toolName.startsWith('jira_') ? 'jira' :
     toolName.startsWith('confluence_') ? 'confluence' : null;
 
-  if (!service || !config[service]) return true;
+  if (!service || !config[service]) {return true;}
 
   const usedInstruments = config[service].usedInstruments;
-  if (!usedInstruments) return true;
+  if (!usedInstruments) {return true;}
 
   // Check if tool is in include list
   if (usedInstruments.include === 'ALL') {
@@ -894,7 +894,7 @@ export class JiraMcpTestCases {
       if (filter.includes('-')) {
         // Specific test ID like "1-3" or "8-1"
         const testCase = allTestCases.find(tc => tc.fullId === filter);
-        if (testCase) selectedTestCases.push(testCase);
+        if (testCase) {selectedTestCases.push(testCase);}
       } else if (filter.match(/^\d+\*?$/)) {
         // Single group number like "1" or "1*" - run all tests in group
         const groupNum = parseInt(filter.replace('*', ''));
@@ -902,7 +902,7 @@ export class JiraMcpTestCases {
       } else {
         // Tool name
         const testCase = allTestCases.find(tc => tc.toolName === filter);
-        if (testCase) selectedTestCases.push(testCase);
+        if (testCase) {selectedTestCases.push(testCase);}
       }
     });
 

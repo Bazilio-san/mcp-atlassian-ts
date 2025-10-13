@@ -61,7 +61,7 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
           (field: any) =>
             (field.name && field.name.toLowerCase().includes(query.toLowerCase())) ||
             (field.key && field.key.toLowerCase().includes(query.toLowerCase())) ||
-            (field.id && field.id.toLowerCase().includes(query.toLowerCase()))
+            (field.id && field.id.toLowerCase().includes(query.toLowerCase())),
         );
       }
       return allFields;
@@ -86,9 +86,9 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
         type: field.schema?.type || 'unknown',
         custom: field.custom || false,
         orderable: field.orderable || false,
-        searchable: field.searchable || false
+        searchable: field.searchable || false,
       })),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

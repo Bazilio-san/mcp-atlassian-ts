@@ -301,7 +301,7 @@ export class McpAtlassianServer {
           logger.info('HTTP MCP request received', {
             method,
             id,
-            customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined
+            customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined,
           });
 
           let result;
@@ -371,7 +371,7 @@ export class McpAtlassianServer {
                   code: errorObj.code,
                   details: errorObj.details,
                   // stack: process.env.NODE_ENV === 'development' ? errorObj.stack : undefined
-                }
+                },
               };
             } else {
               // Standard error handling for non-MCP errors

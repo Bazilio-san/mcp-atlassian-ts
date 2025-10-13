@@ -274,8 +274,8 @@ export class JiraToolsManager {
    * Normalize string or array parameter to array
    */
   private normalizeToArray (value: string | string[] | undefined): string[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
+    if (!value) {return [];}
+    if (Array.isArray(value)) {return value;}
     return [value];
   }
 
@@ -283,19 +283,19 @@ export class JiraToolsManager {
    * Format description field
    */
   private formatDescription (description: any): string {
-    if (!description) return '';
-    if (typeof description === 'string') return description;
+    if (!description) {return '';}
+    if (typeof description === 'string') {return description;}
 
     // Handle JIRA's ADF (Atlassian Document Format)
     if (description && typeof description === 'object') {
       if (description.content) {
         // Simple extraction of text from ADF
         const extractText = (node: any): string => {
-          if (node.type === 'text') return node.text || '';
+          if (node.type === 'text') {return node.text || '';}
           if (node.content && Array.isArray(node.content)) {
             return node.content.map(extractText).join('');
           }
-          if (node.type === 'hardBreak') return '\n';
+          if (node.type === 'hardBreak') {return '\n';}
           return '';
         };
         return extractText(description);
@@ -310,7 +310,7 @@ export class JiraToolsManager {
    * Expand string or array to comma-separated string
    */
   private expandStringOrArray (value: string | string[] | undefined, separator: string = ','): string | undefined {
-    if (!value) return undefined;
+    if (!value) {return undefined;}
     const arr = this.normalizeToArray(value);
     return arr.length > 0 ? arr.join(separator) : undefined;
   }

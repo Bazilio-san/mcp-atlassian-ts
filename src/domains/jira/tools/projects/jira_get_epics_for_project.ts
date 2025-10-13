@@ -89,7 +89,7 @@ async function getEpicsForProjectHandler (args: any, context: ToolContext): Prom
           id: issue.id,
         };
       }),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

@@ -113,7 +113,7 @@ class JiraDirectApiExecutor {
    */
   async parseResponse (response) {
     const text = await response.text();
-    if (!text) return null;
+    if (!text) {return null;}
     try {
       return JSON.parse(text);
     } catch {
@@ -125,10 +125,10 @@ class JiraDirectApiExecutor {
    * Extract error message from response data
    */
   getErrorMessage (data) {
-    if (!data) return 'Unknown error';
-    if (data.errorMessages) return data.errorMessages.join(', ');
-    if (data.errors) return JSON.stringify(data.errors);
-    if (typeof data === 'string') return data;
+    if (!data) {return 'Unknown error';}
+    if (data.errorMessages) {return data.errorMessages.join(', ');}
+    if (data.errors) {return JSON.stringify(data.errors);}
+    if (typeof data === 'string') {return data;}
     return 'Unknown error';
   }
 
@@ -933,7 +933,7 @@ class JiraDirectApiExecutor {
    * (copied from BaseTestExecutor)
    */
   shouldRunTest (testCase) {
-    if (!this.testFilter) return true;
+    if (!this.testFilter) {return true;}
 
     // Support multiple filter formats
     // Format: "1-1,2-*,3-5"
@@ -946,10 +946,10 @@ class JiraDirectApiExecutor {
       if (filter.includes('*')) {
         // Wildcard matching (e.g., "2-*")
         const prefix = filter.replace('*', '');
-        if (testId.startsWith(prefix)) return true;
+        if (testId.startsWith(prefix)) {return true;}
       } else {
         // Exact match
-        if (testId === filter) return true;
+        if (testId === filter) {return true;}
       }
     }
 

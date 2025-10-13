@@ -43,7 +43,7 @@ export class ConfluenceServer extends McpAtlassianServer {
       logLevel,
       transportType,
       rateLimit,
-      cache
+      cache,
     };
 
     // Build auth config from Confluence config

@@ -61,7 +61,7 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
     // Build transition data to match JIRA API format
     const transitionData: any = {
       transition: { id: transitionId },
-      fields
+      fields,
     };
 
     // Add comment if provided
@@ -78,14 +78,14 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
     const json = {
       success: true,
       operation: 'transition_issue',
-      message:  `Issue ${issueIdOrKey} transitioned successfully (transition ID: ${transitionId})`,
+      message: `Issue ${issueIdOrKey} transitioned successfully (transition ID: ${transitionId})`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       transitionId: transitionId,
       transitionName: transitions.find((t: any) => t.id === transitionId)?.name || undefined,
       comment: comment || null,
       fields: fields,
       link: `${config.url}/browse/${issueIdOrKey}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

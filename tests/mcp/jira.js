@@ -395,7 +395,7 @@ class JiraMcpHttpTester {
     };
 
     const patterns = expectedFailures[toolName];
-    if (!patterns) return false;
+    if (!patterns) {return false;}
 
     return patterns.some(pattern =>
       errorMessage.toLowerCase().includes(pattern.toLowerCase()),

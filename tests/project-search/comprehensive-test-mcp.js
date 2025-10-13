@@ -13,6 +13,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { spawn } from 'child_process';
+import { rn } from '../../dist/src/core/utils/tools.js';
 
 // Цветной вывод
 const colors = {
@@ -60,7 +61,7 @@ async function createMCPClient () {
   // Возвращаем HTTP клиент
   return {
     client: null, // Используем прямые HTTP запросы
-    serverProcess: null
+    serverProcess: null,
   };
 }
 
@@ -173,19 +174,20 @@ async function testProjectSearch (client, query, description) {
     }
 
     // Выводим первые 5 кандидатов по убыванию score для отладки
+    let top5 = '';
     if (projects.length > 0) {
-      const top5 = projects
+      top5 = projects
         .sort((a, b) => (b.score || 0) - (a.score || 0))
         .slice(0, 5)
-        .map(p => `${p.key}(${p.score || 0})`)
+        .map(p => `${p.key}(${rn(p.score, 2) || 0})`)
         .join(', ');
-      console.log(`   ${colors.gray}Top 5: ${top5}${colors.reset}`);
     }
 
     return {
       success: true,
       projects: projects,
       count: projects.length,
+      top5,
     };
   } catch (error) {
     return {
@@ -213,13 +215,10 @@ async function runSearchTests (client, realProjects, testPhase) {
     const success = test.expectResults ? result.count > 0 : result.count === 0;
 
     if (success) {
-      console.log(`${colors.green}✅${colors.reset} "${test.query}" → ${
-        result.count} results ${colors.gray}// ${test.description}${colors.reset}`);
+      console.log(`✅  "${test.query}" → ${result.top5}`);
       passed++;
     } else {
-      console.log(`${colors.red}❌${colors.reset} "${test.query}" → ${
-        result.count} results ${colors.gray}// ${test.description} - Expected: ${
-        test.expectResults ? 'results' : 'no results'}${colors.reset}`);
+      console.log(`❌  "${test.query}" → ${result.top5}`);
       failed++;
     }
 
@@ -234,10 +233,10 @@ async function runSearchTests (client, realProjects, testPhase) {
       // Тест точного совпадения по ключу
       const keyResult = await testProjectSearch(client, project.key, `Exact key: ${project.key}`);
       if (keyResult.count > 0 && keyResult.projects[0].key === project.key) {
-        console.log(`${colors.green}✅${colors.reset} "${project.key}" → Found correctly`);
+        console.log(`✅  "${project.key}" → ${keyResult.top5}`);
         passed++;
       } else {
-        console.log(`${colors.red}❌${colors.reset} "${project.key}" → Not found or incorrect`);
+        console.log(`❌  "${project.key}" → ${keyResult.top5}`);
         failed++;
       }
 
@@ -245,10 +244,10 @@ async function runSearchTests (client, realProjects, testPhase) {
       if (project.name && project.name !== project.key) {
         const nameResult = await testProjectSearch(client, project.name, `By name: ${project.name}`);
         if (nameResult.count > 0) {
-          console.log(`${colors.green}✅${colors.reset} "${project.name}" → Found by name`);
+          console.log(`✅  "${project.name}" → ${nameResult.top5}`);
           passed++;
         } else {
-          console.log(`${colors.red}❌${colors.reset} "${project.name}" → Not found by name`);
+          console.log(`❌  "${project.name}" → ${nameResult.top5}`);
           failed++;
         }
       }
@@ -258,10 +257,10 @@ async function runSearchTests (client, realProjects, testPhase) {
         const partial = project.key.substring(0, Math.ceil(project.key.length / 2));
         const partialResult = await testProjectSearch(client, partial, `Partial: ${partial}`);
         if (partialResult.count > 0) {
-          console.log(`${colors.green}✅${colors.reset} "${partial}" → Found by partial match`);
+          console.log(`✅  "${partial}" → ${partialResult.top5}`);
           passed++;
         } else {
-          console.log(`${colors.yellow}⚠️${colors.reset} "${partial}" → No partial match`);
+          console.log(`⚠️  "${partial}" → ${partialResult.top5}`);
           // Не считаем как ошибку, так как частичное совпадение не гарантировано
         }
       }
@@ -336,7 +335,7 @@ async function runComprehensiveTest () {
     const phase2Results = await runSearchTests(
       client,
       realProjects,
-      'Phase 2: Initial search tests'
+      'Phase 2: Initial search tests',
     );
 
     // ========== ФАЗА 3: Принудительное обновление индекса ==========
@@ -367,7 +366,7 @@ async function runComprehensiveTest () {
     const phase4Results = await runSearchTests(
       client,
       realProjects,
-      'Phase 4: Search after update'
+      'Phase 4: Search after update',
     );
 
     // ========== ИТОГОВЫЕ РЕЗУЛЬТАТЫ ==========

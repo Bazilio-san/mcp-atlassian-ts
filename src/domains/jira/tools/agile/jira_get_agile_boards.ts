@@ -66,9 +66,15 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
 
     // Build query parameters
     const params: any = { startAt, maxResults };
-    if (type) params.type = type;
-    if (name) params.name = name;
-    if (projectIdOrKey) params.projectIdOrKey = projectIdOrKey;
+    if (type) {
+      params.type = type;
+    }
+    if (name) {
+      params.name = name;
+    }
+    if (projectIdOrKey) {
+      params.projectIdOrKey = projectIdOrKey;
+    }
 
     logger.info('Making API call to get agile boards');
     const response = await httpClient.get('/rest/agile/1.0/board', { params });

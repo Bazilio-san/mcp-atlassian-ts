@@ -59,15 +59,15 @@ export class ConfluenceToolsManager {
     this.context = {
       httpClient,
       cache: {
-        getOrSet: <T>(key: string, fn: () => Promise<T>, ttl?: number) => cache.getOrSet(key, fn, ttl),
+        getOrSet: <T> (key: string, fn: () => Promise<T>, ttl?: number) => cache.getOrSet(key, fn, ttl),
         del: (key: string) => cache.del(key),
-        keys: () => cache.keys()
+        keys: () => cache.keys(),
       },
       config,
       logger,
       normalizeToArray: this.normalizeToArray.bind(this),
       invalidatePageCache: this.invalidatePageCache.bind(this),
-      customHeaders: undefined
+      customHeaders: undefined,
     };
 
     // Register all tools with their handlers
@@ -101,7 +101,7 @@ export class ConfluenceToolsManager {
       confluence_get_page_history,
 
       // Users tools
-      confluence_search_user
+      confluence_search_user,
     ];
 
     // Create maps for fast lookup
@@ -140,7 +140,7 @@ export class ConfluenceToolsManager {
   async executeTool (
     toolName: string,
     args: Record<string, any>,
-    customHeaders?: Record<string, string>
+    customHeaders?: Record<string, string>,
   ): Promise<any> {
     const tool = this.tools.get(toolName);
     if (!tool || !('handler' in tool)) {
@@ -162,14 +162,14 @@ export class ConfluenceToolsManager {
           }
           return config;
         },
-        error => Promise.reject(error)
+        error => Promise.reject(error),
       );
 
       // Create context with custom HTTP client
       contextToUse = {
         ...this.context,
         httpClient: customHttpClient,
-        customHeaders
+        customHeaders,
       };
     }
 
@@ -184,12 +184,12 @@ export class ConfluenceToolsManager {
     return withErrorHandling(async () => {
       // Confluence doesn't have a direct /myself endpoint, so we'll use space list
       const response = await this.context.httpClient.get('/wiki/rest/api/space', {
-        params: { limit: 1 }
+        params: { limit: 1 },
       });
 
       return {
         status: 'ok',
-        spacesAvailable: response.data.size
+        spacesAvailable: response.data.size,
       };
     });
   }
@@ -207,7 +207,7 @@ export class ConfluenceToolsManager {
     const relatedKeys = keys.filter(key =>
       key.includes(`page:${pageId}`) ||
       key.includes('page-by-title') ||
-      key.includes('search:')
+      key.includes('search:'),
     );
 
     for (const key of relatedKeys) {
@@ -216,7 +216,7 @@ export class ConfluenceToolsManager {
 
     this.context.logger.debug('Cache invalidated for page', {
       pageId,
-      keysCleared: relatedKeys.length
+      keysCleared: relatedKeys.length,
     });
   }
 
@@ -224,8 +224,12 @@ export class ConfluenceToolsManager {
    * Normalize string or array parameter to array
    */
   private normalizeToArray (value: string | string[] | undefined): string[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
+    if (!value) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
     return [value];
   }
 }

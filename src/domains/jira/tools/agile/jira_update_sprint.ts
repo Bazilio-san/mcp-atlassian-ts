@@ -71,12 +71,24 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
 
     // Build update data - only include provided fields
     const sprintData: any = {};
-    if (name !== undefined) sprintData.name = name;
-    if (goal !== undefined) sprintData.goal = goal;
-    if (state !== undefined) sprintData.state = state;
-    if (startDate !== undefined) sprintData.startDate = startDate;
-    if (endDate !== undefined) sprintData.endDate = endDate;
-    if (completeDate !== undefined) sprintData.completeDate = completeDate;
+    if (name !== undefined) {
+      sprintData.name = name;
+    }
+    if (goal !== undefined) {
+      sprintData.goal = goal;
+    }
+    if (state !== undefined) {
+      sprintData.state = state;
+    }
+    if (startDate !== undefined) {
+      sprintData.startDate = startDate;
+    }
+    if (endDate !== undefined) {
+      sprintData.endDate = endDate;
+    }
+    if (completeDate !== undefined) {
+      sprintData.completeDate = completeDate;
+    }
 
     // If no fields to update, return error
     if (Object.keys(sprintData).length === 0) {

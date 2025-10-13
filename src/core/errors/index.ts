@@ -20,7 +20,7 @@ export class McpAtlassianError extends Error implements McpError {
     code: string,
     message: string,
     details?: Record<string, unknown>,
-    statusCode: number = 500
+    statusCode: number = 500,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -126,7 +126,7 @@ export class NotFoundError extends McpAtlassianError {
       'NOT_FOUND_ERROR',
       `${resource} with identifier '${identifier}' not found`,
       { resource, identifier, ...details },
-      404
+      404,
     );
   }
 }
@@ -140,7 +140,7 @@ export class ToolExecutionError extends McpAtlassianError {
       'TOOL_EXECUTION_ERROR',
       `Failed to execute tool '${toolName}': ${message}`,
       { toolName, ...details },
-      400
+      400,
     );
   }
 }
@@ -182,7 +182,7 @@ export interface ErrorResponse {
  */
 export function createErrorResponse (
   error: Error | McpAtlassianError,
-  requestId?: string
+  requestId?: string,
 ): ErrorResponse {
   const isCustomError = error instanceof McpAtlassianError;
 
@@ -224,10 +224,10 @@ export function asyncErrorHandler<T extends any[], R> (fn: (...args: T) => Promi
         originalError:
           error instanceof Error
             ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              }
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
             : error,
       });
     }
@@ -257,10 +257,10 @@ export function errorBoundary (target: any, propertyKey: string, descriptor: Pro
         originalError:
           error instanceof Error
             ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              }
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
             : error,
       });
     }
@@ -275,7 +275,7 @@ export function errorBoundary (target: any, propertyKey: string, descriptor: Pro
 export function createErrorFromStatus (
   status: number,
   message: string,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
 ): McpAtlassianError {
   switch (status) {
     case 400:
@@ -331,7 +331,7 @@ export function handleAxiosError (error: any): never {
  */
 export async function withErrorHandling<T> (
   operation: () => Promise<T>,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<T> {
   try {
     return await operation();
@@ -340,7 +340,7 @@ export async function withErrorHandling<T> (
     logger.error(
       'Operation failed',
       error instanceof Error ? error : new Error(String(error)),
-      context
+      context,
     );
 
     // Re-throw if it's already a custom error
@@ -360,10 +360,10 @@ export async function withErrorHandling<T> (
       originalError:
         error instanceof Error
           ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
           : error,
     });
   }

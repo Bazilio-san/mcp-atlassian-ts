@@ -48,9 +48,9 @@ export const confluence_search_user: ConfluenceToolWithHandler = {
           ...axiosConfig,
           params: {
             cql: `user.fullname ~ "${query}" OR user.email ~ "${query}"`,
-            limit
-          }
-        }
+            limit,
+          },
+        },
       );
 
       const users = response.data.results || [];
@@ -71,7 +71,7 @@ export const confluence_search_user: ConfluenceToolWithHandler = {
           (user: any) =>
             `• **${user.displayName}** (${user.username})\n` +
             `  Email: ${user.email || 'Not available'}\n` +
-            `  Active: ${user.active ? 'Yes' : 'No'}`
+            `  Active: ${user.active ? 'Yes' : 'No'}`,
         )
         .join('\n\n');
 

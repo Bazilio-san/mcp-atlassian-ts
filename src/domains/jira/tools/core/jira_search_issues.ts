@@ -91,13 +91,17 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
           startAt: searchRequest.startAt,
           maxResults: searchRequest.maxResults,
         };
-        if (searchRequest.expand?.length) params.expand = searchRequest.expand.join(',');
-        if (searchRequest.fields?.length) params.fields = searchRequest.fields.join(',');
+        if (searchRequest.expand?.length) {
+          params.expand = searchRequest.expand.join(',');
+        }
+        if (searchRequest.fields?.length) {
+          params.fields = searchRequest.fields.join(',');
+        }
 
         const response = await httpClient.get('/rest/api/2/search', { params });
         return response.data;
       },
-      60 // Cache for 1 minute
+      60, // Cache for 1 minute
     );
 
     // Handle empty results
@@ -108,7 +112,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
         total: 0,
         issues: [],
         searchUrl: `${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       return {
@@ -139,10 +143,10 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
         status: issue.fields.status.name,
         assignee: issue.fields.assignee ? issue.fields.assignee.displayName : 'Unassigned',
         priority: issue.fields.priority ? issue.fields.priority.name : 'None',
-        issueType: issue.fields.issuetype ? issue.fields.issuetype.name : 'Unknown'
+        issueType: issue.fields.issuetype ? issue.fields.issuetype.name : 'Unknown',
       })),
       searchUrl: `${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);

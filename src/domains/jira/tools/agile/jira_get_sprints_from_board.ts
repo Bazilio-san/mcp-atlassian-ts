@@ -62,7 +62,7 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
 
     // Build query parameters
     const params: any = { startAt, maxResults };
-    if (state) params.state = state;
+    if (state) {params.state = state;}
 
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'boardSprints', { boardId, ...params });

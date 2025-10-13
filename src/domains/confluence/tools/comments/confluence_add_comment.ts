@@ -52,7 +52,7 @@ export const confluence_add_comment: ConfluenceToolWithHandler = {
       }
 
       const response = await context.httpClient.post('/rest/api/content', commentInput, {
-        ...(context.customHeaders && { headers: context.customHeaders })
+        ...(context.customHeaders && { headers: context.customHeaders }),
       });
 
       const comment = response.data;
@@ -72,7 +72,7 @@ export const confluence_add_comment: ConfluenceToolWithHandler = {
         ],
       };
     });
-  }
+  },
 };
 
 /**

@@ -62,7 +62,7 @@ export const confluence_get_labels: ConfluenceToolWithHandler = {
       // Get labels via HTTP client
       const response = await context.httpClient.get(
         `/rest/api/content/${pageId}/label`,
-        axiosConfig
+        axiosConfig,
       );
 
       const labelsResult = response.data;

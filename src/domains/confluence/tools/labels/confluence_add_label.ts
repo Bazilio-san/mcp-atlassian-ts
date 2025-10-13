@@ -56,7 +56,7 @@ export const confluence_add_label: ConfluenceToolWithHandler = {
           prefix,
           name: label,
         },
-        axiosConfig
+        axiosConfig,
       );
 
       return {

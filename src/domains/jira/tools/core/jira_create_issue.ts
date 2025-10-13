@@ -20,7 +20,7 @@ const priorityEnum = [
   'Major',
   'Minor',
   'Trivial',
-  'Blocker'
+  'Blocker',
 ];
 
 /**
@@ -121,7 +121,7 @@ Among them you need to choose the right one`,
     required: [
       'projectKey', 'issueType', 'summary',
       'description', 'assignee', 'reporter', 'priority',
-      'labels', 'epicKey', 'components', 'originalEstimate', 'remainingEstimate'
+      'labels', 'epicKey', 'components', 'originalEstimate', 'remainingEstimate',
     ],
     additionalProperties: false,
   },
@@ -160,9 +160,15 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     logger.info('Creating JIRA issue', { projectIdOrKey, issueType, summary });
 
     // Validate required fields
-    if (!projectIdOrKey) throw new ValidationError('Project is required');
-    if (!issueType) throw new ValidationError('Issue type is required');
-    if (!summary) throw new ValidationError('Summary is required');
+    if (!projectIdOrKey) {
+      throw new ValidationError('Project is required');
+    }
+    if (!issueType) {
+      throw new ValidationError('Issue type is required');
+    }
+    if (!summary) {
+      throw new ValidationError('Summary is required');
+    }
 
     // Normalize labels and components
     const normalizedLabels = normalizeToArray(labels);
@@ -179,11 +185,21 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     };
 
     // Add optional fields
-    if (description) issueInput.fields.description = description;
-    if (assignee) issueInput.fields.assignee = { name: assignee };
-    if (reporter) issueInput.fields.reporter = { name: reporter };
-    if (priority) issueInput.fields.priority = { name: priority };
-    if (normalizedLabels.length > 0) issueInput.fields.labels = normalizedLabels;
+    if (description) {
+      issueInput.fields.description = description;
+    }
+    if (assignee) {
+      issueInput.fields.assignee = { name: assignee };
+    }
+    if (reporter) {
+      issueInput.fields.reporter = { name: reporter };
+    }
+    if (priority) {
+      issueInput.fields.priority = { name: priority };
+    }
+    if (normalizedLabels.length > 0) {
+      issueInput.fields.labels = normalizedLabels;
+    }
     if (normalizedComponents.length > 0) {
       issueInput.fields.components = normalizedComponents.map((c: string) => ({ name: c }));
     }

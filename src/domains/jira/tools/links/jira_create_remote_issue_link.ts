@@ -63,8 +63,12 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
 
     // Build link data
     const linkData: any = { url, title };
-    if (summary) linkData.summary = summary;
-    if (iconUrl) linkData.icon = { url16x16: iconUrl, title };
+    if (summary) {
+      linkData.summary = summary;
+    }
+    if (iconUrl) {
+      linkData.icon = { url16x16: iconUrl, title };
+    }
 
     // Create the remote link
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/remotelink`, {

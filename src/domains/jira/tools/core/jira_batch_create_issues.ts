@@ -98,7 +98,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     const issueInputs = issues.map((issue: any) => ({
       fields: {
         project: {
-          [/^\d+$/.test(issue.projectIdOrKey) ? 'id' : 'key']: issue.projectIdOrKey
+          [/^\d+$/.test(issue.projectIdOrKey) ? 'id' : 'key']: issue.projectIdOrKey,
         },
         issuetype: { name: issue.issueType },
         summary: issue.summary,

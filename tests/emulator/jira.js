@@ -1143,9 +1143,9 @@ export class JiraEmulator {
         return;
       }
 
-      if (req.body.comment !== undefined) worklog.comment = req.body.comment;
-      if (req.body.timeSpent !== undefined) worklog.timeSpent = req.body.timeSpent;
-      if (req.body.timeSpentSeconds !== undefined) worklog.timeSpentSeconds = req.body.timeSpentSeconds;
+      if (req.body.comment !== undefined) {worklog.comment = req.body.comment;}
+      if (req.body.timeSpent !== undefined) {worklog.timeSpent = req.body.timeSpent;}
+      if (req.body.timeSpentSeconds !== undefined) {worklog.timeSpentSeconds = req.body.timeSpentSeconds;}
       worklog.updated = new Date().toISOString();
 
       console.log(chalk.green(`[JIRA EMULATOR] Updated worklog ${worklogId} for ${issueKey}`));
@@ -1284,7 +1284,7 @@ export class JiraEmulator {
       const outwardIssueData = issues.get(outwardIssue.key);
 
       if (inwardIssueData) {
-        if (!inwardIssueData.fields.issuelinks) inwardIssueData.fields.issuelinks = [];
+        if (!inwardIssueData.fields.issuelinks) {inwardIssueData.fields.issuelinks = [];}
         inwardIssueData.fields.issuelinks.push({
           id: linkId,
           type: newLink.type,
@@ -1293,7 +1293,7 @@ export class JiraEmulator {
       }
 
       if (outwardIssueData) {
-        if (!outwardIssueData.fields.issuelinks) outwardIssueData.fields.issuelinks = [];
+        if (!outwardIssueData.fields.issuelinks) {outwardIssueData.fields.issuelinks = [];}
         outwardIssueData.fields.issuelinks.push({
           id: linkId,
           type: newLink.type,

@@ -29,7 +29,7 @@ export class CacheManager {
       ttlSeconds?: number;
       maxItems?: number;
       checkPeriod?: number;
-    } = {}
+    } = {},
   ) {
     const { ttlSeconds = 300, maxItems = 1000, checkPeriod = 120 } = options;
 
@@ -368,7 +368,7 @@ export class CacheManager {
 export function generateCacheKey (
   service: 'jira' | 'confluence',
   endpoint: string,
-  params?: Record<string, any>
+  params?: Record<string, any>,
 ): string {
   const baseKey = `${service}:${endpoint}`;
 

@@ -5,10 +5,10 @@ import {
   IJiraCreateMetaResponse, IJiraProject, TKeyName,
 } from '../../../../../types/index.js';
 import { createLogger } from '../../../../../core/utils/logger.js';
-import { transliterate, transliterateRU } from '../../../../../core/utils/text.js';
 import { createAuthenticationManager } from '../../../../../core/auth/index.js';
 import { appConfig } from '../../../../../bootstrap/init-config.js';
 import type { AuthConfig } from '../../../../../types/index.js';
+import { transliterate, transliterateRU } from '../../../../../core/utils/transliterate.js';
 // Lazy import для избежания циклических зависимостей
 let updateProjectsIndex: any;
 
@@ -51,17 +51,17 @@ const initializePowerHttpClient = (): void => {
       authConfig = {
         type: 'basic' as const,
         username: powerAuth.basic.username,
-        password: powerAuth.basic.password
+        password: powerAuth.basic.password,
       };
     } else if (powerAuth.pat) {
       authConfig = {
         type: 'pat' as const,
-        token: powerAuth.pat
+        token: powerAuth.pat,
       };
     } else if (powerAuth.oauth2) {
       authConfig = {
         ...powerAuth.oauth2,
-        type: 'oauth2' as const
+        type: 'oauth2' as const,
       };
     } else {
       throw new Error('No valid power endpoint authentication configured');
@@ -69,7 +69,7 @@ const initializePowerHttpClient = (): void => {
 
     const authManager = createAuthenticationManager(
       authConfig,
-      appConfig.jira.powerEndpoint.baseUrl
+      appConfig.jira.powerEndpoint.baseUrl,
     );
     powerHttpClient = authManager.getHttpClient();
     logger.info('Power HTTP client initialized for JIRA projects');
@@ -86,17 +86,17 @@ const initializePowerHttpClient = (): void => {
       authConfig = {
         type: 'basic' as const,
         username: jiraAuth.basic.username,
-        password: jiraAuth.basic.password
+        password: jiraAuth.basic.password,
       };
     } else if (jiraAuth.pat) {
       authConfig = {
         type: 'pat' as const,
-        token: jiraAuth.pat
+        token: jiraAuth.pat,
       };
     } else if (jiraAuth.oauth2) {
       authConfig = {
         ...jiraAuth.oauth2,
-        type: 'oauth2' as const
+        type: 'oauth2' as const,
       };
     } else {
       throw new Error('No valid JIRA authentication configured');
@@ -144,7 +144,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
             [SYM_TR_RU_KEY_LC]: keyRuLC,
             [SYM_TR_RU_KEY_UC]: keyRuLC.toUpperCase(),
             [SYM_TR_NAME_UC]: transliterate(name).toUpperCase(),
-            [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC)
+            [SYM_TR_RU_NAME_LC]: transliterateRU(nameLC),
           };
         })
         : [];

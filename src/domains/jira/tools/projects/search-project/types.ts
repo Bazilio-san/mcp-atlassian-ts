@@ -1,4 +1,4 @@
-// Типы данных для поиска проектов JIRA с помощью векторного поиска
+// Типы данных для поиска проектов JIRA с помощью string similarity
 
 import { TKeyName } from '../../../../../types';
 
@@ -14,21 +14,13 @@ export interface JiraProjectWithIssueTypes { // VVR
 }
 
 export interface TKeyNameScore extends TKeyName {
-  score?: number;  // Косинусное расстояние (0 = идеальное совпадение)
-}
-
-export interface ProjectEmbeddingRecord {
-  key: string;
-  name: string;
-  searchText: string;
-  embedding: number[] | null;
-  updatedAt: number;
+  score?: number;  // Схожесть строк (1.0 = идеальное совпадение)
 }
 
 export interface ProjectSearchOptions {
   query: string;
   limit?: number;
-  threshold?: number; // Порог косинусного расстояния (по умолчанию 0.7)
+  threshold?: number; // Порог схожести строк (по умолчанию 0.72)
 }
 
 // Символы для кеширования вариаций текста

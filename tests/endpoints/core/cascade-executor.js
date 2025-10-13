@@ -151,8 +151,8 @@ class CascadeExecutor {
    */
   extractResourceId (data, testCaseName) {
     // Check common ID fields
-    if (data.key) return data.key;
-    if (data.id) return data.id;
+    if (data.key) {return data.key;}
+    if (data.id) {return data.id;}
 
     // Handle specific test case types
     if (testCaseName.includes('Issue')) {
@@ -178,16 +178,16 @@ class CascadeExecutor {
    * Determine resource type by test case name
    */
   getResourceType (testCaseName) {
-    if (testCaseName.includes('Issue')) return 'issues';
-    if (testCaseName.includes('Version')) return 'versions';
-    if (testCaseName.includes('Comment')) return 'comments';
-    if (testCaseName.includes('Worklog')) return 'worklogs';
-    if (testCaseName.includes('Link')) return 'links';
-    if (testCaseName.includes('Attachment')) return 'attachments';
-    if (testCaseName.includes('Sprint')) return 'sprints';
-    if (testCaseName.includes('Board')) return 'boards';
-    if (testCaseName.includes('Project')) return 'projects';
-    if (testCaseName.includes('WorkflowScheme')) return 'workflowSchemes';
+    if (testCaseName.includes('Issue')) {return 'issues';}
+    if (testCaseName.includes('Version')) {return 'versions';}
+    if (testCaseName.includes('Comment')) {return 'comments';}
+    if (testCaseName.includes('Worklog')) {return 'worklogs';}
+    if (testCaseName.includes('Link')) {return 'links';}
+    if (testCaseName.includes('Attachment')) {return 'attachments';}
+    if (testCaseName.includes('Sprint')) {return 'sprints';}
+    if (testCaseName.includes('Board')) {return 'boards';}
+    if (testCaseName.includes('Project')) {return 'projects';}
+    if (testCaseName.includes('WorkflowScheme')) {return 'workflowSchemes';}
     return 'other';
   }
 

@@ -44,7 +44,7 @@ export class JiraServer extends McpAtlassianServer {
       logLevel,
       transportType,
       rateLimit,
-      cache
+      cache,
     };
 
     // Build auth config from JIRA config - prioritize Basic auth

@@ -65,8 +65,8 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
 
     // Fetch from API
     const params: any = {};
-    if (expandArray?.length) params.expand = expandArray.join(',');
-    if (fieldsArray?.length) params.fields = fieldsArray.join(',');
+    if (expandArray?.length) {params.expand = expandArray.join(',');}
+    if (fieldsArray?.length) {params.fields = fieldsArray.join(',');}
 
     const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, { params });
     const issue = response.data;

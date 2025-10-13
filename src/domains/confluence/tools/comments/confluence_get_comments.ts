@@ -60,7 +60,7 @@ Can be a single string or array of strings`,
 
       const response = await context.httpClient.get(`/rest/api/content/${pageId}/child/comment`, {
         params,
-        ...(context.customHeaders && { headers: context.customHeaders })
+        ...(context.customHeaders && { headers: context.customHeaders }),
       });
 
       const commentsResult = response.data;
@@ -80,7 +80,7 @@ Can be a single string or array of strings`,
         .map(
           (comment: any) =>
             `• **${comment.history.createdBy.displayName}** - ${new Date(comment.history.createdDate).toLocaleDateString()}\n` +
-            `  ${formatContent(comment.body?.view?.value || comment.body?.storage?.value || 'No content')}`
+            `  ${formatContent(comment.body?.view?.value || comment.body?.storage?.value || 'No content')}`,
         )
         .join('\n\n');
 
@@ -96,7 +96,7 @@ Can be a single string or array of strings`,
         ],
       };
     });
-  }
+  },
 };
 
 /**
@@ -104,7 +104,9 @@ Can be a single string or array of strings`,
  */
 function formatContent (content: string): string {
   // Basic formatting for storage format content
-  if (!content) return '';
+  if (!content) {
+    return '';
+  }
 
   // Remove common Confluence storage format tags for better readability
   return content

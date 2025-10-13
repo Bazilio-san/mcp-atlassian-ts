@@ -78,14 +78,22 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
 
     // Build query parameters
     const params: any = { startAt, maxResults };
-    if (jql) params.jql = jql;
-    if (validateQuery !== undefined) params.validateQuery = validateQuery;
+    if (jql) {
+      params.jql = jql;
+    }
+    if (validateQuery !== undefined) {
+      params.validateQuery = validateQuery;
+    }
 
     const normalizedFields = normalizeToArray(fields);
     const normalizedExpand = normalizeToArray(expand);
 
-    if (normalizedFields.length) params.fields = normalizedFields.join(',');
-    if (normalizedExpand.length) params.expand = normalizedExpand.join(',');
+    if (normalizedFields.length) {
+      params.fields = normalizedFields.join(',');
+    }
+    if (normalizedExpand.length) {
+      params.expand = normalizedExpand.join(',');
+    }
 
     logger.info('Making API call to get board issues');
     const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/issue`, { params });

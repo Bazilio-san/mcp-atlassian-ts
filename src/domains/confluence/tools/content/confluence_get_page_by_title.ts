@@ -50,12 +50,12 @@ Examples: "PROJ", "TEAM", "DOC".`,
             params: {
               spaceKey,
               title,
-              expand: context.normalizeToArray(expand).join(',')
-            }
+              expand: context.normalizeToArray(expand).join(','),
+            },
           });
           return response.data.results;
         },
-        600 // 10 minutes cache for page content
+        600, // 10 minutes cache for page content
       );
 
       if (pages.length === 0) {
@@ -74,7 +74,9 @@ Examples: "PROJ", "TEAM", "DOC".`,
 
       function formatContent (content: string): string {
         // Basic formatting for storage format content
-        if (!content) return '';
+        if (!content) {
+          return '';
+        }
 
         // Remove common Confluence storage format tags for better readability
         return content
@@ -108,5 +110,5 @@ Examples: "PROJ", "TEAM", "DOC".`,
         ],
       };
     });
-  }
+  },
 };

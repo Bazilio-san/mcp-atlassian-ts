@@ -58,9 +58,9 @@ Can be a single string or array of strings`,
           ...axiosConfig,
           params: {
             expand: context.normalizeToArray(expand).join(','),
-            limit
-          }
-        }
+            limit,
+          },
+        },
       );
 
       const historyResult = historyResponse.data;

@@ -55,9 +55,9 @@ export const confluence_get_page_children: ConfluenceToolWithHandler = {
           ...axiosConfig,
           params: {
             expand: context.normalizeToArray(expand).join(','),
-            limit
-          }
-        }
+            limit,
+          },
+        },
       );
 
       const childrenData = childrenResult.data;
@@ -78,7 +78,7 @@ export const confluence_get_page_children: ConfluenceToolWithHandler = {
           (child: any) =>
             `• **${child.title}**\n` +
             `  Version: ${child.version.number}\n` +
-            `  URL: ${context.config.url}/wiki/spaces/${child.space.key}/pages/${child.id}`
+            `  URL: ${context.config.url}/wiki/spaces/${child.space.key}/pages/${child.id}`,
         )
         .join('\n\n');
 

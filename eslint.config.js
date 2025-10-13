@@ -48,6 +48,7 @@ export default [
         'asyncArrow': 'always'
       }],
       'object-curly-spacing': ['error', 'always'],
+      'curly': ['error', 'all'],
     },
   },
   {
@@ -77,6 +78,7 @@ export default [
         'asyncArrow': 'always'
       }],
       'object-curly-spacing': ['error', 'always'],
+      'curly': ['error', 'all'],
     },
   },
   {

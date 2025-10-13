@@ -16,7 +16,9 @@ const LOGS_DIR = path.join(process.cwd(), '_tmp/_logs');
  * Format headers for logging
  */
 function formatHeaders (headers: any): string {
-  if (!headers) return 'No headers';
+  if (!headers) {
+    return 'No headers';
+  }
 
   const entries = Object.entries(headers)
     .filter(([_k, v]) => v !== undefined)
@@ -31,7 +33,9 @@ function formatHeaders (headers: any): string {
 const t = '```';
 const mdText = (s: string) => `${t}\n${s}\n${t}`;
 const mdJson = (v: any) => {
-  if (!v) return `${t}json\nnull\n${t}`;
+  if (!v) {
+    return `${t}json\nnull\n${t}`;
+  }
 
   // Try to parse if it's a JSON string
   let parsed = v;

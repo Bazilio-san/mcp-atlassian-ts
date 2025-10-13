@@ -64,9 +64,15 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
     // Build sprint data
     const sprintData: any = { name, originBoardId };
 
-    if (goal) sprintData.goal = goal;
-    if (startDate) sprintData.startDate = startDate;
-    if (endDate) sprintData.endDate = endDate;
+    if (goal) {
+      sprintData.goal = goal;
+    }
+    if (startDate) {
+      sprintData.startDate = startDate;
+    }
+    if (endDate) {
+      sprintData.endDate = endDate;
+    }
 
     // Create sprint via API
     const response = await httpClient.post('/rest/agile/1.0/sprint', sprintData);

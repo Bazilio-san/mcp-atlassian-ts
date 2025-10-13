@@ -68,7 +68,7 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
         total: 0,
         showing: 0,
         worklogs: [],
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       return {
@@ -103,11 +103,11 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
         author: {
           accountId: w.author.accountId,
           displayName: w.author.displayName,
-          emailAddress: w.author.emailAddress || null
+          emailAddress: w.author.emailAddress || null,
         },
-        visibility: w.visibility || null
+        visibility: w.visibility || null,
       })),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return formatToolResult(json);
