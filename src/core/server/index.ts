@@ -36,7 +36,7 @@ const MCP_PROTOCOL_VERSION = '2025-06-18';
  * MCP Atlassian Server with multiple transport support
  */
 export class McpAtlassianServer {
-  private server: Server;
+  protected server: Server;
   protected serverConfig: ServerConfig;
   protected serviceConfig: JCConfig;
   protected toolRegistry: ToolRegistry;
@@ -79,7 +79,7 @@ export class McpAtlassianServer {
   /**
    * Setup MCP server handlers
    */
-  private setupServerHandlers (): void {
+  protected setupServerHandlers (): void {
     // Handle list_tools requests
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const tools = await this.toolRegistry.listTools();
@@ -130,6 +130,7 @@ export class McpAtlassianServer {
         },
       ];
 
+
       return { resources };
     });
 
@@ -166,6 +167,7 @@ export class McpAtlassianServer {
             }],
           };
 
+
         default:
           throw new ServerError(`Unknown resource URI: ${uri}`);
       }
@@ -191,6 +193,7 @@ export class McpAtlassianServer {
       throw new ServerError('Failed to register tools');
     }
   }
+
 
   /**
    * Start server with STDIO transport

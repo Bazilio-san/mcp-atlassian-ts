@@ -14,7 +14,7 @@ import { ToolWithHandler } from '../../../../types';
  */
 export const jira_get_priorities: ToolWithHandler = {
   name: 'jira_get_priorities',
-  description: 'Get all available JIRA priorities (cached for 1 hour)',
+  description: 'Get all available JIRA priorities. Returns array of { id, name, description }',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -58,11 +58,7 @@ async function getPrioritiesHandler (args: any, context: ToolContext): Promise<a
         ? `Found ${priorities.length} JIRA priorities`
         : 'No JIRA priorities found',
       total: priorities.length,
-      priorities: priorities.map((priority: any) => ({
-        id: priority.id,
-        name: priority.name,
-        description: priority.description,
-      })),
+      priorities: priorities.map(({id, name, description}: any) => ({id, name, description})),
       timestamp: new Date().toISOString(),
     };
 
