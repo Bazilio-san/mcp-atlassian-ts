@@ -191,7 +191,7 @@ then
     journalctl -o cat -xefu $SERVICE
   fi
 else
-  echo_g "========== RESTART SERVICE =========="
+  echo_g "========== RESTART PM2 SERVICE =========="
   pm2 restart ${SERVICE}
   if [[ -n "$showLog" ]]; then
     pm2 logs ${SERVICE} --lines=1000
