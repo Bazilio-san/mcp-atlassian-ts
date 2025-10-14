@@ -102,25 +102,12 @@ export class McpAtlassianServer {
       logger.info('Tool called', { name, hasArgs: !!args });
 
       try {
-        // Rate limiting
-        await this.rateLimiter.consume('global');
-
-        // Execute tool (STDIO/SSE transport doesn't have custom headers)
+        // Execute tool (STDIO transport doesn't use rate limiting)
         const result = await this.toolRegistry.executeTool(name, args || {});
 
         logger.info('Tool executed successfully', { name });
         return result;
       } catch (error) {
-        // Handle rate limit errors
-        if (isRateLimitError(error)) {
-          const rateLimitMessage = formatRateLimitError(
-            error as any,
-            this.serverConfig.rateLimit.maxRequests
-          );
-          logger.warn('Rate limit exceeded in STDIO', { name });
-          throw new ServerError(rateLimitMessage);
-        }
-
         logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
 
         if (error instanceof McpAtlassianError) {
