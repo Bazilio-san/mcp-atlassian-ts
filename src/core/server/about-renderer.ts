@@ -245,7 +245,7 @@ body {
 /* Simple Layout */
 .simple-container {
   width: 100%;
-  max-width: 600px;
+  max-width: 695px;
   background: white;
   border: 1px solid var(--color-neutral-200);
   border-radius: var(--border-radius-200);
@@ -372,6 +372,7 @@ body {
 
   .simple-container {
     margin-top: 20px;
+    max-width: 600px;
   }
 
   .simple-header {

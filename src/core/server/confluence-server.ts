@@ -36,6 +36,7 @@ export class ConfluenceServer extends McpAtlassianServer {
         transportType,
       },
       rateLimit,
+      subst,
     } = config;
 
     const serverConfig: ServerConfig = {
@@ -44,6 +45,7 @@ export class ConfluenceServer extends McpAtlassianServer {
       transportType,
       rateLimit,
       cache,
+      ...(subst && { subst }),
     };
 
     // Build auth config from Confluence config

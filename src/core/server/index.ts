@@ -29,6 +29,7 @@ import { AuthenticationManager } from '../auth/auth-manager.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
+import { substituteUserInHeaders } from '../utils/user-substitution.js';
 
 const logger = createLogger('server');
 
@@ -348,8 +349,14 @@ export class McpAtlassianServer {
                 : `sse-headers-${req.ip}`;
               await this.rateLimiter.consume(clientId);
 
+              // Apply user substitution if configured
+              let headers = authContext.headers;
+              if (this.serverConfig.subst) {
+                headers = substituteUserInHeaders(headers, this.serverConfig.subst);
+              }
+
               // Execute tool with authentication headers from context
-              return await this.toolRegistry.executeTool(name, args || {}, authContext.headers);
+              return await this.toolRegistry.executeTool(name, args || {}, headers);
             } catch (error) {
               // Handle rate limit errors
               if (isRateLimitError(error)) {
@@ -449,7 +456,12 @@ export class McpAtlassianServer {
           }
 
           // Use authentication headers from context
-          const authHeaders = authContext.headers;
+          let authHeaders = authContext.headers;
+
+          // Apply user substitution if configured
+          if (this.serverConfig.subst) {
+            authHeaders = substituteUserInHeaders(authHeaders, this.serverConfig.subst);
+          }
 
           // Process MCP request directly
           const { method, params, id } = req.body;

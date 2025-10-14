@@ -91,6 +91,12 @@ export interface ISslConfig {
   rejectUnauthorized: boolean;
 }
 
+// User substitution configuration
+export interface ISubstitutionConfig {
+  users: Record<string, string>; // Mapping from original user to substitute user
+  httpHeader: string; // HTTP header name to modify
+}
+
 // Main configuration interface
 export interface IConfig {
   // Package metadata
@@ -115,4 +121,7 @@ export interface IConfig {
   // Feature flags
   features: Record<string, never>;
   isReturnJson: boolean;
+
+  // User substitution configuration
+  subst?: ISubstitutionConfig;
 }

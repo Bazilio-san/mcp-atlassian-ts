@@ -27,6 +27,12 @@ export interface OAuth2Auth {
 
 export type AuthConfig = BasicAuth | PersonalAccessToken | OAuth2Auth;
 
+// User substitution configuration
+export interface SubstitutionConfig {
+  users: Record<string, string>; // Mapping from original user to substitute user
+  httpHeader: string; // HTTP header name to modify
+}
+
 // Server configuration
 export interface ServerConfig {
   port: number;
@@ -40,6 +46,7 @@ export interface ServerConfig {
     ttlSeconds: number;
     maxItems: number;
   };
+  subst?: SubstitutionConfig; // Optional user substitution configuration
 }
 
 // JIRA configuration

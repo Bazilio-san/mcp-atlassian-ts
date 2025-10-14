@@ -292,8 +292,8 @@ function buildConfig (): IConfig {
 
     // Rate limiting configuration
     rateLimit: {
-      windowMs: getValue('RATE_LIMIT_WINDOW_MS', ['rateLimit', 'windowMs'], 900000), // 15 minutes
-      maxRequests: getValue('RATE_LIMIT_MAX_REQUESTS', ['rateLimit', 'maxRequests'], 100),
+      windowMs: getValue('RATE_LIMIT_WINDOW_MS', ['rateLimit', 'windowMs'], 60000), // 1 min
+      maxRequests: getValue('RATE_LIMIT_MAX_REQUESTS', ['rateLimit', 'maxRequests'], 1000),
     },
 
     // Cache configuration
@@ -312,6 +312,14 @@ function buildConfig (): IConfig {
 
     // Response format configuration
     isReturnJson: getValue('IS_RETURN_JSON', ['isReturnJson'], false),
+
+    // User substitution configuration
+    ...(yaml?.subst && yaml.subst.users && yaml.subst.httpHeader ? {
+      subst: {
+        users: yaml.subst.users,
+        httpHeader: yaml.subst.httpHeader
+      }
+    } : {}),
   };
 }
 
