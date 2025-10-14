@@ -28,5 +28,5 @@ if pm2 list | grep -q "$SERVICE"; then
   pm2 delete $SERVICE
 fi
 
-NODE_ENV=production pm2 startOrRestart pm2.config.сjs
+NODE_ENV=production pm2 startOrRestart pm2.config.js
 pm2 save
