@@ -271,7 +271,7 @@ export class McpAtlassianServer {
       this.aboutPageRenderer = createAboutPageRenderer(
         this.serverConfig,
         this.serviceConfig,
-        0 // Will be updated after tools are registered
+        0, // Will be updated after tools are registered
       );
 
       // Root endpoint with About page
@@ -282,7 +282,7 @@ export class McpAtlassianServer {
             try {
               const tools = await this.toolRegistry.listTools();
               this.aboutPageRenderer!.setToolsCount(tools.length);
-            } catch (error: Error |any) {
+            } catch (error: Error | any) {
               logger.warn('Failed to get tools count for about page', error);
             }
           }
@@ -312,14 +312,14 @@ export class McpAtlassianServer {
               id: 1,
               error: {
                 code: -32001,
-                message: 'Authentication required'
-              }
+                message: 'Authentication required',
+              },
             });
           }
 
           logger.info('SSE client connected', {
             authMode: authContext.mode,
-            headersCount: Object.keys(authContext.headers).length,
+            headersCount: Object.keys(authContext.headers)?.length || 0,
           });
 
           // Create a separate server instance for this SSE connection with custom auth headers
@@ -363,7 +363,7 @@ export class McpAtlassianServer {
               if (isRateLimitError(error)) {
                 const rateLimitMessage = formatRateLimitError(
                   error as any,
-                  this.serverConfig.rateLimit.maxRequests
+                  this.serverConfig.rateLimit.maxRequests,
                 );
                 logger.warn('Rate limit exceeded in SSE', { name, authMode: authContext.mode });
                 throw new ServerError(rateLimitMessage);
@@ -415,8 +415,8 @@ export class McpAtlassianServer {
                 contents: [{
                   uri: 'atlassian://config',
                   mimeType: 'application/json',
-                  text: JSON.stringify(this.getHealthCheckInfo(), null, 2)
-                }]
+                  text: JSON.stringify(this.getHealthCheckInfo(), null, 2),
+                }],
               };
             } else if (uri === 'atlassian://cache/stats') {
               const cacheStats = getCache().getStats();
@@ -424,8 +424,8 @@ export class McpAtlassianServer {
                 contents: [{
                   uri: 'atlassian://cache/stats',
                   mimeType: 'application/json',
-                  text: JSON.stringify(cacheStats, null, 2)
-                }]
+                  text: JSON.stringify(cacheStats, null, 2),
+                }],
               };
             } else if (uri === 'jira://priorities') {
               const priorities = await this.fetchJiraPriorities();
@@ -470,8 +470,8 @@ export class McpAtlassianServer {
               id: req.body?.id ?? 1,
               error: {
                 code: -32001,
-                message: 'Authentication required'
-              }
+                message: 'Authentication required',
+              },
             });
           }
 
@@ -486,7 +486,7 @@ export class McpAtlassianServer {
             if (isRateLimitError(rateLimitError)) {
               const rateLimitMessage = formatRateLimitError(
                 rateLimitError as any,
-                this.serverConfig.rateLimit.maxRequests
+                this.serverConfig.rateLimit.maxRequests,
               );
               logger.warn('Rate limit exceeded in HTTP', { ip: req.ip, authMode: authContext.mode });
               return res.status(200).json({
@@ -494,8 +494,8 @@ export class McpAtlassianServer {
                 id: req.body?.id ?? 1,
                 error: {
                   code: -32000,
-                  message: rateLimitMessage
-                }
+                  message: rateLimitMessage,
+                },
               });
             }
             throw rateLimitError;
@@ -516,7 +516,7 @@ export class McpAtlassianServer {
             method,
             id,
             authMode: authContext.mode,
-            headersCount: Object.keys(authHeaders).length,
+            headersCount: Object.keys(authHeaders)?.length || 0,
           });
 
           let result;
@@ -529,7 +529,7 @@ export class McpAtlassianServer {
               logger.info('MCP client initializing', {
                 protocolVersion,
                 clientCapabilities,
-                clientInfo
+                clientInfo,
               });
 
               result = {
@@ -538,12 +538,12 @@ export class McpAtlassianServer {
                   tools: {},
                   resources: {},
                   prompts: {},
-                  logging: {}
+                  logging: {},
                 },
                 serverInfo: {
                   name: 'mcp-atlassian-ts',
-                  version: appConfig.version || '1.0.0'
-                }
+                  version: appConfig.version || '1.0.0',
+                },
               };
               break;
 
@@ -600,8 +600,8 @@ export class McpAtlassianServer {
                   contents: [{
                     uri: 'atlassian://config',
                     mimeType: 'application/json',
-                    text: JSON.stringify(this.getHealthCheckInfo(), null, 2)
-                  }]
+                    text: JSON.stringify(this.getHealthCheckInfo(), null, 2),
+                  }],
                 };
               } else if (uri === 'atlassian://cache/stats') {
                 const cacheStats = getCache().getStats();
@@ -609,8 +609,8 @@ export class McpAtlassianServer {
                   contents: [{
                     uri: 'atlassian://cache/stats',
                     mimeType: 'application/json',
-                    text: JSON.stringify(cacheStats, null, 2)
-                  }]
+                    text: JSON.stringify(cacheStats, null, 2),
+                  }],
                 };
               } else if (uri === 'jira://priorities') {
                 const priorities = await this.fetchJiraPriorities();
@@ -628,7 +628,7 @@ export class McpAtlassianServer {
 
             case 'prompts/list':
               result = {
-                prompts: []
+                prompts: [],
               };
               break;
 
@@ -814,16 +814,14 @@ export class McpAtlassianServer {
         },
         3600, // Cache for 1 hour
       );
-
-      logger.info('Priorities fetched successfully for MCP resource', {
-        count: priorities.length,
-      });
+      const count = priorities?.length || 0;
+      logger.info('Priorities fetched successfully for MCP resource', { count });
 
       return {
         priorities,
         metadata: {
           fetchedAt: new Date().toISOString(),
-          count: priorities.length,
+          count,
           cacheKey,
           cacheTtl: 3600,
         },
