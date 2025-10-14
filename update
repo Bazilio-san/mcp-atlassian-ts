@@ -180,12 +180,7 @@ echo_y "typescript build done"
 
 service_exists() {
   local n=$1
-  echo "**** service_exists ${local} ****"
-  if [[ $(systemctl list-units --all -t  --full --no-legend "$n.service" | sed 's/●//g' | sed 's/^\s*//g' | cut -f1 -d' ') == "$n.service" ]]; then
-    return 0
-  else
-    return 1
-  fi
+  systemctl show --no-page "${n}.service" >/dev/null 2>&1
 }
 echo "**** Перезапуск сервиса ${SERVICE} ****"
 
