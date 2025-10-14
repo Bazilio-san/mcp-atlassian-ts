@@ -3,7 +3,7 @@
  * Manages all JIRA MCP tools using modular approach
  */
 
-import { createAuthenticationManager } from '../../core/auth.js';
+import { createAuthenticationManager, createAuthenticationManagerFromHeaders } from '../../core/auth.js';
 import { getCache } from '../../core/cache.js';
 import { createLogger } from '../../core/utils/logger.js';
 import { ToolExecutionError } from '../../core/errors.js';
@@ -78,6 +78,7 @@ export class JiraToolsManager {
   private context: ToolContext;
   private tools: Map<string, ToolWithHandler>;
   private toolsArray: Tool[];
+  private logger = createLogger('jira-tools');
 
   constructor (config: JCConfig) {
     // Validate configuration
@@ -92,7 +93,6 @@ export class JiraToolsManager {
     const authManager = createAuthenticationManager(config.auth, config.url);
     const httpClient = authManager.getHttpClient();
     const cache = getCache();
-    const logger = createLogger('jira-tools');
 
     // Create power HTTP client if configured
     let powerHttpClient: AxiosInstance | undefined;
@@ -102,7 +102,7 @@ export class JiraToolsManager {
         config.powerEndpoint.baseUrl,
       );
       powerHttpClient = powerAuthManager.getHttpClient();
-      logger.info('Power endpoint configured for JIRA', {
+      this.logger.info('Power endpoint configured for JIRA', {
         baseUrl: config.powerEndpoint.baseUrl,
       });
     }
@@ -113,7 +113,7 @@ export class JiraToolsManager {
       ...(powerHttpClient && { powerHttpClient }),
       cache,
       config,
-      logger,
+      logger: this.logger,
       normalizeToArray: this.normalizeToArray.bind(this),
       formatDescription: this.formatDescription.bind(this),
       expandStringOrArray: this.expandStringOrArray.bind(this),
@@ -241,20 +241,42 @@ export class JiraToolsManager {
     // Apply custom headers if provided
     let contextToUse = this.context;
     if (customHeaders && Object.keys(customHeaders).length > 0) {
-      // Create a temporary HTTP client with additional headers
-      const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);
-      const customHttpClient = authManager.getHttpClient();
-
-      // Add custom headers via interceptor
-      customHttpClient.interceptors.request.use(
-        config => {
-          if (config.headers) {
-            Object.assign(config.headers, customHeaders);
+      // Extract JIRA-specific headers from custom headers
+      const jiraHeaders: Record<string, string> = {};
+      Object.keys(customHeaders).forEach(key => {
+        if (key.startsWith('x-jira-')) {
+          const value = customHeaders[key];
+          if (value) {
+            jiraHeaders[key] = value;
           }
-          return config;
-        },
-        error => Promise.reject(error),
-      );
+        }
+      });
+
+      // If we have JIRA-specific headers, create authentication manager from headers
+      // Otherwise, use system auth with additional headers
+      let customHttpClient;
+      if (Object.keys(jiraHeaders).length > 0) {
+        // Use header-based authentication
+        const authManager = createAuthenticationManagerFromHeaders(jiraHeaders, this.context.config.url);
+        customHttpClient = authManager.getHttpClient();
+        this.logger.debug('Using header-based authentication for JIRA', { headers: Object.keys(jiraHeaders) });
+      } else {
+        // Use system authentication with additional headers
+        const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);
+        customHttpClient = authManager.getHttpClient();
+
+        // Add custom headers via interceptor
+        customHttpClient.interceptors.request.use(
+          config => {
+            if (config.headers) {
+              Object.assign(config.headers, customHeaders);
+            }
+            return config;
+          },
+          error => Promise.reject(error),
+        );
+        this.logger.debug('Using system authentication with additional headers for JIRA');
+      }
 
       // Create context with custom HTTP client
       contextToUse = {

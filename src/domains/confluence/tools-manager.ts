@@ -3,7 +3,7 @@
  * Manages all Confluence MCP tools using modular approach
  */
 
-import { createAuthenticationManager } from '../../core/auth.js';
+import { createAuthenticationManager, createAuthenticationManagerFromHeaders } from '../../core/auth.js';
 import { getCache } from '../../core/cache.js';
 import { createLogger } from '../../core/utils/logger.js';
 import { ToolExecutionError, withErrorHandling } from '../../core/errors.js';
@@ -39,6 +39,7 @@ export class ConfluenceToolsManager {
   private context: ConfluenceToolContext;
   private tools: Map<string, ToolWithHandler | ConfluenceToolWithHandler>;
   private toolsArray: Tool[];
+  private logger = createLogger('confluence-tools');
 
   constructor (config: JCConfig) {
     // Validate configuration
@@ -150,20 +151,42 @@ export class ConfluenceToolsManager {
     // Apply custom headers if provided
     let contextToUse = this.context;
     if (customHeaders && Object.keys(customHeaders).length > 0) {
-      // Create a temporary HTTP client with additional headers
-      const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);
-      const customHttpClient = authManager.getHttpClient();
-
-      // Add custom headers via interceptor
-      customHttpClient.interceptors.request.use(
-        config => {
-          if (config.headers) {
-            Object.assign(config.headers, customHeaders);
+      // Extract Confluence-specific headers from custom headers
+      const confluenceHeaders: Record<string, string> = {};
+      Object.keys(customHeaders).forEach(key => {
+        if (key.startsWith('x-confluence-')) {
+          const value = customHeaders[key];
+          if (value) {
+            confluenceHeaders[key] = value;
           }
-          return config;
-        },
-        error => Promise.reject(error),
-      );
+        }
+      });
+
+      // If we have Confluence-specific headers, create authentication manager from headers
+      // Otherwise, use system auth with additional headers
+      let customHttpClient;
+      if (Object.keys(confluenceHeaders).length > 0) {
+        // Use header-based authentication
+        const authManager = createAuthenticationManagerFromHeaders(confluenceHeaders, this.context.config.url);
+        customHttpClient = authManager.getHttpClient();
+        this.logger.debug('Using header-based authentication for Confluence', { headers: Object.keys(confluenceHeaders) });
+      } else {
+        // Use system authentication with additional headers
+        const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);
+        customHttpClient = authManager.getHttpClient();
+
+        // Add custom headers via interceptor
+        customHttpClient.interceptors.request.use(
+          config => {
+            if (config.headers) {
+              Object.assign(config.headers, customHeaders);
+            }
+            return config;
+          },
+          error => Promise.reject(error),
+        );
+        this.logger.debug('Using system authentication with additional headers for Confluence');
+      }
 
       // Create context with custom HTTP client
       contextToUse = {

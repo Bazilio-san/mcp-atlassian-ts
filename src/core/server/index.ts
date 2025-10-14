@@ -25,6 +25,7 @@ import { createErrorResponse, McpAtlassianError, ServerError } from '../errors.j
 import { getCache } from '../cache.js';
 import { createAuthenticationManager } from '../auth.js';
 import { ToolRegistry } from './tools.js';
+import { AuthenticationManager } from '../auth/auth-manager.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 
 const logger = createLogger('server');
@@ -41,11 +42,15 @@ export class McpAtlassianServer {
   protected serviceConfig: JCConfig;
   protected toolRegistry: ToolRegistry;
   protected rateLimiter: RateLimiterMemory;
+  protected authManager: AuthenticationManager;
   protected app?: express.Application;
 
   constructor (serverConfig: ServerConfig, serviceConfig: JCConfig) {
     this.serverConfig = serverConfig;
     this.serviceConfig = serviceConfig;
+
+    // Initialize authentication manager
+    this.authManager = new AuthenticationManager();
 
     // Initialize MCP server
     this.server = new Server(
@@ -252,10 +257,14 @@ export class McpAtlassianServer {
         this.app.use((req, res, next) => {
           res.header('Access-Control-Allow-Origin', '*');
           res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-          res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+          res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Server-Token, X-JIRA-Token, X-JIRA-Username, X-JIRA-Password, X-Confluence-Token, X-Confluence-Username, X-Confluence-Password');
           next();
         });
       }
+
+      // Authentication middleware - apply to MCP endpoints
+      this.app.use('/mcp', this.authManager.authenticationMiddleware());
+      this.app.use('/sse', this.authManager.authenticationMiddleware());
 
       // Health check endpoint
       this.app.get('/health', (req, res) => {
@@ -265,14 +274,92 @@ export class McpAtlassianServer {
       // SSE endpoint for MCP communication
       this.app.get('/sse', async (req, res) => {
         try {
+          // Get authentication context from middleware
+          const authContext = AuthenticationManager.getAuthContext(req);
+          if (!authContext) {
+            return res.status(401).json({
+              jsonrpc: '2.0',
+              error: {
+                code: -32001,
+                message: 'Authentication required'
+              }
+            });
+          }
+
+          logger.info('SSE client connected', {
+            authMode: authContext.mode,
+            headersCount: Object.keys(authContext.headers).length,
+          });
+
+          // Create a separate server instance for this SSE connection with custom auth headers
+          const sseServer = new Server(
+            {
+              name: appConfig.name,
+              version: appConfig.version,
+            },
+            {
+              capabilities: {
+                resources: {},
+                tools: {},
+                prompts: {},
+              },
+            },
+          );
+
+          // Override tool call handler to use authentication headers
+          sseServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+            const { name, arguments: args } = request.params;
+
+            logger.info('SSE tool called', { name, authMode: authContext.mode });
+
+            // Rate limiting
+            const clientId = authContext.mode === 'system'
+              ? `sse-system-${req.ip}`
+              : `sse-headers-${req.ip}`;
+            await this.rateLimiter.consume(clientId);
+
+            // Execute tool with authentication headers from context
+            return await this.toolRegistry.executeTool(name, args || {}, authContext.headers);
+          });
+
+          // Setup other handlers (tools/list, resources, etc.)
+          sseServer.setRequestHandler(ListToolsRequestSchema, async () => {
+            const tools = await this.toolRegistry.listTools();
+            return { tools };
+          });
+
+          sseServer.setRequestHandler(ListResourcesRequestSchema, async () => {
+            return {
+              resources: [
+                {
+                  uri: 'atlassian://config',
+                  name: 'Atlassian Configuration',
+                  description: 'Current Atlassian configuration and connection status',
+                  mimeType: 'application/json',
+                },
+                {
+                  uri: 'atlassian://cache/stats',
+                  name: 'Cache Statistics',
+                  description: 'Current cache statistics and performance metrics',
+                  mimeType: 'application/json',
+                },
+              ],
+            };
+          });
+
+          sseServer.setRequestHandler(PingRequestSchema, async () => {
+            return { pong: true };
+          });
+
           res.setHeader('MCP-Protocol-Version', MCP_PROTOCOL_VERSION);
           const transport = new SSEServerTransport('/sse', res);
-          await this.server.connect(transport);
+          await sseServer.connect(transport);
 
-          logger.info('SSE client connected');
+          logger.info('SSE connection established successfully');
+          return;
         } catch (error) {
           logger.error('SSE connection failed', error instanceof Error ? error : new Error(String(error)));
-          res.status(500).json(createErrorResponse(
+          return res.status(500).json(createErrorResponse(
             new ServerError('Failed to establish SSE connection'),
           ));
         }
@@ -281,30 +368,35 @@ export class McpAtlassianServer {
       // POST endpoint for tool calls and other requests
       this.app.post('/mcp', async (req, res) => {
         try {
-          // Rate limiting
-          const clientId = req.ip || 'anonymous';
+          // Get authentication context from middleware
+          const authContext = AuthenticationManager.getAuthContext(req);
+          if (!authContext) {
+            return res.status(401).json({
+              jsonrpc: '2.0',
+              error: {
+                code: -32001,
+                message: 'Authentication required'
+              }
+            });
+          }
+
+          // Rate limiting with different keys for different auth modes
+          const clientId = authContext.mode === 'system'
+            ? `system-${req.ip}`
+            : `headers-${req.ip}`;
           await this.rateLimiter.consume(clientId);
 
-          // Extract X-headers from request for passthrough
-          const customHeaders: Record<string, string> = {};
-          Object.keys(req.headers).forEach(headerName => {
-            if (headerName.toLowerCase().startsWith('x-')) {
-              const headerValue = req.headers[headerName];
-              if (typeof headerValue === 'string') {
-                customHeaders[headerName] = headerValue;
-              } else if (Array.isArray(headerValue)) {
-                customHeaders[headerName] = headerValue.join(', ');
-              }
-            }
-          });
+          // Use authentication headers from context
+          const authHeaders = authContext.headers;
 
-          // Process MCP request directly (bypass the normal transport layer for testing)
+          // Process MCP request directly
           const { method, params, id } = req.body;
 
           logger.info('HTTP MCP request received', {
             method,
             id,
-            customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined,
+            authMode: authContext.mode,
+            headersCount: Object.keys(authHeaders).length,
           });
 
           let result;
@@ -317,7 +409,7 @@ export class McpAtlassianServer {
 
             case 'tools/call':
               const { name, arguments: args } = params;
-              result = await this.toolRegistry.executeTool(name, args || {}, customHeaders);
+              result = await this.toolRegistry.executeTool(name, args || {}, authHeaders);
               break;
 
             case 'resources/list':
@@ -347,7 +439,7 @@ export class McpAtlassianServer {
               throw new ServerError(`Unknown method: ${method}`);
           }
 
-          res.json({
+          return res.json({
             jsonrpc: '2.0',
             id,
             result,
@@ -356,7 +448,7 @@ export class McpAtlassianServer {
           const errorString = error instanceof Error ? error.toString() : String(error);
           if (errorString.includes('Rate limit')) {
             logger.warn('Rate limit exceeded', { ip: req.ip });
-            res.status(429).json(createErrorResponse(
+            return res.status(429).json(createErrorResponse(
               new ServerError('Rate limit exceeded'),
             ));
           } else {
@@ -384,7 +476,7 @@ export class McpAtlassianServer {
               };
             }
 
-            res.json({
+            return res.json({
               jsonrpc: '2.0',
               id: req.body?.id || null,
               error: errorResponse,

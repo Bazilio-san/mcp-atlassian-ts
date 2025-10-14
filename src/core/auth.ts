@@ -365,6 +365,56 @@ export function createAuthenticationManager (
 }
 
 /**
+ * Create authentication manager from custom headers
+ * Used for header-based authentication mode
+ */
+export function createAuthenticationManagerFromHeaders (
+  customHeaders: Record<string, string>,
+  baseUrl: string,
+  timeout: number = 30000,
+): AuthenticationManager {
+  // Convert custom headers to auth config
+  const authConfig = buildAuthConfigFromHeaders(customHeaders);
+
+  const httpConfig: HttpClientConfig = {
+    baseURL: baseUrl,
+    timeout,
+    headers: {},
+    maxRetries: 3,
+    retryDelay: 1000,
+  };
+
+  return new AuthenticationManager(authConfig, httpConfig);
+}
+
+/**
+ * Build authentication config from custom headers
+ */
+function buildAuthConfigFromHeaders (headers: Record<string, string>): AuthConfig {
+  // Check for PAT token
+  const patToken = headers['x-jira-token'] || headers['x-confluence-token'];
+  if (patToken) {
+    return {
+      type: 'pat',
+      token: patToken,
+    };
+  }
+
+  // Check for Basic Auth credentials
+  const username = headers['x-jira-username'] || headers['x-confluence-username'];
+  const password = headers['x-jira-password'] || headers['x-confluence-password'];
+  if (username && password) {
+    return {
+      type: 'basic',
+      username,
+      password,
+    };
+  }
+
+  throw new Error('No valid authentication headers found');
+}
+
+/**
  * Validate authentication configuration
  */
 export function validateAuthConfig (authConfig: AuthConfig): void {

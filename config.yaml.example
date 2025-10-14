@@ -1,8 +1,14 @@
 # MCP Atlassian Tools Configuration
 # This file controls which tools are enabled for JIRA and Confluence
+server:
+  port: 3000
+  host: '0.0.0.0'
+  transportType: http  # Options: stdio | http | sse
+  serviceMode: jira    # Options: jira | confluence (omit for both)
+  token: test_server_token
 
-usedInstruments:
-  jira:
+jira:
+  usedInstruments:
     # Include ALL to enable all tools, or specify a list of tool names
     include: ALL
     # Exclude specific tools (optional)
@@ -22,7 +28,8 @@ usedInstruments:
     #       username: <power_username> # env: JIRA_POWER_USER
     #       password: <power_password> # env: JIRA_POWER_PASS
 
-  confluence:
+confluence:
+  usedInstruments:
     # Include ALL to enable all tools, or specify a list of tool names
     include: ALL
     # Exclude specific tools (optional)
@@ -46,9 +53,4 @@ usedInstruments:
     #     basic:
     #       username: <power_username> # env: CONFLUENCE_POWER_USER
     #       password: <power_password> # env: CONFLUENCE_POWER_PASS
-openAi:
-  apiKey: <apiKey>
-  apiKeyName: <apiKeyName>
-  baseURL: <baseURL>
-  rateLimits:
-    requestsPerMinute: 1000
+

@@ -23,6 +23,7 @@ export interface IServerConfig {
   host: string;
   transportType: 'stdio' | 'http' | 'sse';
   serviceMode?: 'jira' | 'confluence';
+  token?: string; // Server token for trusted clients authentication
 }
 
 // Logging configuration
@@ -90,14 +91,6 @@ export interface ISslConfig {
   rejectUnauthorized: boolean;
 }
 
-// OpenAI configuration for embeddings
-export interface IOpenAIConfig {
-  apiKey?: string;
-  baseURL?: string;
-  model?: string;
-  dimensions?: number;
-}
-
 // Main configuration interface
 export interface IConfig {
   // Package metadata
@@ -118,9 +111,6 @@ export interface IConfig {
   rateLimit: IRateLimitConfig;
   cache: ICacheConfig;
   ssl: ISslConfig;
-
-  // AI/ML settings
-  openai?: IOpenAIConfig | undefined;
 
   // Feature flags
   features: Record<string, never>;

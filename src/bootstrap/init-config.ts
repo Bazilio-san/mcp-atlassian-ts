@@ -206,6 +206,7 @@ function buildConfig (): IConfig {
       port: getValue('SERVER_PORT', ['server', 'port'], 3000),
       host: getValue('SERVER_HOST', ['server', 'host'], '0.0.0.0'),
       transportType: getValue('TRANSPORT_TYPE', ['server', 'transportType'], 'http') as 'stdio' | 'http' | 'sse',
+      token: getValue('SERVER_TOKEN', ['server', 'token'], undefined),
       ...(serviceMode && { serviceMode: serviceMode as 'jira' | 'confluence' }),
     },
 
@@ -307,21 +308,6 @@ function buildConfig (): IConfig {
     ssl: {
       rejectUnauthorized: getValue('NODE_TLS_REJECT_UNAUTHORIZED', ['ssl', 'rejectUnauthorized'], true),
     },
-
-    // OpenAI configuration for embeddings
-    openai: (() => {
-      const apiKey = getEnv('OPENAI_API_KEY') || yaml?.openai?.apiKey;
-      if (!hasValue(apiKey)) {
-        return undefined;
-      }
-
-      return {
-        apiKey,
-        baseURL: getEnv('OPENAI_BASE_URL') || yaml?.openai?.baseURL,
-        model: getEnv('OPENAI_MODEL') || yaml?.openai?.model || 'text-embedding-3-large',
-        dimensions: getValue('OPENAI_DIMENSIONS', ['openai', 'dimensions'], 256),
-      };
-    })(),
 
     // Feature flags
     features: yaml?.features || {},

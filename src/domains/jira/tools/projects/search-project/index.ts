@@ -1,5 +1,5 @@
 // Главный модуль для текстового поиска проектов JIRA
-// Интеграция с MCP инструментом (без векторного поиска и OpenAI)
+// Интеграция с MCP инструментом
 
 import { ProjectTextSearch } from './text-search.js';
 import { TKeyName } from '../../../../../types';
