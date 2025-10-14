@@ -428,6 +428,181 @@ src/
 - Persistent connections
 - Web applications with live updates
 
+## 🌐 Transport Configuration Examples {#transport-examples}
+
+### Using with MCP Clients
+
+#### Option A: Direct SSE Connection
+```javascript
+{
+  name: 'atlassian-mcp',
+  sse: {
+    url: 'https://your-domain.com/sse',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+}
+```
+
+#### Option B: Using mcp-remote Proxy (STDIO)
+The `mcp-remote` proxy handles OAuth authentication for cloud services:
+```javascript
+{
+  name: 'atlassian-mcp',
+  stdio: {
+    command: 'npx',
+    args: ['-y', 'mcp-remote', 'https://your-domain.com/sse']
+  }
+}
+```
+
+### CLI Usage with mcp-remote
+```bash
+# Direct connection to SSE endpoint
+npx -y mcp-remote https://your-domain.com/sse
+
+# For older versions of mcp-remote, specify version
+npx -y mcp-remote@0.1.13 https://your-domain.com/sse
+```
+
+## 💻 IDE Configuration {#ide-configuration}
+
+### VS Code
+Create or edit `.vscode/mcp.json`:
+
+**For HTTP/SSE Transport:**
+```json
+{
+  "servers": {
+    "atlassian-mcp-server": {
+      "url": "https://your-domain.com/sse",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}
+```
+
+**For STDIO Transport:**
+```json
+{
+  "servers": {
+    "atlassian-mcp-server": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "MCP_SERVICE": "jira",
+        "JIRA_URL": "https://your-company.atlassian.net",
+        "JIRA_USERNAME": "your-email@company.com",
+        "JIRA_PASSWORD": "your-api-token"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+Add to MCP Settings:
+
+**Modern Configuration:**
+```json
+{
+  "Atlassian-MCP-Server": {
+    "url": "https://your-domain.com/sse"
+  }
+}
+```
+
+**Legacy Configuration (STDIO):**
+```json
+{
+  "mcp-atlassian-api": {
+    "command": "npx",
+    "args": [
+      "mcp-remote",
+      "https://your-domain.com/sse"
+    ]
+  }
+}
+```
+
+### Local Development Transport
+For connecting to a locally running MCP server:
+
+```javascript
+{
+  name: 'local-atlassian',
+  stdio: {
+    command: 'node',
+    args: ['dist/index.js'],
+    env: {
+      MCP_SERVICE: 'jira',
+      JIRA_URL: 'http://localhost:8080',
+      JIRA_USERNAME: 'test-user',
+      JIRA_PASSWORD: 'test-token'
+    }
+  }
+}
+```
+
+## 🔍 Client Integration Examples {#client-examples}
+
+### Node.js MCP Client
+```javascript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const transport = new StdioClientTransport({
+  command: 'node',
+  args: ['path/to/mcp-atlassian-ts/dist/index.js'],
+  env: {
+    MCP_SERVICE: 'jira',
+    JIRA_URL: 'https://your-company.atlassian.net',
+    JIRA_USERNAME: 'your-email@company.com',
+    JIRA_PASSWORD: 'your-api-token'
+  }
+});
+
+const client = new Client({
+  name: 'my-app',
+  version: '1.0.0'
+}, {
+  capabilities: {
+    tools: {}
+  }
+});
+
+await client.connect(transport);
+```
+
+### Python MCP Client
+```python
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    server_params = StdioServerParameters(
+        command="node",
+        args=["path/to/mcp-atlassian-ts/dist/index.js"],
+        env={
+            "MCP_SERVICE": "jira",
+            "JIRA_URL": "https://your-company.atlassian.net",
+            "JIRA_USERNAME": "your-email@company.com",
+            "JIRA_PASSWORD": "your-api-token"
+        }
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            tools = await session.list_tools()
+            print(f"Available tools: {tools.tools}")
+
+asyncio.run(main())
+```
+
 ## 📊 Development Features {#development-features}
 
 ### Code Quality

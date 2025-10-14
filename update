@@ -61,7 +61,7 @@ IFS='' read -r -d '' help <<'EOF'
     Параметры:
 
     -b|--branch
-        Имя ветки GIT. По умолчанию - master
+        Имя ветки GIT. По умолчанию - main
     -l|--log
         Переходить в режим отображения логов после завершения
     -?|--help
@@ -99,7 +99,7 @@ done
 
 
 # Ветка по умолчанию
-branch="master"
+branch="main"
 # парсим конфиг, если он есть
 configFile="./deploy/config.yml"
 if [ -f "$configFile" ]; then
@@ -110,7 +110,7 @@ if [[ -n $expectedBranch ]]; then
   expected_branch=$expectedBranch
 else
   # Ветка по умолчанию
-  branch="master"
+  branch="main"
   # парсим конфиг, если он есть
   configFile="./deploy/config.yml"
   if [ -f "$configFile" ]; then
@@ -167,24 +167,12 @@ repo_info
 echo_g "====== CLEAN INSTALL DEPENDENCIES ======"
 
 rm -rf node_modules/
-yarn install --frozen-lockfile
+npm ci
 
-
-patchFile="./_sh/patch_node_modules.js"
-if [ -f "$patchFile" ]; then
-echo_g "========== PATCH NODE MODULES ======"
-  node --no-node-snapshot $patchFile
-fi
-
-
-echo_g "========== TYPESCRIPT REBUILD (API) =========="
-rm -rf ./_dist
-./node_modules/.bin/tsc -b --pretty --verbose ./tsconfig.server.json
+echo_g "========== TYPESCRIPT BUILD =========="
+rm -rf ./dist
+npm run build
 echo_y "typescript build done"
-
-echo_g "========== BUILD QUASAR =========="
-node ./_sh/quasar-prepare-color-vars.mjs
-yarn quasar build
 
 service_exists() {
   local n=$1
