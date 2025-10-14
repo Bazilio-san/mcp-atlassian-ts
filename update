@@ -124,6 +124,8 @@ SERVICE_NAME_ALT=`cat .env | grep SERVICE_NAME | head -1 | awk -F= '{ print $2 }
 SERVICE_NAME="${SERVICE_NAME_ALT:-$SERVICE_NAME}"
 
 SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
+SERVICE_INSTANCE=$(echo "$SERVICE_INSTANCE" | xargs)
+
 if [ -z "$SERVICE_INSTANCE" ]
 then
   echo "========================================================================="
