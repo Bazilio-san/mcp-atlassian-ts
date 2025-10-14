@@ -122,7 +122,42 @@ fi
 SERVICE_NAME=`cat package.json | grep name | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'`
 SERVICE_NAME_ALT=`cat .env | grep SERVICE_NAME | head -1 | awk -F= '{ print $2 }'`
 SERVICE_NAME="${SERVICE_NAME_ALT:-$SERVICE_NAME}"
+# Трим возможные пробелы и CR/LF
+SERVICE_NAME=$(echo "$SERVICE_NAME" | tr -d '\r' | xargs)
 
+SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
+# Трим возможные пробелы и CR/LF
+SERVICE_INSTANCE=$(echo "$SERVICE_INSTANCE" | tr -d '\r' | xargs)
+
+if [ -z "$SERVICE_INSTANCE" ]
+then
+  echo "========================================================================="
+  SERVICE="${SERVICE_NAME}"
+else
+  SERVICE="${SERVICE_NAME}--${SERVICE_INSTANCE}"
+  echo "================SERVICE_INSTANCE===============|${SERVICE_INSTANCE}|=========================================="
+fi
+
+# На всякий случай трим итоговое имя сервиса (убираем CR/LF и внешние пробелы)
+SERVICE=$(echo "$SERVICE" | tr -d '\r' | xargs)
+
+# ... existing code ...
+if service_exists "$SERVICE"
+echo_g "**** Перезапуск сервиса ${SERVICE} ****"
+# ... existing code ...
+then
+  systemctl restart "$SERVICE"
+  echo_g "**** Сервис $g$SERVICE$c перезапущен ****"
+  if [[ -n "$showLog" ]]; then
+    journalctl -o cat -xefu "$SERVICE"
+  fi
+else
+  echo_g "========== RESTART PM2 SERVICE =========="
+  pm2 restart "$SERVICE"
+  if [[ -n "$showLog" ]]; then
+    pm2 logs "$SERVICE" --lines=1000
+  fi
+fi
 SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
 SERVICE_INSTANCE=$(echo "$SERVICE_INSTANCE" | xargs)
 
