@@ -1,5 +1,5 @@
 require('dotenv').config({ path: './.env', debug: true });
-const { name, main } = require('./package.json');
+const { name } = require('./package.json');
 
 const { SERVICE_NAME, SERVICE_INSTANCE, PM2_NAMESPACE } = process.env;
 const suffix = SERVICE_INSTANCE ? `--${SERVICE_INSTANCE}` : '';
@@ -7,7 +7,7 @@ const suffix = SERVICE_INSTANCE ? `--${SERVICE_INSTANCE}` : '';
 module.exports = {
   apps: [{
     name: `${SERVICE_NAME || name}${suffix}`,
-    script: main,
+    script: 'dist/src/index.js',
     node_args: '--no-node-snapshot',
     // Options reference: https://pm2.keymetrics.io/docs/usage/application-declaration/
     namespace: PM2_NAMESPACE || undefined,
