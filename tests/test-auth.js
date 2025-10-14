@@ -44,7 +44,7 @@ const tests = [
   }
 ];
 
-function makeRequest(test) {
+function makeRequest (test) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
       jsonrpc: '2.0',
@@ -92,7 +92,7 @@ function makeRequest(test) {
   });
 }
 
-async function runTests() {
+async function runTests () {
   console.log('🧪 Testing Flexible Authentication System\n');
 
   for (const test of tests) {
@@ -132,7 +132,7 @@ async function runTests() {
 }
 
 // Check if server is running
-function checkServer() {
+function checkServer () {
   return new Promise((resolve) => {
     http.get('http://localhost:3000/health', (res) => {
       resolve(true);
@@ -142,7 +142,7 @@ function checkServer() {
   });
 }
 
-async function main() {
+async function main () {
   const serverRunning = await checkServer();
 
   if (!serverRunning) {

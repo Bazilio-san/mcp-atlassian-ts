@@ -19,7 +19,7 @@ export interface AuthContext {
 export class AuthenticationManager {
   private serverToken: string | undefined;
 
-  constructor() {
+  constructor () {
     // Load server token from config
     this.serverToken = appConfig.server.token;
 
@@ -33,7 +33,7 @@ export class AuthenticationManager {
   /**
    * Middleware for authentication that determines the mode and sets auth context
    */
-  authenticationMiddleware() {
+  authenticationMiddleware () {
     return (req: Request, res: Response, next: NextFunction) => {
       const providedToken = req.headers['x-server-token'] as string;
 
@@ -62,7 +62,7 @@ export class AuthenticationManager {
   /**
    * Create authentication context based on provided token and headers
    */
-  private createAuthContext(providedToken: string | undefined, headers: any): AuthContext {
+  private createAuthContext (providedToken: string | undefined, headers: any): AuthContext {
     if (this.isValidServerToken(providedToken)) {
       // System mode: use configuration credentials
       logger.debug('[Auth] Using system authentication mode');
@@ -83,7 +83,7 @@ export class AuthenticationManager {
   /**
    * Validate server token
    */
-  private isValidServerToken(token?: string): boolean {
+  private isValidServerToken (token?: string): boolean {
     if (!this.serverToken) {
       return false; // No server token configured
     }
@@ -94,7 +94,7 @@ export class AuthenticationManager {
   /**
    * Get system authentication headers from configuration
    */
-  private getSystemAuthHeaders(): Record<string, string> {
+  private getSystemAuthHeaders (): Record<string, string> {
     const headers: Record<string, string> = {};
 
     // JIRA authentication from config
@@ -127,7 +127,7 @@ export class AuthenticationManager {
   /**
    * Extract authentication headers from request headers
    */
-  private extractAuthHeaders(headers: any): Record<string, string> {
+  private extractAuthHeaders (headers: any): Record<string, string> {
     const authHeaders: Record<string, string> = {};
 
     // Extract only x- headers for authentication (excluding server-token)
@@ -148,14 +148,14 @@ export class AuthenticationManager {
   /**
    * Get authentication context from request
    */
-  static getAuthContext(req: Request): AuthContext | undefined {
+  static getAuthContext (req: Request): AuthContext | undefined {
     return (req as any).authContext;
   }
 
   /**
    * Check if request is authenticated
    */
-  static isAuthenticated(req: Request): boolean {
+  static isAuthenticated (req: Request): boolean {
     const authContext = this.getAuthContext(req);
     return !!(authContext && authContext.headers && Object.keys(authContext.headers).length > 0);
   }
@@ -163,7 +163,7 @@ export class AuthenticationManager {
   /**
    * Get service-specific authentication headers
    */
-  static getServiceAuthHeaders(req: Request, service: 'jira' | 'confluence'): Record<string, string> {
+  static getServiceAuthHeaders (req: Request, service: 'jira' | 'confluence'): Record<string, string> {
     const authContext = this.getAuthContext(req);
     if (!authContext) {
       return {};

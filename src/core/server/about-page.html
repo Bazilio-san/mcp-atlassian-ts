@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{SERVICE_TITLE}} MCP Server</title>
+  <link rel="stylesheet" href="/about.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>{{SERVICE_ICON}}</text></svg>">
+</head>
+<body>
+  <main class="main">
+    <div class="container">
+      <!-- Header -->
+      <header class="header">
+        <div class="service-icon">{{SERVICE_ICON}}</div>
+        <h1 class="title">{{SERVICE_TITLE}} <span class="subtitle-text">MCP Server</span></h1>
+        <p class="subtitle">Model Context Protocol server for {{SERVICE_DESCRIPTION}}</p>
+        <div class="status-badge {{STATUS_CLASS}}">
+          <div class="status-indicator"></div>
+          <span>{{STATUS_TEXT}}</span>
+        </div>
+      </header>
+
+      <!-- Service Information -->
+      <section class="card">
+        <h2 class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+          </svg>
+          Service Information
+        </h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Service Mode:</span>
+            <code class="info-value">{{SERVICE_MODE}}</code>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Version:</span>
+            <code class="info-value">{{SERVICE_VERSION}}</code>
+          </div>
+          <div class="info-item">
+            <span class="info-label">{{SERVICE_URL_LABEL}}:</span>
+            <code class="info-value">{{SERVICE_URL}}</code>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Tools Available:</span>
+            <code class="info-value">{{TOOLS_COUNT}}</code>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Authentication:</span>
+            <span class="auth-badge {{AUTH_STATUS_CLASS}}">{{AUTH_STATUS}}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Uptime:</span>
+            <code class="info-value">{{UPTIME}}</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transport Options -->
+      <section class="card">
+        <h2 class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9L12 2L21 9V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9Z" stroke="currentColor" stroke-width="2" fill="none"/>
+            <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+          Available Transports
+        </h2>
+        <div class="transport-grid">
+          <div class="transport-item">
+            <div class="transport-header">
+              <h3>STDIO Transport</h3>
+              <span class="transport-badge primary">Recommended</span>
+            </div>
+            <p class="transport-description">Direct communication for Claude Desktop integration</p>
+            <code class="transport-command">npm start</code>
+          </div>
+
+          <div class="transport-item">
+            <div class="transport-header">
+              <h3>HTTP/SSE Transport</h3>
+              <span class="transport-badge secondary">Testing</span>
+            </div>
+            <p class="transport-description">Web-based transport for testing and development</p>
+            <div class="endpoint-list">
+              <div class="endpoint">
+                <span class="endpoint-method">GET</span>
+                <code class="endpoint-path">/sse</code>
+                <span class="endpoint-desc">SSE Connection</span>
+              </div>
+              <div class="endpoint">
+                <span class="endpoint-method">POST</span>
+                <code class="endpoint-path">/mcp</code>
+                <span class="endpoint-desc">Direct MCP Calls</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Links -->
+      <section class="card">
+        <h2 class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M10 13A5 5 0 0 0 7.54 7.54L4.93 4.93A10 10 0 1 0 19.07 19.07L16.46 16.46A5 5 0 0 0 10 13Z" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M13 10A5 5 0 0 1 10.54 16.46L13.07 19.07A10 10 0 1 1 4.93 4.93L7.46 7.46A5 5 0 0 1 13 10Z" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+          Quick Links
+        </h2>
+        <div class="links-grid">
+          <a href="/health" class="link-button primary">
+            <svg class="link-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M22 12H18L15 21L9 3L6 12H2" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+            Health Check
+          </a>
+          <a href="{{EXTERNAL_SERVICE_URL}}" target="_blank" rel="noopener" class="link-button secondary">
+            <svg class="link-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M18 13V19C18 19.5523 17.5523 20 17 20H7C6.44772 20 6 19.5523 6 19V9C6 8.44772 6.44772 8 7 8H13" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+            {{SERVICE_TITLE}} Dashboard
+          </a>
+          {{#ADDITIONAL_LINKS}}
+          <a href="{{URL}}" target="_blank" rel="noopener" class="link-button tertiary">
+            <svg class="link-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+            {{TITLE}}
+          </a>
+          {{/ADDITIONAL_LINKS}}
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-content">
+          <div class="footer-info">
+            <p>
+              Server: <code>{{SERVER_NAME}}</code> v{{SERVICE_VERSION}}
+              <span class="separator">•</span>
+              Protocol: <code>MCP 2025-06-18</code>
+              <span class="separator">•</span>
+              Started: <code>{{START_TIME}}</code>
+            </p>
+          </div>
+          <div class="footer-links">
+            <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">
+              MCP Specification
+            </a>
+            <a href="https://github.com/anthropics/mcp" target="_blank" rel="noopener">
+              MCP on GitHub
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,6 +1,6 @@
 {
   "name": "mcp-atlassian-ts",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture",
   "main": "dist/src/index.js",
   "type": "module",
@@ -11,7 +11,8 @@
     "start": "node dist/src/index.js",
     "start:jira": "node dist/src/index.js --service jira",
     "start:confluence": "node dist/src/index.js --service confluence",
-    "build": "tsc",
+    "build": "tsc && npm run copy-assets",
+    "copy-assets": "node -e \"const fs = require('fs'); const path = require('path'); const srcDir = 'src/core/server'; const distDir = 'dist/src/core/server'; if(!fs.existsSync(distDir)) fs.mkdirSync(distDir, {recursive: true}); fs.copyFileSync(path.join(srcDir, 'about-page.html'), path.join(distDir, 'about-page.html')); fs.copyFileSync(path.join(srcDir, 'about-page.css'), path.join(distDir, 'about-page.css')); console.log('Assets copied successfully');\"",
     "clean": "rimraf dist",
     "cb": "npm run clean && npm run build",
     "ci": "node --no-deprecation ./_sh/npm/run.js",

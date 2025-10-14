@@ -27,6 +27,7 @@ import { createAuthenticationManager } from '../auth.js';
 import { ToolRegistry } from './tools.js';
 import { AuthenticationManager } from '../auth/auth-manager.js';
 import { appConfig } from '../../bootstrap/init-config.js';
+import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 
 const logger = createLogger('server');
 
@@ -44,6 +45,7 @@ export class McpAtlassianServer {
   protected rateLimiter: RateLimiterMemory;
   protected authManager: AuthenticationManager;
   protected app?: express.Application;
+  protected aboutPageRenderer?: AboutPageRenderer;
 
   constructor (serverConfig: ServerConfig, serviceConfig: JCConfig) {
     this.serverConfig = serverConfig;
@@ -265,6 +267,44 @@ export class McpAtlassianServer {
       // Authentication middleware - apply to MCP endpoints
       this.app.use('/mcp', this.authManager.authenticationMiddleware());
       this.app.use('/sse', this.authManager.authenticationMiddleware());
+
+      // Initialize About page renderer
+      this.aboutPageRenderer = createAboutPageRenderer(
+        this.serverConfig,
+        this.serviceConfig,
+        0 // Will be updated after tools are registered
+      );
+
+      // Root endpoint with About page
+      this.app.get('/', (req, res) => {
+        try {
+          // Update tools count if available
+          if (this.toolRegistry && this.aboutPageRenderer) {
+            this.toolRegistry.listTools().then(tools => {
+              this.aboutPageRenderer!.setToolsCount(tools.length);
+            }).catch(error => {
+              logger.warn('Failed to get tools count for about page', error);
+            });
+          }
+
+          const html = this.aboutPageRenderer!.renderFullPage();
+          res.type('html').send(html);
+        } catch (error) {
+          logger.error('Failed to render about page', error instanceof Error ? error : new Error(String(error)));
+          res.status(500).send('Error rendering about page');
+        }
+      });
+
+      // CSS endpoint for about page
+      this.app.get('/about.css', (req, res) => {
+        try {
+          const css = this.aboutPageRenderer!.renderCss();
+          res.type('css').send(css);
+        } catch (error) {
+          logger.error('Failed to serve about page CSS', error instanceof Error ? error : new Error(String(error)));
+          res.status(500).send('/* Error loading CSS */');
+        }
+      });
 
       // Health check endpoint
       this.app.get('/health', (req, res) => {
@@ -498,6 +538,7 @@ export class McpAtlassianServer {
       const port = this.serverConfig.port;
       this.app.listen(port, '0.0.0.0', () => {
         logger.info(`MCP server started with HTTP transport on port ${port}`);
+        logger.info(`About page: http://localhost:${port}/`);
         logger.info(`Health check: http://localhost:${port}/health`);
         logger.info(`SSE endpoint: http://localhost:${port}/sse`);
         logger.info(`MCP endpoint: http://localhost:${port}/mcp`);
