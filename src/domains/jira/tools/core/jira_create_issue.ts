@@ -128,7 +128,7 @@ async function validateProjectAndIssueType (
   try {
     // Get project details with issueTypes expanded
     const projectResult = await jira_get_project.handler({ projectIdOrKey, expand: ['issueTypes'] }, context);
-    const json = getJsonFromResult(projectResult)
+    const json = getJsonFromResult(projectResult);
 
 
     // Check if project was found

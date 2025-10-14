@@ -28,6 +28,7 @@ import { ToolRegistry } from './tools.js';
 import { AuthenticationManager } from '../auth/auth-manager.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
+import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 
 const logger = createLogger('server');
 
@@ -110,6 +111,16 @@ export class McpAtlassianServer {
         logger.info('Tool executed successfully', { name });
         return result;
       } catch (error) {
+        // Handle rate limit errors
+        if (isRateLimitError(error)) {
+          const rateLimitMessage = formatRateLimitError(
+            error as any,
+            this.serverConfig.rateLimit.maxRequests
+          );
+          logger.warn('Rate limit exceeded in STDIO', { name });
+          throw new ServerError(rateLimitMessage);
+        }
+
         logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
 
         if (error instanceof McpAtlassianError) {
@@ -343,14 +354,27 @@ export class McpAtlassianServer {
 
             logger.info('SSE tool called', { name, authMode: authContext.mode });
 
-            // Rate limiting
-            const clientId = authContext.mode === 'system'
-              ? `sse-system-${req.ip}`
-              : `sse-headers-${req.ip}`;
-            await this.rateLimiter.consume(clientId);
+            try {
+              // Rate limiting
+              const clientId = authContext.mode === 'system'
+                ? `sse-system-${req.ip}`
+                : `sse-headers-${req.ip}`;
+              await this.rateLimiter.consume(clientId);
 
-            // Execute tool with authentication headers from context
-            return await this.toolRegistry.executeTool(name, args || {}, authContext.headers);
+              // Execute tool with authentication headers from context
+              return await this.toolRegistry.executeTool(name, args || {}, authContext.headers);
+            } catch (error) {
+              // Handle rate limit errors
+              if (isRateLimitError(error)) {
+                const rateLimitMessage = formatRateLimitError(
+                  error as any,
+                  this.serverConfig.rateLimit.maxRequests
+                );
+                logger.warn('Rate limit exceeded in SSE', { name, authMode: authContext.mode });
+                throw new ServerError(rateLimitMessage);
+              }
+              throw error;
+            }
           });
 
           // Setup other handlers (tools/list, resources, etc.)
@@ -415,7 +439,27 @@ export class McpAtlassianServer {
           const clientId = authContext.mode === 'system'
             ? `system-${req.ip}`
             : `headers-${req.ip}`;
-          await this.rateLimiter.consume(clientId);
+
+          try {
+            await this.rateLimiter.consume(clientId);
+          } catch (rateLimitError) {
+            if (isRateLimitError(rateLimitError)) {
+              const rateLimitMessage = formatRateLimitError(
+                rateLimitError as any,
+                this.serverConfig.rateLimit.maxRequests
+              );
+              logger.warn('Rate limit exceeded in HTTP', { ip: req.ip, authMode: authContext.mode });
+              return res.status(429).json({
+                jsonrpc: '2.0',
+                id: req.body?.id || null,
+                error: {
+                  code: -32000,
+                  message: rateLimitMessage
+                }
+              });
+            }
+            throw rateLimitError;
+          }
 
           // Use authentication headers from context
           const authHeaders = authContext.headers;
@@ -476,43 +520,35 @@ export class McpAtlassianServer {
             result,
           });
         } catch (error) {
-          const errorString = error instanceof Error ? error.toString() : String(error);
-          if (errorString.includes('Rate limit')) {
-            logger.warn('Rate limit exceeded', { ip: req.ip });
-            return res.status(429).json(createErrorResponse(
-              new ServerError('Rate limit exceeded'),
-            ));
+          logger.error('MCP request failed', error instanceof Error ? error : new Error(String(error)));
+
+          // Extract detailed error information for MCP response
+          let errorResponse;
+          if (error instanceof McpAtlassianError) {
+            // Use full error structure with details for better debugging
+            const errorObj = error.toJSON();
+            errorResponse = {
+              code: -1,
+              message: errorObj.message,
+              data: {
+                code: errorObj.code,
+                details: errorObj.details,
+                // stack: process.env.NODE_ENV === 'development' ? errorObj.stack : undefined
+              },
+            };
           } else {
-            logger.error('MCP request failed', error instanceof Error ? error : new Error(String(error)));
-
-            // Extract detailed error information for MCP response
-            let errorResponse;
-            if (error instanceof McpAtlassianError) {
-              // Use full error structure with details for better debugging
-              const errorObj = error.toJSON();
-              errorResponse = {
-                code: -1,
-                message: errorObj.message,
-                data: {
-                  code: errorObj.code,
-                  details: errorObj.details,
-                  // stack: process.env.NODE_ENV === 'development' ? errorObj.stack : undefined
-                },
-              };
-            } else {
-              // Standard error handling for non-MCP errors
-              errorResponse = {
-                code: -1,
-                message: error instanceof Error ? error.message : String(error),
-              };
-            }
-
-            return res.json({
-              jsonrpc: '2.0',
-              id: req.body?.id || null,
-              error: errorResponse,
-            });
+            // Standard error handling for non-MCP errors
+            errorResponse = {
+              code: -1,
+              message: error instanceof Error ? error.message : String(error),
+            };
           }
+
+          return res.json({
+            jsonrpc: '2.0',
+            id: req.body?.id || null,
+            error: errorResponse,
+          });
         }
       });
 
