@@ -1,391 +1,266 @@
-# MCP Atlassian Server
+# MCP Atlassian TypeScript Server
 
-A comprehensive Model Context Protocol (MCP) server for Atlassian JIRA and Confluence integration with flexible authentication and multi-user web interface support.
+Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture.
 
 ## 🚀 Features
 
-- **📋 47 MCP Tools**: Complete coverage of JIRA (30 tools) and Confluence (17 tools) operations
-- **🔄 Multiple Transport Support**: STDIO, HTTP, and Server-Sent Events (SSE)
-- **🔐 Flexible Authentication**: System mode for trusted clients and header-based authentication for external clients
-- **🌐 Web Interface Support**: Full MCP protocol implementation for web-based clients
-- **⚡ High Performance**: Caching, rate limiting, and optimized tool execution
-- **🛡️ Enterprise Ready**: Comprehensive security, logging, and monitoring
+- **🔧 51 MCP Tools**: Complete coverage of JIRA (34 tools) and Confluence (17 tools) operations
+- **⚡ Modern TypeScript**: Built with ES2022, strict type checking, and comprehensive error handling
+- **🔐 Multiple Authentication**: Basic Auth, Personal Access Tokens (PAT), and OAuth 2.0 support
+- **🚀 Service Modes**: Run JIRA-only, Confluence-only, or combined server modes
+- **🌐 Transport Options**: STDIO for Claude Desktop, HTTP for testing, SSE experimental
+- **📊 Performance**: TTL-based caching, rate limiting, and optimized API calls
+- **🧪 Testing**: Comprehensive test suite with JIRA emulator and API endpoint coverage
+- **📦 Docker Ready**: Containerized deployment with configuration management
 
-## 📦 Installation
+## 📦 Quick Start
 
+### Installation
 ```bash
+git clone https://github.com/Bazilio-san/mcp-atlassian-ts.git
+cd mcp-atlassian-ts
 npm install
+```
+
+### Configuration
+```bash
+cp .env.example .env
+# Edit .env with your Atlassian credentials
+```
+
+### Run
+```bash
+# Development mode with hot reload
+npm run dev
+
+# Production mode
 npm run build
+npm start
 ```
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Environment Variables (.env)
 
 ```bash
-# Server Authentication
-SERVER_TOKEN=your-secret-server-token-12345
-
-# Service Selection (REQUIRED)
-MCP_SERVICE=jira                    # or 'confluence' or 'both'
+# Service Mode (REQUIRED)
+MCP_SERVICE=jira                    # 'jira' or 'confluence'
 
 # JIRA Configuration
-JIRA_URL=https://your-domain.atlassian.net
-JIRA_PAT=your-jira-personal-access-token
-JIRA_USERNAME=your-jira-username
-JIRA_PASSWORD=your-jira-api-token
-JIRA_ACCOUNT_ID=your-account-id
+JIRA_URL=https://your-company.atlassian.net
+JIRA_USERNAME=your-email@company.com
+JIRA_PASSWORD=your-api-token        # Generate at id.atlassian.com
+
+# Alternative: Personal Access Token
+# JIRA_PAT=your-personal-access-token
 
 # Confluence Configuration
-CONFLUENCE_URL=https://your-domain.atlassian.net/wiki
-CONFLUENCE_PAT=your-confluence-personal-access-token
-CONFLUENCE_USERNAME=your-confluence-username
-CONFLUENCE_PASSWORD=your-confluence-api-token
+CONFLUENCE_URL=https://your-company.atlassian.net/wiki
+CONFLUENCE_USERNAME=your-email@company.com
+CONFLUENCE_PASSWORD=your-api-token
+
+# Alternative: Personal Access Token
+# CONFLUENCE_PAT=your-personal-access-token
 
 # Server Configuration
 SERVER_PORT=3000
-TRANSPORT_TYPE=stdio                # 'stdio', 'http', or 'sse'
+TRANSPORT_TYPE=http                 # 'stdio', 'http', or 'sse'
 
-# Performance
+# Performance & Caching
 CACHE_TTL_SECONDS=300
-RATE_LIMIT_REQUESTS=100
-RATE_LIMIT_WINDOW_MS=60000
+CACHE_MAX_ITEMS=1000
+RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_WINDOW_MS=900000
 
 # Logging
-LOG_LEVEL=info
+LOG_LEVEL=info                      # 'debug', 'info', 'warn', 'error'
 LOG_PRETTY=true
-LOG_AUTH_ATTEMPTS=true
+
+# JIRA Custom Fields
+JIRA_EPIC_LINK_FIELD_ID=customfield_10014
+JIRA_MAX_RESULTS=50
 ```
 
-### Configuration File (config.yaml)
+### Tool Configuration (config.yaml)
 
 ```yaml
-# Server configuration
-server:
-  token: your-secret-server-token-12345
-  port: 3000
-  transport: stdio
-
-# Service selection
-service: jira  # or 'confluence' or 'both'
-
-# JIRA configuration
 jira:
-  url: https://your-domain.atlassian.net
-  auth:
-    basic:
-      username: ${JIRA_USERNAME}
-      password: ${JIRA_PASSWORD}
-    pat: ${JIRA_PAT}
-    accountId: ${JIRA_ACCOUNT_ID}
-  maxResults: 50
-  customFields:
-    epicLink: customfield_10014
   usedInstruments:
-    include: ALL
-    exclude: []
+    include: ALL                    # Enable all JIRA tools
+    exclude: []                     # Or exclude specific tools
 
-# Confluence configuration
 confluence:
-  url: https://your-domain.atlassian.net/wiki
-  auth:
-    basic:
-      username: ${CONFLUENCE_USERNAME}
-      password: ${CONFLUENCE_PASSWORD}
-    pat: ${CONFLUENCE_PAT}
-  maxResults: 50
   usedInstruments:
-    include: ALL
-    exclude: []
-
-# Performance settings
-cache:
-  ttlSeconds: 300
-  maxSize: 1000
-
-rateLimit:
-  requests: 100
-  windowMs: 60000
+    include: ALL                    # Enable all Confluence tools
+    exclude: []                     # Or exclude specific tools
 ```
 
-## 🔐 Flexible Authentication System
+## 🔐 Authentication Methods
 
-The server supports a comprehensive flexible authentication system with two distinct modes that can automatically switch based on the provided credentials:
+The server supports multiple authentication methods for flexibility:
 
-### 🏢 System Mode (Trusted Clients)
-
-When a valid `X-Server-Token` header is provided and matches the configured server token, the server uses system credentials from configuration:
-
-**Configuration:**
+### Basic Authentication (Recommended)
 ```bash
-# Environment variable
-SERVER_TOKEN=your-secret-server-token-12345
-
-# Or in config.yaml
-server:
-  token: your-secret-server-token-12345
+JIRA_USERNAME=your-email@company.com
+JIRA_PASSWORD=your-api-token
 ```
 
-**Usage:**
+### Personal Access Token (PAT)
 ```bash
-curl -X POST http://localhost:3000/mcp \
-  -H "Content-Type: application/json" \
-  -H "X-Server-Token: your-secret-server-token-12345" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/call",
-    "params": {
-      "name": "jira_get_issue",
-      "arguments": {"issueId": "TEST-123"}
-    }
-  }'
+JIRA_PAT=your-personal-access-token
 ```
 
-**Benefits:**
-- 🔒 **Secure**: Only clients with valid server token can access
-- 🏢 **Enterprise**: Uses centralized system credentials
-- 📊 **Softer Rate Limiting**: More generous limits for trusted clients
-- ⚡ **Performance**: No per-request authentication overhead
-
-### 👥 Header Mode (External Clients)
-
-When no server token is provided or the token is invalid, the client must supply authentication headers for each request:
-
+### OAuth 2.0 (Future)
 ```bash
-curl -X POST http://localhost:3000/mcp \
-  -H "Content-Type: application/json" \
-  -H "X-JIRA-Token: external-jira-pat" \
-  -H "X-JIRA-Username: external-jira-username" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/call",
-    "params": {
-      "name": "jira_get_issue",
-      "arguments": {"issueId": "TEST-123"}
-    }
-  }'
+JIRA_OAUTH_CLIENT_ID=your-client-id
+JIRA_OAUTH_CLIENT_SECRET=your-client-secret
 ```
 
-**Benefits:**
-- 🔑 **Per-Client**: Each client uses its own credentials
-- 🌐 **Web-Friendly**: Ideal for web applications and external integrations
-- 🛡️ **Isolated**: Clients can only access their own resources
-- 🔍 **Auditable**: Individual client tracking and logging
-
-### 📋 Supported Authentication Headers
-
-#### JIRA Authentication Headers
-- `X-JIRA-Token`: Personal Access Token (PAT)
-- `X-JIRA-Username`: Username (for Basic Auth)
-- `X-JIRA-Password`: API Token (for Basic Auth)
-
-#### Confluence Authentication Headers
-- `X-Confluence-Token`: Personal Access Token (PAT)
-- `X-Confluence-Username`: Username (for Basic Auth)
-- `X-Confluence-Password`: API Token (for Basic Auth)
-
-### 🔄 Automatic Mode Switching
-
-The authentication system automatically detects the appropriate mode:
-
-```typescript
-// System Mode - Valid server token
-if (providedToken === configuredServerToken) {
-  // Use system credentials from config.yaml or environment
-  useSystemAuthentication();
-}
-
-// Header Mode - No or invalid server token
-else if (hasJiraHeaders || hasConfluenceHeaders) {
-  // Use credentials from request headers
-  useHeaderAuthentication();
-}
-
-// Authentication Required
-else {
-  // Reject request with 401 Unauthorized
-  rejectRequest();
-}
-```
-
-### 🎯 Use Cases
-
-#### System Mode Use Cases:
-- **Internal Applications**: Enterprise tools with centralized auth
-- **Trusted Integrations**: MCP Desktop clients, IDE plugins
-- **Background Services**: Automated processes and scripts
-- **Admin Tools**: System administration interfaces
-
-#### Header Mode Use Cases:
-- **Web Applications**: Multi-user SaaS platforms
-- **Customer Portals**: External-facing applications
-- **API Gateways**: Third-party integrations
-- **Mobile Apps**: Mobile client applications
-
-### 🔒 Security Features
-
-- **Token Validation**: Cryptographic server token verification
-- **Header Isolation**: Header-based clients cannot access system credentials
-- **Rate Limiting**: Different limits for trusted vs external clients
-- **Audit Logging**: Complete authentication attempt tracking
-- **CORS Support**: Configurable cross-origin policies
-- **Input Validation**: Request sanitization and validation
+For detailed authentication setup, see [Atlassian API Documentation](https://developer.atlassian.com/cloud/jira/platform/basic-auth-for-rest-apis/).
 
 ## 🏃‍♂️ Usage
 
 ### Development Mode
 
 ```bash
-# Start development server with hot reload
+# Development with hot reload
 npm run dev
 
-# Start with specific transport
-npm run dev:stdio      # STDIO transport (default)
-npm run dev:http       # HTTP transport on port 3000
-npm run dev:sse        # SSE transport
+# Service-specific development
+npm run dev:jira        # JIRA-only mode
+npm run dev:confluence  # Confluence-only mode
+npm run dev:stdio       # STDIO transport
 ```
 
 ### Production Mode
 
 ```bash
-# Build the project
+# Build and start
 npm run build
-
-# Start production server
 npm start
 
-# Start with specific service
-npm run start:jira        # JIRA only
-npm run start:confluence  # Confluence only
+# Service-specific modes
+npm run start:jira        # JIRA-only server
+npm run start:confluence  # Confluence-only server
 ```
 
 ### Docker Deployment
 
 ```bash
-# Build Docker image
-docker build -t mcp-atlassian .
+# Build and run
+npm run docker:build
+npm run docker:run
 
-# Run with environment variables
-docker run -p 3000:3000 \
-  -e SERVER_TOKEN=your-secret-token \
-  -e JIRA_URL=https://your-domain.atlassian.net \
-  -e JIRA_PAT=your-pat \
-  mcp-atlassian
+# Or manually
+docker build -t mcp-atlassian-ts .
+docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 ```
 
-## 🛠️ MCP Tools
+## 🛠️ Complete Tool List
 
-### JIRA Tools (30 tools)
+### 🎯 JIRA Tools (34 tools) {#jira-tools}
 
-**Issue Management:**
-- `jira_get_issue` - Get issue details
-- `jira_create_issue` - Create new issue
-- `jira_update_issue` - Update existing issue
-- `jira_delete_issue` - Delete issue
-- `jira_search_issues` - Search issues with JQL
-- `jira_list_issues` - List issues by project
+#### Core Issue Management (9 tools) {#jira-core}
+- [`jira_get_issue`](#jira_get_issue) - Get issue by ID or key
+- [`jira_search_issues`](#jira_search_issues) - Search issues with JQL
+- [`jira_create_issue`](#jira_create_issue) - Create new issue (dynamic tool with current priorities)
+- [`jira_update_issue`](#jira_update_issue) - Update existing issue
+- [`jira_delete_issue`](#jira_delete_issue) - Delete issue
+- [`jira_batch_create_issues`](#jira_batch_create_issues) - Create multiple issues efficiently
+- [`jira_get_transitions`](#jira_get_transitions) - Get available transitions for issue
+- [`jira_transition_issue`](#jira_transition_issue) - Transition issue to new status
+- [`jira_find_epic`](#jira_find_epic) - Find epic by name
 
-**Project Management:**
-- `jira_get_project` - Get project details
-- `jira_list_projects` - List all projects
-- `jira_get_project_components` - Get project components
-- `jira_get_project_versions` - Get project versions
+#### Project Management (8 tools) {#jira-projects}
+- [`jira_get_projects`](#jira_get_projects) - Get all accessible projects
+- [`jira_get_project`](#jira_get_project) - Get specific project details
+- [`jira_find_project`](#jira_find_project) - Find project by name/key
+- [`jira_force_update_projects_index`](#jira_force_update_projects_index) - Refresh projects cache
+- [`jira_get_project_versions`](#jira_get_project_versions) - Get project versions/releases
+- [`jira_create_version`](#jira_create_version) - Create new project version
+- [`jira_batch_create_versions`](#jira_batch_create_versions) - Create multiple versions
+- [`jira_get_epics_for_project`](#jira_get_epics_for_project) - Get all epics in project
 
-**Agile/Scrum:**
-- `jira_get_sprint` - Get sprint details
-- `jira_list_sprints` - List sprints
-- `jira_get_sprint_issues` - Get issues in sprint
-- `jira_create_sprint` - Create new sprint
-- `jira_update_sprint` - Update sprint
+#### Agile/Scrum (6 tools) {#jira-agile}
+- [`jira_get_agile_boards`](#jira_get_agile_boards) - Get all Agile boards
+- [`jira_get_board_issues`](#jira_get_board_issues) - Get issues on specific board
+- [`jira_get_sprints_from_board`](#jira_get_sprints_from_board) - Get sprints from board
+- [`jira_get_sprint_issues`](#jira_get_sprint_issues) - Get issues in specific sprint
+- [`jira_create_sprint`](#jira_create_sprint) - Create new sprint
+- [`jira_update_sprint`](#jira_update_sprint) - Update existing sprint
 
-**Time Tracking:**
-- `jira_log_work` - Log work on issue
-- `jira_get_worklog` - Get worklog details
-- `jira_update_worklog` - Update worklog
-- `jira_delete_worklog` - Delete worklog
+#### Issue Links (4 tools) {#jira-links}
+- [`jira_get_link_types`](#jira_get_link_types) - Get available link types
+- [`jira_create_issue_link`](#jira_create_issue_link) - Create link between issues
+- [`jira_create_remote_issue_link`](#jira_create_remote_issue_link) - Create remote link
+- [`jira_remove_issue_link`](#jira_remove_issue_link) - Remove issue link
 
-**Comments & Attachments:**
-- `jira_add_comment` - Add comment to issue
-- `jira_get_comments` - Get issue comments
-- `jira_add_attachment` - Add attachment
-- `jira_get_attachments` - Get attachments
+#### Comments & Epic Links (3 tools) {#jira-comments}
+- [`jira_add_comment`](#jira_add_comment) - Add comment to issue
+- [`jira_link_to_epic`](#jira_link_to_epic) - Link issue to epic
+- [`jira_batch_get_changelogs`](#jira_batch_get_changelogs) - Get changelogs for multiple issues
 
-**User & Team Management:**
-- `jira_get_user` - Get user details
-- `jira_search_users` - Search users
-- `jira_get_issue_transitions` - Get available transitions
-- `jira_transition_issue` - Transition issue
+#### Worklog Management (2 tools) {#jira-worklog}
+- [`jira_get_worklog`](#jira_get_worklog) - Get worklog entries for issue
+- [`jira_add_worklog`](#jira_add_worklog) - Add worklog entry to issue
 
-### Confluence Tools (17 tools)
+#### Metadata & Search (2 tools) {#jira-metadata}
+- [`jira_get_user_profile`](#jira_get_user_profile) - Get user profile information
+- [`jira_search_fields`](#jira_search_fields) - Search and get field metadata
 
-**Content Management:**
-- `confluence_get_page` - Get page content
-- `confluence_create_page` - Create new page
-- `confluence_update_page` - Update existing page
-- `confluence_delete_page` - Delete page
-- `confluence_search_content` - Search content
+#### Attachments (1 tool) {#jira-attachments}
+- [`jira_download_attachments`](#jira_download_attachments) - Download issue attachments
 
-**Space Management:**
-- `confluence_get_space` - Get space details
-- `confluence_list_spaces` - List spaces
-- `confluence_create_space` - Create space
-- `confluence_update_space` - Update space
+### 📝 Confluence Tools (17 tools) {#confluence-tools}
 
-**Comments & Labels:**
-- `confluence_add_comment` - Add comment to page
-- `confluence_get_comments` - Get page comments
-- `confluence_add_label` - Add label to content
-- `confluence_get_labels` - Get content labels
-- `confluence_remove_label` - Remove label
+#### Content Management (6 tools) {#confluence-content}
+- [`confluence_search`](#confluence_search) - Search Confluence content
+- [`confluence_get_page`](#confluence_get_page) - Get page by ID
+- [`confluence_get_page_by_title`](#confluence_get_page_by_title) - Get page by title and space
+- [`confluence_create_page`](#confluence_create_page) - Create new page
+- [`confluence_update_page`](#confluence_update_page) - Update existing page
+- [`confluence_delete_page`](#confluence_delete_page) - Delete page
 
-**Attachments:**
-- `confluence_add_attachment` - Add attachment
-- `confluence_get_attachments` - Get attachments
-- `confluence_download_attachment` - Download attachment
+#### Space Management (3 tools) {#confluence-spaces}
+- [`confluence_get_spaces`](#confluence_get_spaces) - Get all accessible spaces
+- [`confluence_get_space`](#confluence_get_space) - Get specific space details
+- [`confluence_get_space_content`](#confluence_get_space_content) - Get content in space
 
-## 🧪 Testing
+#### Collaboration (5 tools) {#confluence-collaboration}
+- [`confluence_add_comment`](#confluence_add_comment) - Add comment to page
+- [`confluence_get_comments`](#confluence_get_comments) - Get page comments
+- [`confluence_add_label`](#confluence_add_label) - Add label to page
+- [`confluence_get_labels`](#confluence_get_labels) - Get page labels
+- [`confluence_get_pages_by_label`](#confluence_get_pages_by_label) - Find pages by label
 
-### Authentication Testing
+#### Navigation & History (3 tools) {#confluence-navigation}
+- [`confluence_get_page_children`](#confluence_get_page_children) - Get child pages
+- [`confluence_get_page_history`](#confluence_get_page_history) - Get page version history
+- [`confluence_search_user`](#confluence_search_user) - Search for users
 
-The server includes a comprehensive authentication testing script:
+### 🔧 Utility Tools (3 tools) {#utility-tools}
+- [`cache_clear`](#cache_clear) - Clear cache (supports pattern matching)
+- [`cache_stats`](#cache_stats) - Get cache statistics and performance metrics
+- [`health_check`](#health_check) - Check service connectivity and health
 
-```bash
-# Test authentication modes (requires server running)
-node test-auth.js
-```
-
-**Test Scenarios:**
-- ✅ System Mode with valid server token
-- ✅ Header Mode without server token
-- ✅ Header Mode with invalid server token
-- ✅ Authentication rejection for missing credentials
+## 🧪 Testing {#testing}
 
 ### Unit Tests
-
 ```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run in watch mode
-npm run test:watch
+npm test                    # Run Jest test suite
+npm run test:coverage       # Run with coverage report
+npm run test:watch          # Run in watch mode
 ```
 
 ### Integration Testing
-
 The project includes comprehensive testing infrastructure:
 
 #### JIRA Emulator
 ```bash
-# Start standalone JIRA emulator
 node tests/emulator/jira.js
 ```
-- Runs on port 8080
-- Contains test data: project TEST, issues TEST-1/TEST-2
+- Self-contained JIRA API emulator on port 8080
+- Test data: project TEST, issues TEST-1/TEST-2
 - No external dependencies required
 
 #### Complete Test Flow
@@ -396,8 +271,8 @@ node tests/emulator/jira.js
 # Terminal 2: Start MCP server
 npm start
 
-# Terminal 3: Run tests
-node tests/mcp-client-tests.js
+# Terminal 3: Run MCP tests
+node tests/mcp/jira.js
 ```
 
 #### API Endpoint Testing
@@ -409,176 +284,88 @@ node tests/emulator/jira.js
 node tests/endpoints/jira.js
 ```
 
-**Test Results:**
-- ✅ **62/62 tests passing** (100% success rate)
-- ⚡ **0.33s** execution time
-- 🎯 Complete coverage of all JIRA REST API v2 endpoints
+**Test Coverage:**
+- ✅ **100% API endpoint coverage** for JIRA REST API v2
+- ⚡ **~0.33s** execution time for full test suite
 - 🔧 Self-contained testing with built-in emulator
+- 📊 Detailed test reporting and validation
 
-### Quick Authentication Test
-
-```bash
-# 1. Start server with test configuration
-SERVER_TOKEN=test-token JIRA_PAT=test-pat JIRA_URL=https://example.atlassian.net npm start
-
-# 2. Test System Mode
-curl -X POST http://localhost:3000/mcp \
-  -H "Content-Type: application/json" \
-  -H "X-Server-Token: test-token" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-
-# 3. Test Header Mode
-curl -X POST http://localhost:3000/mcp \
-  -H "Content-Type: application/json" \
-  -H "X-JIRA-Token: test-pat" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-```
-
-## 🏗️ Architecture
+## 🏗️ Architecture {#architecture}
 
 ```
 src/
-├── core/
-│   ├── auth/              # Authentication management
-│   │   ├── auth-manager.ts     # Flexible authentication system
-│   │   └── index.ts            # Legacy authentication manager
-│   ├── cache/             # Caching system
-│   ├── config/            # Configuration management
-│   ├── errors/            # Error handling
-│   ├── server/            # MCP server and transports
-│   │   ├── index.ts            # Main MCP server
-│   │   ├── tools.ts           # Tool registry
-│   │   └── factory.ts         # Server factory
-│   └── utils/             # Utilities and logging
-├── domains/
-│   ├── jira/              # JIRA client and tools
-│   │   ├── tools-manager.ts     # JIRA tools with header support
-│   │   └── tools/               # Individual tool implementations
-│   └── confluence/        # Confluence client and tools
-│       ├── tools-manager.ts     # Confluence tools with header support
-│       └── tools/               # Individual tool implementations
-├── types/                 # TypeScript definitions
-├── bootstrap/             # Configuration initialization
-└── index.ts               # Main entry point
+├── bootstrap/            # Application initialization and configuration
+├── core/                # Core infrastructure systems
+│   ├── auth/            # Authentication (Basic, PAT, OAuth2)
+│   ├── server/          # MCP server with multiple transports
+│   └── utils/           # Logging, caching, rate limiting, utilities
+├── domains/             # Domain-specific implementations
+│   ├── jira/            # JIRA client and 34 tools
+│   └── confluence/      # Confluence client and 17 tools
+├── types/               # TypeScript type definitions
+└── index.ts             # Main entry point with CLI support
 ```
 
-### Core Components
+### Key Components {#key-components}
 
-- **MCP Server**: Handles MCP protocol requests with multiple transport support (STDIO, HTTP, SSE)
-- **Authentication Manager**:
-  - `auth-manager.ts`: Flexible dual-mode authentication (System + Header modes)
-  - `index.ts`: Legacy authentication for domain clients
-- **Tool Registry**: Manages registration and execution of 47 MCP tools with header support
-- **Domain Clients**: Specialized clients for JIRA and Confluence APIs with per-request auth
-- **Session Management**: Connection lifecycle and context management for web clients
-- **Cache Layer**: Redis-like caching with TTL support
-- **Rate Limiter**: Configurable rate limiting per authentication mode
+- **MCP Server**: Handles MCP protocol with STDIO/HTTP/SSE transports
+- **Tool Registry**: Manages 51 MCP tools with validation and execution
+- **Authentication**: Multi-method auth (Basic, PAT, OAuth2) with validation
+- **Domain Managers**: JIRA and Confluence specialized tool managers
+- **Cache Layer**: TTL-based caching with performance statistics
+- **Error Handling**: Comprehensive error types and context preservation
 
-## 🌐 Transport Layer
+## 🌐 Transport Options {#transport-options}
 
-### STDIO Transport
-- Default transport for MCP client integration
-- JSON-RPC 2.0 protocol over stdin/stdout
-- Ideal for Claude Desktop and other MCP clients
+### STDIO (Default)
+- JSON-RPC 2.0 over stdin/stdout
+- Ideal for Claude Desktop and MCP clients
+- Direct integration without HTTP overhead
 
-### HTTP Transport
-- RESTful API endpoints for web integration (`/mcp`)
-- Full MCP protocol implementation with authentication support
-- Support for both System and Header authentication modes
-- JSON-RPC 2.0 protocol over HTTP
-- Ideal for web-based clients and applications
+### HTTP
+- RESTful API on port 3000
+- JSON-RPC 2.0 over HTTP
+- Web-based clients and testing
+- Health check at `/health`
 
-### SSE Transport
-- Server-Sent Events for real-time communication (`/sse`)
-- Persistent connections with automatic reconnection
-- Per-connection authentication context
-- Real-time tool execution with client-specific credentials
-- Ideal for web applications and live updates
+### SSE (Experimental)
+- Server-Sent Events for real-time updates
+- Persistent connections
+- Web applications with live updates
 
-## 📊 Monitoring & Observability
+## 📊 Development Features {#development-features}
 
-### Health Check
-```bash
-curl http://localhost:3000/health
-```
+### Code Quality
+- **TypeScript**: ES2022 with strict type checking
+- **ESLint**: Code quality and style enforcement
+- **Jest**: Comprehensive testing framework
+- **Hot Reload**: Development server with auto-restart
 
-### Metrics
-- Connection lifecycle metrics
-- Authentication mode usage statistics (System vs Header)
-- Server token validation success/failure rates
-- Header-based authentication attempt statistics
-- Rate limiting statistics per authentication mode
-- Tool execution performance by auth mode
-- Cache hit/miss ratios
-- Error rates per transport and authentication type
-- Active SSE connections by authentication mode
+### Production Features
+- **Caching**: TTL-based with statistics (`cache_stats`)
+- **Rate Limiting**: Configurable request limits
+- **Health Monitoring**: Service connectivity checks (`health_check`)
+- **Error Handling**: Comprehensive error types and context
+- **Logging**: Structured logging with Pino
 
-### Logging
-- Structured logging with Pino
-- Configurable log levels
-- Authentication attempt logging
-- Request/response tracing
-- Error context and stack traces
-
-## 🔒 Security Features
-
-### Authentication Security
-- **Dual-Mode Authentication**: Flexible System and Header-based authentication
-- **Server Token Validation**: Cryptographic verification of trusted client tokens
-- **Per-Request Authentication**: Individual client credentials via headers
-- **Header Isolation**: External clients cannot access system credentials
-- **Authentication Context**: Secure credential management per connection
-
-### Transport Security
-- **HTTPS Support**: TLS encryption for HTTP and SSE transports
-- **CORS Configuration**: Configurable cross-origin resource sharing policies
-- **Security Headers**: Comprehensive security headers (HSTS, CSP, etc.)
-- **Request Validation**: Input validation and sanitization
-- **Secure Error Handling**: Error responses without information leakage
-
-### Access Control
-- **Rate Limiting**: Different limits for trusted vs external clients
-- **IP-Based Tracking**: Client identification and monitoring
-- **Session Management**: Connection lifecycle and timeout handling
-- **Audit Logging**: Complete authentication attempt tracking
-- **Error Logging**: Security event logging and monitoring
-
-### Monitoring & Compliance
-- **Authentication Metrics**: Detailed usage statistics and security events
-- **Error Tracking**: Comprehensive error monitoring and alerting
-- **Performance Monitoring**: Resource usage and response time tracking
-- **Compliance Logging**: Audit trails for security and compliance requirements
-
-## 🤝 Contributing
+## 🤝 Contributing {#contributing}
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-## 📄 License
+## 📄 License {#license}
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🆘 Support {#support}
 
-For support and questions:
-
-- Create an issue in the GitHub repository
-- Check the [MCP_TOOLS_REGISTRY.md](MCP_TOOLS_REGISTRY.md) for available tools
-- Review the test files for usage examples
-
-## 🗺️ Roadmap
-
-- [ ] OAuth 2.0 authentication support
-- [ ] Additional Atlassian services (Bitbucket, Trello)
-- [ ] Advanced caching strategies
-- [ ] GraphQL API support
-- [ ] Advanced monitoring and alerting
-- [ ] Multi-tenant support
-- [ ] Plugin system for custom tools
+- [GitHub Issues](https://github.com/Bazilio-san/mcp-atlassian-ts/issues)
+- [Documentation](CLAUDE.md)
+- [Test Examples](tests/)
 
 ---
 
-**Built with ❤️ for the Model Context Protocol ecosystem**
+Built with ❤️ for the Model Context Protocol ecosystem
