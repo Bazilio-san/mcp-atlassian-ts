@@ -2,7 +2,7 @@
  * Get labels from Confluence page tool
  */
 
-import { withErrorHandling } from '../../../../core/errors/index.js';
+import { withErrorHandling } from '../../../../core/errors.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 

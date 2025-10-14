@@ -2,7 +2,7 @@
  * Get child pages of a Confluence page
  */
 
-import { withErrorHandling } from '../../../../core/errors/index.js';
+import { withErrorHandling } from '../../../../core/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../shared/types.js';
 

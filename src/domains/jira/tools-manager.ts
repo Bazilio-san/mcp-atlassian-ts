@@ -3,10 +3,10 @@
  * Manages all JIRA MCP tools using modular approach
  */
 
-import { createAuthenticationManager } from '../../core/auth/index.js';
-import { getCache } from '../../core/cache/index.js';
+import { createAuthenticationManager } from '../../core/auth.js';
+import { getCache } from '../../core/cache.js';
 import { createLogger } from '../../core/utils/logger.js';
-import { ToolExecutionError } from '../../core/errors/index.js';
+import { ToolExecutionError } from '../../core/errors.js';
 
 import type { JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';

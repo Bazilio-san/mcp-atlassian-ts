@@ -1,4 +1,4 @@
-import { withErrorHandling } from '../../../../core/errors/index.js';
+import { withErrorHandling } from '../../../../core/errors.js';
 import { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../../../types/confluence.js';
 

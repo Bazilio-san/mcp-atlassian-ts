@@ -7,9 +7,9 @@
  */
 
 import { appConfig, hasStringValue } from './bootstrap/init-config.js';
-import { createAuthenticationManager, validateAuthConfig } from './core/auth/index.js';
-import { initializeCache } from './core/cache/index.js';
-import { ServerError } from './core/errors/index.js';
+import { createAuthenticationManager, validateAuthConfig } from './core/auth.js';
+import { initializeCache } from './core/cache.js';
+import { ServerError } from './core/errors.js';
 import { createServiceServer, validateServiceMode, type ServiceMode } from './core/server/factory.js';
 import { createLogger } from './core/utils/logger.js';
 import { pathToFileURL } from 'url';

@@ -4,8 +4,8 @@
 
 import { ConfluenceToolsManager } from '../../domains/confluence/tools-manager.js';
 import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
-import { getCache } from '../cache/index.js';
-import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors/index.js';
+import { getCache } from '../cache.js';
+import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors.js';
 import { createLogger } from '../utils/logger.js';
 import { isToolEnabledByConfig } from '../../bootstrap/init-config.js';
 import { setCurrentToolName } from '../utils/http-logger.js';

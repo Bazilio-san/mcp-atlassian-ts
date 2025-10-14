@@ -4,8 +4,8 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context';
-import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
+import { withErrorHandling } from '../../../../core/errors.js';
+import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 

@@ -5,7 +5,7 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
+import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 

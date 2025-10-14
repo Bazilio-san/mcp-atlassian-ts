@@ -21,9 +21,9 @@ import {
 
 import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
-import { createErrorResponse, McpAtlassianError, ServerError } from '../errors/index.js';
-import { getCache } from '../cache/index.js';
-import { createAuthenticationManager } from '../auth/index.js';
+import { createErrorResponse, McpAtlassianError, ServerError } from '../errors.js';
+import { getCache } from '../cache.js';
+import { createAuthenticationManager } from '../auth.js';
 import { ToolRegistry } from './tools.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 

@@ -4,10 +4,11 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling } from '../../../../core/errors/index.js';
-import { generateCacheKey } from '../../../../core/cache/index.js';
+import { withErrorHandling } from '../../../../core/errors.js';
+import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { getProjectLabels } from './search-project/labels-cache.js';
 
 /**
  * Tool definition for jira_get_project
@@ -21,6 +22,7 @@ name,
 description,
 url,
 issueTypes: {id, name, description, subtask)[], // list of issue types available in the project so the LLM Agent can choose the correct issueType name when creating an issue
+labels: // Project label array
 projectTypeKey,
 archived,
 lead?: {key, name, displayName},
@@ -102,6 +104,20 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       return formatToolResult(json);
     }
 
+    // Get project labels using cache system
+    let projectLabels: string[] = []; // VVT
+    if (project.key && project.id) {
+      try {
+        const labelsResult = await getProjectLabels(project.key, String(project.id), context);
+        projectLabels = labelsResult.labels;
+      } catch (error) {
+        logger.warn('Failed to retrieve project labels', {
+          projectKey: project.key,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
     // Sanitize project to include only allowed fields
     const filteredProject: FilteredProject = (() => {
       const p: any = project || {};
@@ -116,6 +132,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         issueTypes: Array.isArray(p.issueTypes)
           ? p.issueTypes.map(({ id, name, description, subtask }: any) => ({ id, name, description, subtask }))
           : undefined,
+        labels: projectLabels,
         lead: p.lead ? {
           key: p.lead.key,
           name: p.lead.name,
@@ -152,6 +169,7 @@ interface FilteredProject {
     description?: string;
     subtask?: boolean;
   }[];
+  labels: string[],
   lead?: {
     key?: string;
     name?: string;

@@ -8,9 +8,9 @@ import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
-import { createAuthenticationManager } from '../auth/index.js';
-import { getCache } from '../cache/index.js';
-import { ServerError } from '../errors/index.js';
+import { createAuthenticationManager } from '../auth.js';
+import { getCache } from '../cache.js';
+import { ServerError } from '../errors.js';
 import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,

@@ -2,9 +2,9 @@
  * Centralized error handling system for the MCP Atlassian server
  */
 
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from './utils/logger.js';
 
-import type { McpError } from '../../types/index.js';
+import type { McpError } from '../types';
 
 const logger = createLogger('errors');
 

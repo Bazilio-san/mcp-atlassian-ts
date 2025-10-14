@@ -4,7 +4,7 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
+import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
@@ -120,7 +120,7 @@ export const jira_create_issue: ToolWithHandler = createJiraCreateIssueTool();
 /**
  * Validate project exists and issueType is correct
  */
-async function validateProjectAndIssueType(
+async function validateProjectAndIssueType (
   projectIdOrKey: string,
   issueType: string,
   context: ToolContext

@@ -4,12 +4,12 @@
 
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders } from 'axios';
 
-import { AuthenticationError } from '../errors/index.js';
-import { createLogger, getDebug } from '../utils/logger.js';
-import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from '../utils/http-logger.js';
-import { appConfig } from '../../bootstrap/init-config.js';
+import { AuthenticationError } from './errors.js';
+import { createLogger, getDebug } from './utils/logger.js';
+import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from './utils/http-logger.js';
+import { appConfig } from '../bootstrap/init-config.js';
 
-import type { AuthConfig, HttpClientConfig } from '../../types/index.js';
+import type { AuthConfig, HttpClientConfig } from '../types';
 
 const logger = createLogger('auth');
 const debug = getDebug('headers-to-api');
