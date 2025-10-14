@@ -97,7 +97,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Override to add JIRA-specific resources
    */
-  protected override setupServerHandlers(): void {
+  protected override setupServerHandlers (): void {
     super.setupServerHandlers();
 
     // Override list_resources to add JIRA-specific resources
@@ -140,12 +140,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Get base resources (common to all services)
    */
-  private async getBaseResources() {
-    const authManager = createAuthenticationManager(
-      this.serviceConfig.auth,
-      this.serviceConfig.url,
-    );
-
+  private async getBaseResources () {
     return [
       {
         uri: 'atlassian://config',
@@ -165,7 +160,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Handle base resource reading
    */
-  private async handleBaseResourceRead(uri: string) {
+  private async handleBaseResourceRead (uri: string) {
     switch (uri) {
       case 'atlassian://config':
         const authManager = createAuthenticationManager(
@@ -203,7 +198,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Fetch JIRA priorities for MCP resource
    */
-  private async fetchJiraPriorities(): Promise<any> {
+  private async fetchJiraPriorities (): Promise<any> {
     const cache = getCache();
     const cacheKey = 'jira_priorities_resource';
 

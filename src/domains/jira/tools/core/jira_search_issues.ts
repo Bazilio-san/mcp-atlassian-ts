@@ -109,7 +109,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
       operation: 'search_issues',
       message: searchResult.issues.length
         ? `Found ${searchResult.total} issues (showing ${searchResult.issues.length})`
-        : `No issues found`,
+        : 'No issues found',
       jql: jql,
       total: searchResult.total || 0,
       showing: searchResult.issues.length,

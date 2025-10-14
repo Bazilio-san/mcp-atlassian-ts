@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, ValidationError } from '../../../../core/errors/index.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { jira_get_project } from '../projects/jira_get_project.js';
 
 export function createJiraCreateIssueTool (): ToolWithHandler {
   return {
@@ -117,6 +118,87 @@ Among them you need to choose the right one`,
 export const jira_create_issue: ToolWithHandler = createJiraCreateIssueTool();
 
 /**
+ * Validate project exists and issueType is correct
+ */
+async function validateProjectAndIssueType(
+  projectIdOrKey: string,
+  issueType: string,
+  context: ToolContext
+): Promise<{ valid: boolean; error?: any }> {
+  try {
+    // Get project details with issueTypes expanded
+    const projectResult = await jira_get_project.handler( // VVT
+      {
+        projectIdOrKey,
+        expand: ['issueTypes']
+      },
+      context
+    );
+
+    // Parse the result - it comes wrapped in formatToolResult
+    const parsedResult = typeof projectResult === 'string'
+      ? JSON.parse(projectResult)
+      : projectResult;
+
+    // Check if project was found
+    if (!parsedResult.found) {
+      return {
+        valid: false,
+        error: {
+          success: false,
+          operation: 'create_issue',
+          error: 'PROJECT_NOT_FOUND',
+          message: `Project '${projectIdOrKey}' not found. Please verify the project key or ID.`,
+          projectIdOrKey,
+        }
+      };
+    }
+
+    const project = parsedResult.project;
+    const issueTypes = project.issueTypes || [];
+
+    // Check if issueType is valid (by name or id)
+    const validIssueType = issueTypes.find((it: any) =>
+      it.name === issueType || it.id === issueType
+    );
+
+    if (!validIssueType) {
+      return {
+        valid: false,
+        error: {
+          success: false,
+          operation: 'create_issue',
+          error: 'INVALID_ISSUE_TYPE',
+          message: `Issue type '${issueType}' is not valid for project '${project.name}' (${project.key}).`,
+          projectIdOrKey,
+          invalidIssueType: issueType,
+          availableIssueTypes: issueTypes.map((it: any) => ({
+            id: it.id,
+            name: it.name,
+            description: it.description,
+            subtask: it.subtask
+          }))
+        }
+      };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    return {
+      valid: false,
+      error: {
+        success: false,
+        operation: 'create_issue',
+        error: 'VALIDATION_ERROR',
+        message: `Failed to validate project and issue type: ${error instanceof Error ? error.message : String(error)}`,
+        projectIdOrKey,
+        issueType,
+      }
+    };
+  }
+}
+
+/**
  * Handler function for creating a JIRA issue
  */
 async function createIssueHandler (args: any, context: ToolContext): Promise<any> {
@@ -149,6 +231,12 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     }
     if (!summary) {
       throw new ValidationError('Summary is required');
+    }
+
+    // Validate project exists and issueType is correct
+    const projectValidation = await validateProjectAndIssueType(projectIdOrKey, issueType, context);
+    if (!projectValidation.valid) {
+      return formatToolResult(projectValidation.error);
     }
 
     // Normalize labels and components

@@ -70,7 +70,7 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     // Search for epics
     const requestBody = {
       jql: jqlParts.join(' AND '),
-      fields: [`summary`, epicNameFieldId, `status`, `created`, `updated`],
+      fields: ['summary', epicNameFieldId, 'status', 'created', 'updated'],
       maxResults,
     };
 

@@ -4,9 +4,9 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context';
-import { withErrorHandling } from '../../../../core/errors';
-import { generateCacheKey } from '../../../../core/cache';
-import { formatToolResult } from '../../../../core/utils/formatToolResult';
+import { withErrorHandling } from '../../../../core/errors/index.js';
+import { generateCacheKey } from '../../../../core/cache/index.js';
+import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
@@ -84,7 +84,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
       success: true,
       operation: 'get_user_profile',
       login,
-      message: `User profile retrieved`,
+      message: 'User profile retrieved',
       user: {
         accountId: user.accountId,
         displayName: user.displayName,
