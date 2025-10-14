@@ -276,6 +276,68 @@ docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 - [`cache_stats`](#cache_stats) - Get cache statistics and performance metrics
 - [`health_check`](#health_check) - Check service connectivity and health
 
+## 🚀 Deployment {#deployment}
+
+Production-ready deployment scripts for Linux and Windows environments.
+
+### 📁 Deployment Scripts
+
+| Script | Purpose | Platform |
+|--------|---------|----------|
+| `deploy/deploy.sh` | Full production deployment | Linux/Unix |
+| `deploy/update.sh` | Quick updates without restart | Linux/Unix |
+| `deploy/restart.sh` | Service restart with health checks | Linux/Unix |
+| `deploy/rollback.sh` | Rollback to backup or git commit | Linux/Unix |
+| `deploy/status.sh` | Comprehensive status dashboard | Linux/Unix |
+| `deploy/deploy.bat` | Full deployment for Windows | Windows |
+| `deploy/status.bat` | Status check for Windows | Windows |
+
+### 🛠️ Setup
+
+```bash
+# Make scripts executable (Linux/Unix)
+chmod +x deploy/*.sh
+
+# Configure paths in scripts (if needed)
+# PROJECT_DIR="/opt/mcp-atlassian-ts"
+# BACKUP_DIR="/opt/backups/mcp-atlassian"
+```
+
+### 📖 Usage Examples
+
+```bash
+# Full deployment
+./deploy/deploy.sh main mcp-atlassian
+
+# Quick update
+./deploy/update.sh
+
+# Check status
+./deploy/status.sh --detailed
+
+# Restart service
+./deploy/restart.sh mcp-atlassian --force
+
+# Rollback to backup
+./deploy/rollback.sh backup_20231201_143022.tar.gz
+
+# Git rollback
+./deploy/rollback.sh HEAD~1 --git
+```
+
+### ✨ Features
+
+- ✅ **Automated backups** before deployments
+- ✅ **Health checks** and service monitoring
+- ✅ **Git integration** with commit tracking
+- ✅ **Graceful service reloads** for zero downtime
+- ✅ **Rollback capabilities** to previous states
+- ✅ **Configuration validation** before startup
+- ✅ **Comprehensive logging** of all operations
+- ✅ **PM2 integration** for process management
+
+For detailed deployment documentation, see [`deploy/README.md`](deploy/README.md).
+
 ## 🧪 Testing {#testing}
 
 ### Unit Tests

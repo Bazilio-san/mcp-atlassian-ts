@@ -1,0 +1,8 @@
+branch: main
+pm2restart: yes
+reinstallDependencies: yes
+installDevDependencies: yes
+nodeVersion: 20
+env: prd
+email: vvpipkin@corp.com
+

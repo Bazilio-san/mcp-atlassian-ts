@@ -1,0 +1,220 @@
+#!/bin/bash
+
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+nvm use 22.17.1
+
+c='\033[0;35m'
+y='\033[0;33m'
+w='\033[0;0m'
+g='\033[0;32m'
+lg="\033[0;32m";
+
+echo_g() { /bin/echo -e "$g$1$w"; }
+echo_lg()    { if [ "$2" = "" ]; then /bin/echo -e "$lg$1$w"; else /bin/echo -en "$lg$1$w"; fi  }
+echo_y() { /bin/echo -e "$y$1$w"; };
+
+parse_yaml() {
+  local prefix=$2
+  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+  sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
+    -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+  awk -F$fs '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+    if (length($3) > 0) {
+       vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+       printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+    }
+  }'
+}
+
+# Function to send build notification to multiple email addresses
+send_build_notification() {
+  local emails=$1
+  local subject="Build Notification: $SERVICE"
+  local message="The build for $SERVICE has been completed successfully."
+
+  # Split email addresses by comma
+  IFS=',' read -ra EMAIL_ARRAY <<< "$emails"
+
+  for email in "${EMAIL_ARRAY[@]}"; do
+    # Trim whitespace
+    email=$(echo "$email" | xargs)
+    if [ -n "$email" ]; then
+      echo_g "Sending build notification to: $email"
+      # Use mail command to send email
+      echo "$message" | mail -s "$subject" "$email"
+    fi
+  done
+}
+
+IFS='' read -r -d '' help <<'EOF'
+================================================================================
+    Обновление и пересборка проекта
+
+    Запуск:
+        ./update [Параметры]
+
+    Параметры:
+
+    -b|--branch
+        Имя ветки GIT. По умолчанию - master
+    -l|--log
+        Переходить в режим отображения логов после завершения
+    -?|--help
+        Отображение справки
+
+    Пример: ./update -b production -l
+================================================================================
+EOF
+
+
+# -e  Exit immediately if a command exits with a non-zero status.
+set -e
+
+args="$@";
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -b|--branch)
+    expectedBranch=$2
+    shift; shift;;
+    -l|--log)
+    showLog="1"
+    shift;;
+    *) shift;;
+  esac
+done
+set -- $args
+
+for i in "$@" ; do
+  if [[ $i =~ (-\?|--help) ]]; then
+    echo_lg "$help"
+    exit;
+  fi
+done
+
+
+# Ветка по умолчанию
+branch="master"
+# парсим конфиг, если он есть
+configFile="./deploy/config.yml"
+if [ -f "$configFile" ]; then
+  eval $(parse_yaml $configFile)
+fi
+
+if [[ -n $expectedBranch ]]; then
+  expected_branch=$expectedBranch
+else
+  # Ветка по умолчанию
+  branch="master"
+  # парсим конфиг, если он есть
+  configFile="./deploy/config.yml"
+  if [ -f "$configFile" ]; then
+    eval $(parse_yaml $configFile)
+  fi
+  expected_branch=$branch
+fi
+
+SERVICE_NAME=`cat package.json | grep name | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'`
+SERVICE_NAME_ALT=`cat .env | grep SERVICE_NAME | head -1 | awk -F= '{ print $2 }'`
+SERVICE_NAME="${SERVICE_NAME_ALT:-$SERVICE_NAME}"
+
+SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
+if [ -z "$SERVICE_INSTANCE" ]
+then
+  SERVICE="${SERVICE_NAME}"
+else
+  SERVICE="${SERVICE_NAME}--${SERVICE_INSTANCE}"
+fi
+
+echo_g "========================================"
+echo_g "**** RENEW ${y}${SERVICE}${g} ****"
+echo_g "========================================"
+
+repo_info() {
+  local currentHash=$(git rev-parse --short HEAD)
+  local currentCommitMessage=$(git log -n 1 --pretty=format:%s ${currentHash})
+  local currentCommitDate=$(git log -n 1 --format="%at" ${currentHash} | xargs -I\{} date -d @\{} +%d.%m.%Y_%H:%M:%S)
+  local currBranch=$(git rev-parse --abbrev-ref HEAD)
+  echo_g "Current branch: ${ly}${currBranch}"
+  echo_g "Last commit: ${ly}${currentHash}${g}, date: ${lm}${currentCommitDate}"
+  echo_g "message: ${lm}${currentCommitMessage}"
+  echo_g "----------------------------------------"
+}
+
+currentBranch=$(git rev-parse --abbrev-ref HEAD)
+
+echo_g "Expected_branch: ${expected_branch}"
+echo_g "Current_branch: ${currentBranch}"
+
+if [ "$currentBranch" != "$expected_branch" ]; then
+  git reset --hard @{u}
+  isBranchSwitched="YES"
+  echo_g "Switch tracking from branch \"$currentBranch\" to \"$expected_branch\""
+  git checkout -f $expected_branch
+fi
+
+echo_g "=============== git pull ==============="
+
+git pull origin $expected_branch 2>/dev/null
+
+repo_info
+
+echo_g "====== CLEAN INSTALL DEPENDENCIES ======"
+
+rm -rf node_modules/
+yarn install --frozen-lockfile
+
+
+patchFile="./_sh/patch_node_modules.js"
+if [ -f "$patchFile" ]; then
+echo_g "========== PATCH NODE MODULES ======"
+  node --no-node-snapshot $patchFile
+fi
+
+
+echo_g "========== TYPESCRIPT REBUILD (API) =========="
+rm -rf ./_dist
+./node_modules/.bin/tsc -b --pretty --verbose ./tsconfig.server.json
+echo_y "typescript build done"
+
+echo_g "========== BUILD QUASAR =========="
+node ./_sh/quasar-prepare-color-vars.mjs
+yarn quasar build
+
+service_exists() {
+  local n=$1
+  if [[ $(systemctl list-units --all -t service --full --no-legend "$n.service" | sed 's/●//g' | sed 's/^\s*//g' | cut -f1 -d' ') == "$n.service" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+if service_exists "$SERVICE"
+then
+  systemctl restart $SERVICE
+  echo_g "**** Сервис $g$SERVICE$c перезапущен ****"
+  if [[ -n "$showLog" ]]; then
+    journalctl -o cat -xefu $SERVICE
+  fi
+else
+  echo_g "========== RESTART SERVICE =========="
+  pm2 restart ${SERVICE}
+  if [[ -n "$showLog" ]]; then
+    pm2 logs ${SERVICE} --lines=1000
+  fi
+fi
+
+# Send build notification if email is configured
+if [ -n "$email" ]; then
+  # echo_g "========== SENDING BUILD NOTIFICATION =========="
+  # send_build_notification "$email"
+  :  # no-op command
+fi
+
+exit 0
