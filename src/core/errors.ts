@@ -208,6 +208,26 @@ export function createErrorResponse (
 }
 
 /**
+ * Create JSON-RPC 2.0 error response
+ */
+export function createJsonRpcErrorResponse (
+  error: Error | McpAtlassianError,
+  requestId?: string | number | null,
+): any {
+  const isCustomError = error instanceof McpAtlassianError;
+
+  return {
+    jsonrpc: '2.0',
+    id: requestId ?? 1,
+    error: {
+      code: isCustomError ? (typeof error.code === 'number' ? error.code : -32000) : -32603,
+      message: error.message,
+      data: isCustomError && error.details !== undefined ? error.details : undefined,
+    },
+  };
+}
+
+/**
  * Error handler for async functions
  */
 export function asyncErrorHandler<T extends any[], R> (fn: (...args: T) => Promise<R>) {

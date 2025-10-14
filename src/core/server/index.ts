@@ -21,7 +21,7 @@ import {
 
 import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
-import { createErrorResponse, McpAtlassianError, ServerError } from '../errors.js';
+import { createErrorResponse, createJsonRpcErrorResponse, McpAtlassianError, ServerError } from '../errors.js';
 import { getCache } from '../cache.js';
 import { createAuthenticationManager } from '../auth.js';
 import { ToolRegistry } from './tools.js';
@@ -309,6 +309,7 @@ export class McpAtlassianServer {
           if (!authContext) {
             return res.status(401).json({
               jsonrpc: '2.0',
+              id: 1,
               error: {
                 code: -32001,
                 message: 'Authentication required'
@@ -408,7 +409,7 @@ export class McpAtlassianServer {
           return;
         } catch (error) {
           logger.error('SSE connection failed', error instanceof Error ? error : new Error(String(error)));
-          return res.status(500).json(createErrorResponse(
+          return res.status(500).json(createJsonRpcErrorResponse(
             new ServerError('Failed to establish SSE connection'),
           ));
         }
@@ -422,6 +423,7 @@ export class McpAtlassianServer {
           if (!authContext) {
             return res.status(401).json({
               jsonrpc: '2.0',
+              id: req.body?.id ?? 1,
               error: {
                 code: -32001,
                 message: 'Authentication required'
@@ -445,7 +447,7 @@ export class McpAtlassianServer {
               logger.warn('Rate limit exceeded in HTTP', { ip: req.ip, authMode: authContext.mode });
               return res.status(200).json({
                 jsonrpc: '2.0',
-                id: req.body?.id || null,
+                id: req.body?.id ?? 1,
                 error: {
                   code: -32000,
                   message: rateLimitMessage
@@ -545,7 +547,7 @@ export class McpAtlassianServer {
 
           return res.json({
             jsonrpc: '2.0',
-            id: req.body?.id || null,
+            id: req.body?.id ?? 1,
             error: errorResponse,
           });
         }
@@ -556,7 +558,7 @@ export class McpAtlassianServer {
         logger.error('Express error handler', error);
 
         if (!res.headersSent) {
-          res.status(500).json(createErrorResponse(error));
+          res.status(500).json(createJsonRpcErrorResponse(error));
         }
       });
 

@@ -50,6 +50,7 @@ export class AuthenticationManager {
 
         res.status(401).json({
           jsonrpc: '2.0',
+          id: 1,
           error: {
             code: -32001,
             message: 'Authentication failed'

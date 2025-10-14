@@ -20,7 +20,23 @@ import {
 import fs from 'fs';
 import yaml from 'yaml';
 import path from 'path';
-import { getJsonFromResult } from '../../dist/src/core/utils/formatToolResult.js';
+
+
+const getJsonFromResult = (result) => {
+  if (appConfig.isReturnJson) {
+    return result?.structuredContent;
+  }
+  else {
+    const text = result?.result?.content?.[0]?.text || result?.content?.[0]?.text || '';
+    try {
+      return JSON.parse(text);
+    }
+    catch {
+      //
+    }
+  }
+  return undefined;
+};
 
 // Tool config functions adapted for new config structure
 function loadToolConfig () {

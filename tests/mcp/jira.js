@@ -21,6 +21,8 @@ const JIRA_EMULATOR_URL = process.env.JIRA_URL || 'http://localhost:8080';
 const RESULTS_DIR = path.join(process.cwd(), 'tests/mcp/_logs/jira');
 const TEST_USE_EMOJI = process.env.TEST_USE_EMOJI === true;
 
+console.log('MCP_SERVER_URL', MCP_SERVER_URL);
+
 if (!fss.existsSync(RESULTS_DIR)) {
   fss.mkdirSync(RESULTS_DIR, { recursive: true });
 }
@@ -261,7 +263,7 @@ class JiraMcpHttpTester {
             status: 'skipped',
             response: null,
             error: 'Unable to resolve parameters',
-            marker: '⏭️'
+            marker: '⏭️',
           };
 
           this.results.push(skippedResult);
@@ -292,7 +294,7 @@ class JiraMcpHttpTester {
           response: null,
           error: `Failed to resolve parameters: ${error.message}`,
           errorDetails: error.data && error.data.details ? error.data.details : null,
-          marker: '❌'
+          marker: '❌',
         };
 
         this.results.push(failedResult);
@@ -521,7 +523,6 @@ ${responseText}${errorText}`;
       chalk.red(`Failed: ${this.stats.failed}`)} / ${
       chalk.yellow(`Expected Failures: ${this.stats.skipped}`)
     }`));
-
 
     // Write summary file
     const summaryContent = this.generateSummaryMarkdown();
