@@ -237,7 +237,7 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Fetch JIRA priorities for MCP resource
    */
-  private async fetchJiraPriorities (): Promise<any> {
+  protected override async fetchJiraPriorities (): Promise<any> {
     const cache = getCache();
     const cacheKey = 'jira_priorities_resource';
 

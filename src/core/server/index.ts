@@ -379,22 +379,66 @@ export class McpAtlassianServer {
           });
 
           sseServer.setRequestHandler(ListResourcesRequestSchema, async () => {
-            return {
-              resources: [
-                {
+            const resources = [
+              {
+                uri: 'atlassian://config',
+                name: 'Atlassian Configuration',
+                description: 'Current Atlassian configuration and connection status',
+                mimeType: 'application/json',
+              },
+              {
+                uri: 'atlassian://cache/stats',
+                name: 'Cache Statistics',
+                description: 'Current cache statistics and performance metrics',
+                mimeType: 'application/json',
+              },
+            ];
+
+            // Add JIRA-specific resources when in JIRA mode
+            const serviceMode = appConfig.server.serviceMode;
+            if ((serviceMode === 'jira' || !serviceMode) && appConfig.jira?.url && appConfig.jira?.auth) {
+              resources.push({
+                uri: 'jira://priorities',
+                name: 'JIRA Priorities',
+                description: 'List of available priorities from JIRA instance',
+                mimeType: 'application/json',
+              });
+            }
+
+            return { resources };
+          });
+
+          sseServer.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+            const { uri } = request.params;
+            if (uri === 'atlassian://config') {
+              return {
+                contents: [{
                   uri: 'atlassian://config',
-                  name: 'Atlassian Configuration',
-                  description: 'Current Atlassian configuration and connection status',
                   mimeType: 'application/json',
-                },
-                {
+                  text: JSON.stringify(this.getHealthCheckInfo(), null, 2)
+                }]
+              };
+            } else if (uri === 'atlassian://cache/stats') {
+              const cacheStats = getCache().getStats();
+              return {
+                contents: [{
                   uri: 'atlassian://cache/stats',
-                  name: 'Cache Statistics',
-                  description: 'Current cache statistics and performance metrics',
                   mimeType: 'application/json',
-                },
-              ],
-            };
+                  text: JSON.stringify(cacheStats, null, 2)
+                }]
+              };
+            } else if (uri === 'jira://priorities') {
+              const priorities = await this.fetchJiraPriorities();
+              return {
+                contents: [{
+                  uri,
+                  mimeType: 'application/json',
+                  text: JSON.stringify(priorities, null, 2),
+                }],
+              };
+            } else {
+              throw new ServerError(`Unknown resource URI: ${uri}`);
+            }
           });
 
           sseServer.setRequestHandler(PingRequestSchema, async () => {
@@ -478,6 +522,37 @@ export class McpAtlassianServer {
           let result;
 
           switch (method) {
+            case 'initialize':
+              // MCP initialization handshake
+              const { protocolVersion, capabilities: clientCapabilities, clientInfo } = params || {};
+
+              logger.info('MCP client initializing', {
+                protocolVersion,
+                clientCapabilities,
+                clientInfo
+              });
+
+              result = {
+                protocolVersion: '2024-11-05',
+                capabilities: {
+                  tools: {},
+                  resources: {},
+                  prompts: {},
+                  logging: {}
+                },
+                serverInfo: {
+                  name: 'mcp-atlassian-ts',
+                  version: appConfig.version || '1.0.0'
+                }
+              };
+              break;
+
+            case 'notifications/initialized':
+              // Client has finished initialization
+              logger.info('MCP client initialization completed');
+              // Notifications don't return a response - just log and continue
+              return res.status(204).send(); // No content response
+
             case 'tools/list':
               const tools = await this.toolRegistry.listTools();
               result = { tools };
@@ -489,21 +564,71 @@ export class McpAtlassianServer {
               break;
 
             case 'resources/list':
-              result = {
-                resources: [
-                  {
+              const resources = [
+                {
+                  uri: 'atlassian://config',
+                  name: 'Atlassian Configuration',
+                  description: 'Current Atlassian configuration and connection status',
+                  mimeType: 'application/json',
+                },
+                {
+                  uri: 'atlassian://cache/stats',
+                  name: 'Cache Statistics',
+                  description: 'Current cache statistics and performance metrics',
+                  mimeType: 'application/json',
+                },
+              ];
+
+              // Add JIRA-specific resources when in JIRA mode
+              const serviceMode = appConfig.server.serviceMode;
+              if ((serviceMode === 'jira' || !serviceMode) && appConfig.jira?.url && appConfig.jira?.auth) {
+                resources.push({
+                  uri: 'jira://priorities',
+                  name: 'JIRA Priorities',
+                  description: 'List of available priorities from JIRA instance',
+                  mimeType: 'application/json',
+                });
+              }
+
+              result = { resources };
+              break;
+
+            case 'resources/read':
+              const { uri } = params;
+              if (uri === 'atlassian://config') {
+                result = {
+                  contents: [{
                     uri: 'atlassian://config',
-                    name: 'Atlassian Configuration',
-                    description: 'Current Atlassian configuration and connection status',
                     mimeType: 'application/json',
-                  },
-                  {
+                    text: JSON.stringify(this.getHealthCheckInfo(), null, 2)
+                  }]
+                };
+              } else if (uri === 'atlassian://cache/stats') {
+                const cacheStats = getCache().getStats();
+                result = {
+                  contents: [{
                     uri: 'atlassian://cache/stats',
-                    name: 'Cache Statistics',
-                    description: 'Current cache statistics and performance metrics',
                     mimeType: 'application/json',
-                  },
-                ],
+                    text: JSON.stringify(cacheStats, null, 2)
+                  }]
+                };
+              } else if (uri === 'jira://priorities') {
+                const priorities = await this.fetchJiraPriorities();
+                result = {
+                  contents: [{
+                    uri,
+                    mimeType: 'application/json',
+                    text: JSON.stringify(priorities, null, 2),
+                  }],
+                };
+              } else {
+                throw new ServerError(`Unknown resource URI: ${uri}`);
+              }
+              break;
+
+            case 'prompts/list':
+              result = {
+                prompts: []
               };
               break;
 
@@ -622,6 +747,111 @@ export class McpAtlassianServer {
    */
   getApp (): express.Application | undefined {
     return this.app;
+  }
+
+  /**
+   * Fetch JIRA priorities for the resource endpoint
+   */
+  protected async fetchJiraPriorities (): Promise<any> {
+    const cache = getCache();
+    const cacheKey = 'jira_priorities_resource';
+
+    try {
+      // Validate JIRA configuration and auth
+      if (!appConfig.jira?.url || !appConfig.jira?.auth) {
+        throw new ServerError('JIRA configuration or authentication not available');
+      }
+
+      // Convert IAuth to AuthConfig format
+      let authConfig: any;
+      const jiraAuth = appConfig.jira.auth;
+      if (jiraAuth.basic?.username && jiraAuth.basic?.password) {
+        authConfig = {
+          type: 'basic',
+          username: jiraAuth.basic.username,
+          password: jiraAuth.basic.password,
+        };
+      } else if (jiraAuth.pat) {
+        authConfig = {
+          type: 'pat',
+          token: jiraAuth.pat,
+        };
+      } else if (jiraAuth.oauth2?.clientId) {
+        authConfig = {
+          ...jiraAuth.oauth2,
+          type: 'oauth2',
+        };
+      } else {
+        throw new ServerError('No valid JIRA authentication method found');
+      }
+
+      const authManager = createAuthenticationManager(
+        authConfig,
+        appConfig.jira.url,
+        10000,
+      );
+
+      const priorities = await cache.getOrSet(
+        cacheKey,
+        async () => {
+          logger.info('Fetching priorities from JIRA API for MCP resource');
+
+          const httpClient = authManager.getHttpClient();
+          const response = await httpClient.get('/rest/api/2/priority');
+
+          if (!Array.isArray(response.data)) {
+            logger.warn('Invalid priorities response format', { response: response.data });
+            return [];
+          }
+
+          return response.data.map((priority: any) => ({
+            id: priority.id,
+            name: priority.name,
+            description: priority.description || null,
+            iconUrl: priority.iconUrl || null,
+            statusColor: priority.statusColor || null,
+          }));
+        },
+        3600, // Cache for 1 hour
+      );
+
+      logger.info('Priorities fetched successfully for MCP resource', {
+        count: priorities.length,
+      });
+
+      return {
+        priorities,
+        metadata: {
+          fetchedAt: new Date().toISOString(),
+          count: priorities.length,
+          cacheKey,
+          cacheTtl: 3600,
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to fetch priorities from JIRA for MCP resource', error instanceof Error ? error : new Error(String(error)));
+
+      // Fallback to common JIRA priorities if fetch fails
+      const fallbackPriorities = [
+        { id: '1', name: 'Highest', description: 'This problem will block progress.' },
+        { id: '2', name: 'High', description: 'Serious problem that could block progress.' },
+        { id: '3', name: 'Medium', description: 'Has the potential to affect progress.' },
+        { id: '4', name: 'Low', description: 'Minor problem or easily worked around.' },
+        { id: '5', name: 'Lowest', description: 'Trivial problem with little or no impact on progress.' },
+      ];
+
+      logger.info('Using fallback priorities for MCP resource', { count: fallbackPriorities.length });
+
+      return {
+        priorities: fallbackPriorities,
+        metadata: {
+          fetchedAt: new Date().toISOString(),
+          count: fallbackPriorities.length,
+          fallback: true,
+          reason: 'JIRA API fetch failed',
+        },
+      };
+    }
   }
 
   /**
