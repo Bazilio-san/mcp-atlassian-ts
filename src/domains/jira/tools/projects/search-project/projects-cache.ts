@@ -82,7 +82,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
           const keyLC = key.toLowerCase();
           const nameLC = name.toLowerCase();
           const keyRuVariants = enToRuVariants(keyLC);
-          const nameRuVariants = enToRuVariants(nameLC);
+          const nameRuVariants = enToRuVariants(nameLC, 5);
 
           const variants = [
             // Оригинальные
@@ -110,7 +110,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
           logger.error('Failed to update vector index', err);
         });
       }
-
+      const count = Object.values(cacheEntries).reduce((acc, entry) => acc + entry.variants.length, 0);
       projectsCache.cache = cacheEntries;
       projectsCache.expire = Date.now() + PROJECTS_TTL_MS;
 

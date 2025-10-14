@@ -55,7 +55,8 @@ Use this tool to verify the correct project key when working with AI Agent tools
 
   async handler ({ query, limit = 50 }: { query: string; limit?: number }, _context: ToolContext) {
     const json = await handler({ query, limit });
-    json.matches = json.matches.map(removeScore);
+    // Keep scores for debugging and analysis - don't strip them out
+    // json.matches = json.matches.map(removeScore);
     return formatToolResult(json);
   },
 };

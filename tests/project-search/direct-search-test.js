@@ -7,7 +7,10 @@ import {
   searchProjects,
   resetVectorSearchSingleton,
 } from '../../dist/src/domains/jira/tools/projects/search-project/index.js';
-import { getJiraProjects, setUpdateProjectsIndexFunction } from '../../dist/src/domains/jira/tools/projects/search-project/projects-cache.js';
+import { getJiraProjects, setUpdateProjectsIndexFunction, initializeProjectsCache } from '../../dist/src/domains/jira/tools/projects/search-project/projects-cache.js';
+import { createAuthenticationManager } from '../../dist/src/core/auth.js';
+import { getCache } from '../../dist/src/core/cache.js';
+import { createLogger } from '../../dist/src/core/utils/logger.js';
 
 // Тестовые поисковые запросы (основаны на реальных проектах)
 const testQueries = [
@@ -36,6 +39,36 @@ const testQueries = [
  */
 async function runDirectSearchTests () {
   try {
+    // Initialize HTTP client and projects cache first
+    // Use local emulator for testing
+    const jiraUrl = process.env.JIRA_URL || 'http://localhost:8080';
+    const jiraUsername = process.env.JIRA_USERNAME || 'admin';
+    const jiraPassword = process.env.JIRA_PASSWORD || 'admin';
+
+    const authConfig = {
+      type: 'basic',
+      username: jiraUsername,
+      password: jiraPassword,
+    };
+
+    const authManager = createAuthenticationManager(authConfig, jiraUrl);
+    const httpClient = authManager.getHttpClient();
+    const cache = getCache();
+    const logger = createLogger('test');
+
+    const mockContext = {
+      httpClient,
+      cache,
+      config: { url: jiraUrl, auth: authConfig, maxResults: 50 },
+      logger,
+      normalizeToArray: (value) => Array.isArray(value) ? value : [value].filter(Boolean),
+      formatDescription: (description) => String(description || ''),
+      expandStringOrArray: (value, separator = ',') => Array.isArray(value) ? value.join(separator) : value,
+    };
+
+    // Initialize projects cache with context
+    initializeProjectsCache(mockContext);
+
     resetVectorSearchSingleton();
     await initializeVectorSearch();
     setUpdateProjectsIndexFunction(updateProjectsIndex);

@@ -119,7 +119,7 @@ export const transliterateRU = (text: string): string => {
  * Пример:
  *   enToRuVariants("aitech") -> ["аитех", "айтех", "аитеч", "айтек", ...]
  */
-export const enToRuVariants = (text: string): string[] => {
+export const enToRuVariants = (text: string, maxResults: number = 20): string[] => {
   const s = text.toLowerCase();
 
   // Приоритетные многобуквенные латинские кластеры
@@ -168,7 +168,7 @@ export const enToRuVariants = (text: string): string[] => {
     j: ['дж', 'ж', 'й'], // jira -> джира/жира
     q: ['к'],
     w: ['в', 'у'],
-    x: ['кс', 'кс/з'], // "x" часто "кс", иногда звучит как "з" в заимств.
+    x: ['кс', 'з'], // "x" часто "кс", иногда звучит как "з" в заимств.
     ' ': [' '],
     '-': ['-'],
     '_': ['_'],
@@ -176,7 +176,6 @@ export const enToRuVariants = (text: string): string[] => {
 
   // ДП по позициям с разветвлением по вариантам
   const results: string[] = [];
-  const maxResults = 5000; // предохранитель от взрыва вариантов
 
   const backtrack = (idx: number, acc: string) => {
     if (results.length >= maxResults) {
@@ -219,13 +218,4 @@ export const enToRuVariants = (text: string): string[] => {
   const uniq = Array.from(new Set(results));
   uniq.sort((a, b) => a.length - b.length || a.localeCompare(b));
   return uniq;
-};
-
-/**
- * Обратная транслитерация - из латиницы в кириллицу (детерминированная)
- * Сохраняем старую функцию, но для совместимости оставим поведение "первый вариант".
- */
-export const transliterateRU2 = (text: string): string => {
-  const variants = enToRuVariants(text);
-  return variants[0] ?? text.toLowerCase();
 };
