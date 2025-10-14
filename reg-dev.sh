@@ -28,6 +28,6 @@ if pm2 list | grep -q "$SERVICE"; then
   pm2 delete $SERVICE
 fi
 
-NODE_ENV=development pm2 startOrRestart pm2.config.js
-#NODE_ENV=development pm2 startOrRestart pm2.config.js --interpreter=/root/.nvm/versions/node/v18.19.1/bin/node --name $SERVICE
+NODE_ENV=development pm2 startOrRestart pm2.config.сjs
+#NODE_ENV=development pm2 startOrRestart pm2.config.сjs --interpreter=/root/.nvm/versions/node/v18.19.1/bin/node --name $SERVICE
 pm2 save
