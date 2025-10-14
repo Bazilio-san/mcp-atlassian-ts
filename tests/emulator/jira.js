@@ -112,7 +112,7 @@ const MOCK_ISSUE_TYPES = [
   {
     id: '10003',
     name: 'Epic',
-    description: 'A large user story',
+    description: 'A large user story ',
     iconUrl: 'https://test.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307',
     subtasks: false,
   },
