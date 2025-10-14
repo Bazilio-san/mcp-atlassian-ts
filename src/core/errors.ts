@@ -3,6 +3,7 @@
  */
 
 import { createLogger } from './utils/logger.js';
+import { formatHttpRateLimitError } from './utils/rate-limit.js';
 
 import type { McpError } from '../types';
 
@@ -269,6 +270,7 @@ export function errorBoundary (target: any, propertyKey: string, descriptor: Pro
   return descriptor;
 }
 
+
 /**
  * Map HTTP status codes to appropriate error classes
  */
@@ -287,7 +289,13 @@ export function createErrorFromStatus (
     case 404:
       return new NotFoundError('Resource', 'unknown', details);
     case 429:
-      return new RateLimitError(message, details);
+      // Extract Retry-After header if available
+      const retryAfter = details?.headers && typeof details.headers === 'object'
+        ? (details.headers as any)['retry-after'] || (details.headers as any)['Retry-After']
+        : undefined;
+      const retrySeconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+      const formattedMessage = formatHttpRateLimitError(retrySeconds);
+      return new RateLimitError(formattedMessage, details);
     case 503:
       return new NetworkError(message, details);
     default:
@@ -301,11 +309,12 @@ export function createErrorFromStatus (
 export function handleAxiosError (error: any): never {
   if (error.response) {
     // Server responded with error status
-    const { status, data } = error.response;
+    const { status, data, headers } = error.response;
     const message = data?.errorMessages?.[0] || data?.message || error.message;
     const details = {
       status,
       data,
+      headers,
       url: error.config?.url,
       method: error.config?.method?.toUpperCase(),
     };

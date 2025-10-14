@@ -307,7 +307,7 @@ export class McpAtlassianServer {
         }
       });
 
-      
+
       // Health check endpoint
       this.app.get('/health', (req, res) => {
         res.json(this.getHealthCheckInfo());
@@ -449,7 +449,7 @@ export class McpAtlassianServer {
                 this.serverConfig.rateLimit.maxRequests
               );
               logger.warn('Rate limit exceeded in HTTP', { ip: req.ip, authMode: authContext.mode });
-              return res.status(429).json({
+              return res.status(200).json({
                 jsonrpc: '2.0',
                 id: req.body?.id || null,
                 error: {
