@@ -85,7 +85,7 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
       url: url,
       summary: summary || null,
       iconUrl: iconUrl || null,
-      issueLink: `${config.url}/browse/${issueIdOrKey}`,
+      issueUrl: `${config.url}/browse/${issueIdOrKey}`,
       timestamp: new Date().toISOString(),
     };
 

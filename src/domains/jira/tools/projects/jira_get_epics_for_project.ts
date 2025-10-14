@@ -83,10 +83,10 @@ async function getEpicsForProjectHandler (args: any, context: ToolContext): Prom
       epics: issues.map((issue: any) => {
         const fields = issue.fields;
         return {
+          id: issue.id,
           key: issue.key,
           summary: fields.summary || '',
-          directLink: `${config.url}/browse/${issue.key}`,
-          id: issue.id,
+          issueUrl: `${config.url}/browse/${issue.key}`,
         };
       }),
       timestamp: new Date().toISOString(),
