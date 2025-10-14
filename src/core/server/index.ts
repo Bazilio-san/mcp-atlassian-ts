@@ -276,15 +276,16 @@ export class McpAtlassianServer {
       );
 
       // Root endpoint with About page
-      this.app.get('/', (req, res) => {
+      this.app.get('/', async (req, res) => {
         try {
           // Update tools count if available
           if (this.toolRegistry && this.aboutPageRenderer) {
-            this.toolRegistry.listTools().then(tools => {
+            try {
+              const tools = await this.toolRegistry.listTools();
               this.aboutPageRenderer!.setToolsCount(tools.length);
-            }).catch(error => {
+            } catch (error: Error |any) {
               logger.warn('Failed to get tools count for about page', error);
-            });
+            }
           }
 
           const html = this.aboutPageRenderer!.renderFullPage();
@@ -295,17 +296,7 @@ export class McpAtlassianServer {
         }
       });
 
-      // CSS endpoint for about page
-      this.app.get('/about.css', (req, res) => {
-        try {
-          const css = this.aboutPageRenderer!.renderCss();
-          res.type('css').send(css);
-        } catch (error) {
-          logger.error('Failed to serve about page CSS', error instanceof Error ? error : new Error(String(error)));
-          res.status(500).send('/* Error loading CSS */');
-        }
-      });
-
+      
       // Health check endpoint
       this.app.get('/health', (req, res) => {
         res.json(this.getHealthCheckInfo());

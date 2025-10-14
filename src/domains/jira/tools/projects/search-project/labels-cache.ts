@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../../../shared/tool-context.js';
 import { generateCacheKey } from '../../../../../core/cache.js';
+import { powerHttpClient } from '../../../../../core/server/jira-server.js';
 
 export interface ProjectLabelsResult {
   labels: string[];
@@ -56,7 +57,7 @@ const LABELS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 export async function getProjectLabels (
   projectKey: string,
   projectId: string,
-  context: ToolContext
+  context: ToolContext,
 ): Promise<ProjectLabelsResult> {
   const { cache, logger } = context;
 
@@ -85,7 +86,7 @@ export async function getProjectLabels (
 
         // Try fast gadget API first
         try {
-          const gadgetLabels = await fetchLabelsFromGadgetApi(projectId, context);
+          const gadgetLabels = await fetchLabelsFromGadgetApi(projectId, logger);
           if (gadgetLabels.length > 0) {
             logger.info('Labels fetched from gadget API', {
               projectKey,
@@ -109,7 +110,7 @@ export async function getProjectLabels (
 
         // Fallback to issue search
         try {
-          const searchLabels = await fetchLabelsFromIssueSearch(projectKey, context);
+          const searchLabels = await fetchLabelsFromIssueSearch(projectKey, logger);
           logger.info('Labels fetched from issue search', {
             projectKey,
             count: searchLabels.length,
@@ -169,10 +170,8 @@ export async function getProjectLabels (
  */
 async function fetchLabelsFromGadgetApi (
   projectId: string,
-  context: ToolContext
+  logger: any
 ): Promise<string[]> {
-  const { powerHttpClient, logger } = context;
-
   if (!powerHttpClient) {
     throw new Error('powerHttpClient is required for gadget API');
   }
@@ -220,10 +219,8 @@ async function fetchLabelsFromGadgetApi (
  */
 async function fetchLabelsFromIssueSearch (
   projectKey: string,
-  context: ToolContext
+  logger: any
 ): Promise<string[]> {
-  const { powerHttpClient, logger } = context;
-
   if (!powerHttpClient) {
     throw new Error('powerHttpClient is required for issue search');
   }

@@ -7,6 +7,7 @@ import {
 import { createLogger } from '../../../../../core/utils/logger.js';
 import { transliterate, transliterateRU, enToRuVariants } from '../../../../../core/utils/transliterate.js';
 import type { ToolContext } from '../../../shared/tool-context.js';
+import { powerHttpClient } from '../../../../../core/server/jira-server.js';
 
 // Lazy import для избежания циклических зависимостей
 let updateProjectsIndex: any;
@@ -39,10 +40,8 @@ const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 // Initialize projects cache with ToolContext
 export const initializeProjectsCache = (context: ToolContext): void => {
   // Use powerHttpClient if available, otherwise use regular httpClient
-  httpClient = context.powerHttpClient || context.httpClient;
-  logger.info('Projects cache initialized with HTTP client', {
-    usingPowerEndpoint: !!context.powerHttpClient,
-  });
+  httpClient = powerHttpClient || context.httpClient;
+  logger.info('Projects cache initialized with HTTP client', { usingPowerEndpoint: !!powerHttpClient });
 };
 
 // Получить все проекты (пространства) Jira (с кешированием)
@@ -52,7 +51,9 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
   if (projectsCache.cache && now < projectsCache.expire) {
     const cachedProjects = Object.values(projectsCache.cache).map(entry => entry.project);
     const hash: { [key: string]: TKeyName } = {};
-    cachedProjects.forEach(p => { hash[p.key] = p; });
+    cachedProjects.forEach(p => {
+      hash[p.key] = p;
+    });
     return { error: null, result: cachedProjects, hash };
   }
   // If a request is already in flight, reuse it
@@ -110,13 +111,14 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
           logger.error('Failed to update vector index', err);
         });
       }
-      const count = Object.values(cacheEntries).reduce((acc, entry) => acc + entry.variants.length, 0);
       projectsCache.cache = cacheEntries;
       projectsCache.expire = Date.now() + PROJECTS_TTL_MS;
 
       // Создаем hash для обратной совместимости
       const hash: { [key: string]: TKeyName } = {};
-      result.forEach(p => { hash[p.key] = p; });
+      result.forEach(p => {
+        hash[p.key] = p;
+      });
 
       return { error: null, result, hash };
     } catch (err) {

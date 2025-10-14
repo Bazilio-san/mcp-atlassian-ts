@@ -11,7 +11,6 @@ import { ToolExecutionError } from '../../core/errors.js';
 import type { JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolContext } from './shared/tool-context.js';
-import type { AxiosInstance } from 'axios';
 
 // Import tool modules - Core tools
 import { jira_get_issue } from './tools/core/jira_get_issue.js';
@@ -94,23 +93,9 @@ export class JiraToolsManager {
     const httpClient = authManager.getHttpClient();
     const cache = getCache();
 
-    // Create power HTTP client if configured
-    let powerHttpClient: AxiosInstance | undefined;
-    if (config.powerEndpoint?.baseUrl && config.powerEndpoint?.auth) {
-      const powerAuthManager = createAuthenticationManager(
-        config.powerEndpoint.auth,
-        config.powerEndpoint.baseUrl,
-      );
-      powerHttpClient = powerAuthManager.getHttpClient();
-      this.logger.info('Power endpoint configured for JIRA', {
-        baseUrl: config.powerEndpoint.baseUrl,
-      });
-    }
-
     // Create tool context
     this.context = {
       httpClient,
-      ...(powerHttpClient && { powerHttpClient }),
       cache,
       config,
       logger: this.logger,

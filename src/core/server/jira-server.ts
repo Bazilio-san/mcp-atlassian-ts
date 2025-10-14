@@ -4,6 +4,7 @@
 
 import type { IConfig } from '../../types/config';
 import type { ServerConfig, JCConfig } from '../../types/index.js';
+import type { AxiosInstance } from 'axios';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
@@ -17,6 +18,9 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('jira-server');
+
+// Global power HTTP client for JIRA
+export let powerHttpClient: AxiosInstance | undefined;
 
 /**
  * JIRA-only MCP server
@@ -36,6 +40,7 @@ export class JiraServer extends McpAtlassianServer {
         url,
         maxResults,
         epicLinkFieldId,
+        powerEndpoint,
       },
       cache,
       logger: { level: logLevel },
@@ -67,6 +72,38 @@ export class JiraServer extends McpAtlassianServer {
     const jiraConfig: JCConfig = { url, auth, maxResults };
     if (epicLinkFieldId) {
       jiraConfig.epicLinkFieldId = epicLinkFieldId;
+    }
+
+    // Create power HTTP client if configured
+    if (powerEndpoint?.baseUrl && powerEndpoint?.auth) {
+      // Convert IAuth to AuthConfig format
+      let powerAuthConfig: any;
+      if (powerEndpoint.auth.basic?.username && powerEndpoint.auth.basic?.password) {
+        powerAuthConfig = {
+          type: 'basic',
+          username: powerEndpoint.auth.basic.username,
+          password: powerEndpoint.auth.basic.password,
+        };
+      } else if (powerEndpoint.auth.pat) {
+        powerAuthConfig = {
+          type: 'pat',
+          token: powerEndpoint.auth.pat,
+        };
+      } else if (powerEndpoint.auth.oauth2?.clientId) {
+        powerAuthConfig = {
+          ...powerEndpoint.auth.oauth2,
+          type: 'oauth2',
+        };
+      }
+
+      const powerAuthManager = createAuthenticationManager(
+        powerAuthConfig,
+        powerEndpoint.baseUrl,
+      );
+      powerHttpClient = powerAuthManager.getHttpClient();
+      logger.info('Power endpoint configured for JIRA', {
+        baseUrl: powerEndpoint.baseUrl,
+      });
     }
 
     // Initialize parent with service mode configuration
@@ -206,7 +243,7 @@ export class JiraServer extends McpAtlassianServer {
       const authManager = createAuthenticationManager(
         this.serviceConfig.auth,
         this.serviceConfig.url,
-        10000
+        10000,
       );
 
       const priorities = await cache.getOrSet(
@@ -230,11 +267,11 @@ export class JiraServer extends McpAtlassianServer {
             statusColor: priority.statusColor || null,
           }));
         },
-        3600 // Cache for 1 hour
+        3600, // Cache for 1 hour
       );
 
       logger.info('Priorities fetched successfully for MCP resource', {
-        count: priorities.length
+        count: priorities.length,
       });
 
       return {
@@ -243,8 +280,8 @@ export class JiraServer extends McpAtlassianServer {
           fetchedAt: new Date().toISOString(),
           count: priorities.length,
           cacheKey,
-          cacheTtl: 3600
-        }
+          cacheTtl: 3600,
+        },
       };
     } catch (error) {
       logger.error('Failed to fetch priorities from JIRA for MCP resource', error instanceof Error ? error : new Error(String(error)));
@@ -255,7 +292,7 @@ export class JiraServer extends McpAtlassianServer {
         { id: '2', name: 'High', description: 'Serious problem that could block progress.' },
         { id: '3', name: 'Medium', description: 'Has the potential to affect progress.' },
         { id: '4', name: 'Low', description: 'Minor problem or easily worked around.' },
-        { id: '5', name: 'Lowest', description: 'Trivial problem with little or no impact on progress.' }
+        { id: '5', name: 'Lowest', description: 'Trivial problem with little or no impact on progress.' },
       ];
 
       logger.info('Using fallback priorities for MCP resource', { count: fallbackPriorities.length });
@@ -266,8 +303,8 @@ export class JiraServer extends McpAtlassianServer {
           fetchedAt: new Date().toISOString(),
           count: fallbackPriorities.length,
           fallback: true,
-          reason: 'JIRA API fetch failed'
-        }
+          reason: 'JIRA API fetch failed',
+        },
       };
     }
   }

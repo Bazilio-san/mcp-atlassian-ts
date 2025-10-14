@@ -8,6 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { powerHttpClient } from '../../../../core/server/jira-server.js';
 
 /**
  * Tool definition for searching JIRA fields
@@ -41,7 +42,7 @@ export const jira_search_fields: ToolWithHandler = {
 async function searchFieldsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { query } = args;
-    const { httpClient, powerHttpClient, cache, logger } = context;
+    const { httpClient, cache, logger } = context;
 
     logger.info('Searching JIRA fields', { query });
 

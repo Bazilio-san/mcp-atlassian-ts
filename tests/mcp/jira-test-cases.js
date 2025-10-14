@@ -1,3 +1,5 @@
+// noinspection UnnecessaryLocalVariableJS
+
 /**
  * JIRA MCP Test Cases
  * Defines all test cases for JIRA MCP tools testing
@@ -18,6 +20,7 @@ import {
 import fs from 'fs';
 import yaml from 'yaml';
 import path from 'path';
+import { getJsonFromResult } from '../../dist/src/core/utils/formatToolResult.js';
 
 // Tool config functions adapted for new config structure
 function loadToolConfig () {
@@ -77,7 +80,7 @@ export const MCP_GROUP_INFO = {
 
 const getProjectId = async (client) => {
   const { result } = await client.callTool('jira_get_project', { projectIdOrKey: TEST_JIRA_PROJECT });
-  const data = JSON.parse(result?.content?.[0]?.text);
+  const data = getJsonFromResult(result);
   const projectId = Number(data?.project?.id);
   if (!projectId) {
     throw new Error(`⚠️  Failed to get id for project ${TEST_JIRA_PROJECT}`);
@@ -261,7 +264,7 @@ export class JiraMcpTestCases {
           if (!data) {
             throw new Error('  ❌  No transitions available for this issue');
           }
-          const { transitions } = JSON.parse(data);
+          const  { transitions } = getJsonFromResult(result);
 
           // Используем первый доступный переход
           const firstTransition = transitions[0];
@@ -288,7 +291,7 @@ export class JiraMcpTestCases {
             summary: `Temp issue for delete test - ${Date.now()}`,
             description: 'This issue will be deleted immediately',
           });
-          const json = JSON.parse(createResult?.result?.content?.[0]?.text ?? '');
+          const json = getJsonFromResult(createResult);
 
           const tmpIssueKey = json?.newIssue?.key;
           if (!tmpIssueKey) {
@@ -548,7 +551,7 @@ export class JiraMcpTestCases {
             issueIdOrKey: this.testIssueKey,
           });
 
-          const issueData = JSON.parse(issueResult?.result?.content?.[0]?.text ?? '{}');
+          const issueData = getJsonFromResult(issueResult);
           const existingLinks = issueData?.jiraIssue?.issueLinks || [];
 
           let linkId;
@@ -572,6 +575,7 @@ export class JiraMcpTestCases {
 
             // Extract the link ID from the response
             linkId = JSON.parse(createLinkResult?.result?.content?.[0]?.text || '')?.link?.id;
+            const linkId2 = getJsonFromResult(createLinkResult)?.link?.id; // VVA
             console.log(`  ℹ️  Created test link with ID: ${linkId}`);
           }
           return { linkId };
@@ -650,7 +654,7 @@ export class JiraMcpTestCases {
           });
 
           // Берём первую доску из списка
-          const firstBoard = JSON.parse(boardsResult?.result?.content?.[0]?.text || '')?.agileBoards?.[0];
+          const firstBoard = getJsonFromResult(boardsResult)?.agileBoards?.[0];
           if (!firstBoard?.id) {
             throw new Error('No boards found to test board issues');
           }
@@ -674,7 +678,7 @@ export class JiraMcpTestCases {
           });
 
           // Ищем доску типа scrum (данные в content[0].text)
-          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
+          const boards = getJsonFromResult(boardsResult)?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -701,7 +705,7 @@ export class JiraMcpTestCases {
           });
 
           // Ищем доску типа scrum
-          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
+          const boards = getJsonFromResult(boardsResult)?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -716,7 +720,7 @@ export class JiraMcpTestCases {
           });
 
           // Берём первый спринт из списка
-          const firstSprint = JSON.parse(sprintsResult?.result?.content?.[0]?.text || '{}')?.sprints?.[0];
+          const firstSprint = getJsonFromResult(sprintsResult)?.sprints?.[0];
           if (!firstSprint?.id) {
             console.log('No sprints found to test sprint issues');
             return null;
@@ -740,7 +744,7 @@ export class JiraMcpTestCases {
           });
 
           // Ищем доску типа scrum
-          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
+          const boards = getJsonFromResult(boardsResult)?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -752,8 +756,8 @@ export class JiraMcpTestCases {
             originBoardId: Number(scrumBoard.id),
             name: `Test ${Date.now() % 10000}`, // Shortened to fit 30 char limit
             goal: 'Test sprint creation',
-            startDate: (new Date()).toISOString(), // 'Start date of the sprint in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.'
-            endDate: (new Date()).toISOString(),
+            startDate: new Date().toISOString(), // 'Start date of the sprint in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.'
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           };
         },
         description: 'Create new sprint for the first available board',
@@ -769,7 +773,7 @@ export class JiraMcpTestCases {
           });
 
           // Ищем доску типа scrum
-          const boards = JSON.parse(boardsResult?.result?.content?.[0]?.text || '{}')?.agileBoards || [];
+          const boards = getJsonFromResult(boardsResult)?.agileBoards || [];
           const scrumBoard = boards.find(b => b.type === 'scrum');
 
           if (!scrumBoard?.id) {
@@ -785,7 +789,7 @@ export class JiraMcpTestCases {
           });
 
           // Получаем ID созданного спринта
-          const createdSprint = JSON.parse(createResult?.result?.content?.[0]?.text || '{}')?.sprint;
+          const createdSprint = getJsonFromResult(createResult)?.sprint;
           if (!createdSprint?.id) {
             console.log('Failed to create sprint for update test');
             return null;

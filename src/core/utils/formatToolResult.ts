@@ -21,3 +21,17 @@ export function formatToolResult (json: any): any {
     ],
   };
 }
+
+export const getJsonFromResult = <T = any> (result: any): T => {
+  if (appConfig.isReturnJson) {
+    return result?.structuredContent as T;
+  } else {
+    const text = result?.result?.content?.[0]?.text || result?.content?.[0]?.text || '';
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      //
+    }
+  }
+  return undefined as T;
+};

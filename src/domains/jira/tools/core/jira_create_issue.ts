@@ -6,13 +6,13 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
-import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
 
 export function createJiraCreateIssueTool (): ToolWithHandler {
   return {
     name: 'jira_create_issue',
-    description:  `Create a new issue (task, bug, story, etc.) in JIRA.
+    description: `Create a new issue (task, bug, story, etc.) in JIRA.
 
 Workflow:
 1) Collect or receive: projectIdOrKey, issueType, summary.
@@ -123,25 +123,16 @@ export const jira_create_issue: ToolWithHandler = createJiraCreateIssueTool();
 async function validateProjectAndIssueType (
   projectIdOrKey: string,
   issueType: string,
-  context: ToolContext
+  context: ToolContext,
 ): Promise<{ valid: boolean; error?: any }> {
   try {
     // Get project details with issueTypes expanded
-    const projectResult = await jira_get_project.handler( // VVT
-      {
-        projectIdOrKey,
-        expand: ['issueTypes']
-      },
-      context
-    );
+    const projectResult = await jira_get_project.handler({ projectIdOrKey, expand: ['issueTypes'] }, context);
+    const json = getJsonFromResult(projectResult)
 
-    // Parse the result - it comes wrapped in formatToolResult
-    const parsedResult = typeof projectResult === 'string'
-      ? JSON.parse(projectResult)
-      : projectResult;
 
     // Check if project was found
-    if (!parsedResult.found) {
+    if (!json.found) {
       return {
         valid: false,
         error: {
@@ -150,16 +141,16 @@ async function validateProjectAndIssueType (
           error: 'PROJECT_NOT_FOUND',
           message: `Project '${projectIdOrKey}' not found. Please verify the project key or ID.`,
           projectIdOrKey,
-        }
+        },
       };
     }
 
-    const project = parsedResult.project;
+    const project = json.project;
     const issueTypes = project.issueTypes || [];
 
     // Check if issueType is valid (by name or id)
     const validIssueType = issueTypes.find((it: any) =>
-      it.name === issueType || it.id === issueType
+      it.name === issueType || it.id === issueType,
     );
 
     if (!validIssueType) {
@@ -176,9 +167,9 @@ async function validateProjectAndIssueType (
             id: it.id,
             name: it.name,
             description: it.description,
-            subtask: it.subtask
-          }))
-        }
+            subtask: it.subtask,
+          })),
+        },
       };
     }
 
@@ -193,7 +184,7 @@ async function validateProjectAndIssueType (
         message: `Failed to validate project and issue type: ${error instanceof Error ? error.message : String(error)}`,
         projectIdOrKey,
         issueType,
-      }
+      },
     };
   }
 }

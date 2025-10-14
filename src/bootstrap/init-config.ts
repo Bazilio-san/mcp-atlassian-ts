@@ -174,11 +174,9 @@ function buildConfig (): IConfig {
 
   // Helper to get value with priority: env > yaml > default
   const getValue = <T> (envKey: string, yamlPath: string[], defaultValue: T): T => {
-    const envValue = getEnv(envKey, undefined);
-    if (envValue !== undefined) {
-      return envValue;
+    if (process.env[envKey] !== undefined) {
+      return getEnv(envKey, defaultValue);
     }
-
     // Navigate through yaml path
     let yamlValue = yaml;
     for (const key of yamlPath) {
