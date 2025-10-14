@@ -186,10 +186,9 @@ service_exists() {
     return 1
   fi
 }
-
-if service_exists "$SERVICE"
 echo_g "**** Перезапуск сервиса ${SERVIC} ****"
 
+if service_exists "$SERVICE"
 then
   systemctl restart $SERVICE
   echo_g "**** Сервис $g$SERVICE$c перезапущен ****"
