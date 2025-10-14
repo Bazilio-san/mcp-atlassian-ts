@@ -40,13 +40,78 @@ npm start
 
 ## 🔧 Configuration
 
-### Environment Variables (.env)
+Configuration uses a **two-layer approach**:
+- **`config.yaml`** - Primary configuration file for all application settings
+- **`.env`** - Environment variables for sensitive data only (URLs, credentials)
 
-```bash
-# Service Mode (REQUIRED)
-MCP_SERVICE=jira                    # 'jira' or 'confluence'
+### Primary Configuration (config.yaml)
+
+Copy `config.yaml.example` to `config.yaml` and customize:
+
+```yaml
+# Server settings
+server:
+  port: 3000
+  host: '0.0.0.0'
+  transportType: http               # 'stdio', 'http', or 'sse'
+  serviceMode: jira                 # 'jira' or 'confluence'
+
+# Logging
+logging:
+  level: info                       # 'debug', 'info', 'warn', 'error'
+  pretty: true
+
+# Performance & Caching
+cache:
+  ttlSeconds: 300
+  maxItems: 1000
+
+rateLimit:
+  windowMs: 900000
+  maxRequests: 100
 
 # JIRA Configuration
+jira:
+  url: ${JIRA_URL}                  # From environment variable
+  maxResults: 50
+  epicLinkFieldId: customfield_10014
+
+  # Authentication via environment variables
+  auth:
+    basic:
+      username: ${JIRA_USERNAME}
+      password: ${JIRA_PASSWORD}    # API token recommended
+    # pat: ${JIRA_PAT}             # Alternative: Personal Access Token
+
+  # Tool Configuration
+  usedInstruments:
+    include: ALL                    # Enable all JIRA tools
+    exclude: []                     # Or exclude specific tools
+
+# Confluence Configuration
+confluence:
+  url: ${CONFLUENCE_URL}            # From environment variable
+  maxResults: 50
+
+  # Authentication via environment variables
+  auth:
+    basic:
+      username: ${CONFLUENCE_USERNAME}
+      password: ${CONFLUENCE_PASSWORD}
+    # pat: ${CONFLUENCE_PAT}       # Alternative: Personal Access Token
+
+  # Tool Configuration
+  usedInstruments:
+    include: ALL                    # Enable all Confluence tools
+    exclude: []                     # Or exclude specific tools
+```
+
+### Environment Variables (.env)
+
+Copy `.env.example` to `.env` and fill in your credentials:
+
+```bash
+# JIRA Authentication (Required for JIRA service)
 JIRA_URL=https://your-company.atlassian.net
 JIRA_USERNAME=your-email@company.com
 JIRA_PASSWORD=your-api-token        # Generate at id.atlassian.com
@@ -54,45 +119,13 @@ JIRA_PASSWORD=your-api-token        # Generate at id.atlassian.com
 # Alternative: Personal Access Token
 # JIRA_PAT=your-personal-access-token
 
-# Confluence Configuration
+# Confluence Authentication (Required for Confluence service)
 CONFLUENCE_URL=https://your-company.atlassian.net/wiki
 CONFLUENCE_USERNAME=your-email@company.com
 CONFLUENCE_PASSWORD=your-api-token
 
 # Alternative: Personal Access Token
 # CONFLUENCE_PAT=your-personal-access-token
-
-# Server Configuration
-SERVER_PORT=3000
-TRANSPORT_TYPE=http                 # 'stdio', 'http', or 'sse'
-
-# Performance & Caching
-CACHE_TTL_SECONDS=300
-CACHE_MAX_ITEMS=1000
-RATE_LIMIT_MAX_REQUESTS=100
-RATE_LIMIT_WINDOW_MS=900000
-
-# Logging
-LOG_LEVEL=info                      # 'debug', 'info', 'warn', 'error'
-LOG_PRETTY=true
-
-# JIRA Custom Fields
-JIRA_EPIC_LINK_FIELD_ID=customfield_10014
-JIRA_MAX_RESULTS=50
-```
-
-### Tool Configuration (config.yaml)
-
-```yaml
-jira:
-  usedInstruments:
-    include: ALL                    # Enable all JIRA tools
-    exclude: []                     # Or exclude specific tools
-
-confluence:
-  usedInstruments:
-    include: ALL                    # Enable all Confluence tools
-    exclude: []                     # Or exclude specific tools
 ```
 
 ## 🔐 Authentication Methods

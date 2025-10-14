@@ -119,7 +119,7 @@ export class AboutPageRenderer {
     <footer class="simple-footer">
       <p>
         Server: {{SERVER_NAME}} v{{SERVICE_VERSION}} • Started: {{START_TIME}} •
-        <a href="https://github.com/yourusername/mcp-atlassian-ts#configuration" target="_blank" rel="noopener">
+        <a href="https://github.com/Bazilio-san/mcp-atlassian-ts#configuration" target="_blank" rel="noopener">
           Configure headers in README
         </a>
       </p>
