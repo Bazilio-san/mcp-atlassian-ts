@@ -83,3 +83,4 @@ _logs/
 vectors.txt
 
 /_misc_/
+/deploy/config.yml
