@@ -126,9 +126,11 @@ SERVICE_NAME="${SERVICE_NAME_ALT:-$SERVICE_NAME}"
 SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
 if [ -z "$SERVICE_INSTANCE" ]
 then
+  echo "========================================================================="
   SERVICE="${SERVICE_NAME}"
 else
   SERVICE="${SERVICE_NAME}--${SERVICE_INSTANCE}"
+  echo "================SERVICE_INSTANCE===============|${SERVICE_INSTANCE}|=========================================="
 fi
 
 echo_g "========================================"
