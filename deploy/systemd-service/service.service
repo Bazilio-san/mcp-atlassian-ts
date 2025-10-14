@@ -1,0 +1,19 @@
+[Unit]
+Description=MCP JIRA
+After=network.target
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
+StartLimitIntervalSec=0
+
+[Service]
+User=root
+WorkingDirectory=/var/opt/node/mcp-jira
+EnvironmentFile=/var/opt/node/mcp-jira/.env
+ExecStart=/root/.nvm/versions/node/v22.17.1/bin/node ./dist/src/index.js
+Restart=always
+RestartSec=3
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#StandardOutput=
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
