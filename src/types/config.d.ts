@@ -63,6 +63,7 @@ export interface IPowerEndpoint {
 // JIRA configuration
 export interface IJiraConfig {
   url: string;
+  origin: string;
   auth?: {
     basic?: IBasicAuth;
     pat?: string;
@@ -77,6 +78,7 @@ export interface IJiraConfig {
 // Confluence configuration
 export interface IConfluenceConfig {
   url: string;
+  origin: string;
   auth?: {
     basic?: IBasicAuth;
     pat?: string;

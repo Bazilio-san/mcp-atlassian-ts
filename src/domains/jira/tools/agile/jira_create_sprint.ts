@@ -100,7 +100,7 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
         startDate: fmtD(sprint.startDate),
         endDate: fmtD(sprint.endDate),
         completeDate: fmtD(sprint.completeDate),
-        url: `${config.url}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
+        url: `${config.origin}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
       },
     };
 

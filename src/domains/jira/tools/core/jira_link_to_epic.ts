@@ -107,8 +107,8 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       epicKey: epicKey,
       links: {
-        issue: `${config.url}/browse/${issueIdOrKey}`,
-        epic: `${config.url}/browse/${epicKey}`,
+        issue: `${config.origin}/browse/${issueIdOrKey}`,
+        epic: `${config.origin}/browse/${epicKey}`,
       },
       timestamp: new Date().toISOString(),
     };

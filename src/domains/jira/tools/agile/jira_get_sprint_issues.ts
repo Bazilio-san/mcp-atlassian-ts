@@ -132,7 +132,7 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
           name: f.issuetype?.name,
         },
         priority: f.priority?.name,
-        link: `${config.url}/browse/${issue.key}`,
+        link: `${config.origin}/browse/${issue.key}`,
         project: {
           key: f.project?.key,
           name: f.project?.name,

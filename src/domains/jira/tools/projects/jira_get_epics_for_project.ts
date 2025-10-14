@@ -86,7 +86,7 @@ async function getEpicsForProjectHandler (args: any, context: ToolContext): Prom
           id: issue.id,
           key: issue.key,
           summary: fields.summary || '',
-          issueUrl: `${config.url}/browse/${issue.key}`,
+          issueUrl: `${config.origin}/browse/${issue.key}`,
         };
       }),
       timestamp: new Date().toISOString(),

@@ -38,6 +38,7 @@ export class JiraServer extends McpAtlassianServer {
           oauth2,
         } = {},
         url,
+        origin,
         maxResults,
         epicLinkFieldId,
         powerEndpoint,
@@ -71,7 +72,7 @@ export class JiraServer extends McpAtlassianServer {
       auth = { ...oauth2, type: 'oauth2' };
     }
 
-    const jiraConfig: JCConfig = { url, auth, maxResults };
+    const jiraConfig: JCConfig = { url, origin, auth, maxResults };
     if (epicLinkFieldId) {
       jiraConfig.epicLinkFieldId = epicLinkFieldId;
     }

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import YAML from 'yaml';
 import type { IConfig, IToolsConfig } from '../types/config.js';
 import { createLogger } from '../core/utils/logger.js';
+import { getBaseUrl } from '../core/utils/tools.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const logger = createLogger('config');
@@ -210,8 +211,10 @@ function buildConfig (): IConfig {
 
     // JIRA configuration
     jira: (() => {
+      const url = getValue('JIRA_URL', ['jira', 'url'], '');
       const jiraConfig: any = {
-        url: getValue('JIRA_URL', ['jira', 'url'], ''),
+        url,
+        origin: getBaseUrl(url),
         auth: buildAuthConfig('JIRA', yaml?.jira?.auth),
         maxResults: getValue('JIRA_MAX_RESULTS', ['jira', 'maxResults'], 50),
         epicLinkFieldId: getValue('JIRA_EPIC_LINK_FIELD_ID', ['jira', 'epicLinkFieldId'], 'customfield_10014'),
@@ -272,8 +275,10 @@ function buildConfig (): IConfig {
 
     // Confluence configuration
     confluence: (() => {
+      const url = getValue('CONFLUENCE_URL', ['confluence', 'url'], '');
       const confConfig: any = {
-        url: getValue('CONFLUENCE_URL', ['confluence', 'url'], ''),
+        url,
+        origin: getBaseUrl(url),
         auth: buildAuthConfig('CONFLUENCE', yaml?.confluence?.auth),
         maxResults: getValue('CONFLUENCE_MAX_RESULTS', ['confluence', 'maxResults'], 50),
       };
@@ -317,8 +322,8 @@ function buildConfig (): IConfig {
     ...(yaml?.subst && yaml.subst.users && yaml.subst.httpHeader ? {
       subst: {
         users: yaml.subst.users,
-        httpHeader: yaml.subst.httpHeader
-      }
+        httpHeader: yaml.subst.httpHeader,
+      },
     } : {}),
   };
 }

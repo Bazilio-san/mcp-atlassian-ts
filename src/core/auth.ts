@@ -10,10 +10,10 @@ import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from './ut
 import { appConfig } from '../bootstrap/init-config.js';
 
 import type { AuthConfig, HttpClientConfig } from '../types';
+import { debugJiraTool } from './utils/debug.js';
 
 const logger = createLogger('auth');
 const debug = getDebug('headers-to-api');
-const debugHttp = getDebug('api-http');
 
 /**
  * Authentication manager for different auth methods
@@ -58,18 +58,12 @@ export class AuthenticationManager {
     client.interceptors.response.use(
       response => {
         // Log successful HTTP transaction
-        if (debugHttp.enabled) {
-          const toolName = getCurrentToolName();
-          logHttpTransaction(toolName, response.config, response);
-        }
+        logHttpTransaction(getCurrentToolName(), response.config, response);
         return response;
       },
       async error => {
         // Log failed HTTP transaction
-        if (debugHttp.enabled) {
-          const toolName = getCurrentToolName();
-          logHttpTransaction(toolName, error.config, undefined, error);
-        }
+        logHttpTransaction(getCurrentToolName(), error.config, undefined, error);
 
         // Handle 401 errors by attempting token refresh if using OAuth
         if (error.response?.status === 401 && this.authConfig.type === 'oauth2') {

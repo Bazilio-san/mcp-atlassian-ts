@@ -93,7 +93,7 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
           emailAddress: comment.author.emailAddress,
         },
         visibility: comment.visibility,
-        issueUrl: `${config.url}/browse/${issueIdOrKey}`,
+        issueUrl: `${config.origin}/browse/${issueIdOrKey}`,
       },
     };
 

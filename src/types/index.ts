@@ -52,6 +52,7 @@ export interface ServerConfig {
 // JIRA configuration
 export interface JCConfig {
   url: string;
+  origin: string;
   auth: AuthConfig;
   maxResults: number;
   epicLinkFieldId?: string; // Custom field ID for Epic Link (defaults to customfield_10014)

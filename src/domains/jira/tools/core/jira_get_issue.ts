@@ -88,7 +88,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       updated: new Date(fields.updated).toLocaleString(),
       priority: fields.priority?.name || 'None',
       issueType: fields.issuetype.name,
-      issueUrl: `${config.url}/browse/${issue.key}`,
+      issueUrl: `${config.origin}/browse/${issue.key}`,
       project: {
         name: fields.project.name,
         key: fields.project.key,

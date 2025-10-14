@@ -27,6 +27,7 @@ export class ConfluenceServer extends McpAtlassianServer {
           oauth2,
         } = {},
         url,
+        origin,
         maxResults,
       },
       cache,
@@ -58,7 +59,7 @@ export class ConfluenceServer extends McpAtlassianServer {
       auth = { type: 'basic', username, password };
     }
 
-    const confluenceConfig: JCConfig = { url, auth, maxResults };
+    const confluenceConfig: JCConfig = { url, origin, auth, maxResults };
 
     // Initialize parent with service mode configuration
     super(serverConfig, confluenceConfig);

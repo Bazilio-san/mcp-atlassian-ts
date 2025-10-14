@@ -84,7 +84,7 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
       transitionName: transitions.find((t: any) => t.id === transitionId)?.name || undefined,
       comment: comment || null,
       fields: fields,
-      link: `${config.url}/browse/${issueIdOrKey}`,
+      link: `${config.origin}/browse/${issueIdOrKey}`,
       timestamp: new Date().toISOString(),
     };
 

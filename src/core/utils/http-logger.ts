@@ -4,10 +4,10 @@
 
 import fs from 'fs';
 import path from 'path';
-import { getDebug } from './logger.js';
 import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { debugJiraTool, debugJiraToolFile } from "./debug.js";
+import { debug } from "node:util";
 
-const debug = getDebug('api-http');
 
 // Ensure logs directory exists
 const LOGS_DIR = path.join(process.cwd(), '_tmp/_logs');
@@ -121,7 +121,7 @@ export function logHttpTransaction (
   response?: AxiosResponse,
   error?: AxiosError,
 ): void {
-  if (!debug.enabled) {
+  if (!debugJiraTool.enabled) {
     return;
   }
 
@@ -131,21 +131,19 @@ export function logHttpTransaction (
 
     const logContent = formatHttpLogAsMarkdown(toolName, request, response, error);
 
-    if (!fs.existsSync(LOGS_DIR)) {
-      fs.mkdirSync(LOGS_DIR, { recursive: true });
-    }
+    if (debugJiraToolFile.enabled) {
+      if (!fs.existsSync(LOGS_DIR)) {
+        fs.mkdirSync(LOGS_DIR, { recursive: true });
+      }
 
-    // Append to existing log file or create new one
-    fs.appendFileSync(logFilePath, logContent, 'utf-8');
-
-    // Also log to console for immediate feedback
-    if (debug.enabled) {
+      fs.writeFileSync(logFilePath, logContent, 'utf-8');
       console.log(`[api-http] HTTP transaction logged to ${logFilePath}`);
     }
+
+    console.log(logContent)
+
   } catch (logError) {
-    if (debug.enabled) {
-      console.log(`[api-http] Failed to log HTTP transaction: ${logError}`);
-    }
+    console.log(`[api-http] Failed to log HTTP transaction: ${logError}`);
   }
 }
 
@@ -153,7 +151,7 @@ export function logHttpTransaction (
  * Clear log file for a specific tool
  */
 export function clearHttpLog (toolName: string): void {
-  if (!debug.enabled) {
+  if (!debugJiraTool.enabled) {
     return;
   }
 
@@ -163,14 +161,10 @@ export function clearHttpLog (toolName: string): void {
 
     if (fs.existsSync(logFilePath)) {
       fs.unlinkSync(logFilePath);
-      if (debug.enabled) {
-        console.log(`[api-http] Cleared HTTP log for ${toolName}`);
-      }
+      console.log(`[api-http] Cleared HTTP log for ${toolName}`);
     }
   } catch (error) {
-    if (debug.enabled) {
-      console.log(`[api-http] Failed to clear HTTP log: ${error}`);
-    }
+    console.log(`[api-http] Failed to clear HTTP log: ${error}`);
   }
 }
 

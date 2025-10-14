@@ -115,7 +115,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       updatedFields: Object.keys(updateData.fields),
       fieldValues: updateData.fields,
-      link: `${config.url}/browse/${issueIdOrKey}`,
+      link: `${config.origin}/browse/${issueIdOrKey}`,
       timestamp: new Date().toISOString(),
     };
 

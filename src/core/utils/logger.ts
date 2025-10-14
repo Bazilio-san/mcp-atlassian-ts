@@ -214,7 +214,7 @@ export function createRequestLogger () {
         url: req.url,
         statusCode: res.statusCode,
         duration,
-        responseSize: Buffer.isBuffer(body) ? body.length : JSON.stringify(body).length,
+        responseSize: (Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0,
       });
 
       return originalSend.call(this, body);

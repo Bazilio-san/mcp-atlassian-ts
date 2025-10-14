@@ -8,7 +8,8 @@ import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
-import { getBaseUrl } from "../../../../core/utils/tools.js";
+import { debugJiraTool } from "../../../../core/utils/debug.js";
+import { ppj } from "../../../../core/utils/text";
 
 export function createJiraCreateIssueTool (): ToolWithHandler {
   return {
@@ -293,13 +294,14 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
       newIssue: {
         id: createdIssue.id,
         key: createdIssue.key,
-        issueUrl: `${config.url}/browse/${createdIssue.key}`,
+        issueUrl: `${config.origin}/browse/${createdIssue.key}`,
         summary,
         project: {
           [/^\d+$/.test(projectIdOrKey) ? 'id' : 'key']: projectIdOrKey,
         },
       },
     };
+    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`)
     // Return formatted response
     return formatToolResult(json);
   });

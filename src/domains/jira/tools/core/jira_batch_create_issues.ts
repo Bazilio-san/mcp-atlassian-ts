@@ -7,6 +7,8 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { debugJiraTool } from "../../../../core/utils/debug.js";
+import { ppj } from "../../../../core/utils/text";
 
 /**
  * Tool definition for batch creating JIRA issues
@@ -95,7 +97,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     logger.info('Batch creating JIRA issues', { count: issues.length });
 
     // Convert to the format expected by the JIRA API
-    const issueInputs = issues.map((issue: any) => ({
+    const issueUpdates = issues.map((issue: any) => ({
       fields: {
         project: {
           [/^\d+$/.test(issue.projectIdOrKey) ? 'id' : 'key']: issue.projectIdOrKey,
@@ -112,9 +114,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     }));
 
     // Make API call
-    const response = await httpClient.post('/rest/api/2/issue/bulk', {
-      issueUpdates: issueInputs,
-    });
+    const response = await httpClient.post('/rest/api/2/issue/bulk', { issueUpdates });
 
     const result = response.data;
     const successCount = result.issues?.length || 0;
@@ -140,6 +140,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
       })) || [],
     };
 
+    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`)
     return formatToolResult(json);
   });
 }

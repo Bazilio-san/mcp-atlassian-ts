@@ -121,7 +121,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
         priority: issue.fields.priority ? issue.fields.priority.name : 'None',
         issueType: issue.fields.issuetype ? issue.fields.issuetype.name : 'Unknown',
       })),
-      searchUrl: `${config.url}/issues/?jql=${encodeURIComponent(jql)}`,
+      searchUrl: `${config.origin}/issues/?jql=${encodeURIComponent(jql)}`,
       timestamp: new Date().toISOString(),
     };
 

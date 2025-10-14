@@ -97,7 +97,7 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
         },
         visibility: visibility || null,
       },
-      link: `${config.url}/browse/${issueIdOrKey}`,
+      link: `${config.origin}/browse/${issueIdOrKey}`,
       timestamp: new Date().toISOString(),
     };
 

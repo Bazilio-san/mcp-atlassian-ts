@@ -89,7 +89,7 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
       statusCategory: epic.fields.status?.statusCategory?.name,
       created: epic.fields.created,
       updated: epic.fields.updated,
-      url: `${config.url}/browse/${epic.key}`,
+      url: `${config.origin}/browse/${epic.key}`,
     }));
 
     // Sort epics by updated date (most recent first)
