@@ -21,9 +21,9 @@ const SENSITIVE_PATTERNS = [
 ];
 
 /**
- * Mask sensitive information in log messages
+ * Mask sensitive information in log messages with circular reference protection
  */
-function maskSensitiveData (data: any): any {
+function maskSensitiveData (data: any, visited = new WeakSet()): any {
   if (typeof data === 'string') {
     let masked = data;
     SENSITIVE_PATTERNS.forEach(pattern => {
@@ -41,8 +41,20 @@ function maskSensitiveData (data: any): any {
     return masked;
   }
 
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  // Prevent circular references and limit depth
+  if (typeof data === 'object') {
+    if (visited.has(data)) {
+      return '[Circular]';
+    }
+    visited.add(data);
+  }
+
   if (Array.isArray(data)) {
-    return data.map(item => maskSensitiveData(item));
+    return data.map(item => maskSensitiveData(item, visited));
   }
 
   if (data && typeof data === 'object') {
@@ -58,7 +70,7 @@ function maskSensitiveData (data: any): any {
       ) {
         masked[key] = '[MASKED]';
       } else {
-        masked[key] = maskSensitiveData(data[key]);
+        masked[key] = maskSensitiveData(data[key], visited);
       }
     });
     return masked;

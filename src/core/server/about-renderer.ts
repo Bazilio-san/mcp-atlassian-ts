@@ -94,7 +94,7 @@ export class AboutPageRenderer {
         </div>
         <div class="info-row">
           <span class="label">Service URL:</span>
-          <a href="{{SERVICE_URL}}" target="_blank" rel="noopener" class="value link">{{SERVICE_URL}}</a>
+          {{SERVICE_URL}}
         </div>
       </section>
 
@@ -268,8 +268,8 @@ body {
 }
 
 .simple-header h1 {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 700;
   margin: 0;
   color: var(--color-primary-600);
 }
@@ -300,7 +300,7 @@ body {
 
 /* Info Section */
 .info-section {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .info-row {
