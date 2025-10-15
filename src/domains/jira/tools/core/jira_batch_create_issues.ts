@@ -8,7 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { debugJiraTool } from "../../../../core/utils/debug.js";
-import { ppj } from "../../../../core/utils/text";
+import { ppj } from "../../../../core/utils/text.js";
 
 /**
  * Tool definition for batch creating JIRA issues

@@ -9,7 +9,7 @@ import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
 import { debugJiraTool } from "../../../../core/utils/debug.js";
-import { ppj } from "../../../../core/utils/text";
+import { ppj } from "../../../../core/utils/text.js";
 
 export function createJiraCreateIssueTool (): ToolWithHandler {
   return {
