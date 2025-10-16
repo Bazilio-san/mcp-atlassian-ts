@@ -29,8 +29,8 @@ const colorMap: Record<string, (s: string) => string> = {
   lCyan: chalk.cyanBright,
 };
 
-function getStyler(color?: string): (s: string) => string {
-  if (!color) return chalk.cyan;
+function getStyler (color?: string): (s: string) => string {
+  if (!color) {return chalk.cyan;}
   if (color in colorMap) {
     const styler = (colorMap as Record<string, (s: string) => string>)[color];
     return styler || chalk.cyan;
@@ -38,7 +38,7 @@ function getStyler(color?: string): (s: string) => string {
   // Also try direct chalk color names if provided like 'red', 'greenBright', etc.
   try {
     const maybe = (chalk as any)[color];
-    if (typeof maybe === 'function') return maybe as (s: string) => string;
+    if (typeof maybe === 'function') {return maybe as (s: string) => string;}
   } catch {}
   return chalk.cyan;
 }

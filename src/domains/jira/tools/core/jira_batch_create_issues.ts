@@ -7,8 +7,8 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { debugJiraTool } from "../../../../core/utils/debug.js";
-import { ppj } from "../../../../core/utils/text.js";
+import { debugJiraTool } from '../../../../core/utils/debug.js';
+import { ppj } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for batch creating JIRA issues
@@ -140,7 +140,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
       })) || [],
     };
 
-    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`)
+    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`);
     return formatToolResult(json);
   });
 }

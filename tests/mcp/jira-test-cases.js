@@ -516,6 +516,13 @@ export class JiraMcpTestCases {
         params: { query: 'summary' },
         description: 'Search JIRA fields',
       },
+      {
+        fullId: '4-2',
+        name: 'Get JIRA Priorities',
+        toolName: 'jira_get_priorities',
+        params: {},
+        description: 'Get all available JIRA priorities',
+      },
     ]);
   }
 

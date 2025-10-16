@@ -10,7 +10,6 @@ import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from './ut
 import { appConfig } from '../bootstrap/init-config.js';
 
 import type { AuthConfig, HttpClientConfig } from '../types';
-import { debugJiraTool } from './utils/debug.js';
 
 const logger = createLogger('auth');
 const debug = getDebug('headers-to-api');

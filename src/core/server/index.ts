@@ -21,7 +21,7 @@ import {
 
 import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
-import { createErrorResponse, createJsonRpcErrorResponse, McpAtlassianError, ServerError } from '../errors.js';
+import { createJsonRpcErrorResponse, McpAtlassianError, ServerError } from '../errors.js';
 import { getCache } from '../cache.js';
 import { createAuthenticationManager } from '../auth.js';
 import { ToolRegistry } from './tools.js';
@@ -30,8 +30,17 @@ import { appConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
+import { getCachedPriorityObjects } from '../../domains/jira/shared/priority-service';
 
 const logger = createLogger('server');
+
+// Types for refactored MCP handlers
+interface ExecutionContext {
+  authHeaders?: Record<string, string>;
+  rateLimitKey?: string;
+  enableRateLimit?: boolean;
+}
+
 
 // MCP protocol date-version per spec; used for HTTP/Streamable HTTP header negotiation
 const MCP_PROTOCOL_VERSION = '2025-06-18';
@@ -86,104 +95,229 @@ export class McpAtlassianServer {
   }
 
   /**
-   * Setup MCP server handlers
+   * Get list of available resources
    */
-  protected setupServerHandlers (): void {
+  private getResourcesList (): Resource[] {
+    const resources: Resource[] = [
+      {
+        uri: 'atlassian://config',
+        name: 'Atlassian Configuration',
+        description: 'Current Atlassian configuration and connection status',
+        mimeType: 'application/json',
+      },
+      {
+        uri: 'atlassian://cache/stats',
+        name: 'Cache Statistics',
+        description: 'Current cache statistics and performance metrics',
+        mimeType: 'application/json',
+      },
+    ];
+
+    // Add JIRA-specific resources when in JIRA mode
+    const serviceMode = appConfig.server.serviceMode;
+    if ((serviceMode === 'jira' || !serviceMode) && appConfig.jira?.url && appConfig.jira?.auth) {
+      resources.push({
+        uri: 'jira://priorities',
+        name: 'JIRA Priorities',
+        description: 'List of available priorities from JIRA instance',
+        mimeType: 'application/json',
+      });
+    }
+
+    return resources;
+  }
+
+  /**
+   * Handle resource read requests
+   */
+  private async handleResourceRead (uri: string): Promise<any> {
+    switch (uri) {
+      case 'atlassian://config':
+        const authManager = createAuthenticationManager(
+          this.serviceConfig.auth,
+          this.serviceConfig.url,
+        );
+
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify({
+              url: this.serviceConfig.url,
+              auth: authManager.getAuthInfo(),
+              config: this.serviceConfig,
+            }, null, 2),
+          }],
+        };
+
+      case 'atlassian://cache/stats':
+        const cache = getCache();
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(cache.getStats(), null, 2),
+          }],
+        };
+
+      case 'jira://priorities':
+        const priorities = getCachedPriorityObjects();
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify({ priorities }, null, 2),
+          }],
+        };
+
+      default:
+        throw new ServerError(`Unknown resource URI: ${uri}`);
+    }
+  }
+
+  /**
+   * Handle tools list requests
+   */
+  private async handleToolsList (): Promise<{tools: any[]}> {
+    const tools = await this.toolRegistry.listTools();
+    logger.info('Tools listed', { count: tools.length });
+    return { tools };
+  }
+
+  /**
+   * Handle tool call requests with optional context
+   */
+  private async handleToolCall (name: string, args: any, context?: ExecutionContext): Promise<any> {
+    logger.info('Tool called', { name, hasArgs: !!args, authMode: context?.rateLimitKey ? 'http' : 'stdio' });
+
+    try {
+      // Apply rate limiting if enabled
+      if (context?.enableRateLimit && context?.rateLimitKey) {
+        await this.rateLimiter.consume(context.rateLimitKey);
+      }
+
+      // Execute tool
+      const result = await this.toolRegistry.executeTool(name, args || {}, context?.authHeaders);
+
+      logger.info('Tool executed successfully', { name });
+      return result;
+    } catch (error) {
+      // Handle rate limit errors
+      if (isRateLimitError(error)) {
+        const rateLimitMessage = formatRateLimitError(
+          error as any,
+          this.serverConfig.rateLimit.maxRequests,
+        );
+        logger.warn('Rate limit exceeded', { name, rateLimitKey: context?.rateLimitKey });
+        throw new ServerError(rateLimitMessage);
+      }
+
+      logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
+
+      if (error instanceof McpAtlassianError) {
+        throw error;
+      }
+
+      throw new ServerError(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle ping requests
+   */
+  private handlePing (): {pong: boolean} {
+    return { pong: true };
+  }
+
+  /**
+   * Setup common MCP handlers on a server instance
+   */
+  private setupCommonHandlers (server: Server, _enableRateLimit = false): void {
     // Handle list_tools requests
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      const tools = await this.toolRegistry.listTools();
-      logger.info('Tools listed', { count: tools.length });
-      return { tools };
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
+      return this.handleToolsList();
     });
 
     // Handle tool_call requests
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-
-      logger.info('Tool called', { name, hasArgs: !!args });
-
-      try {
-        // Execute tool (STDIO transport doesn't use rate limiting)
-        const result = await this.toolRegistry.executeTool(name, args || {});
-
-        logger.info('Tool executed successfully', { name });
-        return result;
-      } catch (error) {
-        logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
-
-        if (error instanceof McpAtlassianError) {
-          throw error;
-        }
-
-        throw new ServerError(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`);
-      }
+      const context: ExecutionContext = {
+        enableRateLimit: false, // STDIO doesn't use rate limiting
+      };
+      return this.handleToolCall(name, args, context);
     });
 
     // Handle list_resources requests
-    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      const resources: Resource[] = [
-        {
-          uri: 'atlassian://config',
-          name: 'Atlassian Configuration',
-          description: 'Current Atlassian configuration and connection status',
-          mimeType: 'application/json',
-        },
-        {
-          uri: 'atlassian://cache/stats',
-          name: 'Cache Statistics',
-          description: 'Current cache statistics and performance metrics',
-          mimeType: 'application/json',
-        },
-      ];
-
-
-      return { resources };
+    server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      return { resources: this.getResourcesList() };
     });
 
     // Handle resource read requests
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-      const { uri } = request.params;
-
-      switch (uri) {
-        case 'atlassian://config':
-          const authManager = createAuthenticationManager(
-            this.serviceConfig.auth,
-            this.serviceConfig.url,
-          );
-
-          return {
-            contents: [{
-              uri,
-              mimeType: 'application/json',
-              text: JSON.stringify({
-                url: this.serviceConfig.url,
-                auth: authManager.getAuthInfo(),
-                config: this.serviceConfig,
-              }, null, 2),
-            }],
-          };
-
-        case 'atlassian://cache/stats':
-          const cache = getCache();
-          return {
-            contents: [{
-              uri,
-              mimeType: 'application/json',
-              text: JSON.stringify(cache.getStats(), null, 2),
-            }],
-          };
-
-
-        default:
-          throw new ServerError(`Unknown resource URI: ${uri}`);
-      }
+    server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      return this.handleResourceRead(request.params.uri);
     });
 
     // Handle ping requests
-    this.server.setRequestHandler(PingRequestSchema, async () => {
-      return { pong: true };
+    server.setRequestHandler(PingRequestSchema, async () => {
+      return this.handlePing();
     });
+  }
 
+  /**
+   * Handle HTTP MCP request with unified logic
+   */
+  private async handleHttpMcpRequest (method: string, params: any, context: ExecutionContext): Promise<any> {
+    switch (method) {
+      case 'initialize':
+        const { protocolVersion, capabilities: clientCapabilities, clientInfo } = params || {};
+        logger.info('MCP client initializing', {
+          protocolVersion,
+          clientCapabilities,
+          clientInfo,
+        });
+        return {
+          protocolVersion: '2024-11-05',
+          capabilities: {
+            tools: {},
+            resources: {},
+            prompts: {},
+            logging: {},
+          },
+          serverInfo: {
+            name: 'mcp-atlassian-ts',
+            version: appConfig.version || '1.0.0',
+          },
+        };
+
+      case 'tools/list':
+        return this.handleToolsList();
+
+      case 'tools/call':
+        const { name, arguments: args } = params;
+        return this.handleToolCall(name, args, context);
+
+      case 'resources/list':
+        return { resources: this.getResourcesList() };
+
+      case 'resources/read':
+        return this.handleResourceRead(params.uri);
+
+      case 'prompts/list':
+        return { prompts: [] };
+
+      case 'ping':
+        return this.handlePing();
+
+      default:
+        throw new ServerError(`Unknown method: ${method}`);
+    }
+  }
+
+  /**
+   * Setup MCP server handlers
+   */
+  protected setupServerHandlers (): void {
+    this.setupCommonHandlers(this.server, false);
     logger.info('Server handlers configured');
   }
 
@@ -337,112 +471,28 @@ export class McpAtlassianServer {
             },
           );
 
-          // Override tool call handler to use authentication headers
+          // Setup common handlers with SSE-specific context
+          this.setupCommonHandlers(sseServer, true);
+
+          // Override tool call handler to use authentication headers and rate limiting
           sseServer.setRequestHandler(CallToolRequestSchema, async (request) => {
             const { name, arguments: args } = request.params;
 
-            logger.info('SSE tool called', { name, authMode: authContext.mode });
+            // Apply user substitution if configured
+            let headers = authContext.headers;
+            if (this.serverConfig.subst) {
+              headers = substituteUserInHeaders(headers, this.serverConfig.subst);
+            }
 
-            try {
-              // Rate limiting
-              const clientId = authContext.mode === 'system'
+            const context: ExecutionContext = {
+              authHeaders: headers,
+              rateLimitKey: authContext.mode === 'system'
                 ? `sse-system-${req.ip}`
-                : `sse-headers-${req.ip}`;
-              await this.rateLimiter.consume(clientId);
+                : `sse-headers-${req.ip}`,
+              enableRateLimit: true,
+            };
 
-              // Apply user substitution if configured
-              let headers = authContext.headers;
-              if (this.serverConfig.subst) {
-                headers = substituteUserInHeaders(headers, this.serverConfig.subst);
-              }
-
-              // Execute tool with authentication headers from context
-              return await this.toolRegistry.executeTool(name, args || {}, headers);
-            } catch (error) {
-              // Handle rate limit errors
-              if (isRateLimitError(error)) {
-                const rateLimitMessage = formatRateLimitError(
-                  error as any,
-                  this.serverConfig.rateLimit.maxRequests,
-                );
-                logger.warn('Rate limit exceeded in SSE', { name, authMode: authContext.mode });
-                throw new ServerError(rateLimitMessage);
-              }
-              throw error;
-            }
-          });
-
-          // Setup other handlers (tools/list, resources, etc.)
-          sseServer.setRequestHandler(ListToolsRequestSchema, async () => {
-            const tools = await this.toolRegistry.listTools();
-            return { tools };
-          });
-
-          sseServer.setRequestHandler(ListResourcesRequestSchema, async () => {
-            const resources = [
-              {
-                uri: 'atlassian://config',
-                name: 'Atlassian Configuration',
-                description: 'Current Atlassian configuration and connection status',
-                mimeType: 'application/json',
-              },
-              {
-                uri: 'atlassian://cache/stats',
-                name: 'Cache Statistics',
-                description: 'Current cache statistics and performance metrics',
-                mimeType: 'application/json',
-              },
-            ];
-
-            // Add JIRA-specific resources when in JIRA mode
-            const serviceMode = appConfig.server.serviceMode;
-            if ((serviceMode === 'jira' || !serviceMode) && appConfig.jira?.url && appConfig.jira?.auth) {
-              resources.push({
-                uri: 'jira://priorities',
-                name: 'JIRA Priorities',
-                description: 'List of available priorities from JIRA instance',
-                mimeType: 'application/json',
-              });
-            }
-
-            return { resources };
-          });
-
-          sseServer.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-            const { uri } = request.params;
-            if (uri === 'atlassian://config') {
-              return {
-                contents: [{
-                  uri: 'atlassian://config',
-                  mimeType: 'application/json',
-                  text: JSON.stringify(this.getHealthCheckInfo(), null, 2),
-                }],
-              };
-            } else if (uri === 'atlassian://cache/stats') {
-              const cacheStats = getCache().getStats();
-              return {
-                contents: [{
-                  uri: 'atlassian://cache/stats',
-                  mimeType: 'application/json',
-                  text: JSON.stringify(cacheStats, null, 2),
-                }],
-              };
-            } else if (uri === 'jira://priorities') {
-              const priorities = await this.fetchJiraPriorities();
-              return {
-                contents: [{
-                  uri,
-                  mimeType: 'application/json',
-                  text: JSON.stringify(priorities, null, 2),
-                }],
-              };
-            } else {
-              throw new ServerError(`Unknown resource URI: ${uri}`);
-            }
-          });
-
-          sseServer.setRequestHandler(PingRequestSchema, async () => {
-            return { pong: true };
+            return this.handleToolCall(name, args, context);
           });
 
           res.setHeader('MCP-Protocol-Version', MCP_PROTOCOL_VERSION);
@@ -521,124 +571,24 @@ export class McpAtlassianServer {
 
           let result;
 
-          switch (method) {
-            case 'initialize':
-              // MCP initialization handshake
-              const { protocolVersion, capabilities: clientCapabilities, clientInfo } = params || {};
-
-              logger.info('MCP client initializing', {
-                protocolVersion,
-                clientCapabilities,
-                clientInfo,
-              });
-
-              result = {
-                protocolVersion: '2024-11-05',
-                capabilities: {
-                  tools: {},
-                  resources: {},
-                  prompts: {},
-                  logging: {},
-                },
-                serverInfo: {
-                  name: 'mcp-atlassian-ts',
-                  version: appConfig.version || '1.0.0',
-                },
-              };
-              break;
-
-            case 'notifications/initialized':
-              // Client has finished initialization
-              logger.info('MCP client initialization completed');
-              // Notifications don't return a response - just log and continue
-              return res.status(204).send(); // No content response
-
-            case 'tools/list':
-              const tools = await this.toolRegistry.listTools();
-              result = { tools };
-              break;
-
-            case 'tools/call':
-              const { name, arguments: args } = params;
-              result = await this.toolRegistry.executeTool(name, args || {}, authHeaders);
-              break;
-
-            case 'resources/list':
-              const resources = [
-                {
-                  uri: 'atlassian://config',
-                  name: 'Atlassian Configuration',
-                  description: 'Current Atlassian configuration and connection status',
-                  mimeType: 'application/json',
-                },
-                {
-                  uri: 'atlassian://cache/stats',
-                  name: 'Cache Statistics',
-                  description: 'Current cache statistics and performance metrics',
-                  mimeType: 'application/json',
-                },
-              ];
-
-              // Add JIRA-specific resources when in JIRA mode
-              const serviceMode = appConfig.server.serviceMode;
-              if ((serviceMode === 'jira' || !serviceMode) && appConfig.jira?.url && appConfig.jira?.auth) {
-                resources.push({
-                  uri: 'jira://priorities',
-                  name: 'JIRA Priorities',
-                  description: 'List of available priorities from JIRA instance',
-                  mimeType: 'application/json',
-                });
-              }
-
-              result = { resources };
-              break;
-
-            case 'resources/read':
-              const { uri } = params;
-              if (uri === 'atlassian://config') {
-                result = {
-                  contents: [{
-                    uri: 'atlassian://config',
-                    mimeType: 'application/json',
-                    text: JSON.stringify(this.getHealthCheckInfo(), null, 2),
-                  }],
-                };
-              } else if (uri === 'atlassian://cache/stats') {
-                const cacheStats = getCache().getStats();
-                result = {
-                  contents: [{
-                    uri: 'atlassian://cache/stats',
-                    mimeType: 'application/json',
-                    text: JSON.stringify(cacheStats, null, 2),
-                  }],
-                };
-              } else if (uri === 'jira://priorities') {
-                const priorities = await this.fetchJiraPriorities();
-                result = {
-                  contents: [{
-                    uri,
-                    mimeType: 'application/json',
-                    text: JSON.stringify(priorities, null, 2),
-                  }],
-                };
-              } else {
-                throw new ServerError(`Unknown resource URI: ${uri}`);
-              }
-              break;
-
-            case 'prompts/list':
-              result = {
-                prompts: [],
-              };
-              break;
-
-            case 'ping':
-              result = { pong: true };
-              break;
-
-            default:
-              throw new ServerError(`Unknown method: ${method}`);
+          // Handle special cases that don't return standard results
+          if (method === 'notifications/initialized') {
+            // Client has finished initialization
+            logger.info('MCP client initialization completed');
+            // Notifications don't return a response - just log and continue
+            return res.status(204).send(); // No content response
           }
+
+          // Use unified handler for all other methods
+          const context: ExecutionContext = {
+            authHeaders,
+            rateLimitKey: authContext.mode === 'system'
+              ? `system-${req.ip}`
+              : `headers-${req.ip}`,
+            enableRateLimit: true,
+          };
+
+          result = await this.handleHttpMcpRequest(method, params, context);
 
           return res.json({
             jsonrpc: '2.0',
@@ -747,109 +697,6 @@ export class McpAtlassianServer {
    */
   getApp (): express.Application | undefined {
     return this.app;
-  }
-
-  /**
-   * Fetch JIRA priorities for the resource endpoint
-   */
-  protected async fetchJiraPriorities (): Promise<any> {
-    const cache = getCache();
-    const cacheKey = 'jira_priorities_resource';
-
-    try {
-      // Validate JIRA configuration and auth
-      if (!appConfig.jira?.url || !appConfig.jira?.auth) {
-        throw new ServerError('JIRA configuration or authentication not available');
-      }
-
-      // Convert IAuth to AuthConfig format
-      let authConfig: any;
-      const jiraAuth = appConfig.jira.auth;
-      if (jiraAuth.basic?.username && jiraAuth.basic?.password) {
-        authConfig = {
-          type: 'basic',
-          username: jiraAuth.basic.username,
-          password: jiraAuth.basic.password,
-        };
-      } else if (jiraAuth.pat) {
-        authConfig = {
-          type: 'pat',
-          token: jiraAuth.pat,
-        };
-      } else if (jiraAuth.oauth2?.clientId) {
-        authConfig = {
-          ...jiraAuth.oauth2,
-          type: 'oauth2',
-        };
-      } else {
-        throw new ServerError('No valid JIRA authentication method found');
-      }
-
-      const authManager = createAuthenticationManager(
-        authConfig,
-        appConfig.jira.url,
-        10000,
-      );
-
-      const priorities = await cache.getOrSet(
-        cacheKey,
-        async () => {
-          logger.info('Fetching priorities from JIRA API for MCP resource');
-
-          const httpClient = authManager.getHttpClient();
-          const response = await httpClient.get('/rest/api/2/priority');
-
-          if (!Array.isArray(response.data)) {
-            logger.warn('Invalid priorities response format', { response: response.data });
-            return [];
-          }
-
-          return response.data.map((priority: any) => ({
-            id: priority.id,
-            name: priority.name,
-            description: priority.description || null,
-            iconUrl: priority.iconUrl || null,
-            statusColor: priority.statusColor || null,
-          }));
-        },
-        3600, // Cache for 1 hour
-      );
-      const count = priorities?.length || 0;
-      logger.info('Priorities fetched successfully for MCP resource', { count });
-
-      return {
-        priorities,
-        metadata: {
-          fetchedAt: new Date().toISOString(),
-          count,
-          cacheKey,
-          cacheTtl: 3600,
-        },
-      };
-    } catch (error) {
-      logger.error('Failed to fetch priorities from JIRA for MCP resource', error instanceof Error ? error : new Error(String(error)));
-
-      // Fallback to common JIRA priorities if fetch fails
-      const fallbackPriorities = [
-        { id: '1', name: 'Highest', description: 'This problem will block progress.' },
-        { id: '2', name: 'High', description: 'Serious problem that could block progress.' },
-        { id: '3', name: 'Medium', description: 'Has the potential to affect progress.' },
-        { id: '4', name: 'Low', description: 'Minor problem or easily worked around.' },
-        { id: '5', name: 'Lowest', description: 'Trivial problem with little or no impact on progress.' },
-      ];
-
-      logger.info('Using fallback priorities for MCP resource', { count: fallbackPriorities.length });
-
-      return {
-        priorities: fallbackPriorities,
-        metadata: {
-          fetchedAt: new Date().toISOString(),
-          count: fallbackPriorities.length,
-          fallback: true,
-          reason: 'JIRA API fetch failed',
-        },
-      };
-    }
   }
 
   /**

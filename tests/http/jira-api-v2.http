@@ -121,7 +121,7 @@ POST {{baseUrl}}/rest/api/2/issue/AITECH-5/attachments
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 X-Atlassian-Token: no-check
 Content-Type: multipart/form-data; boundary=WebAppBoundary
-x-finam-user: {{SUBST_USER}}
+x-on-behalf-of-user: {{SUBST_USER}}
 X-Atlassian-Token: no-check
 
 --WebAppBoundary
@@ -338,7 +338,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 ###
 GET {{baseUrl}}/rest/api/2/myself
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
-x-finam-user: {{SUBST_USER}}
+x-on-behalf-of-user: {{SUBST_USER}}
 
 ###
 GET {{baseUrl}}/rest/api/2/serverInfo

@@ -8,8 +8,9 @@ import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
-import { debugJiraTool } from "../../../../core/utils/debug.js";
-import { ppj } from "../../../../core/utils/text.js";
+import { debugJiraTool } from '../../../../core/utils/debug.js';
+import { ppj } from '../../../../core/utils/text.js';
+import { getPriorityNamesArray } from '../../shared/priority-service.js';
 
 export function createJiraCreateIssueTool (): ToolWithHandler {
   return {
@@ -66,6 +67,7 @@ If not indicated explicitly, form a short title according to the description`,
           description: `Optional. The priority level of the issue.
 If the user indicated priority, find the most suitable from the MCP resource jira://priorities.
 Access the resource to get available priority names, then choose the most appropriate one. If none suit, choose null.`,
+          enum: getPriorityNamesArray(), // Dynamic priority enum
           nullable: true,
         },
         labels: {
@@ -301,7 +303,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
         },
       },
     };
-    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`)
+    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`);
     // Return formatted response
     return formatToolResult(json);
   });

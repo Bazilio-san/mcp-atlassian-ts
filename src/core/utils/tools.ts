@@ -6,4 +6,4 @@ export const rn = (x: number, digits: number = 2) => {
 export const getBaseUrl = (input: string): string => {
   const m = input.match(/^(https?:\/\/[^\/?#]+)/i);
   return m?.[1] || input;
-}
+};

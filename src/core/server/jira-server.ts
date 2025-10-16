@@ -16,6 +16,7 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { getCachedPriorityObjects } from '../../domains/jira/shared/priority-service';
 
 const logger = createLogger('jira-server');
 
@@ -162,12 +163,12 @@ export class JiraServer extends McpAtlassianServer {
       const { uri } = request.params;
 
       if (uri === 'jira://priorities') {
-        const priorities = await this.fetchJiraPriorities();
+        const priorities = getCachedPriorityObjects();
         return {
           contents: [{
             uri,
             mimeType: 'application/json',
-            text: JSON.stringify(priorities, null, 2),
+            text: JSON.stringify({ priorities }, null, 2),
           }],
         };
       }
@@ -232,83 +233,6 @@ export class JiraServer extends McpAtlassianServer {
 
       default:
         throw new ServerError(`Unknown resource URI: ${uri}`);
-    }
-  }
-
-  /**
-   * Fetch JIRA priorities for MCP resource
-   */
-  protected override async fetchJiraPriorities (): Promise<any> {
-    const cache = getCache();
-    const cacheKey = 'jira_priorities_resource';
-
-    try {
-      const authManager = createAuthenticationManager(
-        this.serviceConfig.auth,
-        this.serviceConfig.url,
-        10000,
-      );
-
-      const priorities = await cache.getOrSet(
-        cacheKey,
-        async () => {
-          logger.info('Fetching priorities from JIRA API for MCP resource');
-
-          const httpClient = authManager.getHttpClient();
-          const response = await httpClient.get('/rest/api/2/priority');
-
-          if (!Array.isArray(response.data)) {
-            logger.warn('Invalid priorities response format', { response: response.data });
-            return [];
-          }
-
-          return response.data.map((priority: any) => ({
-            id: priority.id,
-            name: priority.name,
-            description: priority.description || null,
-            iconUrl: priority.iconUrl || null,
-            statusColor: priority.statusColor || null,
-          }));
-        },
-        3600, // Cache for 1 hour
-      );
-
-      logger.info('Priorities fetched successfully for MCP resource', {
-        count: priorities.length,
-      });
-
-      return {
-        priorities,
-        metadata: {
-          fetchedAt: new Date().toISOString(),
-          count: priorities.length,
-          cacheKey,
-          cacheTtl: 3600,
-        },
-      };
-    } catch (error) {
-      logger.error('Failed to fetch priorities from JIRA for MCP resource', error instanceof Error ? error : new Error(String(error)));
-
-      // Fallback to common JIRA priorities if fetch fails
-      const fallbackPriorities = [
-        { id: '1', name: 'Highest', description: 'This problem will block progress.' },
-        { id: '2', name: 'High', description: 'Serious problem that could block progress.' },
-        { id: '3', name: 'Medium', description: 'Has the potential to affect progress.' },
-        { id: '4', name: 'Low', description: 'Minor problem or easily worked around.' },
-        { id: '5', name: 'Lowest', description: 'Trivial problem with little or no impact on progress.' },
-      ];
-
-      logger.info('Using fallback priorities for MCP resource', { count: fallbackPriorities.length });
-
-      return {
-        priorities: fallbackPriorities,
-        metadata: {
-          fetchedAt: new Date().toISOString(),
-          count: fallbackPriorities.length,
-          fallback: true,
-          reason: 'JIRA API fetch failed',
-        },
-      };
     }
   }
 

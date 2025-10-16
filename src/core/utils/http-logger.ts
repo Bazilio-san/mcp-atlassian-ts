@@ -5,8 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-import { debugJiraTool, debugJiraToolFile } from "./debug.js";
-import { debug } from "node:util";
+import { debugJiraTool, debugJiraToolFile } from './debug.js';
 
 
 // Ensure logs directory exists
@@ -140,7 +139,7 @@ export function logHttpTransaction (
       console.log(`[api-http] HTTP transaction logged to ${logFilePath}`);
     }
 
-    console.log(logContent)
+    console.log(logContent);
 
   } catch (logError) {
     console.log(`[api-http] Failed to log HTTP transaction: ${logError}`);
