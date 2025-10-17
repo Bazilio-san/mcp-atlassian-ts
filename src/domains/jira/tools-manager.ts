@@ -24,6 +24,9 @@ import { jira_find_epic } from './tools/core/jira_find_epic.js';
 
 // Import comment and transition tools
 import { jira_add_comment } from './tools/comments/jira_add_comment.js';
+import { jira_get_comments } from './tools/comments/jira_get_comments.js';
+import { jira_delete_comment } from './tools/comments/jira_delete_comment.js';
+import { jira_update_comment } from './tools/comments/jira_update_comment.js';
 import { jira_get_transitions } from './tools/core/jira_get_transitions.js';
 import { jira_transition_issue } from './tools/core/jira_transition_issue.js';
 
@@ -63,6 +66,7 @@ import { jira_update_sprint } from './tools/agile/jira_update_sprint.js';
 
 // Import metadata tools
 import { jira_search_fields } from './tools/metadata/jira_search_fields.js';
+import { jira_get_priorities } from './tools/metadata/jira_get_priorities.js';
 
 // Import bulk operation tools
 import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
@@ -150,6 +154,9 @@ export class JiraToolsManager {
 
       // Comment and transition tools
       jira_add_comment,
+      jira_get_comments,
+      jira_delete_comment,
+      jira_update_comment,
       jira_get_transitions,
       jira_transition_issue,
 
@@ -189,6 +196,7 @@ export class JiraToolsManager {
 
       // Metadata tools
       jira_search_fields,
+      jira_get_priorities,
 
       // Bulk operation tools
       jira_batch_get_changelogs,

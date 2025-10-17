@@ -10,13 +10,8 @@ import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 import { createAuthenticationManager } from '../auth.js';
-import { getCache } from '../cache.js';
-import { ServerError } from '../errors.js';
-import {
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { getCachedPriorityObjects } from '../../domains/jira/shared/priority-service';
+import type { Resource } from '@modelcontextprotocol/sdk/types.js';
+import { getCachedPriorityObjects } from '../../domains/jira/shared/priority-service.js';
 
 const logger = createLogger('jira-server');
 
@@ -116,8 +111,7 @@ export class JiraServer extends McpAtlassianServer {
     // Replace the default tool registry with JIRA-only registry
     this.toolRegistry = new ServiceToolRegistry(jiraConfig, 'jira');
 
-    // Setup JIRA-specific handlers after parent initialization
-    this.setupServerHandlers();
+    // No need to call setupServerHandlers - parent already did it
 
     logger.info('JIRA server initialized');
   }
@@ -138,103 +132,42 @@ export class JiraServer extends McpAtlassianServer {
   /**
    * Override to add JIRA-specific resources
    */
-  protected override setupServerHandlers (): void {
-    super.setupServerHandlers();
+  protected override getResourcesList (): Resource[] {
+    const baseResources = super.getResourcesList();
 
-    // Override list_resources to add JIRA-specific resources
-    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      const baseResources = await this.getBaseResources();
-
-      // Add JIRA-specific resources
-      if (this.serviceConfig.url && this.serviceConfig.auth) {
-        baseResources.push({
-          uri: 'jira://priorities',
-          name: 'JIRA Priorities',
-          description: 'List of available priorities from JIRA instance',
-          mimeType: 'application/json',
-        });
-      }
-
-      return { resources: baseResources };
-    });
-
-    // Override resource read to handle JIRA-specific resources
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-      const { uri } = request.params;
-
-      if (uri === 'jira://priorities') {
-        const priorities = getCachedPriorityObjects();
-        return {
-          contents: [{
-            uri,
-            mimeType: 'application/json',
-            text: JSON.stringify({ priorities }, null, 2),
-          }],
-        };
-      }
-
-      // Delegate to parent for base resources
-      return this.handleBaseResourceRead(uri);
-    });
-  }
-
-  /**
-   * Get base resources (common to all services)
-   */
-  private async getBaseResources () {
-    return [
-      {
-        uri: 'atlassian://config',
-        name: 'Atlassian Configuration',
-        description: 'Current Atlassian configuration and connection status',
+    // Add JIRA-specific resources
+    if (this.serviceConfig.url && this.serviceConfig.auth) {
+      baseResources.push({
+        uri: 'jira://priorities',
+        name: 'JIRA Priorities',
+        description: 'List of available priorities from JIRA instance',
         mimeType: 'application/json',
-      },
-      {
-        uri: 'atlassian://cache/stats',
-        name: 'Cache Statistics',
-        description: 'Current cache statistics and performance metrics',
-        mimeType: 'application/json',
-      },
-    ];
-  }
-
-  /**
-   * Handle base resource reading
-   */
-  private async handleBaseResourceRead (uri: string) {
-    switch (uri) {
-      case 'atlassian://config':
-        const authManager = createAuthenticationManager(
-          this.serviceConfig.auth,
-          this.serviceConfig.url,
-        );
-
-        return {
-          contents: [{
-            uri,
-            mimeType: 'application/json',
-            text: JSON.stringify({
-              url: this.serviceConfig.url,
-              auth: authManager.getAuthInfo(),
-              config: this.serviceConfig,
-            }, null, 2),
-          }],
-        };
-
-      case 'atlassian://cache/stats':
-        const cache = getCache();
-        return {
-          contents: [{
-            uri,
-            mimeType: 'application/json',
-            text: JSON.stringify(cache.getStats(), null, 2),
-          }],
-        };
-
-      default:
-        throw new ServerError(`Unknown resource URI: ${uri}`);
+      });
     }
+
+    return baseResources;
   }
+
+  /**
+   * Override to handle JIRA-specific resources
+   */
+  protected override async handleResourceRead (uri: string): Promise<any> {
+    // Handle JIRA-specific resources first
+    if (uri === 'jira://priorities') {
+      const priorities = getCachedPriorityObjects();
+      return {
+        contents: [{
+          uri,
+          mimeType: 'application/json',
+          text: JSON.stringify({ priorities }, null, 2),
+        }],
+      };
+    }
+
+    // Delegate to parent for base resources
+    return super.handleResourceRead(uri);
+  }
+
 
   /**
    * Override health check endpoint to show JIRA service info

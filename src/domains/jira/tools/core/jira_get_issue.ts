@@ -13,7 +13,16 @@ import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
  */
 export const jira_get_issue: ToolWithHandler = {
   name: 'jira_get_issue',
-  description: 'Get detailed information about a JIRA issue by key or ID',
+  description: `Get detailed information about a JIRA issue by key or ID.
+Returns: 
+key, summary, status, assignee, reporter, timestamps, priority, issue type, issue URL, project info, labels, description, 
+and when available: 
+- up to 10 recent comments
+- attachments
+- subtasks
+- fix versions
+- timetracking
+- issue links`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -106,7 +115,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       jiraIssue.commentsCount = fields.comment?.total || 0;
       jiraIssue.lastComments = fields.comment.comments.sort((a: any, b: any) => {
         return new Date(b.updated).getTime() - new Date(a.updated).getTime();
-      }).slice(0, 5).map((c: any) => {
+      }).slice(0, 10).map((c: any) => {
         return {
           id: c.id,
           author: c.author.displayName,

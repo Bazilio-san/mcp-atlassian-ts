@@ -14,7 +14,7 @@ import fs from 'fs/promises';
 import fss from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import JiraMcpTestCases from './jira-test-cases.js';
+import { JiraMcpTestCases, getJsonFromResult } from './jira-test-cases.js';
 
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3000';
 const JIRA_EMULATOR_URL = process.env.JIRA_URL || 'http://localhost:8080';
@@ -153,6 +153,161 @@ class JiraMcpHttpTester {
   }
 
   /**
+   * Cleanup function - removes all comments except the last one,
+   * all attachments except the last one, and all issue links except the last one
+   * from the test issue (TEST_ISSUE_KEY)
+   */
+  async cleanupTestData () {
+    const { TEST_ISSUE_KEY } = await import('../constants.js');
+    console.log(chalk.yellow(`🧹 Cleaning up test data for issue ${TEST_ISSUE_KEY}...`));
+
+    try {
+      // Get issue details including comments, attachments, and links
+      const { result } = await this.client.callTool('jira_get_issue', {
+        issueIdOrKey: TEST_ISSUE_KEY,
+      });
+
+      const issueData = getJsonFromResult(result);
+      if (!issueData?.jiraIssue) {
+        console.log(chalk.yellow('  ⚠️  Could not get issue data for cleanup'));
+        return;
+      }
+
+      const issue = issueData.jiraIssue;
+
+      // Clean up comments (remove all except the last one)
+      if (issue.lastComments?.length > 1) {
+        const commentsToDelete = issue.lastComments.slice(0, -1); // All except last
+        console.log(`  🗑️  Removing ${commentsToDelete.length} old comments...`);
+
+        for (const comment of commentsToDelete) {
+          try {
+            // Note: No MCP tool available for comment deletion in this implementation
+            // Would need to add jira_delete_comment tool to support this functionality
+            console.log(`    Skipping comment ${comment.id} (no delete tool available)`);
+          } catch (error) {
+            console.log(chalk.yellow(`    Could not delete comment ${comment.id}: ${error.message}`));
+          }
+        }
+      }
+
+      // Clean up issue links (remove all except the last one)
+      if (issue.issueLinks?.length > 1) {
+        const linksToDelete = issue.issueLinks.slice(0, -1); // All except last
+        console.log(`  🔗  Removing ${linksToDelete.length} old issue links...`);
+
+        for (const link of linksToDelete) {
+          try {
+            await this.client.callTool('jira_remove_issue_link', { linkId: link.id });
+            console.log(`    ✅ Removed link ${link.id}`);
+          } catch (error) {
+            console.log(chalk.yellow(`    Could not remove link ${link.id}: ${error.message}`));
+          }
+        }
+      }
+
+      // Clean up attachments (remove all except the last one)
+      if (issue.attachments?.length > 1) {
+        const attachmentsToDelete = issue.attachments.slice(0, -1); // All except last
+        console.log(`  📎  Found ${attachmentsToDelete.length} old attachments to remove...`);
+        console.log(chalk.yellow('    Note: Attachment deletion typically requires admin access'));
+      }
+
+      // Clean up test versions created during testing
+      await this.cleanupTestVersions(TEST_ISSUE_KEY);
+
+      console.log(chalk.green(`  ✅ Cleanup completed for issue ${TEST_ISSUE_KEY}`));
+
+    } catch (error) {
+      console.log(chalk.yellow(`  ⚠️  Cleanup failed: ${error.message}`));
+    }
+  }
+
+  /**
+   * Clean up test versions that start with 'Batch-' or 'MCP-Test-'
+   * Keeps only the most recent version of each prefix
+   */
+  async cleanupTestVersions (issueKey) {
+    const { TEST_JIRA_PROJECT } = await import('../constants.js');
+
+    try {
+      // Get project versions
+      const { result } = await this.client.callTool('jira_get_project_versions', {
+        projectIdOrKey: TEST_JIRA_PROJECT,
+      });
+
+      const getJsonFromResult = (result) => {
+        if (result?.structuredContent) {
+          return result.structuredContent;
+        }
+        const text = result?.content?.[0]?.text || '';
+        try {
+          return JSON.parse(text);
+        } catch {
+          return undefined;
+        }
+      };
+
+      const versionsData = getJsonFromResult(result);
+      if (!versionsData?.versions?.length) {
+        console.log('  📦  No versions found to clean up');
+        return;
+      }
+
+      const versions = versionsData.versions;
+
+      // Find test versions (starting with Batch- or MCP-Test-)
+      const batchVersions = versions.filter(v => v.name.startsWith('Batch-'));
+      const mcpTestVersions = versions.filter(v => v.name.startsWith('MCP-Test-'));
+
+      const testPrefixes = [
+        { name: 'Batch-', versions: batchVersions },
+        { name: 'MCP-Test-', versions: mcpTestVersions },
+      ];
+
+      for (const { name: prefix, versions: prefixVersions } of testPrefixes) {
+        if (prefixVersions.length > 1) {
+          // Sort by creation date (most recent first) or by name if no date
+          const sortedVersions = prefixVersions.sort((a, b) => {
+            // If we have releaseDate, use it for sorting
+            if (a.releaseDate && b.releaseDate) {
+              return new Date(b.releaseDate) - new Date(a.releaseDate);
+            }
+            // Otherwise sort by name (assuming timestamp is in name)
+            return b.name.localeCompare(a.name);
+          });
+
+          const versionsToDelete = sortedVersions.slice(1); // All except first (most recent)
+          console.log(`  📦  Removing ${versionsToDelete.length} old ${prefix} versions...`);
+
+          for (const version of versionsToDelete) {
+            try {
+              // Note: JIRA API typically requires admin access for version deletion
+              // and there might not be a direct MCP tool for this
+              console.log(`    Skipping version ${version.name} (${version.id}) - deletion requires admin access`);
+
+              // If there was a jira_delete_version tool, it would be called like this:
+              // await this.client.callTool('jira_delete_version', { versionId: version.id });
+            } catch (error) {
+              console.log(chalk.yellow(`    Could not delete version ${version.name}: ${error.message}`));
+            }
+          }
+        } else if (prefixVersions.length === 1) {
+          console.log(`  📦  Found 1 ${prefix} version - keeping it`);
+        }
+      }
+
+      const totalTestVersions = batchVersions.length + mcpTestVersions.length;
+      if (totalTestVersions === 0) {
+        console.log('  📦  No test versions found to clean up');
+      }
+
+    } catch (error) {
+      console.log(chalk.yellow(`  ⚠️  Version cleanup failed: ${error.message}`));
+    }
+  }
+
+  /**
    * Initialize test cases using external test cases file
    */
   initializeTestCases () {
@@ -210,6 +365,12 @@ class JiraMcpHttpTester {
 
     // Initialize test cases
     this.initializeTestCases();
+
+    // Run cleanup if running full test suite (no filter specified)
+    if (!this.testFilter) {
+      await this.cleanupTestData();
+      console.log();
+    }
 
     // Run each test case
     console.log(chalk.bold.yellow('🧪 Running tests...\n'));

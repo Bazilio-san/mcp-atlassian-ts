@@ -30,7 +30,6 @@ import { appConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
-import { getCachedPriorityObjects } from '../../domains/jira/shared/priority-service';
 
 const logger = createLogger('server');
 
@@ -95,10 +94,10 @@ export class McpAtlassianServer {
   }
 
   /**
-   * Get list of available resources
+   * Get list of available resources (can be overridden by subclasses)
    */
-  private getResourcesList (): Resource[] {
-    const resources: Resource[] = [
+  protected getResourcesList (): Resource[] {
+    return [
       {
         uri: 'atlassian://config',
         name: 'Atlassian Configuration',
@@ -112,25 +111,12 @@ export class McpAtlassianServer {
         mimeType: 'application/json',
       },
     ];
-
-    // Add JIRA-specific resources when in JIRA mode
-    const serviceMode = appConfig.server.serviceMode;
-    if ((serviceMode === 'jira' || !serviceMode) && appConfig.jira?.url && appConfig.jira?.auth) {
-      resources.push({
-        uri: 'jira://priorities',
-        name: 'JIRA Priorities',
-        description: 'List of available priorities from JIRA instance',
-        mimeType: 'application/json',
-      });
-    }
-
-    return resources;
   }
 
   /**
-   * Handle resource read requests
+   * Handle resource read requests (can be overridden by subclasses)
    */
-  private async handleResourceRead (uri: string): Promise<any> {
+  protected async handleResourceRead (uri: string): Promise<any> {
     switch (uri) {
       case 'atlassian://config':
         const authManager = createAuthenticationManager(
@@ -157,16 +143,6 @@ export class McpAtlassianServer {
             uri,
             mimeType: 'application/json',
             text: JSON.stringify(cache.getStats(), null, 2),
-          }],
-        };
-
-      case 'jira://priorities':
-        const priorities = getCachedPriorityObjects();
-        return {
-          contents: [{
-            uri,
-            mimeType: 'application/json',
-            text: JSON.stringify({ priorities }, null, 2),
           }],
         };
 

@@ -20,9 +20,10 @@ import {
 import fs from 'fs';
 import yaml from 'yaml';
 import path from 'path';
+import { appConfig } from '../../dist/src/bootstrap/init-config.js';
 
 
-const getJsonFromResult = (result) => {
+export const getJsonFromResult = (result) => {
   if (appConfig.isReturnJson) {
     return result?.structuredContent;
   }
@@ -936,5 +937,3 @@ export class JiraMcpTestCases {
     return enabledTestCases.length > 0 ? enabledTestCases : this.filterTestCasesByConfig(allTestCases);
   }
 }
-
-export default JiraMcpTestCases;

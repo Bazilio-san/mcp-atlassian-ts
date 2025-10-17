@@ -5,8 +5,8 @@
 
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { getCachedPriorityObjects } from '../../shared/priority-service.js';
 import { ToolWithHandler } from '../../../../types';
-import { getCachedPriorityObjects } from '../../shared/priority-service';
 
 /**
  * Tool definition for getting JIRA priorities
