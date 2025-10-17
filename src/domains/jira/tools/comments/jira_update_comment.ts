@@ -90,6 +90,9 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
 
     const comment = response.data;
 
+    const { id, created, updated, body: b, renderedBody, author, updateAuthor, visibility: vis, properties } = comment;
+    const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
+    const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
     // Build structured JSON
     const json = {
       success: true,
@@ -97,29 +100,27 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       message: `Comment ${commentId} updated successfully in ${issueIdOrKey}`,
       comment: {
-        id: comment.id,
-        self: comment.self,
-        created: comment.created,
-        updated: comment.updated,
-        body: comment.body,
-        renderedBody: comment.renderedBody,
+        id,
+        created,
+        updated,
+        body: b,
+        renderedBody,
+        linkToComment,
         author: {
-          key: comment.author?.key,
-          name: comment.author?.name,
-          displayName: comment.author?.displayName,
-          emailAddress: comment.author?.emailAddress,
-          avatarUrls: comment.author?.avatarUrls,
+          key: author?.key,
+          name: author?.name,
+          displayName: author?.displayName,
+          emailAddress: author?.emailAddress,
         },
         updateAuthor: comment.updateAuthor ? {
-          key: comment.updateAuthor.key,
-          name: comment.updateAuthor.name,
-          displayName: comment.updateAuthor.displayName,
-          emailAddress: comment.updateAuthor.emailAddress,
-          avatarUrls: comment.updateAuthor.avatarUrls,
+          key: updateAuthor.key,
+          name: updateAuthor.name,
+          displayName: updateAuthor.displayName,
+          emailAddress: updateAuthor.emailAddress,
         } : undefined,
-        visibility: comment.visibility,
-        properties: comment.properties,
-        issueUrl: `${config.origin}/browse/${issueIdOrKey}`,
+        visibility: vis,
+        properties,
+        issueUrl,
       },
     };
 

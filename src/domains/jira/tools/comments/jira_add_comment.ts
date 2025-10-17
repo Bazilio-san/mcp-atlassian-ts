@@ -74,6 +74,9 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
 
     const comment = response.data;
 
+    const { id, created, updated, body: b, author, visibility: vis } = comment;
+    const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
+    const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
     // Build structured JSON
     const json = {
       success: true,
@@ -81,19 +84,19 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       message: `Comment added successfully to ${issueIdOrKey}`,
       comment: {
-        id: comment.id,
-        self: comment.self,
-        created: comment.created,
-        updated: comment.updated,
-        body: comment.body,
+        id,
+        linkToComment,
+        created,
+        updated,
+        body: b,
         author: {
-          key: comment.author.key,
-          name: comment.author.name,
-          displayName: comment.author.displayName,
-          emailAddress: comment.author.emailAddress,
+          key: author.key,
+          name: author.name,
+          displayName: author.displayName,
+          emailAddress: author.emailAddress,
         },
-        visibility: comment.visibility,
-        issueUrl: `${config.origin}/browse/${issueIdOrKey}`,
+        visibility: vis,
+        issueUrl,
       },
     };
 

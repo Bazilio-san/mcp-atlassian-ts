@@ -83,8 +83,8 @@ function isToolEnabledByConfig (toolName, config) {
  * Test groups information for MCP tests
  */
 export const MCP_GROUP_INFO = {
-  1: { name: 'IssueManagement', description: 'Issue Management tools (10 tools)' },
-  2: { name: 'ProjectManagement', description: 'Project Management tools (5 tools)' },
+  1: { name: 'IssueManagement', description: 'Issue Management tools (14 tools)' },
+  2: { name: 'ProjectManagement', description: 'Project Management tools (7 tools)' },
   3: { name: 'UserManagement', description: 'User Management tools (1 tool)' },
   4: { name: 'FieldsMetadata', description: 'Fields and Metadata tools (1 tool)' },
   5: { name: 'IssueLinks', description: 'Issue Links tools (4 tools)' },
@@ -257,6 +257,105 @@ export class JiraMcpTestCases {
         description: 'Add comment to issue',
       },
       {
+        fullId: '1-12',
+        name: 'Get All Issue Comments',
+        toolName: 'jira_get_comments',
+        params: {
+          issueIdOrKey: this.testIssueKey,
+          maxResults: 50,
+          orderBy: 'created',
+        },
+        description: 'Get all comments for an issue',
+      },
+      {
+        fullId: '1-13',
+        name: 'Update Issue Comment',
+        toolName: 'jira_update_comment',
+        params: async (client) => {
+          // First get all comments to find one to update
+          console.log('  ℹ️  Getting existing comments to find one to update...');
+          const commentsResult = await client.callTool('jira_get_comments', {
+            issueIdOrKey: this.testIssueKey,
+            maxResults: 50,
+          });
+
+          const commentsData = getJsonFromResult(commentsResult);
+          let commentId;
+
+          if (commentsData?.comments?.length > 0) {
+            // Use the first existing comment
+            commentId = commentsData.comments[0].id;
+            console.log(`  ℹ️  Found ${commentsData.comments.length} existing comments, updating comment ID: ${commentId}`);
+          } else {
+            // Create a new comment to update
+            console.log('  ℹ️  No existing comments found, creating a new comment for update test...');
+            const createResult = await client.callTool('jira_add_comment', {
+              issueIdOrKey: this.testIssueKey,
+              body: 'Initial comment for update test',
+            });
+
+            const createData = getJsonFromResult(createResult);
+            commentId = createData?.comment?.id;
+
+            if (!commentId) {
+              throw new Error('  ❌  Failed to create comment for update test');
+            }
+            console.log(`  ℹ️  Created new comment ID: ${commentId} for update test`);
+          }
+
+          return {
+            issueIdOrKey: this.testIssueKey,
+            commentId,
+            body: `Updated comment body - ${new Date().toISOString()}`,
+          };
+        },
+        description: 'Update existing comment (creates comment first if needed)',
+      },
+      {
+        fullId: '1-14',
+        name: 'Delete Issue Comment',
+        toolName: 'jira_delete_comment',
+        params: async (client) => {
+          // First get all comments to find one to delete
+          console.log('  ℹ️  Getting existing comments to find one to delete...');
+          const commentsResult = await client.callTool('jira_get_comments', {
+            issueIdOrKey: this.testIssueKey,
+            maxResults: 50,
+            orderBy: 'created',
+          });
+
+          const commentsData = getJsonFromResult(commentsResult);
+          let commentId;
+
+          if (commentsData?.comments?.length > 1) {
+            // Use the first comment (keeping the last one)
+            commentId = commentsData.comments[0].id;
+            console.log(`  ℹ️  Found ${commentsData.comments.length} existing comments, deleting comment ID: ${commentId}`);
+          } else {
+            // Create a new comment to delete
+            console.log('  ℹ️  Not enough comments found, creating a new comment for deletion test...');
+            const createResult = await client.callTool('jira_add_comment', {
+              issueIdOrKey: this.testIssueKey,
+              body: `Temporary comment for deletion test - ${Date.now()}`,
+            });
+
+            const createData = getJsonFromResult(createResult);
+            commentId = createData?.comment?.id;
+
+            if (!commentId) {
+              throw new Error('  ❌  Failed to create comment for deletion test');
+            }
+            console.log(`  ℹ️  Created temporary comment ID: ${commentId} for deletion test`);
+          }
+
+          return {
+            issueIdOrKey: this.testIssueKey,
+            commentId,
+          };
+        },
+        description: 'Delete existing comment (creates comment first if needed)',
+      },
+      {
         fullId: '1-6',
         name: 'Get Available Transitions',
         toolName: 'jira_get_transitions',
@@ -424,7 +523,7 @@ export class JiraMcpTestCases {
       {
         fullId: '2-5',
         name: 'Create Project Version',
-        toolName: 'jira_create_version',
+        toolName: 'jira_create_project_version',
         params: async (client) => {
           const projectId = await getProjectId(client);
           console.log(`  ℹ️  Using project ID: ${projectId}`);
@@ -438,10 +537,47 @@ export class JiraMcpTestCases {
       },
       {
         fullId: '2-6',
+        name: 'Delete Project Version',
+        toolName: 'jira_delete_version',
+        params: async (client) => {
+          // First create a temporary version to delete
+          console.log('  ℹ️  Creating temporary version for deletion test...');
+          const projectId = await getProjectId(client);
+
+          const createResult = await client.callTool('jira_create_project_version', {
+            projectId,
+            name: `DeleteTest-v${Date.now()}`,
+            description: 'Temporary version for deletion test',
+          });
+
+          const createData = getJsonFromResult(createResult);
+          const versionId = createData?.version?.id;
+
+          if (!versionId) {
+            throw new Error('  ❌  Failed to create temporary version for deletion test');
+          }
+
+          console.log(`  ℹ️  Created temporary version ID: ${versionId} for deletion test`);
+
+          return {
+            versionId: versionId.toString(),
+          };
+        },
+        description: 'Delete project version (creates temp version first)',
+      },
+      {
+        fullId: '2-7',
         name: 'Get Epics for Project',
         toolName: 'jira_get_epics_for_project',
         params: { projectKey: this.testProjectKey, maxResults: 10 },
         description: 'Get active epics for a project',
+      },
+      {
+        fullId: '2-8',
+        name: 'Force Update Projects Index',
+        toolName: 'jira_force_update_projects_index',
+        params: {},
+        description: 'Force refresh of the projects cache index',
       },
     ];
 

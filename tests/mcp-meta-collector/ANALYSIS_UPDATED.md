@@ -36,7 +36,7 @@
 11. ✅ **jira_transition_issue** - выполнение перехода
 12. ✅ **jira_search_fields** - поиск полей включая кастомные
 13. ✅ **jira_get_project_versions** - версии проекта
-14. ✅ **jira_create_version** - создание версии
+14. ✅ **jira_create_project_version** - создание версии
 15. ✅ **jira_get_link_types** - типы связей issues
 16. ✅ **jira_remove_issue_link** - удаление связи
 17. ✅ **jira_link_to_epic** - специальная связь с Epic

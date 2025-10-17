@@ -210,7 +210,7 @@ docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 - [`jira_find_project`](#jira_find_project) - Find project by name/key
 - [`jira_force_update_projects_index`](#jira_force_update_projects_index) - Refresh projects cache
 - [`jira_get_project_versions`](#jira_get_project_versions) - Get project versions/releases
-- [`jira_create_version`](#jira_create_version) - Create new project version
+- [`jira_create_project_version`](#jira_create_project_version) - Create new project version
 - [`jira_batch_create_versions`](#jira_batch_create_versions) - Create multiple versions
 - [`jira_get_epics_for_project`](#jira_get_epics_for_project) - Get all epics in project
 

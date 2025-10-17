@@ -34,7 +34,8 @@ import { jira_transition_issue } from './tools/core/jira_transition_issue.js';
 import { jira_get_projects } from './tools/projects/jira_get_projects.js';
 import { jira_get_project } from './tools/projects/jira_get_project.js';
 import { jira_get_project_versions } from './tools/projects/jira_get_project_versions.js';
-import { jira_create_version } from './tools/projects/jira_create_version.js';
+import { jira_create_project_version } from './tools/projects/jira_create_project_version.js';
+import { jira_delete_version } from './tools/projects/jira_delete_version.js';
 import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
 import { jira_find_project } from './tools/projects/jira_find_project.js';
 import { jira_force_update_projects_index } from './tools/projects/jira_force_update_projects_index.js';
@@ -164,7 +165,8 @@ export class JiraToolsManager {
       jira_get_projects,
       jira_get_project,
       jira_get_project_versions,
-      jira_create_version,
+      jira_create_project_version,
+      jira_delete_version,
       jira_batch_create_versions,
       jira_find_project,
       jira_force_update_projects_index,

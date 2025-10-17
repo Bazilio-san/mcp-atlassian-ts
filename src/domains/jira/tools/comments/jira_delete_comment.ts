@@ -13,7 +13,7 @@ import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
  */
 export const jira_delete_comment: ToolWithHandler = {
   name: 'jira_delete_comment',
-  description: `Delete a specific comment from a JIRA issue`,
+  description: 'Delete a specific comment from a JIRA issue',
   inputSchema: {
     type: 'object',
     properties: {

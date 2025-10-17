@@ -84,6 +84,7 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
     const commentsData = response.data;
 
     // Build structured JSON
+    const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
     const json = {
       success: true,
       operation: 'get_comments',
@@ -94,31 +95,33 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
         maxResults: commentsData.maxResults,
         total: commentsData.total,
       },
-      comments: commentsData.comments?.map((comment: any) => ({
-        id: comment.id,
-        self: comment.self,
-        created: comment.created,
-        updated: comment.updated,
-        body: comment.body,
-        renderedBody: comment.renderedBody,
-        author: {
-          key: comment.author?.key,
-          name: comment.author?.name,
-          displayName: comment.author?.displayName,
-          emailAddress: comment.author?.emailAddress,
-          avatarUrls: comment.author?.avatarUrls,
-        },
-        updateAuthor: comment.updateAuthor ? {
-          key: comment.updateAuthor.key,
-          name: comment.updateAuthor.name,
-          displayName: comment.updateAuthor.displayName,
-          emailAddress: comment.updateAuthor.emailAddress,
-          avatarUrls: comment.updateAuthor.avatarUrls,
-        } : undefined,
-        visibility: comment.visibility,
-        properties: comment.properties,
-      })) || [],
-      issueUrl: `${config.origin}/browse/${issueIdOrKey}`,
+      comments: commentsData.comments?.map((comment: any) => {
+        const { id, created, updated, body, renderedBody, author, updateAuthor, visibility, properties } = comment;
+        const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
+        return {
+          id,
+          linkToComment,
+          created,
+          updated,
+          body,
+          renderedBody,
+          author: {
+            key: author?.key,
+            name: author?.name,
+            displayName: author?.displayName,
+            emailAddress: author?.emailAddress,
+          },
+          updateAuthor: updateAuthor ? {
+            key: updateAuthor.key,
+            name: updateAuthor.name,
+            displayName: updateAuthor.displayName,
+            emailAddress: updateAuthor.emailAddress,
+          } : undefined,
+          visibility,
+          properties,
+        };
+      }) || [],
+      issueUrl,
     };
 
     return formatToolResult(json);

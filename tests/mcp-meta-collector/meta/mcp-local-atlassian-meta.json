@@ -508,7 +508,7 @@
       }
     },
     {
-      "name": "jira_create_version",
+      "name": "jira_create_project_version",
       "description": "Create a new version in a JIRA project",
       "inputSchema": {
         "type": "object",

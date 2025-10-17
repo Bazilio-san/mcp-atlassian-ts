@@ -176,19 +176,32 @@ class JiraMcpHttpTester {
       const issue = issueData.jiraIssue;
 
       // Clean up comments (remove all except the last one)
-      if (issue.lastComments?.length > 1) {
-        const commentsToDelete = issue.lastComments.slice(0, -1); // All except last
+      // Get all comments using the new jira_get_comments tool
+      const { result: commentsResult } = await this.client.callTool('jira_get_comments', {
+        issueIdOrKey: TEST_ISSUE_KEY,
+        maxResults: 1000, // Get all comments
+        orderBy: 'created', // Order by creation date
+      });
+
+      const commentsData = getJsonFromResult(commentsResult);
+      if (commentsData?.comments?.length > 1) {
+        const commentsToDelete = commentsData.comments.slice(0, -1); // All except last
         console.log(`  🗑️  Removing ${commentsToDelete.length} old comments...`);
 
         for (const comment of commentsToDelete) {
           try {
-            // Note: No MCP tool available for comment deletion in this implementation
-            // Would need to add jira_delete_comment tool to support this functionality
-            console.log(`    Skipping comment ${comment.id} (no delete tool available)`);
+            // Use the new jira_delete_comment tool
+            await this.client.callTool('jira_delete_comment', {
+              issueIdOrKey: TEST_ISSUE_KEY,
+              commentId: comment.id,
+            });
+            console.log(`    ✅ Deleted comment ${comment.id}`);
           } catch (error) {
             console.log(chalk.yellow(`    Could not delete comment ${comment.id}: ${error.message}`));
           }
         }
+      } else {
+        console.log(`  💬  Found ${commentsData?.comments?.length || 0} comments, nothing to clean up`);
       }
 
       // Clean up issue links (remove all except the last one)
@@ -236,18 +249,6 @@ class JiraMcpHttpTester {
         projectIdOrKey: TEST_JIRA_PROJECT,
       });
 
-      const getJsonFromResult = (result) => {
-        if (result?.structuredContent) {
-          return result.structuredContent;
-        }
-        const text = result?.content?.[0]?.text || '';
-        try {
-          return JSON.parse(text);
-        } catch {
-          return undefined;
-        }
-      };
-
       const versionsData = getJsonFromResult(result);
       if (!versionsData?.versions?.length) {
         console.log('  📦  No versions found to clean up');
@@ -256,13 +257,15 @@ class JiraMcpHttpTester {
 
       const versions = versionsData.versions;
 
-      // Find test versions (starting with Batch- or MCP-Test-)
+      // Find test versions (starting with test prefixes)
       const batchVersions = versions.filter(v => v.name.startsWith('Batch-'));
       const mcpTestVersions = versions.filter(v => v.name.startsWith('MCP-Test-'));
+      const deleteTestVersions = versions.filter(v => v.name.startsWith('DeleteTest-'));
 
       const testPrefixes = [
         { name: 'Batch-', versions: batchVersions },
         { name: 'MCP-Test-', versions: mcpTestVersions },
+        { name: 'DeleteTest-', versions: deleteTestVersions },
       ];
 
       for (const { name: prefix, versions: prefixVersions } of testPrefixes) {
@@ -282,12 +285,11 @@ class JiraMcpHttpTester {
 
           for (const version of versionsToDelete) {
             try {
-              // Note: JIRA API typically requires admin access for version deletion
-              // and there might not be a direct MCP tool for this
-              console.log(`    Skipping version ${version.name} (${version.id}) - deletion requires admin access`);
-
-              // If there was a jira_delete_version tool, it would be called like this:
-              // await this.client.callTool('jira_delete_version', { versionId: version.id });
+              // Use the new jira_delete_version tool
+              await this.client.callTool('jira_delete_version', {
+                versionId: version.id.toString()
+              });
+              console.log(`    ✅ Deleted version ${version.name} (${version.id})`);
             } catch (error) {
               console.log(chalk.yellow(`    Could not delete version ${version.name}: ${error.message}`));
             }
@@ -297,7 +299,7 @@ class JiraMcpHttpTester {
         }
       }
 
-      const totalTestVersions = batchVersions.length + mcpTestVersions.length;
+      const totalTestVersions = batchVersions.length + mcpTestVersions.length + deleteTestVersions.length;
       if (totalTestVersions === 0) {
         console.log('  📦  No test versions found to clean up');
       }

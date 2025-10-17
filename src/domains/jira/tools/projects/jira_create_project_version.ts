@@ -9,10 +9,10 @@ import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 
 /**
- * Tool definition for jira_create_version
+ * Tool definition for jira_create_project_version
  */
-export const jira_create_version: ToolWithHandler = {
-  name: 'jira_create_version',
+export const jira_create_project_version: ToolWithHandler = {
+  name: 'jira_create_project_version',
   description: 'Create a new version in a JIRA project',
   inputSchema: {
     type: 'object',
@@ -64,7 +64,7 @@ export const jira_create_version: ToolWithHandler = {
 };
 
 /**
- * Handler function for jira_create_version
+ * Handler function for jira_create_project_version
  */
 async function createVersionHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
