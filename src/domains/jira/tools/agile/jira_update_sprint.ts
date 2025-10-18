@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for updating a sprint
@@ -80,14 +81,14 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
     if (state !== undefined) {
       sprintData.state = state;
     }
-    if (startDate !== undefined) {
-      sprintData.startDate = startDate;
+    if (startDate) {
+      sprintData.startDate = convertToIsoUtc(startDate);
     }
-    if (endDate !== undefined) {
-      sprintData.endDate = endDate;
+    if (endDate) {
+      sprintData.endDate = convertToIsoUtc(endDate);
     }
-    if (completeDate !== undefined) {
-      sprintData.completeDate = completeDate;
+    if (completeDate) {
+      sprintData.completeDate = convertToIsoUtc(completeDate);
     }
 
     // If no fields to update, return error
@@ -106,8 +107,6 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
 
     logger.info('Sprint updated successfully', { sprintId: sprint.id, name: sprint.name, state: sprint.state });
 
-    const fmtD = (v: string) => v ? new Date(v).toLocaleDateString() : null;
-
     const json = {
       success: true,
       operation: 'update_sprint',
@@ -118,9 +117,9 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
         state: sprint.state,
         originBoardId: sprint.originBoardId,
         goal: sprint.goal || '',
-        startDate: fmtD(sprint.startDate),
-        endDate: fmtD(sprint.endDate),
-        completeDate: fmtD(sprint.completeDate),
+        startDate: convertToIsoUtc(sprint.startDate),
+        endDate: convertToIsoUtc(sprint.endDate),
+        completeDate: convertToIsoUtc(sprint.completeDate),
         url: `${config.origin}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
       },
     };

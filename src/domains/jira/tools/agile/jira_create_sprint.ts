@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for creating a sprint
@@ -68,10 +69,10 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
       sprintData.goal = goal;
     }
     if (startDate) {
-      sprintData.startDate = startDate;
+      sprintData.startDate = convertToIsoUtc(startDate);
     }
     if (endDate) {
-      sprintData.endDate = endDate;
+      sprintData.endDate = convertToIsoUtc(endDate);
     }
 
     // Create sprint via API
@@ -85,8 +86,6 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
 
     logger.info('Sprint created successfully', { sprintId: sprint.id, name: sprint.name });
 
-    const fmtD = (v: string) => (v ? new Date(v).toLocaleDateString() : null);
-
     const json = {
       success: true,
       operation: 'create_sprint',
@@ -97,9 +96,9 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
         state: sprint.state,
         originBoardId: sprint.originBoardId,
         goal: sprint.goal || '',
-        startDate: fmtD(sprint.startDate),
-        endDate: fmtD(sprint.endDate),
-        completeDate: fmtD(sprint.completeDate),
+        startDate: convertToIsoUtc(sprint.startDate),
+        endDate: convertToIsoUtc(sprint.endDate),
+        completeDate: convertToIsoUtc(sprint.completeDate),
         url: `${config.origin}/secure/RapidBoard.jspa?rapidView=${sprint.originBoardId}&view=reporting&chart=sprintRetrospective&sprint=${sprint.id}`,
       },
     };

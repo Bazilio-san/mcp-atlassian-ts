@@ -86,8 +86,8 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
       comment: {
         id,
         linkToComment,
-        created,
-        updated,
+        created,  // VVQ convertToIsoUtc
+        updated,  // VVQ convertToIsoUtc
         body: b,
         author: {
           key: author.key,

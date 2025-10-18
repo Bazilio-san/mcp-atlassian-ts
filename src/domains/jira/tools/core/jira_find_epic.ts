@@ -87,8 +87,8 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
       summary: epic.fields.summary,
       status: epic.fields.status?.name,
       statusCategory: epic.fields.status?.statusCategory?.name,
-      created: epic.fields.created,
-      updated: epic.fields.updated,
+      created: epic.fields.created,  // VVQ convertToIsoUtc
+      updated: epic.fields.updated,  // VVQ convertToIsoUtc
       url: `${config.origin}/browse/${epic.key}`,
     }));
 

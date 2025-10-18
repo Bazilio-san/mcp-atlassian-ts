@@ -95,7 +95,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
           histories: histories.map(({ id, created, author, items }: any) => {
             return {
               id,
-              created,
+              created, // VVQ  convertToIsoUtc
               author: {
                 key: author?.key,
                 name: author?.name,

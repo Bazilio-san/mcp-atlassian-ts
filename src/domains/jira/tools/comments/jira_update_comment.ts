@@ -101,8 +101,8 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
       message: `Comment ${commentId} updated successfully in ${issueIdOrKey}`,
       comment: {
         id,
-        created,
-        updated,
+        created,  // VVQ convertToIsoUtc
+        updated,  // VVQ convertToIsoUtc
         body: b,
         renderedBody,
         linkToComment,

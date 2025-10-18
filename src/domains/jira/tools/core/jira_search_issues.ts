@@ -115,7 +115,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
       showing: searchResult.issues.length,
       issues: (searchResult.issues || []).map((issue: any) => ({
         key: issue.key,
-        summary: issue.fields.summary,
+        summary: issue.fields.summary, // // VVQ created updated convertToIsoUtc
         status: issue.fields.status.name,
         assignee: issue.fields.assignee ? issue.fields.assignee.displayName : 'Unassigned',
         priority: issue.fields.priority ? issue.fields.priority.name : 'None',

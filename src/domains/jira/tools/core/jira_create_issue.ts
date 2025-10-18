@@ -296,7 +296,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
         project: {
           [/^\d+$/.test(projectIdOrKey) ? 'id' : 'key']: projectIdOrKey,
         },
-      },
+      },   // VVQ created convertToIsoUtc
     };
     debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`);
     // Return formatted response

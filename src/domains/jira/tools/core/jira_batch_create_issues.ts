@@ -138,7 +138,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
         errorMessages: error.elementErrors?.errorMessages || [],
         fieldErrors: error.elementErrors?.errors || {},
       })) || [],
-    };
+    }; // VVQ created
 
     debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`);
     return formatToolResult(json);

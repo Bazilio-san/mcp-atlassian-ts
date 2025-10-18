@@ -8,6 +8,7 @@ import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting sprints from board
@@ -62,7 +63,9 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
 
     // Build query parameters
     const params: any = { startAt, maxResults };
-    if (state) {params.state = state;}
+    if (state) {
+      params.state = state;
+    }
 
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'boardSprints', { boardId, ...params });
@@ -78,50 +81,26 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
 
       return response.data;
     });
-
-    if (!sprintsResult.values || sprintsResult.values.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `**No sprints found on board ${boardId}**`,
-          },
-        ],
-      };
-    }
-
-
-    // Приводим данные к унифицированной структуре и формируем список
-    const sprints = sprintsResult.values.map((sprint: any) => {
-      let dateInfo = '';
-      if (sprint.startDate && sprint.endDate) {
-        const startDate = new Date(sprint.startDate).toLocaleDateString();
-        const endDate = new Date(sprint.endDate).toLocaleDateString();
-        dateInfo = ` (${startDate} - ${endDate})`;
-      } else if (sprint.startDate) {
-        const startDate = new Date(sprint.startDate).toLocaleDateString();
-        dateInfo = ` (Started: ${startDate})`;
-      }
-
-      return {
-        id: sprint.id,
-        name: sprint.name,
-        state: sprint.state,
-        startDate: sprint.startDate || null,
-        endDate: sprint.endDate || null,
-        goal: sprint.goal || '',
-        boardId,
-        dateInfo, // пригодится для человекочитаемого списка
-      };
-    });
-
+    const { values = [], total } = sprintsResult || {};
+    const count = values?.length || 0;
     const json = {
       success: true,
       operation: 'get_sprints_from_board',
-      message: `Found ${sprintsResult.values.length} sprint(s) on board ${boardId}
-Total: ${sprintsResult.total || sprintsResult.values.length} sprint(s) available${
-        sprintsResult.isLast ? '' : ` (showing ${sprintsResult.values.length})`}`,
-      sprints,
+      message: count
+        ? `Found ${count} sprint(s) on board ${boardId}
+Total: ${total || count} sprint(s) available${sprintsResult.isLast ? '' : ` (showing ${count})`}`
+        : `No sprints found on board ${boardId}`,
+      sprints: values.map((sprint: any) => {
+        return {
+          id: sprint.id,
+          name: sprint.name,
+          state: sprint.state,
+          startDate: convertToIsoUtc(sprint.startDate) || null,
+          endDate: convertToIsoUtc(sprint.endDate) || null,
+          goal: sprint.goal || '',
+          boardId,
+        };
+      }),
     };
 
     return formatToolResult(json);

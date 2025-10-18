@@ -80,21 +80,13 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
     const response = await httpClient.get('/rest/agile/1.0/board', { params });
     const boardsResult = response.data;
 
-    if (!boardsResult.values || boardsResult.values.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'No agile boards found',
-          },
-        ],
-      };
-    }
+    const { values = [] } = boardsResult || {};
+    const count = values?.length || 0;
 
     const json = {
       success: true,
       operation: 'get_agile_boards',
-      message: `Found ${boardsResult.values.length} agile board(s)`,
+      message: count ? `Found ${boardsResult.values.length} agile board(s)` : 'No agile boards found',
       agileBoards: boardsResult.values,
     };
 

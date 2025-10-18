@@ -103,44 +103,35 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
     }
 
     const issuesResult = response.data;
-
-    if (!issuesResult.issues || issuesResult.issues.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `**No issues found on board ${boardId}**`,
-          },
-        ],
-      };
-    }
-
-    const issues = issuesResult.issues.map((issue: any) => {
-      const f = issue.fields || {};
-      return {
-        key: issue.key,
-        summary: f.summary,
-        status: f.status?.name,
-        assignee: f.assignee?.displayName || 'Unassigned',
-        reporter: f.reporter?.displayName || 'Unassigned',
-        type: {
-          name: f.issuetype?.name,
-        },
-        priority: f.priority?.name,
-        link: `${config.origin}/browse/${issue.key}`,
-        project: {
-          key: f.project?.key,
-          name: f.project?.name,
-        },
-      };
-    });
+    const count = issuesResult?.issues?.length || 0;
+    const issues = issuesResult?.issues || [];
 
     const json = {
       success: true,
       operation: 'get_board_issues',
-      message: `Found ${issuesResult.issues.length} issue(s) on board ${boardId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
-      issues,
+      message: count
+        ? `Found ${count} issue(s) on board ${boardId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${count})`}`
+        : `No issues found on board ${boardId}`,
+      issues: issues.map((issue: any) => {
+        const f = issue.fields || {};
+        return {
+          key: issue.key,
+          summary: f.summary,
+          status: f.status?.name,
+          assignee: f.assignee?.displayName || 'Unassigned',
+          reporter: f.reporter?.displayName || 'Unassigned',
+          type: {
+            name: f.issuetype?.name,
+          },
+          priority: f.priority?.name,
+          link: `${config.origin}/browse/${issue.key}`,
+          project: {
+            key: f.project?.key,
+            name: f.project?.name,
+          },
+        };
+      }),
     };
 
     return formatToolResult(json);

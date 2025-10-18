@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting a JIRA issue
@@ -93,8 +94,8 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       },
       assignee: fields.assignee?.displayName || 'Unassigned',
       reporter: fields.reporter.displayName,
-      created: new Date(fields.created).toLocaleString(),
-      updated: new Date(fields.updated).toLocaleString(),
+      created: convertToIsoUtc(fields.created),
+      updated: convertToIsoUtc(fields.updated),
       priority: fields.priority?.name || 'None',
       issueType: fields.issuetype.name,
       issueUrl: `${config.origin}/browse/${issue.key}`,
@@ -120,7 +121,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
           id: c.id,
           author: c.author.displayName,
           body: c.body,
-          created: new Date(c.created).toLocaleString(),
+          created: convertToIsoUtc(c.created),
           url: c.self,
         };
       });
@@ -133,7 +134,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
           id: a.id,
           filename: a.filename,
           author: a.author.displayName,
-          created: new Date(a.created).toLocaleString(),
+          created: convertToIsoUtc(a.created),
           size: a.size,
           mimeType: a.mimeType,
           downloadUrl: a.content,

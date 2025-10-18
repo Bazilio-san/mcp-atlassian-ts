@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting all comments from a JIRA issue
@@ -101,8 +102,8 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
         return {
           id,
           linkToComment,
-          created,
-          updated,
+          created: convertToIsoUtc(created),  // VVQ convertToIsoUtc
+          updated: convertToIsoUtc(updated),  // VVQ convertToIsoUtc
           body,
           renderedBody,
           author: {

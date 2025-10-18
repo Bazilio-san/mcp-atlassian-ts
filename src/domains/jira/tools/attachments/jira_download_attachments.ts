@@ -51,22 +51,12 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
       params: { expand: 'attachment' },
     });
     const attachments = response.data.fields.attachment || [];
-
-    if (attachments.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `No attachments found for issue ${issueIdOrKey}`,
-          },
-        ],
-      };
-    }
+    const count = attachments.length;
 
     const json = {
       success: true,
       operation: 'batch_get_changelogs',
-      message: `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`,
+      message: count ? `Found ${attachments.length} attachment(s) for ${issueIdOrKey}` : `No attachments found for ${issueIdOrKey}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,
       attachments: attachments.map((a: any) => ({
@@ -75,8 +65,8 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
         size: a.size,
         sizeKB: Math.round(a.size / 1024),
         mimeType: a.mimeType,
-        created: a.created,
-        downloadUrl: a.content,
+        created: a.created, // VVQ convertToIsoUtc
+        downloadUrl: a.content, // VVQ
         author: {
           key: a.author.key,
           name: a.author.name,

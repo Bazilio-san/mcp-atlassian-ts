@@ -103,51 +103,41 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
     }
 
     const issuesResult = response.data;
-
-    if (!issuesResult.issues || issuesResult.issues.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `**No issues found in sprint ${sprintId}**`,
-          },
-        ],
-      };
-    }
-
-    // Приводим issues к унифицированной структуре, как в jira_get_board_issues.ts
-    const issues = issuesResult.issues.map((issue: any) => {
-      const f = issue.fields || {};
-      const statusName = f.status?.name;
-      const status =
-        f.resolution?.name ? `${statusName} (${f.resolution.name})` : statusName;
-
-      return {
-        key: issue.key,
-        summary: f.summary,
-        status,
-        assignee: f.assignee?.displayName || 'Unassigned',
-        reporter: f.reporter?.displayName || 'Unassigned',
-        type: {
-          name: f.issuetype?.name,
-        },
-        priority: f.priority?.name,
-        link: `${config.origin}/browse/${issue.key}`,
-        project: {
-          key: f.project?.key,
-          name: f.project?.name,
-        },
-        // Доп. поле спринтовой метрики (если есть)
-        storyPoints: f.customfield_10016,
-      };
-    });
+    const count = issuesResult?.issues?.length || 0;
+    const issues = issuesResult?.issues || [];
 
     const json = {
       success: true,
       operation: 'get_sprint_issues',
-      message: `Found ${issuesResult.issues.length} issue(s) in sprint ${sprintId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${issuesResult.issues.length})`}`,
-      issues,
+      message: count
+        ? `Found ${count} issue(s) in sprint ${sprintId}
+Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${count})`}`
+        : `No issues found in sprint ${sprintId}`,
+      issues: issues.map((issue: any) => {
+        const f = issue.fields || {};
+        const statusName = f.status?.name;
+        const status =
+          f.resolution?.name ? `${statusName} (${f.resolution.name})` : statusName;
+
+        return {
+          key: issue.key,
+          summary: f.summary,
+          status,
+          assignee: f.assignee?.displayName || 'Unassigned',
+          reporter: f.reporter?.displayName || 'Unassigned',
+          type: {
+            name: f.issuetype?.name,
+          },
+          priority: f.priority?.name,
+          link: `${config.origin}/browse/${issue.key}`,
+          project: {
+            key: f.project?.key,
+            name: f.project?.name,
+          },
+          // Доп. поле спринтовой метрики (если есть)
+          storyPoints: f.customfield_10016,
+        };
+      }),
     };
 
     return formatToolResult(json);
