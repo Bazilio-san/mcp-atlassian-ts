@@ -195,7 +195,7 @@ class JiraMcpHttpTester {
               issueIdOrKey: TEST_ISSUE_KEY,
               commentId: comment.id,
             });
-            console.log(`    ✅ Deleted comment ${comment.id}`);
+            console.log(`    ✅  Deleted comment ${comment.id}`);
           } catch (error) {
             console.log(chalk.yellow(`    Could not delete comment ${comment.id}: ${error.message}`));
           }
@@ -289,7 +289,7 @@ class JiraMcpHttpTester {
               await this.client.callTool('jira_delete_version', {
                 versionId: version.id.toString()
               });
-              console.log(`    ✅ Deleted version ${version.name} (${version.id})`);
+              console.log(`    ✅  Deleted version ${version.name} (${version.id})`);
             } catch (error) {
               console.log(chalk.yellow(`    Could not delete version ${version.name}: ${error.message}`));
             }

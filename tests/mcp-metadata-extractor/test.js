@@ -1,4 +1,4 @@
-import { extractMCPMetadata } from './mcp-client.js';
+import { extractMCPMetadata } from './mcp-metadata-extractor.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
