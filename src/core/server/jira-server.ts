@@ -154,7 +154,7 @@ export class JiraServer extends McpAtlassianServer {
   protected override async handleResourceRead (uri: string): Promise<any> {
     // Handle JIRA-specific resources first
     if (uri === 'jira://priorities') {
-      const priorities = getCachedPriorityObjects();
+      const priorities = await getCachedPriorityObjects();
       return {
         contents: [{
           uri,

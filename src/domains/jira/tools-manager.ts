@@ -112,9 +112,6 @@ export class JiraToolsManager {
     // Initialize tools storage
     this.tools = new Map();
     this.toolsArray = [];
-
-    // Build initial tools list
-    this.buildToolsList(config.epicLinkFieldId);
   }
 
   /**
@@ -130,23 +127,23 @@ export class JiraToolsManager {
     this.context.logger.info('JIRA tools manager initialized');
 
     // Build tools list
-    this.buildToolsList(this.context.config.epicLinkFieldId);
+    await this.buildToolsList(this.context.config.epicLinkFieldId);
   }
 
   /**
    * Build the tools list
    */
-  private buildToolsList (epicLinkFieldId?: string): void {
+  private async buildToolsList (epicLinkFieldId?: string): Promise<void> {
     // Clear existing tools
     this.tools.clear();
     this.toolsArray = [];
-
+    const jira_create_issue = await createJiraCreateIssueTool();
     // Register all tools with their handlers
     const toolInstances = [
       // Core tools
       jira_get_issue,
       jira_search_issues,
-      createJiraCreateIssueTool(), // Create fresh instance with current priorities
+      jira_create_issue, // Create fresh instance with current priorities
       jira_update_issue(epicLinkFieldId), // Create jira_update_issue with dynamic epicLinkFieldId
       jira_delete_issue,
       jira_batch_create_issues,
@@ -313,8 +310,12 @@ export class JiraToolsManager {
    * Normalize string or array parameter to array
    */
   private normalizeToArray (value: string | string[] | undefined): string[] {
-    if (!value) {return [];}
-    if (Array.isArray(value)) {return value;}
+    if (!value) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
     return [value];
   }
 
@@ -322,19 +323,27 @@ export class JiraToolsManager {
    * Format description field
    */
   private formatDescription (description: any): string {
-    if (!description) {return '';}
-    if (typeof description === 'string') {return description;}
+    if (!description) {
+      return '';
+    }
+    if (typeof description === 'string') {
+      return description;
+    }
 
     // Handle JIRA's ADF (Atlassian Document Format)
     if (description && typeof description === 'object') {
       if (description.content) {
         // Simple extraction of text from ADF
         const extractText = (node: any): string => {
-          if (node.type === 'text') {return node.text || '';}
+          if (node.type === 'text') {
+            return node.text || '';
+          }
           if (node.content && Array.isArray(node.content)) {
             return node.content.map(extractText).join('');
           }
-          if (node.type === 'hardBreak') {return '\n';}
+          if (node.type === 'hardBreak') {
+            return '\n';
+          }
           return '';
         };
         return extractText(description);
@@ -349,7 +358,9 @@ export class JiraToolsManager {
    * Expand string or array to comma-separated string
    */
   private expandStringOrArray (value: string | string[] | undefined, separator: string = ','): string | undefined {
-    if (!value) {return undefined;}
+    if (!value) {
+      return undefined;
+    }
     const arr = this.normalizeToArray(value);
     return arr.length > 0 ? arr.join(separator) : undefined;
   }

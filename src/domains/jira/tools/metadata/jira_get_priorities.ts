@@ -34,7 +34,7 @@ export const jira_get_priorities: ToolWithHandler = {
  */
 async function getPrioritiesHandler (): Promise<any> {
   return withErrorHandling(async () => {
-    const priorities = getCachedPriorityObjects();
+    const priorities = await getCachedPriorityObjects();
 
     const json = {
       success: true,

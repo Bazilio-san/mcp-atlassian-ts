@@ -12,7 +12,7 @@ import { debugJiraTool } from '../../../../core/utils/debug.js';
 import { ppj } from '../../../../core/utils/text.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
 
-export function createJiraCreateIssueTool (): ToolWithHandler {
+export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
   return {
     name: 'jira_create_issue',
     description: `Create a new issue (task, bug, story, etc.) in JIRA.
@@ -67,7 +67,7 @@ If not indicated explicitly, form a short title according to the description`,
           description: `Optional. The priority level of the issue.
 If the user indicated priority, find the most suitable from the MCP resource jira://priorities.
 Access the resource to get available priority names, then choose the most appropriate one. If none suit, choose null.`,
-          enum: getPriorityNamesArray(), // Dynamic priority enum
+          enum: await getPriorityNamesArray(), // Dynamic priority enum
           nullable: true,
         },
         labels: {
@@ -115,11 +115,6 @@ Among them you need to choose the right one`,
     handler: createIssueHandler,
   };
 }
-
-/**
- * Default export for backward compatibility
- */
-export const jira_create_issue: ToolWithHandler = createJiraCreateIssueTool();
 
 /**
  * Validate project exists and issueType is correct
