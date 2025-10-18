@@ -5,6 +5,7 @@
 import { createLogger } from '../utils/logger.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 import type { JCConfig, ServerConfig } from '../../types/index.js';
+import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
 
 const logger = createLogger('about-renderer');
 
@@ -18,6 +19,11 @@ interface AboutPageData {
   serviceUrlLabel: string;
   externalServiceUrl: string;
   toolsCount: number;
+  resourcesCount: number;
+  promptsCount: number;
+  tools: Tool[];
+  resources: Resource[];
+  prompts: Prompt[];
   authStatus: string;
   authStatusClass: string;
   statusText: string;
@@ -34,12 +40,22 @@ export class AboutPageRenderer {
   private serverConfig: ServerConfig;
   private serviceConfig: JCConfig;
   private toolsCount: number;
+  private resourcesCount: number;
+  private promptsCount: number;
+  private tools: Tool[];
+  private resources: Resource[];
+  private prompts: Prompt[];
   private startTime: Date;
 
   constructor (serverConfig: ServerConfig, serviceConfig: JCConfig, toolsCount: number = 0) {
     this.serverConfig = serverConfig;
     this.serviceConfig = serviceConfig;
     this.toolsCount = toolsCount;
+    this.resourcesCount = 0;
+    this.promptsCount = 0;
+    this.tools = [];
+    this.resources = [];
+    this.prompts = [];
     this.startTime = new Date();
 
     // Initialize templates
@@ -86,7 +102,15 @@ export class AboutPageRenderer {
         </div>
         <div class="info-row">
           <span class="label">Tools:</span>
-          <span class="value">{{TOOLS_COUNT}} available</span>
+          <span class="value clickable" onclick="openModal('tools')">{{TOOLS_COUNT}} available</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Resources:</span>
+          <span class="value clickable" onclick="openModal('resources')">{{RESOURCES_COUNT}} available</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Prompts:</span>
+          <span class="value clickable" onclick="openModal('prompts')">{{PROMPTS_COUNT}} available</span>
         </div>
         <div class="info-row">
           <span class="label">Uptime:</span>
@@ -113,7 +137,88 @@ export class AboutPageRenderer {
           <a href="/health" class="value link">Check Server Health</a>
         </div>
       </section>
-    </main>
+
+      </main>
+
+    <!-- Modal Overlays -->
+    <!-- Tools Modal -->
+    <div id="tools-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Available Tools ({{TOOLS_COUNT}})</h3>
+          <button class="modal-close" onclick="closeModal('tools')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-container">
+            <table class="details-table" id="tools-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Content will be dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resources Modal -->
+    <div id="resources-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Available Resources ({{RESOURCES_COUNT}})</h3>
+          <button class="modal-close" onclick="closeModal('resources')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-container">
+            <table class="details-table" id="resources-table">
+              <thead>
+                <tr>
+                  <th>URI</th>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>MIME Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Content will be dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompts Modal -->
+    <div id="prompts-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Available Prompts ({{PROMPTS_COUNT}})</h3>
+          <button class="modal-close" onclick="closeModal('prompts')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-container">
+            <table class="details-table" id="prompts-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Content will be dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="simple-footer">
@@ -125,6 +230,195 @@ export class AboutPageRenderer {
       </p>
     </footer>
   </div>
+
+  <script>
+    // Store data globally
+    let toolsData = [];
+    let resourcesData = [];
+    let promptsData = [];
+
+    // Initialize data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        toolsData = {{TOOLS_JSON}};
+        resourcesData = {{RESOURCES_JSON}};
+        promptsData = {{PROMPTS_JSON}};
+      } catch (error) {
+        console.error('Error parsing data:', error);
+        toolsData = [];
+        resourcesData = [];
+        promptsData = [];
+      }
+    });
+
+    function openModal(sectionName) {
+      const modal = document.getElementById(sectionName + '-modal');
+      const tableBody = document.getElementById(sectionName + '-table').querySelector('tbody');
+
+      // Show loading state
+      tableBody.innerHTML = '<tr><td colspan="100%" class="loading-cell"><div class="loading-spinner"></div> Loading...</td></tr>';
+      modal.style.display = 'flex';
+
+      // Load data with small delay to show loading animation
+      setTimeout(function() {
+        loadTableData(sectionName);
+      }, 300);
+    }
+
+    function closeModal(sectionName) {
+      const modal = document.getElementById(sectionName + '-modal');
+      modal.style.display = 'none';
+    }
+
+    function loadTableData(sectionName) {
+      const tableBody = document.getElementById(sectionName + '-table').querySelector('tbody');
+      let data, html;
+
+      switch(sectionName) {
+        case 'tools':
+          data = toolsData;
+          html = generateToolsTableRows(data);
+          break;
+        case 'resources':
+          data = resourcesData;
+          html = generateResourcesTableRows(data);
+          break;
+        case 'prompts':
+          data = promptsData;
+          html = generatePromptsTableRows(data);
+          break;
+      }
+
+      tableBody.innerHTML = html;
+    }
+
+    function generateToolsTableRows(tools) {
+      return tools.map((tool, index) =>
+        '<tr>' +
+          '<td><code>' + tool.name + '</code></td>' +
+          '<td>' + (tool.annotations?.title || tool.description) + '</td>' +
+          '<td>' +
+            '<a class="detail-link" id="tools-toggle-' + index + '" onclick="toggleDetails(\\\'tools\\\', ' + index + ')">подробнее</a>' +
+          '</td>' +
+        '</tr>' +
+        '<tr id="tools-detail-' + index + '" class="detail-row" style="display: none;">' +
+          '<td colspan="3">' +
+            '<div class="detail-content">' +
+              '<div class="loading-spinner" style="display: none;"></div>' +
+              '<pre class="json-content" style="display: none;"></pre>' +
+            '</div>' +
+          '</td>' +
+        '</tr>'
+      ).join('');
+    }
+
+    function generateResourcesTableRows(resources) {
+      return resources.map((resource, index) =>
+        '<tr>' +
+          '<td><code>' + resource.uri + '</code></td>' +
+          '<td>' + resource.name + '</td>' +
+          '<td>' + resource.description + '</td>' +
+          '<td><code>' + resource.mimeType + '</code></td>' +
+          '<td>' +
+            '<a class="detail-link" id="resources-toggle-' + index + '" onclick="toggleDetails(\\\'resources\\\', ' + index + ')">подробнее</a>' +
+          '</td>' +
+        '</tr>' +
+        '<tr id="resources-detail-' + index + '" class="detail-row" style="display: none;">' +
+          '<td colspan="5">' +
+            '<div class="detail-content">' +
+              '<div class="loading-spinner"></div>' +
+              '<pre class="json-content" style="display: none;"></pre>' +
+            '</div>' +
+          '</td>' +
+        '</tr>'
+      ).join('');
+    }
+
+    function generatePromptsTableRows(prompts) {
+      return prompts.map((prompt, index) =>
+        '<tr>' +
+          '<td><code>' + prompt.name + '</code></td>' +
+          '<td>' +
+            '<a class="detail-link" id="prompts-toggle-' + index + '" onclick="toggleDetails(\\\'prompts\\\', ' + index + ')">подробнее</a>' +
+          '</td>' +
+        '</tr>' +
+        '<tr id="prompts-detail-' + index + '" class="detail-row" style="display: none;">' +
+          '<td colspan="2">' +
+            '<div class="detail-content">' +
+              '<div class="loading-spinner"></div>' +
+              '<pre class="json-content" style="display: none;"></pre>' +
+            '</div>' +
+          '</td>' +
+        '</tr>'
+      ).join('');
+    }
+
+    function toggleDetails(sectionName, index) {
+      const detailRow = document.getElementById(sectionName + '-detail-' + index);
+      const toggleLink = document.getElementById(sectionName + '-toggle-' + index);
+      const loadingSpinner = detailRow.querySelector('.loading-spinner');
+      const jsonContent = detailRow.querySelector('.json-content');
+
+      if (detailRow.style.display === 'none') {
+        // Show the detail row with loading state
+        detailRow.style.display = 'table-row';
+        toggleLink.textContent = 'скрыть';
+        loadingSpinner.style.display = 'block';
+        jsonContent.style.display = 'none';
+
+        // Simulate loading delay and show content
+        setTimeout(() => {
+          let data;
+          switch(sectionName) {
+            case 'tools':
+              data = {
+                name: toolsData[index].name,
+                description: toolsData[index].description,
+                inputSchema: toolsData[index].inputSchema,
+                annotations: toolsData[index].annotations
+              };
+              break;
+            case 'resources':
+              data = resourcesData[index].content || resourcesData[index];
+              // Try to parse JSON from contents[0]?.text and add explanation
+              if (data && data.contents && data.contents[0] && data.contents[0].text) {
+                try {
+                  const parsedJson = JSON.parse(data.contents[0].text);
+                  data = Object.assign({}, data, {
+                    contents: [Object.assign({}, data.contents[0], {
+                      text: 'Text field - deserialized data:\\n\\n' + JSON.stringify(parsedJson, null, 2)
+                    })]
+                  });
+                } catch (e) {
+                  // If parsing fails, keep original data
+                }
+              }
+              break;
+            case 'prompts':
+              data = promptsData[index];
+              break;
+          }
+
+          loadingSpinner.style.display = 'none';
+          jsonContent.style.display = 'block';
+          jsonContent.textContent = JSON.stringify(data, null, 2);
+        }, 500);
+      } else {
+        // Hide the detail row
+        detailRow.style.display = 'none';
+        toggleLink.textContent = 'подробнее';
+      }
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+      if (event.target.classList.contains('modal-overlay')) {
+        const modalId = event.target.id;
+        const sectionName = modalId.replace('-modal', '');
+        closeModal(sectionName);
+      }
+    });
+  </script>
 </body>
 </html>`;
   }
@@ -297,6 +591,197 @@ body {
 .simple-main {
   padding: 20px 32px;
 }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(9, 30, 66, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background: white;
+  border-radius: var(--border-radius-300);
+  box-shadow: var(--shadow-overlay);
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 900px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: var(--color-neutral-20);
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: var(--font-size-300);
+  font-weight: 600;
+  color: var(--color-primary-600);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--color-neutral-600);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-100);
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-900);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: var(--border-radius-100);
+  border: 1px solid var(--color-neutral-200);
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: var(--font-size-075);
+}
+
+.details-table th {
+  background: var(--color-neutral-100);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+  border-bottom: 2px solid var(--color-neutral-200);
+  white-space: nowrap;
+}
+
+.details-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-neutral-100);
+  vertical-align: top;
+}
+
+.details-table tr:hover {
+  background: var(--color-neutral-20);
+}
+
+.details-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Detail row styles */
+.detail-row {
+  background: var(--color-neutral-20);
+}
+
+.detail-row td {
+  padding: 0;
+}
+
+.detail-content {
+  padding: 16px;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-neutral-200);
+  border-top: 2px solid var(--color-primary-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 12px auto;
+}
+
+.loading-cell {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-neutral-600);
+  font-size: var(--font-size-100);
+}
+
+.loading-cell .loading-spinner {
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* JSON content styles */
+.json-content {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-050);
+  line-height: 1.4;
+  color: var(--color-neutral-1000);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  background: var(--color-neutral-90);
+  padding: 16px;
+  border-radius: var(--border-radius-100);
+  border: 1px solid var(--color-neutral-200);
+}
+
+.clickable {
+  color: var(--color-primary-500);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.clickable:hover {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+}
+
+.detail-link {
+  color: var(--color-primary-500);
+  text-decoration: none;
+  font-size: var(--font-size-075);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.detail-link:hover {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+}
+
 
 /* Info Section */
 .info-section {
@@ -528,6 +1013,12 @@ body {
     }
   }
 
+  private escapeJsonForScript (data: any): string {
+    // JSON.stringify already handles proper escaping for JavaScript
+    // We just need to ensure it's safe for HTML context
+    return JSON.stringify(data);
+  }
+
   private substitutePlaceholders (template: string, data: AboutPageData): string {
     return template
       .replace(/\{\{SERVICE_TITLE\}\}/g, data.serviceTitle)
@@ -539,6 +1030,11 @@ body {
       .replace(/\{\{SERVICE_URL_LABEL\}\}/g, data.serviceUrlLabel)
       .replace(/\{\{EXTERNAL_SERVICE_URL\}\}/g, data.externalServiceUrl)
       .replace(/\{\{TOOLS_COUNT\}\}/g, data.toolsCount.toString())
+      .replace(/\{\{RESOURCES_COUNT\}\}/g, data.resourcesCount.toString())
+      .replace(/\{\{PROMPTS_COUNT\}\}/g, data.promptsCount.toString())
+      .replace(/\{\{TOOLS_JSON\}\}/g, this.escapeJsonForScript(data.tools))
+      .replace(/\{\{RESOURCES_JSON\}\}/g, this.escapeJsonForScript(data.resources))
+      .replace(/\{\{PROMPTS_JSON\}\}/g, this.escapeJsonForScript(data.prompts))
       .replace(/\{\{AUTH_STATUS\}\}/g, data.authStatus)
       .replace(/\{\{AUTH_STATUS_CLASS\}\}/g, data.authStatusClass)
       .replace(/\{\{STATUS_TEXT\}\}/g, data.statusText)
@@ -562,8 +1058,33 @@ body {
       );
   }
 
+  
   public setToolsCount (count: number): void {
     this.toolsCount = count;
+  }
+
+  public setToolsData (tools: Tool[]): void {
+    this.tools = tools;
+    this.toolsCount = tools.length;
+  }
+
+  public setResourcesData (resources: Resource[]): void {
+    this.resources = resources;
+    this.resourcesCount = resources.length;
+  }
+
+  public setPromptsData (prompts: Prompt[]): void {
+    this.prompts = prompts;
+    this.promptsCount = prompts.length;
+  }
+
+  public setAllData (tools: Tool[], resources: Resource[], prompts: Prompt[]): void {
+    this.tools = tools;
+    this.resources = resources;
+    this.prompts = prompts;
+    this.toolsCount = tools.length;
+    this.resourcesCount = resources.length;
+    this.promptsCount = prompts.length;
   }
 
   public renderHtml (): string {
@@ -581,6 +1102,11 @@ body {
       serviceUrlLabel: serviceUrls.label,
       externalServiceUrl: serviceUrls.externalUrl,
       toolsCount: this.toolsCount,
+      resourcesCount: this.resourcesCount,
+      promptsCount: this.promptsCount,
+      tools: this.tools,
+      resources: this.resources,
+      prompts: this.prompts,
       authStatus: authStatus.status,
       authStatusClass: authStatus.statusClass,
       statusText: 'Online',

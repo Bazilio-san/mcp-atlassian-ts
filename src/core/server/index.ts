@@ -10,7 +10,7 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import express from 'express';
 import helmet from 'helmet';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
-import type { Resource } from '@modelcontextprotocol/sdk/types.js';
+import type { Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -23,10 +23,9 @@ import type { ServerConfig, JCConfig } from '../../types/index.js';
 import { createLogger, createRequestLogger } from '../utils/logger.js';
 import { createJsonRpcErrorResponse, McpAtlassianError, ServerError } from '../errors.js';
 import { getCache } from '../cache.js';
-import { createAuthenticationManager } from '../auth.js';
 import { ToolRegistry } from './tools.js';
 import { AuthenticationManager } from '../auth/auth-manager.js';
-import { appConfig } from '../../bootstrap/init-config.js';
+import { appConfig, getSafeAppConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
@@ -114,25 +113,42 @@ export class McpAtlassianServer {
   }
 
   /**
+   * Get resources list with content for About page display
+   */
+  protected async getResourcesWithContent (): Promise<any[]> {
+    const resources = this.getResourcesList();
+    const resourcesWithContent = [];
+
+    for (const resource of resources) {
+      try {
+        const resourceContent = await this.handleResourceRead(resource.uri);
+        resourcesWithContent.push({
+          ...resource,
+          content: resourceContent
+        });
+      } catch (error) {
+        logger.warn(`Failed to read resource content for ${resource.uri}`, { error: error instanceof Error ? error.message : String(error) });
+        resourcesWithContent.push({
+          ...resource,
+          content: { error: 'Failed to load resource content' }
+        });
+      }
+    }
+
+    return resourcesWithContent;
+  }
+
+  /**
    * Handle resource read requests (can be overridden by subclasses)
    */
   protected async handleResourceRead (uri: string): Promise<any> {
     switch (uri) {
       case 'atlassian://config':
-        const authManager = createAuthenticationManager(
-          this.serviceConfig.auth,
-          this.serviceConfig.url,
-        );
-
         return {
           contents: [{
             uri,
             mimeType: 'application/json',
-            text: JSON.stringify({
-              url: this.serviceConfig.url,
-              auth: authManager.getAuthInfo(),
-              config: this.serviceConfig,
-            }, null, 2),
+            text: JSON.stringify(getSafeAppConfig(), null, 2),
           }],
         };
 
@@ -387,13 +403,18 @@ export class McpAtlassianServer {
       // Root endpoint with About page
       this.app.get('/', async (req, res) => {
         try {
-          // Update tools count if available
+          // Update tools, resources, and prompts data if available
           if (this.toolRegistry && this.aboutPageRenderer) {
             try {
               const tools = await this.toolRegistry.listTools();
-              this.aboutPageRenderer!.setToolsCount(tools.length);
+              const resources = await this.getResourcesWithContent();
+
+              // For now, prompts are empty as per current implementation
+              const prompts: Prompt[] = [];
+
+              this.aboutPageRenderer!.setAllData(tools, resources, prompts);
             } catch (error: Error | any) {
-              logger.warn('Failed to get tools count for about page', error);
+              logger.warn('Failed to get tools, resources, and prompts data for about page', error);
             }
           }
 

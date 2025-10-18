@@ -330,6 +330,36 @@ function buildConfig (): IConfig {
 
 export const appConfig: IConfig = buildConfig();
 
+/**
+ * Returns configuration with sensitive data masked for safe display
+ */
+export function getSafeAppConfig (): any {
+  const config = JSON.parse(JSON.stringify(appConfig)); // Deep clone
+  ['jira', 'confluence'].forEach((v) => {
+    const a = config[v]?.auth;
+    // Mask JIRA sensitive data
+    if (a?.basic?.password) {
+      a.basic.password = '[MASKED]';
+    }
+    if (a?.pat) {
+      a.pat = '[MASKED]';
+    }
+    if (a?.oauth2?.clientSecret) {
+      a.oauth2.clientSecret = '[MASKED]';
+    }
+    if (a?.oauth2?.accessToken) {
+      a.oauth2.accessToken = '[MASKED]';
+    }
+    if (a?.oauth2?.refreshToken) {
+      a.oauth2.refreshToken = '[MASKED]';
+    }
+    if (config[v]?.powerEndpoint?.auth?.basic?.password) {
+      config[v].powerEndpoint.auth.basic.password = '[MASKED]';
+    }
+  });
+  return config;
+}
+
 const { confluence, jira } = appConfig;
 
 // Optional: Validate required configuration
