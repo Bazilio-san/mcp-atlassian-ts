@@ -28,6 +28,12 @@ server:
   # Server authentication token for HTTP mode
   token: test_server_token
 
+# Response format configuration:
+# - structuredContent - default - the response in result.structuredContent returns JSON
+# - text - in the response, serialized JSON is returned in result.content[0].text
+# Перекрывается значением пеерменной окружения TOOL_ANSWER_AS
+toolAnswerAs: structuredContent
+
 # --------------------------------------------------
 # LOGGING CONFIGURATION
 # --------------------------------------------------

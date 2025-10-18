@@ -118,7 +118,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
       link: `${config.origin}/browse/${issueIdOrKey}`,
       timestamp: new Date().toISOString(),
     };
-
+    // VVQ created convertToIsoUtc
     return formatToolResult(json);
   });
 }

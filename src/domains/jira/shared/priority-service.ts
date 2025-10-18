@@ -16,12 +16,6 @@ export interface JiraPriority {
 }
 
 /**
- * Global cache for dynamic priorities
- */
-let cachedPriorities: JiraPriority[] = [];
-let _prioritiesFetched = false;
-
-/**
  * Fetch priorities from JIRA and cache them
  */
 export async function getCachedPriorityObjects (): Promise<JiraPriority[]> {
@@ -30,33 +24,29 @@ export async function getCachedPriorityObjects (): Promise<JiraPriority[]> {
   }
   const cache = getCache();
   const cacheKey = 'jira_priorities';
-
+  let cachedPriorities: JiraPriority[] | undefined;
   try {
     // Use cache to store priorities for session
     cachedPriorities = await cache.getOrSet(
       cacheKey,
-      async (): Promise<JiraPriority[]> => {
+      async (): Promise<JiraPriority[] | undefined> => {
         logger.info('Fetching priorities from JIRA API');
         const response = await powerHttpClient!.get('/rest/api/2/priority');
-
-        if (!Array.isArray(response.data)) {
-          logger.warn('Invalid priorities response format', { response: response.data });
-          return [];
+        const priorities = response.data;
+        if (!Array.isArray(priorities)) {
+          logger.warn('Invalid priorities response format', { response: priorities });
+          return;
         }
-
-        return response.data as JiraPriority[];
+        logger.info('Priorities fetched successfully', { count: priorities.length });
+        return priorities.map(({ id, name, description }) => ({ id, name, description }));
       },
       3600, // Cache for 1 hour
     );
-
-    logger.info('Priorities fetched successfully', { count: cachedPriorities.length });
-    _prioritiesFetched = true;
   } catch (error) {
     logger.error('Failed to fetch priorities from JIRA', error instanceof Error ? error : new Error(String(error)));
   }
-  return cachedPriorities;
+  return cachedPriorities || [];
 }
-
 
 
 /**

@@ -209,6 +209,9 @@ function buildConfig (): IConfig {
       ...(serviceMode && { serviceMode: serviceMode as 'jira' | 'confluence' }),
     },
 
+    // Response format configuration
+    toolAnswerAs: getValue('TOOL_ANSWER_AS', ['toolAnswerAs'], 'structuredContent'),
+
     // JIRA configuration
     jira: (() => {
       const url = getValue('JIRA_URL', ['jira', 'url'], '');
@@ -315,9 +318,6 @@ function buildConfig (): IConfig {
     // Feature flags
     features: yaml?.features || {},
 
-    // Response format configuration
-    isReturnJson: getValue('IS_RETURN_JSON', ['isReturnJson'], false),
-
     // User substitution configuration
     ...(yaml?.subst && yaml.subst.users && yaml.subst.httpHeader ? {
       subst: {
@@ -357,6 +357,9 @@ export function getSafeAppConfig (): any {
       config[v].powerEndpoint.auth.basic.password = '[MASKED]';
     }
   });
+  if (config.server?.token) {
+    config.server.token = '[MASKED]';
+  }
   return config;
 }
 

@@ -122,7 +122,7 @@ export interface IConfig {
 
   // Feature flags
   features: Record<string, never>;
-  isReturnJson: boolean;
+  toolAnswerAs: 'structuredContent' | 'text';
 
   // User substitution configuration
   subst?: ISubstitutionConfig;

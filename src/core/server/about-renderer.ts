@@ -365,10 +365,11 @@ export class AboutPageRenderer {
         toggleLink.textContent = 'скрыть';
         loadingSpinner.style.display = 'block';
         jsonContent.style.display = 'none';
-
+        
         // Simulate loading delay and show content
         setTimeout(() => {
           let data;
+          let textContent;
           switch(sectionName) {
             case 'tools':
               data = {
@@ -377,18 +378,18 @@ export class AboutPageRenderer {
                 inputSchema: toolsData[index].inputSchema,
                 annotations: toolsData[index].annotations
               };
+              textContent = JSON.stringify(data, null, 2);
               break;
             case 'resources':
               data = resourcesData[index].content || resourcesData[index];
+              textContent = JSON.stringify(data, null, 2);
               // Try to parse JSON from contents[0]?.text and add explanation
-              if (data && data.contents && data.contents[0] && data.contents[0].text) {
+              const text = data.contents?.[0]?.text;
+              if (text) {
                 try {
-                  const parsedJson = JSON.parse(data.contents[0].text);
-                  data = Object.assign({}, data, {
-                    contents: [Object.assign({}, data.contents[0], {
-                      text: 'Text field - deserialized data:\\n\\n' + JSON.stringify(parsedJson, null, 2)
-                    })]
-                  });
+                  const parsedJson = JSON.parse(text);
+                  data.contents[0].text = parsedJson;
+                  textContent = 'Text field - deserialized data:\\n\\n' + JSON.stringify(data, null, 2);
                 } catch (e) {
                   // If parsing fails, keep original data
                 }
@@ -396,12 +397,13 @@ export class AboutPageRenderer {
               break;
             case 'prompts':
               data = promptsData[index];
+              textContent = JSON.stringify(data, null, 2)
               break;
           }
 
           loadingSpinner.style.display = 'none';
           jsonContent.style.display = 'block';
-          jsonContent.textContent = JSON.stringify(data, null, 2);
+          jsonContent.textContent = textContent;
         }, 500);
       } else {
         // Hide the detail row
@@ -1058,7 +1060,7 @@ body {
       );
   }
 
-  
+
   public setToolsCount (count: number): void {
     this.toolsCount = count;
   }

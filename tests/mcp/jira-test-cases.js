@@ -24,7 +24,7 @@ import { appConfig } from '../../dist/src/bootstrap/init-config.js';
 
 
 export const getJsonFromResult = (result) => {
-  if (appConfig.isReturnJson) {
+  if (appConfig.toolAnswerAs === 'structuredContent') {
     return result?.structuredContent;
   }
   else {

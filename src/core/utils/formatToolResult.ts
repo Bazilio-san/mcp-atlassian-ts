@@ -6,7 +6,7 @@ import { ppj } from './text.js';
  * Returns either structured content (JSON) or formatted text
  */
 export function formatToolResult (json: any): any {
-  if (appConfig.isReturnJson) {
+  if (appConfig.toolAnswerAs === 'structuredContent') {
     return {
       structuredContent: json,
     };
@@ -23,7 +23,7 @@ export function formatToolResult (json: any): any {
 }
 
 export const getJsonFromResult = <T = any> (result: any): T => {
-  if (appConfig.isReturnJson) {
+  if (appConfig.toolAnswerAs === 'structuredContent') {
     return result?.structuredContent as T;
   } else {
     const text = result?.result?.content?.[0]?.text || result?.content?.[0]?.text || '';
