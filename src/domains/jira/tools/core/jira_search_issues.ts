@@ -8,6 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for searching JIRA issues
@@ -113,13 +114,15 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
       jql: jql,
       total: searchResult.total || 0,
       showing: searchResult.issues.length,
-      issues: (searchResult.issues || []).map((issue: any) => ({
-        key: issue.key,
-        summary: issue.fields.summary, // // VVQ created updated convertToIsoUtc
-        status: issue.fields.status.name,
-        assignee: issue.fields.assignee ? issue.fields.assignee.displayName : 'Unassigned',
-        priority: issue.fields.priority ? issue.fields.priority.name : 'None',
-        issueType: issue.fields.issuetype ? issue.fields.issuetype.name : 'Unknown',
+      issues: (searchResult.issues || []).map(({ key, fields }: any) => ({
+        key,
+        summary: fields.summary,
+        status: fields.status.name,
+        assignee: fields.assignee ? fields.assignee.displayName : 'Unassigned',
+        priority: fields.priority ? fields.priority.name : 'None',
+        issueType: fields.issuetype ? fields.issuetype.name : 'Unknown',
+        created: convertToIsoUtc(fields.created),
+        updated: convertToIsoUtc(fields.updated),
       })),
       searchUrl: `${config.origin}/issues/?jql=${encodeURIComponent(jql)}`,
       timestamp: new Date().toISOString(),

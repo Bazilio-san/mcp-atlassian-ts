@@ -102,8 +102,8 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
         return {
           id,
           linkToComment,
-          created: convertToIsoUtc(created),  // VVQ convertToIsoUtc
-          updated: convertToIsoUtc(updated),  // VVQ convertToIsoUtc
+          created: convertToIsoUtc(created),
+          updated: convertToIsoUtc(updated),
           body,
           renderedBody,
           author: {

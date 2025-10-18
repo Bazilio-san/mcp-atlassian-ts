@@ -131,6 +131,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
         id: issue.id,
         self: issue.self,
         summary: issue.summary || null,
+        created: new Date().toISOString(),
       })) || [],
       errors: result.errors?.map((error: any, index: number) => ({
         issueIndex: index,
@@ -138,9 +139,9 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
         errorMessages: error.elementErrors?.errorMessages || [],
         fieldErrors: error.elementErrors?.errors || {},
       })) || [],
-    }; // VVQ created
+    };
 
-    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`);
+    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`); // VVR
     return formatToolResult(json);
   });
 }

@@ -88,8 +88,8 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
         id: version.id,
         name: version.name,
         projectId: versionData.projectId,
-        description: versionData.description || null, // VVQ
-        releaseDate: versionData.releaseDate || null, // VVQ
+        description: versionData.description || null,
+        releaseDate: versionData.releaseDate || null,
         startDate: versionData.startDate || null,
         archived: versionData.archived || false,
         released: versionData.released || false,

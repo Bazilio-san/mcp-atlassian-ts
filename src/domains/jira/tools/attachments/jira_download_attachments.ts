@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for downloading JIRA attachments
@@ -65,8 +66,8 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
         size: a.size,
         sizeKB: Math.round(a.size / 1024),
         mimeType: a.mimeType,
-        created: a.created, // VVQ convertToIsoUtc
-        downloadUrl: a.content, // VVQ
+        created: convertToIsoUtc(a.created),
+        downloadUrl: a.content,
         author: {
           key: a.author.key,
           name: a.author.name,

@@ -531,6 +531,7 @@ export class JiraMcpTestCases {
             projectId, // Используем ID проекта
             name: `MCP-Test-v${Date.now()}`,
             description: 'Created via MCP HTTP test',
+            releaseDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // YYYY-MM-DD
           };
         },
         description: 'Create project version',

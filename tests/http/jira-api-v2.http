@@ -11,7 +11,7 @@
 #
 
 ### Get full issue data
-GET {{baseUrl}}/rest/api/2/issue/AITECH-379
+GET {{baseUrl}}/rest/api/2/issue/AITECH-7?expand=changelog
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
