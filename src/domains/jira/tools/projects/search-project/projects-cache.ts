@@ -67,7 +67,9 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
         throw new Error('Projects cache not initialized - call initializeProjectsCache() first');
       }
 
-      const res = await httpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project');
+      const res = await httpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project', {
+        params: { expand: 'description,projectKeys' },
+      });
       const projects = res.data;
 
       // Создаем новую структуру кеша с вариантами
@@ -75,7 +77,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
       const result: TKeyName[] = [];
 
       if (Array.isArray(projects)) {
-        projects.forEach(({ key, name }: IJiraProject) => {
+        projects.forEach(({ key, name, description = '' }: IJiraProject) => {
           const project: TKeyName = { key, name };
           result.push(project);
 
@@ -96,6 +98,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
             // Все русские варианты
             ...keyRuVariants,
             ...nameRuVariants,
+            description,
           ].filter(Boolean); // убираем пустые
 
           cacheEntries[key] = {

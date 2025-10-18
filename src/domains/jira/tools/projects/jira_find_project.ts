@@ -32,9 +32,12 @@ const removeScore = ({ name, key }: any) => ({ name, key });
  */
 export const jira_find_project: ToolWithHandler = {
   name: 'jira_find_project',
-  description: `Searches Jira projects by name or key (including typos) via semantic search. 
+  description: `Searches Jira projects by name or key (including typos) via semantic search.
 Returns exact projects names and keys similar to search.
 Use this tool to verify the correct project key when working with AI Agent tools that require the project key as a parameter.`,
+  annotations: {
+    title: 'Find JIRA project by name'
+  },
   inputSchema: {
     type: 'object',
     properties: {
