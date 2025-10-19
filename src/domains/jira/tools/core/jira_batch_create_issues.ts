@@ -112,6 +112,8 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     }));
 
     // Make API call
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssues
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-bulk-post
     const response = await httpClient.post('/rest/api/2/issue/bulk', { issueUpdates });
 
     const result = response.data;

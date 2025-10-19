@@ -51,6 +51,8 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
 
     // Fetch from cache or API
     const versions = await cache.getOrSet(cacheKey, async () => {
+      // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProjectVersions
+      // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-project-projectidorkey-versions-get
       const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}/versions`);
       return response.data || [];
     });

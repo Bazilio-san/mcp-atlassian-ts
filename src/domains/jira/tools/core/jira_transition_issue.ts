@@ -68,10 +68,14 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
     if (comment) {
       transitionData.comment = { body: comment };
     }
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
     const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
     const transitions = response.data.transitions;
 
     // Make API call to transition issue
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-doTransition
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-post
     await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/transitions`, transitionData);
 
     // Format response for MCP

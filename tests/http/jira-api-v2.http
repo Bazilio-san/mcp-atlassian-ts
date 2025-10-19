@@ -11,12 +11,16 @@
 #
 
 ### Get full issue data
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
 GET {{baseUrl}}/rest/api/2/issue/AITECH-7?expand=changelog
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### Update issue
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-editIssue
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-put
 PUT {{baseUrl}}/rest/api/2/issue/AITECH-4
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -29,6 +33,8 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 }
 
 ### Add worklog
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addWorklog
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-post
 POST {{baseUrl}}/rest/api/2/issue/AITECH-1/worklog
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -40,11 +46,15 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 }
 
 ### Get issue link types
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLinkType-getIssueLinkTypes
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-link-types/#api-rest-api-2-issuelinktype-get
 GET {{baseUrl}}/rest/api/2/issueLinkType
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 Content-Type: application/json
 
 ### Create remote link
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createOrUpdateRemoteIssueLink
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-post
 POST {{baseUrl}}/rest/api/2/issue/AITECH-4/remotelink
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -56,13 +66,17 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
   }
 }
 
-### Create remote link
+### Get remote links
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getRemoteIssueLinks
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-get
 GET {{baseUrl}}/rest/api/2/issue/AITECH-4/remotelink
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### Create issue link
+### Get issue with links
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
 GET {{baseUrl}}/rest/api/2/issue/AITECH-4?fields=issuelinks
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -70,6 +84,8 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### Add comment
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addComment
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-post
 POST {{baseUrl}}/rest/api/2/issue/AITECH-7/comment
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -81,6 +97,8 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### Create issue link
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-linkIssues
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-post
 POST {{baseUrl}}/rest/api/2/issueLink
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
@@ -103,6 +121,8 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### create Issue:
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssue
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-post
 POST {{baseUrl}}/rest/api/2/issue
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 Content-Type: application/json
@@ -129,6 +149,8 @@ Content-Type: application/json
 
 
 ### Create issue attachment
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addAttachment
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-attachments/#api-rest-api-2-issue-issueidorkey-attachments-post
 POST {{baseUrl}}/rest/api/2/issue/AITECH-5/attachments
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 X-Atlassian-Token: no-check
@@ -160,19 +182,27 @@ Content-Type: text/plain
 #| `GET` | `/priority`                      | Priority list                                                               |
 #| `GET` | `/status`                        | All statuses list                                                             |
 
-###
+### Get create metadata
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getCreateIssueMetadata
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-createmeta-get
 GET {{baseUrl}}/rest/api/2/issue/createmeta
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-###
+### Get priorities
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#priority-getPriorities
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-priorities/#api-rest-api-2-priority-get
 GET {{baseUrl}}/rest/api/2/priority
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-###
+### Get edit metadata
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getEditIssueMeta
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-editmeta-get
 GET {{baseUrl}}/rest/api/2/issue/AITECH-845/editmeta
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-###
+### Get statuses
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#status-getStatuses
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-workflow-statuses/#api-rest-api-2-status-get
 GET {{baseUrl}}/rest/api/2/status
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -185,12 +215,16 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 #| `GET` | `/project/{projectIdOrKey}/statuses` | Statuses by issue types in project |
 
 
-###
+### Get all projects
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getAllProjects
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-get
 GET {{baseUrl}}/rest/api/2/project
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-###
+### Get project
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProject
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-projectidorkey-get
 GET {{baseUrl}}/rest/api/2/project/AITECH
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -203,6 +237,8 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 #| `POST` | `/issue/{issueIdOrKey}/transitions` | Change issue status |
 
 ### Issue status change example:
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-doTransition
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-post
 POST {{baseUrl}}/rest/api/2/issue/TEST-1/transitions
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -212,11 +248,15 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### Possible issue transitions
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
 GET {{baseUrl}}/rest/api/2/issue/AITECH-5/transitions
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### Possible issue transitions
+### Possible issue transitions with params
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
 GET {{baseUrl}}/rest/api/2/issue/AITECH-5/transitions?includeUnavailableTransitions=false&skipRemoteOnlyCondition=true
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 

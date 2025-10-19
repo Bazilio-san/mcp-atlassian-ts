@@ -403,11 +403,15 @@ export class JiraEmulator {
     });
 
     // Get current user
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-myself-get
     this.app.get('/rest/api/2/myself', (req, res) => {
       res.json(MOCK_USER);
     });
 
     // Get issue comments (must be before generic issue route)
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getComments
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-get
     this.app.get('/rest/api/2/issue/:issueKey/comment', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -430,6 +434,8 @@ export class JiraEmulator {
     });
 
     // Get issue transitions (must be before generic issue route)
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
     this.app.get('/rest/api/2/issue/:issueKey/transitions', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -496,6 +502,8 @@ export class JiraEmulator {
     });
 
     // Get issue worklogs (must be before generic issue route)
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getWorklog
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-get
     this.app.get('/rest/api/2/issue/:issueKey/worklog', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -624,6 +632,8 @@ export class JiraEmulator {
     });
 
     // Get issue by key or ID (must be after specific issue routes)
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
     this.app.get('/rest/api/2/issue/:issueKey', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -667,6 +677,8 @@ export class JiraEmulator {
     });
 
     // Search issues
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-searchUsingSearchRequest
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-post
     this.app.post('/rest/api/2/search', (req, res) => {
       const { jql, startAt = 0, maxResults = 50 } = req.body;
 
@@ -701,6 +713,8 @@ export class JiraEmulator {
     });
 
     // Create issue
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-post
     this.app.post('/rest/api/2/issue', (req, res) => {
       const { fields } = req.body;
 
@@ -751,11 +765,15 @@ export class JiraEmulator {
     });
 
     // Get projects
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getAllProjects
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-get
     this.app.get('/rest/api/2/project', (req, res) => {
       res.json([MOCK_PROJECT]);
     });
 
     // Get specific project
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProject
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-projectidorkey-get
     this.app.get('/rest/api/2/project/:projectIdOrKey', (req, res) => {
       const { projectIdOrKey } = req.params;
       if (projectIdOrKey === 'TEST' || projectIdOrKey === '10000') {
@@ -793,6 +811,8 @@ export class JiraEmulator {
     });
 
     // Get project versions
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProjectVersions
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-project-projectidorkey-versions-get
     this.app.get('/rest/api/2/project/:projectIdOrKey/versions', (req, res) => {
       const { projectIdOrKey } = req.params;
       if (projectIdOrKey === 'TEST' || projectIdOrKey === '10000') {
@@ -835,6 +855,8 @@ export class JiraEmulator {
     });
 
     // Create version
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
     this.app.post('/rest/api/2/version', (req, res) => {
       const newVersion = {
         id: (10000 + versionCounter++).toString(),
@@ -853,6 +875,8 @@ export class JiraEmulator {
     });
 
     // Update version
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-updateVersion
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-id-put
     this.app.put('/rest/api/2/version/:id', (req, res) => {
       const { id } = req.params;
       const version = versions.get(id);
@@ -872,6 +896,8 @@ export class JiraEmulator {
     });
 
     // Delete version
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-delete
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-id-delete
     this.app.delete('/rest/api/2/version/:id', (req, res) => {
       const { id } = req.params;
       const version = versions.get(id);
@@ -891,6 +917,8 @@ export class JiraEmulator {
     });
 
     // Add comment to issue
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addComment
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-post
     this.app.post('/rest/api/2/issue/:issueKey/comment', (req, res) => {
       const { issueKey } = req.params;
       const { body } = req.body;
@@ -922,6 +950,8 @@ export class JiraEmulator {
     });
 
     // Update issue
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-editIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-put
     this.app.put('/rest/api/2/issue/:issueKey', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -968,6 +998,8 @@ export class JiraEmulator {
     });
 
     // Delete issue
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-delete
     this.app.delete('/rest/api/2/issue/:issueKey', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -997,6 +1029,8 @@ export class JiraEmulator {
     });
 
     // Update comment
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-updateComment
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-id-put
     this.app.put('/rest/api/2/issue/:issueKey/comment/:commentId', (req, res) => {
       const { issueKey, commentId } = req.params;
       const issue = issues.get(issueKey);
@@ -1028,6 +1062,8 @@ export class JiraEmulator {
     });
 
     // Delete comment
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteComment
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-id-delete
     this.app.delete('/rest/api/2/issue/:issueKey/comment/:commentId', (req, res) => {
       const { issueKey, commentId } = req.params;
       const issue = issues.get(issueKey);
@@ -1059,6 +1095,8 @@ export class JiraEmulator {
     });
 
     // Perform issue transition
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-doTransition
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-post
     this.app.post('/rest/api/2/issue/:issueKey/transitions', (req, res) => {
       const { issueKey } = req.params;
       const { transition } = req.body;
@@ -1088,6 +1126,8 @@ export class JiraEmulator {
     });
 
     // Add worklog to issue
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addWorklog
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-post
     this.app.post('/rest/api/2/issue/:issueKey/worklog', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -1211,6 +1251,8 @@ export class JiraEmulator {
     });
 
     // Create bulk issues
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssues
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-bulk-post
     this.app.post('/rest/api/2/issue/bulk', (req, res) => {
       const { issueUpdates } = req.body;
       const createdIssues = [];
@@ -1261,10 +1303,14 @@ export class JiraEmulator {
     });
 
     // Issue links endpoints
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLinkType-getIssueLinkTypes
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-link-types/#api-rest-api-2-issuelinktype-get
     this.app.get('/rest/api/2/issueLinkType', (req, res) => {
       res.json({ issueLinkTypes: MOCK_LINK_TYPES });
     });
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-linkIssues
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-post
     this.app.post('/rest/api/2/issueLink', (req, res) => {
       const { type, inwardIssue, outwardIssue } = req.body;
 
@@ -1307,6 +1353,8 @@ export class JiraEmulator {
       res.status(201).json({ id: linkId, self: newLink.self });
     });
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-deleteIssueLink
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-linkid-delete
     this.app.delete('/rest/api/2/issueLink/:linkId', (req, res) => {
       const { linkId } = req.params;
 
@@ -1324,6 +1372,8 @@ export class JiraEmulator {
     });
 
     // Remote links
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createOrUpdateRemoteIssueLink
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-post
     this.app.post('/rest/api/2/issue/:issueKey/remotelink', (req, res) => {
       const { issueKey } = req.params;
       const issue = issues.get(issueKey);
@@ -1351,6 +1401,8 @@ export class JiraEmulator {
     });
 
     // Delete remote link
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteRemoteIssueLink
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-linkid-delete
     this.app.delete('/rest/api/2/issue/:issueKey/remotelink/:remoteLinkId', (req, res) => {
       const { issueKey, remoteLinkId } = req.params;
       const issue = issues.get(issueKey);
@@ -1382,10 +1434,14 @@ export class JiraEmulator {
     });
 
     // User endpoints
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-get
     this.app.get('/rest/api/2/user', (req, res) => {
       res.json(MOCK_USER);
     });
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-findUsers
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-search-get
     this.app.get('/rest/api/2/user/search', (req, res) => {
       res.json([MOCK_USER]);
     });
@@ -1395,6 +1451,8 @@ export class JiraEmulator {
     });
 
     // Metadata endpoints
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#priority-getPriorities
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-priorities/#api-rest-api-2-priority-get
     this.app.get('/rest/api/2/priority', (req, res) => {
       res.json(MOCK_PRIORITIES);
     });
@@ -1407,6 +1465,8 @@ export class JiraEmulator {
       res.json(MOCK_ISSUE_TYPES);
     });
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#field-getFields
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-fields/#api-rest-api-2-field-get
     this.app.get('/rest/api/2/field', (req, res) => {
       res.json(MOCK_FIELDS);
     });
@@ -1750,6 +1810,8 @@ export class JiraEmulator {
     });
 
     // Search GET endpoint
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-search
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-get
     this.app.get('/rest/api/2/search', (req, res) => {
       const { jql, startAt = 0, maxResults = 50 } = req.query;
 

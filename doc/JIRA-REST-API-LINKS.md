@@ -104,6 +104,198 @@ This is the legacy documentation for JIRA Software REST API version 8.13.0.
 Base URL: https://developer.atlassian.com/server/jira/platform/rest/v11001/
 This is the newer documentation for JIRA Platform REST API with more detailed specifications.
 
+## JIRA REST API v2 Endpoints
+
+### User Management
+
+#### Get Current User
+**Endpoint:** `GET /rest/api/2/myself`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-myself-get
+
+#### Get User Profile
+**Endpoint:** `GET /rest/api/2/user`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-get
+
+#### Search Users
+**Endpoint:** `GET /rest/api/2/user/search`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-findUsers
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-search-get
+
+### Issue Management
+
+#### Get Issue
+**Endpoint:** `GET /rest/api/2/issue/{issueIdOrKey}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
+
+#### Create Issue
+**Endpoint:** `POST /rest/api/2/issue`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssue
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-post
+
+#### Update Issue
+**Endpoint:** `PUT /rest/api/2/issue/{issueIdOrKey}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-editIssue
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-put
+
+#### Delete Issue
+**Endpoint:** `DELETE /rest/api/2/issue/{issueIdOrKey}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteIssue
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-delete
+
+#### Create Issues in Bulk
+**Endpoint:** `POST /rest/api/2/issue/bulk`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssues
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-bulk-post
+
+#### Search Issues
+**Endpoint:** `GET /rest/api/2/search`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-search
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-get
+
+#### Search Issues (POST)
+**Endpoint:** `POST /rest/api/2/search`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-searchUsingSearchRequest
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-post
+
+### Issue Transitions
+
+#### Get Issue Transitions
+**Endpoint:** `GET /rest/api/2/issue/{issueIdOrKey}/transitions`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
+
+#### Transition Issue
+**Endpoint:** `POST /rest/api/2/issue/{issueIdOrKey}/transitions`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-doTransition
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-post
+
+### Comments
+
+#### Get Issue Comments
+**Endpoint:** `GET /rest/api/2/issue/{issueIdOrKey}/comment`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getComments
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-get
+
+#### Add Comment
+**Endpoint:** `POST /rest/api/2/issue/{issueIdOrKey}/comment`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addComment
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-post
+
+#### Update Comment
+**Endpoint:** `PUT /rest/api/2/issue/{issueIdOrKey}/comment/{commentId}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-updateComment
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-id-put
+
+#### Delete Comment
+**Endpoint:** `DELETE /rest/api/2/issue/{issueIdOrKey}/comment/{commentId}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteComment
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-id-delete
+
+### Worklogs
+
+#### Get Issue Worklog
+**Endpoint:** `GET /rest/api/2/issue/{issueIdOrKey}/worklog`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getWorklog
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-get
+
+#### Add Worklog
+**Endpoint:** `POST /rest/api/2/issue/{issueIdOrKey}/worklog`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addWorklog
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-post
+
+### Project Management
+
+#### Get All Projects
+**Endpoint:** `GET /rest/api/2/project`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getAllProjects
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-get
+
+#### Get Project
+**Endpoint:** `GET /rest/api/2/project/{projectIdOrKey}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProject
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-projectidorkey-get
+
+#### Get Project Versions
+**Endpoint:** `GET /rest/api/2/project/{projectIdOrKey}/versions`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProjectVersions
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-project-projectidorkey-versions-get
+
+#### Create Project Version
+**Endpoint:** `POST /rest/api/2/version`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
+
+#### Delete Version
+**Endpoint:** `POST /rest/api/2/version/{versionId}/removeAndSwap`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-delete
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-id-removeandswap-post
+
+### Issue Links
+
+#### Get Link Types
+**Endpoint:** `GET /rest/api/2/issueLinkType`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLinkType-getIssueLinkTypes
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-link-types/#api-rest-api-2-issuelinktype-get
+
+#### Create Issue Link
+**Endpoint:** `POST /rest/api/2/issueLink`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-linkIssues
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-post
+
+#### Create Remote Issue Link
+**Endpoint:** `POST /rest/api/2/issue/{issueIdOrKey}/remotelink`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createOrUpdateRemoteIssueLink
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-post
+
+#### Remove Issue Link
+**Endpoint:** `DELETE /rest/api/2/issueLink/{linkId}`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-deleteIssueLink
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-linkid-delete
+
+### Metadata
+
+#### Get Fields
+**Endpoint:** `GET /rest/api/2/field`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#field-getFields
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-fields/#api-rest-api-2-field-get
+
+#### Get Priorities
+**Endpoint:** `GET /rest/api/2/priority`
+**Documentation:**
+- https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#priority-getPriorities
+- https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-priorities/#api-rest-api-2-priority-get
+
 ## Notes
 
 This file should only contain **Endpoint:** and **Documentation:** and not touch Documentation Sources yet

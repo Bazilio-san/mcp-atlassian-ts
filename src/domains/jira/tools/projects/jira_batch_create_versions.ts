@@ -90,6 +90,8 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
     // Process each version sequentially to handle dependencies and errors properly
     for (const version of versions) {
       try {
+        // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
         const response = await httpClient.post('/rest/api/2/version', version);
         results.push(response.data);
         logger.debug('Successfully created version', { name: version.name, id: response.data.id });

@@ -83,6 +83,8 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
       worklogInput.visibility = visibility;
     }
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addWorklog
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-post
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/worklog`, worklogInput);
     const worklog = response.data;
 

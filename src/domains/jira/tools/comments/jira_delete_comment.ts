@@ -50,6 +50,8 @@ async function deleteCommentHandler (args: any, context: ToolContext): Promise<a
     logger.info('Deleting JIRA comment', { issueIdOrKey, commentId });
 
     // Make API call to delete comment
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteComment
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-id-delete
     const response = await httpClient.delete(`/rest/api/2/issue/${issueIdOrKey}/comment/${commentId}`);
 
     // Build structured JSON

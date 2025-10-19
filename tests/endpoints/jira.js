@@ -318,6 +318,8 @@ class JiraDirectApiExecutor {
       },
     };
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-post
     const url = `${this.baseUrl}/rest/api/2/issue`;
     const options = {
       method: 'POST',
@@ -359,6 +361,8 @@ class JiraDirectApiExecutor {
       `------${boundary}--`,
     ].join('\r\n');
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addAttachment
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-attachments/#api-rest-api-2-issue-issueidorkey-attachments-post
     const url = `${this.baseUrl}/rest/api/2/issue/${issueKey}/attachments`;
     const headers = {
       ...this.getHeaders(),
@@ -402,6 +406,8 @@ class JiraDirectApiExecutor {
    * Get remote links for issue and return first link ID
    */
   async getRemoteLinkId (issueKey) {
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getRemoteIssueLinks
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-get
     const url = `${this.baseUrl}/rest/api/2/issue/${issueKey}/remotelink`;
     const headers = this.getHeaders();
 
@@ -432,6 +438,8 @@ class JiraDirectApiExecutor {
   async cleanupRemoteLinks () {
     try {
       // Get all remote links for the test issue
+      // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getRemoteIssueLinks
+      // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-get
       const url = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/remotelink`;
       const headers = this.getHeaders();
 
@@ -452,6 +460,8 @@ class JiraDirectApiExecutor {
 
         for (const link of linksToDelete) {
           try {
+            // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteRemoteIssueLink
+            // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-linkid-delete
             const deleteUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}/remotelink/${link.id}`;
             const deleteOptions = {
               method: 'DELETE',
@@ -648,6 +658,8 @@ class JiraDirectApiExecutor {
       // Since JIRA doesn't return link ID on creation, we need to query for it
       // Try to get issue links and find the one we created
       try {
+        // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
         const getLinksUrl = `${this.baseUrl}/rest/api/2/issue/${this.testIssueKey}?fields=issuelinks`;
         const getLinksOptions = {
           method: 'GET',

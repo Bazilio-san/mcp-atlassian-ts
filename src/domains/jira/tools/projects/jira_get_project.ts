@@ -90,6 +90,8 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
     // Fetch from cache or API
     const project = await cache.getOrSet(cacheKey, async () => {
+      // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProject
+      // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-projectidorkey-get
       const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}`, { params });
       return response.data;
     });

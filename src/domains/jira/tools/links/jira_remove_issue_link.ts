@@ -46,6 +46,8 @@ async function removeIssueLinkHandler (args: any, context: ToolContext): Promise
     logger.info('Removing JIRA issue link', { linkId });
 
     // Remove the link
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-deleteIssueLink
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-linkid-delete
     await httpClient.delete(`/rest/api/2/issueLink/${linkId}`);
 
     // Clear search cache since links may affect search results

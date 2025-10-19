@@ -31,6 +31,8 @@ export async function getCachedPriorityObjects (): Promise<JiraPriority[]> {
       cacheKey,
       async (): Promise<JiraPriority[] | undefined> => {
         logger.info('Fetching priorities from JIRA API');
+        // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#priority-getPriorities
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-priorities/#api-rest-api-2-priority-get
         const response = await powerHttpClient!.get('/rest/api/2/priority');
         const priorities = response.data;
         if (!Array.isArray(priorities)) {

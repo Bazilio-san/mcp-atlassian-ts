@@ -281,6 +281,8 @@ export class JiraToolsManager {
    */
   async healthCheck (): Promise<any> {
     try {
+      // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+      // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-myself-get
       const response = await this.context.httpClient.get('/rest/api/2/myself');
       return {
         status: 'ok',
