@@ -68,6 +68,18 @@ Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
+
+### Add comment
+POST {{baseUrl}}/rest/api/2/issue/AITECH-7/comment
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+{
+  "body": "API test comment"
+}
+
+
+
 ### Create issue link
 POST {{baseUrl}}/rest/api/2/issueLink
 Content-Type: application/json
@@ -342,5 +354,6 @@ x-on-behalf-of-user: {{SUBST_USER}}
 
 ###
 GET {{baseUrl}}/rest/api/2/serverInfo
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 

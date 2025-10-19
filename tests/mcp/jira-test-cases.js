@@ -25,7 +25,7 @@ import { appConfig } from '../../dist/src/bootstrap/init-config.js';
 
 export const getJsonFromResult = (result) => {
   if (appConfig.toolAnswerAs === 'structuredContent') {
-    return result?.structuredContent;
+    return result?.result?.structuredContent;
   }
   else {
     const text = result?.result?.content?.[0]?.text || result?.content?.[0]?.text || '';
@@ -805,6 +805,7 @@ export class JiraMcpTestCases {
           // Сначала получаем список досок
           const boardsResult = await client.callTool('jira_get_agile_boards', {
             maxResults: 10,
+            projectIdOrKey: this.testProjectKey,
           });
 
           // Берём первую доску из списка
@@ -816,6 +817,7 @@ export class JiraMcpTestCases {
           return {
             boardId: Number(firstBoard.id),
             maxResults: 10,
+            jql: `project=${this.testProjectKey}`,
           };
         },
         description: 'Get board issues for the first available board',
