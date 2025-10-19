@@ -847,6 +847,8 @@ export class SharedJiraTestCases {
         name: 'Get Agile Boards',
         directApi: {
           method: 'GET',
+          // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+          // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
           endpoint: '/rest/agile/1.0/board',
         },
         expectedStatus: 200,
@@ -861,6 +863,8 @@ export class SharedJiraTestCases {
         name: 'Get Board Sprints',
         directApi: {
           method: 'GET',
+          // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
+          // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
           endpoint: '/rest/agile/1.0/board/{boardId}/sprint', // will be replaced at runtime
         },
         expectedStatus: 200,
@@ -876,6 +880,8 @@ export class SharedJiraTestCases {
         name: 'Get Board Issues',
         directApi: {
           method: 'GET',
+          // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForBoard
+          // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-issue-get
           endpoint: '/rest/agile/1.0/board/{boardId}/issue', // will be replaced at runtime
         },
         expectedStatus: 200,

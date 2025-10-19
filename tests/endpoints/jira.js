@@ -492,6 +492,8 @@ class JiraDirectApiExecutor {
    * Get Scrum board ID from available boards
    */
   async getScrumBoardId () {
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
     const url = `${this.baseUrl}/rest/agile/1.0/board`;
     const headers = this.getHeaders();
 

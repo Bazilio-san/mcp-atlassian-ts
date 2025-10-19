@@ -97,6 +97,8 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
     }
 
     logger.info('Making API call to get board issues');
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForBoard
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-issue-get
     const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/issue`, { params });
 
     if (!response.data) {

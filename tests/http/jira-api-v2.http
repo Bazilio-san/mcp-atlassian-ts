@@ -294,52 +294,76 @@ GET {{baseUrl}}/rest/api/latest/user/assignable/search?issueKey=AITECH-845&usern
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### assignee
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
 GET {{baseUrl}}/rest/agile/1.0/board/
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### assignee
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
 GET {{baseUrl}}/rest/agile/1.0/board/968/sprint
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
 ### assignee
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/sprint
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Kanban boards list
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
 GET {{baseUrl}}/rest/agile/1.0/board?type=kanban
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board info (EDOX PROD ISSUES board - ID 820)
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getBoard
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-get
 GET {{baseUrl}}/rest/agile/1.0/board/820
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board configuration (columns, ranking, estimation)
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getConfiguration
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-configuration-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/configuration
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board projects
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getProjects
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-project-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/project
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board issues with JQL and quick filter
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForBoard
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-issue-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/issue?jql=project%20%3D%20AITECH%20AND%20status%20!%3D%20Done&maxResults=50&quickFilterId=1
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board epics
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getEpics
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-epic-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/epic
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Issues of a specific epic on the board
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForEpic
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-epic-epicid-issue-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/epic/12345/issue
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board versions
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getVersions
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-version-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/version
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board properties (list)
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getPropertiesKeys
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-properties-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/properties
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 

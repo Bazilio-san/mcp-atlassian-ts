@@ -73,6 +73,8 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
     // Fetch from cache or API
     const sprintsResult = await cache.getOrSet(cacheKey, async () => {
       logger.info('Making API call to get board sprints');
+      // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
+      // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
       const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/sprint`, { params });
 
       if (!response.data) {

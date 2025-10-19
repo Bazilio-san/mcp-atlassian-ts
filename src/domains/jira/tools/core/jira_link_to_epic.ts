@@ -54,6 +54,8 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       logger.info('Trying Agile API to link issue to epic');
 
       // Use the Agile API to link issue to epic
+      // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/epic-addIssuesToEpic
+      // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-epic/#api-agile-1-0-epic-epicidorkey-issue-post
       await httpClient.post(`/rest/agile/1.0/epic/${epicKey}/issue`, {
         issues: [issueIdOrKey],
       });

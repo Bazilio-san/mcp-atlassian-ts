@@ -77,6 +77,8 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
     }
 
     logger.info('Making API call to get agile boards');
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
     const response = await httpClient.get('/rest/agile/1.0/board', { params });
     const boardsResult = response.data;
 

@@ -1774,6 +1774,8 @@ export class JiraEmulator {
     });
 
     // Agile endpoints
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
     this.app.get('/rest/agile/1.0/board', (req, res) => {
       res.json({
         maxResults: 50,
@@ -1783,6 +1785,8 @@ export class JiraEmulator {
       });
     });
 
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
     this.app.get('/rest/agile/1.0/board/:boardId/sprint', (req, res) => {
       const { boardId } = req.params;
 
@@ -1804,6 +1808,8 @@ export class JiraEmulator {
       });
     });
 
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForBoard
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-issue-get
     this.app.get('/rest/agile/1.0/board/:boardId/issue', (req, res) => {
       const { boardId } = req.params;
 
@@ -1825,6 +1831,8 @@ export class JiraEmulator {
       });
     });
 
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-getIssuesForSprint
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-sprintid-issue-get
     this.app.get('/rest/agile/1.0/sprint/:sprintId/issue', (req, res) => {
       const { sprintId } = req.params;
 
@@ -1846,6 +1854,8 @@ export class JiraEmulator {
       });
     });
 
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-createSprint
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-post
     this.app.post('/rest/agile/1.0/sprint', (req, res) => {
       const newSprint = {
         id: ++sprintCounter,
@@ -1863,6 +1873,8 @@ export class JiraEmulator {
       res.status(201).json(newSprint);
     });
 
+    // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-updateSprint
+    // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-sprintid-put
     this.app.put('/rest/agile/1.0/sprint/:sprintId', (req, res) => {
       const { sprintId } = req.params;
       const sprint = sprints.get(sprintId);
