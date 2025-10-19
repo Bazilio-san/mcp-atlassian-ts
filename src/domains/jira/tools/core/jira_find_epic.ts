@@ -75,14 +75,11 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
       maxResults,
     };
 
-    const response = await httpClient.post('/rest/api/2/search', requestBody); // VVT
+    const { data } = (await httpClient.post('/rest/api/2/search', requestBody)) || {};
 
-    if (!response.data || !Array.isArray(response.data.issues)) {
-      return formatToolResult([]);
-    }
+    const { issues = [], total } = data || {};
 
-    // Map the epics to a simplified format
-    const epics = response.data.issues.map((epic: any) => {
+    const epics = issues.map((epic: any) => {
       const { key, fields } = epic;
       return {
         key,
@@ -102,6 +99,7 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     const result = {
       projectKey,
       epicCount: epics.length,
+      total,
       epics,
       epicNames: epics.map((e: any) => e.epicName), // Quick list of just epic names for easy reference
     };

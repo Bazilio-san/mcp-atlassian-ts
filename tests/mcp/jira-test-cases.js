@@ -25,7 +25,7 @@ import { appConfig } from '../../dist/src/bootstrap/init-config.js';
 
 export const getJsonFromResult = (result) => {
   if (appConfig.toolAnswerAs === 'structuredContent') {
-    return result?.result?.structuredContent;
+    return result?.result?.structuredContent || result?.structuredContent;
   }
   else {
     const text = result?.result?.content?.[0]?.text || result?.content?.[0]?.text || '';
@@ -375,20 +375,20 @@ export class JiraMcpTestCases {
           const result = await client.callTool('jira_get_transitions', {
             issueIdOrKey: this.testIssueKey,
           });
-          const data = result?.result?.content?.[0]?.text || '';
+
+          const  { transitions } = getJsonFromResult(result);
           // Проверяем, есть ли доступные переходы
-          if (!data) {
+          if (!transitions?.length) {
             throw new Error('  ❌  No transitions available for this issue');
           }
-          const  { transitions } = getJsonFromResult(result);
-
-          // Используем первый доступный переход
-          const firstTransition = transitions[0];
-          console.log(`  ℹ️  Using transition: ${firstTransition.name} (ID: ${firstTransition.id})`);
+          // Используем случайный доступный переход
+          const randomIndex = Math.floor(Math.random() * transitions.length);
+          const chosenTransition = transitions[randomIndex];
+          console.log(`  ℹ️  Using transition: ${chosenTransition.name} (ID: ${chosenTransition.id})`);
 
           return {
             issueIdOrKey: this.testIssueKey,
-            transitionId: firstTransition.id,
+            transitionId: chosenTransition.id,
             comment: 'Transitioned via MCP test',
           };
         },
@@ -728,8 +728,8 @@ export class JiraMcpTestCases {
             const createLinkResult = await client.callTool('jira_create_issue_link', params);
 
             // Extract the link ID from the response
-            linkId = JSON.parse(createLinkResult?.result?.content?.[0]?.text || '')?.link?.id;
-            const linkId2 = getJsonFromResult(createLinkResult)?.link?.id; // VVA
+            const data = getJsonFromResult(createLinkResult);
+            linkId = data?.link?.id;
             console.log(`  ℹ️  Created test link with ID: ${linkId}`);
           }
           return { linkId };
@@ -817,7 +817,7 @@ export class JiraMcpTestCases {
           return {
             boardId: Number(firstBoard.id),
             maxResults: 10,
-            jql: `project=${this.testProjectKey}`,
+            // jql: `project=${this.testProjectKey}`,
           };
         },
         description: 'Get board issues for the first available board',

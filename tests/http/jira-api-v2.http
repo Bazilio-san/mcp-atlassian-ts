@@ -271,11 +271,15 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 #| `GET`  | `/user/search?username={query}` | Search users                   |
 #| `POST` | `/user`                         | Create user (if allowed) |
 
-###
+### Get user by username
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-get
 GET {{baseUrl}}/rest/api/2/user?username=vvmakarov
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-###
+### Search users
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-findUsers
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-search-get
 GET {{baseUrl}}/rest/api/2/user/search?username=Makarov
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -300,7 +304,9 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 # JQL — powerful issue search language.
 # JQL search example:
 
-###
+### Search issues with JQL
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-searchUsingSearchRequest
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-post
 POST {{baseUrl}}/rest/api/2/search
 
 {
@@ -321,7 +327,9 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/1.0/labels/suggest?query=CS
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-### issuelinks
+### Issue picker
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssuePickerResource
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-picker-get
 GET {{baseUrl}}/rest/api/2/issue/picker?currentProjectId=&showSubTaskParent=true&showSubTasks=true&currentIssueKey=AITECH-845&query=CSB
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
@@ -333,21 +341,28 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/latest/user/assignable/search?issueKey=AITECH-845&username=Makaro
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-### assignee
+###
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
 # https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
 GET {{baseUrl}}/rest/agile/1.0/board/
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### assignee
+### Поиск досок по проекту
+# https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
+# https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
+GET {{baseUrl}}/rest/agile/1.0/board?startAt=0&maxResults=10&projectIdOrKey=AITECH
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+
+###
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
 # https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
 GET {{baseUrl}}/rest/agile/1.0/board/968/sprint
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### assignee
+###
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
 # https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
 GET {{baseUrl}}/rest/agile/1.0/board/820/sprint
@@ -359,11 +374,13 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/agile/1.0/board?type=kanban
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+
 ### Board info (EDOX PROD ISSUES board - ID 820)
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getBoard
 # https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-get
 GET {{baseUrl}}/rest/agile/1.0/board/820
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
 
 ### Board configuration (columns, ranking, estimation)
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getConfiguration
@@ -380,7 +397,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 ### Board issues with JQL and quick filter
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForBoard
 # https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-issue-get
-GET {{baseUrl}}/rest/agile/1.0/board/820/issue?jql=project%20%3D%20AITECH%20AND%20status%20!%3D%20Done&maxResults=50&quickFilterId=1
+GET {{baseUrl}}/rest/agile/1.0/board/820/issue?status%20!%3D%20Done&maxResults=50&quickFilterId=1
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Board epics
@@ -408,15 +425,21 @@ GET {{baseUrl}}/rest/agile/1.0/board/820/properties
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 ### Create Version
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
 POST {{baseUrl}}/rest/api/2/version
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
-###
+### Get current user
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-myself-get
 GET {{baseUrl}}/rest/api/2/myself
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 x-on-behalf-of-user: {{SUBST_USER}}
 
-###
+### Get server info
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#serverInfo-getServerInfo
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-server-info/#api-rest-api-2-serverinfo-get
 GET {{baseUrl}}/rest/api/2/serverInfo
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
