@@ -8,8 +8,6 @@ import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
-import { debugJiraTool } from '../../../../core/utils/debug.js';
-import { ppj } from '../../../../core/utils/text.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
 
 export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
@@ -123,69 +121,51 @@ async function validateProjectAndIssueType (
   projectIdOrKey: string,
   issueType: string,
   context: ToolContext,
-): Promise<{ valid: boolean; error?: any }> {
+): Promise<{ valid?: true; error?: string, message?: string, data?: any }> {
+  let projectResult: any;
   try {
     // Get project details with issueTypes expanded
-    const projectResult = await jira_get_project.handler({ projectIdOrKey, expand: ['issueTypes'] }, context);
-    const json = getJsonFromResult(projectResult);
-
-
-    // Check if project was found
-    if (!json.found) {
-      return {
-        valid: false,
-        error: {
-          success: false,
-          operation: 'create_issue',
-          error: 'PROJECT_NOT_FOUND',
-          message: `Project '${projectIdOrKey}' not found. Please verify the project key or ID.`,
-          projectIdOrKey,
-        },
-      };
-    }
-
-    const project = json.project;
-    const issueTypes = project.issueTypes || [];
-
-    // Check if issueType is valid (by name or id)
-    const validIssueType = issueTypes.find((it: any) =>
-      it.name === issueType || it.id === issueType,
-    );
-
-    if (!validIssueType) {
-      return {
-        valid: false,
-        error: {
-          success: false,
-          operation: 'create_issue',
-          error: 'INVALID_ISSUE_TYPE',
-          message: `Issue type '${issueType}' is not valid for project '${project.name}' (${project.key}).`,
-          projectIdOrKey,
-          invalidIssueType: issueType,
-          availableIssueTypes: issueTypes.map((it: any) => ({
-            id: it.id,
-            name: it.name,
-            description: it.description,
-            subtask: it.subtask,
-          })),
-        },
-      };
-    }
-
-    return { valid: true };
+    projectResult = await jira_get_project.handler({ projectIdOrKey, expand: ['issueTypes'] }, context);
   } catch (error) {
     return {
-      valid: false,
-      error: {
-        success: false,
-        operation: 'create_issue',
-        error: 'VALIDATION_ERROR',
-        message: `Failed to validate project and issue type: ${error instanceof Error ? error.message : String(error)}`,
-        projectIdOrKey,
-        issueType,
+      error: 'VALIDATION_ERROR',
+      message: `Failed to validate project '${projectIdOrKey}'. ERROR: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+  const json = getJsonFromResult(projectResult);
+  // Check if project was found
+  if (!json.found) {
+    return {
+      error: 'PROJECT_NOT_FOUND',
+      message: `Project '${projectIdOrKey}' not found. Please verify the project key or ID.`,
+    };
+  }
+
+  const project = json.project;
+  const issueTypes = project.issueTypes || [];
+
+  // Check if issueType is valid (by name or id)
+  const validIssueType = issueTypes.find((it: any) =>
+    it.name === issueType || it.id === issueType,
+  );
+
+  if (!validIssueType) {
+    return {
+      error: 'INVALID_ISSUE_TYPE',
+      message: `Issue type '${issueType}' is not valid for project '${project.key}' (${project.name}).`,
+      data: {
+        invalidIssueType: issueType,
+        availableIssueTypes: issueTypes.map((it: any) => ({
+          id: it.id,
+          name: it.name,
+          description: it.description,
+          subtask: it.subtask,
+        })),
       },
     };
   }
+
+  return { valid: true };
 }
 
 /**
@@ -226,7 +206,12 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     // Validate project exists and issueType is correct
     const projectValidation = await validateProjectAndIssueType(projectIdOrKey, issueType, context);
     if (!projectValidation.valid) {
-      return formatToolResult(projectValidation.error);
+      const json = {
+        success: false,
+        operation: 'create_issue',
+        ...projectValidation,
+      };
+      return formatToolResult(json);
     }
 
     // Normalize labels and components
@@ -299,8 +284,6 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
         created: new Date().toISOString(),
       },
     };
-    debugJiraTool(`jira_create_issue:: return: ${ppj(json)}`); // VVR
-    // Return formatted response
     return formatToolResult(json);
   });
 }

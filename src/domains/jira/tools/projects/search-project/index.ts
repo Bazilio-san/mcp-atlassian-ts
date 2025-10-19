@@ -162,27 +162,3 @@ export function getTimeToNextUpdate (): number {
   }
   return Math.ceil((UPDATE_INTERVAL_MS - timeSinceLastUpdate) / 1000);
 }
-
-/**
- * Очистка индекса
- */
-export async function clearVectorIndex (): Promise<void> {
-  if (!projectSearch) {
-    return;
-  }
-
-  try {
-    await projectSearch.clear();
-    console.debug('Text index cleared');
-  } catch (error) {
-    console.error('Failed to clear text index:', error);
-  }
-}
-
-/**
- * Сброс синглтона для переинициализации (для тестов)
- */
-export function resetVectorSearchSingleton (): void {
-  projectSearch = null;
-  lastUpdateTime = 0;
-}

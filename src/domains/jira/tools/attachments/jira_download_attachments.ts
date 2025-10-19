@@ -56,7 +56,7 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
 
     const json = {
       success: true,
-      operation: 'batch_get_changelogs',
+      operation: 'jira_download_attachments',
       message: count ? `Found ${attachments.length} attachment(s) for ${issueIdOrKey}` : `No attachments found for ${issueIdOrKey}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,

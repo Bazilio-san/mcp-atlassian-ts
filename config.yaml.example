@@ -122,6 +122,7 @@ jira:
     #   - jira_create_issue
     #   - jira_update_issue
     # exclude: []
+
     # powerEndpoint:
     #   baseUrl: <power_base_url> # env: JIRA_POWER_BASE_URL
     #   auth:

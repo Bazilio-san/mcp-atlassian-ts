@@ -26,14 +26,6 @@ export class ProjectTextSearch {
   }
 
   /**
-   * Проверка актуальности кеша - делегируется в projects-cache
-   */
-  isCacheValid (): boolean {
-    const cache = getOptimizedProjectsCache();
-    return cache !== null && Object.keys(cache).length > 0;
-  }
-
-  /**
    * Поиск проектов по запросу с использованием string similarity
    */
   async searchProjects (query: string, limit = 5): Promise<TKeyNameScore[]> {
@@ -84,7 +76,7 @@ export class ProjectTextSearch {
     for (const entry of Object.values(cache)) {
       // Проверяем точное совпадение среди всех вариантов
       const hasExactMatch = entry.variants.some(variant =>
-        variant.toLowerCase() === normalizedQuery
+        variant.toLowerCase() === normalizedQuery,
       );
 
       if (hasExactMatch) {
@@ -104,7 +96,7 @@ export class ProjectTextSearch {
    */
   private calculateSimilarities (query: string, variants: string[]): number {
     const similarities = variants.map(variant =>
-      phraseSimilarity(query, variant.toLowerCase())
+      phraseSimilarity(query, variant.toLowerCase()),
     );
     return Math.max(...similarities);
   }
@@ -126,13 +118,5 @@ export class ProjectTextSearch {
         name: p.name,
         score: 1.0,
       }));
-  }
-
-  /**
-   * Очистка кеша - теперь делегируется в projects-cache
-   */
-  async clear (): Promise<void> {
-    // Кеш теперь управляется централизованно в projects-cache.ts
-    console.log('Cache is now managed centrally in projects-cache.ts');
   }
 }

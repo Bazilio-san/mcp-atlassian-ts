@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for adding JIRA worklog entry
@@ -31,7 +32,7 @@ export const jira_add_worklog: ToolWithHandler = {
       },
       started: {
         type: 'string',
-        description: 'When work started (ISO format)',
+        description: 'When work started. ISO 8601 format (e.g., 2023-01-15T00:00:00.000Z)',
       },
       visibility: {
         type: 'object',
@@ -72,9 +73,15 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
 
     // Build worklog input
     const worklogInput: any = { timeSpent };
-    if (comment) {worklogInput.comment = comment;}
-    if (started) {worklogInput.started = started;}
-    if (visibility) {worklogInput.visibility = visibility;}
+    if (comment) {
+      worklogInput.comment = comment;
+    }
+    if (started) {
+      worklogInput.started = convertToIsoUtc(started);
+    }
+    if (visibility) {
+      worklogInput.visibility = visibility;
+    }
 
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/worklog`, worklogInput);
     const worklog = response.data;
@@ -89,7 +96,7 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
         timeSpent: timeSpent,
         timeSpentSeconds: worklog.timeSpentSeconds,
         comment: comment || null,
-        started: worklog.started,
+        started: convertToIsoUtc(worklog.started), // VVQ convertToIsoUtc
         author: {
           accountId: worklog.author.accountId,
           displayName: worklog.author.displayName,

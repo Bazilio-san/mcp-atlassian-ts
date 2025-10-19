@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting JIRA worklog entries
@@ -74,9 +75,9 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
         timeSpent: w.timeSpent,
         timeSpentSeconds: w.timeSpentSeconds,
         comment: w.comment || null,
-        started: w.started,
-        created: w.created,
-        updated: w.updated,
+        started: convertToIsoUtc(w.started),
+        created: convertToIsoUtc(w.created),
+        updated: convertToIsoUtc(w.updated),  // VVQ convertToIsoUtc
         author: {
           accountId: w.author.accountId,
           displayName: w.author.displayName,

@@ -82,7 +82,7 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
 
     const json = {
       success: true,
-      operation: 'create_version',
+      operation: 'create_project_version',
       message: `Version "${version.name}" created successfully (ID: ${version.id})`,
       version: {
         id: version.id,

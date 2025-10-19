@@ -573,13 +573,6 @@ export class JiraMcpTestCases {
         params: { projectKey: this.testProjectKey, maxResults: 10 },
         description: 'Get active epics for a project',
       },
-      {
-        fullId: '2-8',
-        name: 'Force Update Projects Index',
-        toolName: 'jira_force_update_projects_index',
-        params: {},
-        description: 'Force refresh of the projects cache index',
-      },
     ];
 
     return this.transformTestCases(this.filterTestCasesByConfig(testCases));

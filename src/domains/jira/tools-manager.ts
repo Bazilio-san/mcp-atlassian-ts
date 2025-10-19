@@ -38,7 +38,6 @@ import { jira_create_project_version } from './tools/projects/jira_create_projec
 import { jira_delete_version } from './tools/projects/jira_delete_version.js';
 import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
 import { jira_find_project } from './tools/projects/jira_find_project.js';
-import { jira_force_update_projects_index } from './tools/projects/jira_force_update_projects_index.js';
 import { jira_get_epics_for_project } from './tools/projects/jira_get_epics_for_project.js';
 
 // Import user tools
@@ -166,7 +165,6 @@ export class JiraToolsManager {
       jira_delete_version,
       jira_batch_create_versions,
       jira_find_project,
-      jira_force_update_projects_index,
       jira_get_epics_for_project,
 
       // User tools
