@@ -9,6 +9,7 @@ import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for searching JIRA issues
@@ -64,7 +65,7 @@ export const jira_search_issues: ToolWithHandler = {
 async function searchIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
-    const { httpClient, cache, config, logger, normalizeToArray } = context;
+    const { httpClient, cache, config, logger } = context;
 
     logger.info('Searching JIRA issues', { jql, maxResults });
 

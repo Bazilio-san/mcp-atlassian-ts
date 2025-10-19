@@ -5,6 +5,7 @@
 import { withErrorHandling } from '../../../../core/errors.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export interface ConfluenceToolWithHandler extends Tool {
   handler: (args: any, context: ConfluenceToolContext) => Promise<any>;
@@ -66,7 +67,7 @@ export const confluence_get_pages_by_label: ConfluenceToolWithHandler = {
       };
 
       if (expand) {
-        params.expand = context.normalizeToArray(expand).join(',');
+        params.expand = normalizeToArray(expand).join(',');
       }
 
       // Create axios config with custom headers and params

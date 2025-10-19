@@ -5,6 +5,7 @@
 import { withErrorHandling } from '../../../../core/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../shared/types.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export const confluence_get_page_history: ConfluenceToolWithHandler = {
   name: 'confluence_get_page_history',
@@ -57,7 +58,7 @@ Can be a single string or array of strings`,
         {
           ...axiosConfig,
           params: {
-            expand: context.normalizeToArray(expand).join(','),
+            expand: normalizeToArray(expand).join(','),
             limit,
           },
         },

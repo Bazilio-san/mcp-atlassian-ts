@@ -26,3 +26,16 @@ export const convertToIsoUtc = (datetimeWithTimezone?: string | number | Date): 
     }
   }
 };
+
+/**
+ * Normalize string or array parameter to array
+ */
+export const normalizeToArray = (value: string | string[] | undefined): string[] => {
+  if (!value) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return [value];
+};

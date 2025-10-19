@@ -1,6 +1,7 @@
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../../../types/confluence.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export const confluence_get_comments: ConfluenceToolWithHandler = {
   name: 'confluence_get_comments',
@@ -50,7 +51,7 @@ Can be a single string or array of strings`,
       const pageId = String(args.pageId);
 
       const params: any = {
-        expand: context.normalizeToArray(expand).join(','),
+        expand: normalizeToArray(expand).join(','),
         limit,
       };
 

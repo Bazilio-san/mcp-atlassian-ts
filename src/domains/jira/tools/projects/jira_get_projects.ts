@@ -9,6 +9,7 @@ import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { powerHttpClient } from '../../../../core/server/jira-server.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for jira_get_projects
@@ -49,7 +50,7 @@ export const jira_get_projects: ToolWithHandler = {
  */
 async function getProjectsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, normalizeToArray } = context;
+    const { httpClient, cache, logger } = context;
     const { expand, recent } = args;
 
     logger.info('Fetching JIRA projects', { expand, recent });

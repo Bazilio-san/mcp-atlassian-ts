@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Create tool definition for updating a JIRA issue with dynamic epicLinkFieldId
@@ -82,7 +83,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
       labels,
       customFields = {},
     } = args;
-    const { httpClient, config, logger, normalizeToArray } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Updating JIRA issue', { issueIdOrKey });
 

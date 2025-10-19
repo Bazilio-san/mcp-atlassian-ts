@@ -42,7 +42,6 @@ export interface ToolContext {
   /**
    * Utility functions (from current JiraToolsManager)
    */
-  normalizeToArray: (value: string | string[] | undefined) => string[];
   formatDescription: (description: any) => string;
   expandStringOrArray: (value: string | string[] | undefined, separator?: string) => string | undefined;
 }

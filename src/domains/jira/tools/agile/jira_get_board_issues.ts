@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting board issues
@@ -71,7 +72,7 @@ export const jira_get_board_issues: ToolWithHandler = {
  */
 async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, logger, normalizeToArray, config } = context;
+    const { httpClient, logger, config } = context;
     const { boardId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;
 
     logger.info('Fetching JIRA board issues', { boardId, maxResults, jql });

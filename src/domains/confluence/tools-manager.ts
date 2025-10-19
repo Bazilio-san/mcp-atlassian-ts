@@ -66,7 +66,6 @@ export class ConfluenceToolsManager {
       },
       config,
       logger,
-      normalizeToArray: this.normalizeToArray.bind(this),
       invalidatePageCache: this.invalidatePageCache.bind(this),
       customHeaders: undefined,
     };
@@ -241,18 +240,5 @@ export class ConfluenceToolsManager {
       pageId,
       keysCleared: relatedKeys.length,
     });
-  }
-
-  /**
-   * Normalize string or array parameter to array
-   */
-  private normalizeToArray (value: string | string[] | undefined): string[] {
-    if (!value) {
-      return [];
-    }
-    if (Array.isArray(value)) {
-      return value;
-    }
-    return [value];
   }
 }

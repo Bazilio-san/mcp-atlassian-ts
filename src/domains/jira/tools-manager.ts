@@ -73,6 +73,7 @@ import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelog
 
 // Import projects cache initialization
 import { initializeProjectsCache } from './tools/projects/search-project/projects-cache.js';
+import { normalizeToArray } from '../../core/utils/tools.js';
 
 /**
  * Modular JIRA Tools Manager
@@ -103,7 +104,6 @@ export class JiraToolsManager {
       cache,
       config,
       logger: this.logger,
-      normalizeToArray: this.normalizeToArray.bind(this),
       formatDescription: this.formatDescription.bind(this),
       expandStringOrArray: this.expandStringOrArray.bind(this),
     };
@@ -305,19 +305,6 @@ export class JiraToolsManager {
   // === Utility Methods (used by tool modules via context) ===
 
   /**
-   * Normalize string or array parameter to array
-   */
-  private normalizeToArray (value: string | string[] | undefined): string[] {
-    if (!value) {
-      return [];
-    }
-    if (Array.isArray(value)) {
-      return value;
-    }
-    return [value];
-  }
-
-  /**
    * Format description field
    */
   private formatDescription (description: any): string {
@@ -359,7 +346,7 @@ export class JiraToolsManager {
     if (!value) {
       return undefined;
     }
-    const arr = this.normalizeToArray(value);
+    const arr = normalizeToArray(value);
     return arr.length > 0 ? arr.join(separator) : undefined;
   }
 }

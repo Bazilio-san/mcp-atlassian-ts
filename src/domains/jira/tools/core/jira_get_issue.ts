@@ -8,6 +8,7 @@ import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting a JIRA issue
@@ -67,7 +68,7 @@ An example issue key is ISSUE-1.`,
 async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
-    const { httpClient, config, logger, normalizeToArray } = context;
+    const { httpClient, config, logger } = context;
     logger.info('Fetching JIRA issue', { issueIdOrKey });
 
     const expandArray = args.expand && normalizeToArray(args.expand);

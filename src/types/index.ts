@@ -62,31 +62,12 @@ export interface JCConfig {
   };
 }
 
-// API Response types
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  metadata?: {
-    total?: number;
-    startAt?: number;
-    maxResults?: number;
-  };
-}
-
 // Error types
 export interface McpError {
   code: string;
   message: string;
   details?: Record<string, unknown>;
   stack?: string;
-}
-
-// Cache types
-export interface CacheEntry<T = unknown> {
-  data: T;
-  timestamp: number;
-  ttl: number;
 }
 
 // Logging types
@@ -99,19 +80,6 @@ export interface LogContext {
   [key: string]: unknown;
 }
 
-// Tool types
-export interface ToolConfig {
-  enabled: boolean;
-  rateLimit?: {
-    requests: number;
-    windowMs: number;
-  };
-}
-
-export interface ToolRegistry {
-  [toolName: string]: ToolConfig;
-}
-
 // HTTP Client types
 export interface HttpClientConfig {
   baseURL: string;
@@ -120,29 +88,6 @@ export interface HttpClientConfig {
   maxRetries: number;
   retryDelay: number;
 }
-
-// Validation types
-export interface ValidationError {
-  field: string;
-  message: string;
-  value?: unknown;
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-}
-
-// Common utility types
-export type Prettify<T> = {
-  [K in keyof T]: T[K];
-} & {};
-
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
-
-export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
 // Re-export common types
 export * from './jira.js';

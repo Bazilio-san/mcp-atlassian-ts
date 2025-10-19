@@ -42,7 +42,6 @@ export interface ConfluenceToolContext {
   /**
    * Utility functions (from current ConfluenceToolsManager)
    */
-  normalizeToArray: (value: string | string[] | undefined) => string[];
   invalidatePageCache: (pageId: string) => void;
 
   /**

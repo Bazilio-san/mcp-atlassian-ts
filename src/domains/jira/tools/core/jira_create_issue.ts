@@ -9,6 +9,7 @@ import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
   return {
@@ -188,7 +189,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
       remainingEstimate,
       customFields = {},
     } = args;
-    const { httpClient, config, logger, normalizeToArray } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Creating JIRA issue', { projectIdOrKey, issueType, summary });
 

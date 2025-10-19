@@ -5,6 +5,7 @@
 import { withErrorHandling } from '../../../../core/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ToolWithHandler } from '../../../../types/index.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export const confluence_search: ToolWithHandler = {
   name: 'confluence_search',
@@ -69,7 +70,7 @@ Examples: With limit = 50: 0 (items 1–50), 50 (items 51–100), 100 (items 101
               start: offset,
               limit,
               excerpt,
-              expand: context.normalizeToArray(expand).join(','),
+              expand: normalizeToArray(expand).join(','),
             },
           });
           return response.data;

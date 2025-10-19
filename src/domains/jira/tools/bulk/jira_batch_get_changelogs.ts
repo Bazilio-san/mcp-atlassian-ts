@@ -10,6 +10,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for batch getting JIRA changelogs
@@ -84,7 +85,7 @@ interface JiraIssueWithError {
 async function batchGetChangelogsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueKeys } = args;
-    const { httpClient, logger, normalizeToArray } = context;
+    const { httpClient, logger } = context;
 
     logger.info('Batch fetching JIRA changelogs', { count: issueKeys.length });
 

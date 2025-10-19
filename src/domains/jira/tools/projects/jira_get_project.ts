@@ -9,6 +9,7 @@ import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { getProjectLabels } from './search-project/labels-cache.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for jira_get_project
@@ -66,7 +67,7 @@ versions?: {id, name, description, archived, released}[]
  */
 async function getProjectHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger, normalizeToArray } = context;
+    const { httpClient, cache, logger } = context;
     const { projectIdOrKey, expand, properties } = args;
 
     logger.info('Fetching JIRA project details', { projectIdOrKey, expand, properties });

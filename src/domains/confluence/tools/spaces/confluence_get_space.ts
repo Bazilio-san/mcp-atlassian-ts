@@ -1,6 +1,7 @@
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../../../types/confluence.js';
+import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export const confluence_get_space: ConfluenceToolWithHandler = {
   name: 'confluence_get_space',
@@ -36,7 +37,7 @@ Examples: "PROJ", "TEAM", "DOC"`,
 
       const response = await context.httpClient.get(`/rest/api/space/${spaceKey}`, {
         params: {
-          expand: context.normalizeToArray(expand).join(','),
+          expand: normalizeToArray(expand).join(','),
         },
         ...(context.customHeaders && { headers: context.customHeaders }),
       });
