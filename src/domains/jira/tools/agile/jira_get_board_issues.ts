@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting board issues
@@ -131,6 +131,8 @@ Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (s
             key: f.project?.key,
             name: f.project?.name,
           },
+          created: convertToIsoUtc(f.created),
+          updated: convertToIsoUtc(f.updated),
         };
       }),
     };

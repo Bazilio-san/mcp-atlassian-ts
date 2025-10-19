@@ -106,7 +106,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     }
 
     // Get project labels using cache system
-    let projectLabels: string[] = []; // VVT
+    let projectLabels: string[] = [];
     if (project.key && project.id) {
       try {
         const labelsResult = await getProjectLabels(project.key, String(project.id), context);

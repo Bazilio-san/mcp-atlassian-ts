@@ -39,3 +39,14 @@ export const normalizeToArray = (value: string | string[] | undefined): string[]
   }
   return [value];
 };
+
+/**
+ * Expand string or array to comma-separated string
+ */
+export const expandStringOrArray = (value: string | string[] | undefined, separator: string = ','): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const arr = normalizeToArray(value);
+  return arr.length > 0 ? arr.join(separator) : undefined;
+};

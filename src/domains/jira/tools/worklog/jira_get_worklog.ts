@@ -77,7 +77,7 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
         comment: w.comment || null,
         started: convertToIsoUtc(w.started),
         created: convertToIsoUtc(w.created),
-        updated: convertToIsoUtc(w.updated),  // VVQ convertToIsoUtc
+        updated: convertToIsoUtc(w.updated),
         author: {
           accountId: w.author.accountId,
           displayName: w.author.displayName,

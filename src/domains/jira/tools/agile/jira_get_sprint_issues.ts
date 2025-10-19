@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting sprint issues
@@ -137,6 +137,8 @@ Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (s
           },
           // Доп. поле спринтовой метрики (если есть)
           storyPoints: f.customfield_10016,
+          created: convertToIsoUtc(f.created),
+          updated: convertToIsoUtc(f.updated),
         };
       }),
     };

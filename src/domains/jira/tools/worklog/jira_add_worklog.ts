@@ -96,7 +96,7 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
         timeSpent: timeSpent,
         timeSpentSeconds: worklog.timeSpentSeconds,
         comment: comment || null,
-        started: convertToIsoUtc(worklog.started), // VVQ convertToIsoUtc
+        started: convertToIsoUtc(worklog.started),
         author: {
           accountId: worklog.author.accountId,
           displayName: worklog.author.displayName,

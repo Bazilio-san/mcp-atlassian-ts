@@ -38,10 +38,4 @@ export interface ToolContext {
     warn: (message: string, meta?: any) => void;
     error: (message: string, meta?: any) => void;
   };
-
-  /**
-   * Utility functions (from current JiraToolsManager)
-   */
-  formatDescription: (description: any) => string;
-  expandStringOrArray: (value: string | string[] | undefined, separator?: string) => string | undefined;
 }

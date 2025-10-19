@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for updating a comment in a JIRA issue
@@ -101,8 +102,8 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
       message: `Comment ${commentId} updated successfully in ${issueIdOrKey}`,
       comment: {
         id,
-        created,  // VVQ convertToIsoUtc
-        updated,  // VVQ convertToIsoUtc
+        created: convertToIsoUtc(created),
+        updated: convertToIsoUtc(updated),
         body: b,
         renderedBody,
         linkToComment,

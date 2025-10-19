@@ -73,7 +73,6 @@ import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelog
 
 // Import projects cache initialization
 import { initializeProjectsCache } from './tools/projects/search-project/projects-cache.js';
-import { normalizeToArray } from '../../core/utils/tools.js';
 
 /**
  * Modular JIRA Tools Manager
@@ -104,8 +103,6 @@ export class JiraToolsManager {
       cache,
       config,
       logger: this.logger,
-      formatDescription: this.formatDescription.bind(this),
-      expandStringOrArray: this.expandStringOrArray.bind(this),
     };
 
     // Initialize tools storage
@@ -300,53 +297,5 @@ export class JiraToolsManager {
         error: error.message || 'Failed to connect to JIRA',
       };
     }
-  }
-
-  // === Utility Methods (used by tool modules via context) ===
-
-  /**
-   * Format description field
-   */
-  private formatDescription (description: any): string {
-    if (!description) {
-      return '';
-    }
-    if (typeof description === 'string') {
-      return description;
-    }
-
-    // Handle JIRA's ADF (Atlassian Document Format)
-    if (description && typeof description === 'object') {
-      if (description.content) {
-        // Simple extraction of text from ADF
-        const extractText = (node: any): string => {
-          if (node.type === 'text') {
-            return node.text || '';
-          }
-          if (node.content && Array.isArray(node.content)) {
-            return node.content.map(extractText).join('');
-          }
-          if (node.type === 'hardBreak') {
-            return '\n';
-          }
-          return '';
-        };
-        return extractText(description);
-      }
-      return JSON.stringify(description, null, 2);
-    }
-
-    return String(description);
-  }
-
-  /**
-   * Expand string or array to comma-separated string
-   */
-  private expandStringOrArray (value: string | string[] | undefined, separator: string = ','): string | undefined {
-    if (!value) {
-      return undefined;
-    }
-    const arr = normalizeToArray(value);
-    return arr.length > 0 ? arr.join(separator) : undefined;
   }
 }

@@ -69,8 +69,8 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
         description: v.description || null,
         released: v.released || false,
         archived: v.archived || false,
-        releaseDate: v.releaseDate || null, // VVQ
-        startDate: v.startDate || null, // VVQ
+        releaseDate: v.releaseDate || null,
+        startDate: v.startDate || null,
       })),
     };
 

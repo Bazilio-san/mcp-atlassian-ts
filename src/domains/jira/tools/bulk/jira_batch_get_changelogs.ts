@@ -90,7 +90,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
     logger.info('Batch fetching JIRA changelogs', { count: issueKeys.length });
 
     // Normalize to array
-    const normalizedKeys = normalizeToArray(issueKeys); // VVR
+    const normalizedKeys = normalizeToArray(issueKeys);
 
     const fn = async (issueKey: string): Promise<JiraIssueWithChangelog | JiraIssueWithError> => {
       try {
