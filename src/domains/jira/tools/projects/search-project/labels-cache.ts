@@ -3,9 +3,9 @@
  * Caches project labels using fast gadget API with fallback to issue search
  */
 
+import type { AxiosInstance } from 'axios';
 import type { ToolContext } from '../../../shared/tool-context.js';
 import { generateCacheKey } from '../../../../../core/cache.js';
-import { powerHttpClient } from '../../../../../core/server/jira-server.js';
 
 export interface ProjectLabelsResult {
   labels: string[];
@@ -32,7 +32,7 @@ interface SearchApiResponse {
     id: string;
     key: string;
     fields: {
-      labels: string[];
+      labels?: string[];
     };
   }[];
   total: number;
@@ -55,6 +55,7 @@ const LABELS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
  * Uses fast gadget API with fallback to issue search
  */
 export async function getProjectLabels (
+  httpClient: AxiosInstance,
   projectKey: string,
   projectId: string,
   context: ToolContext,
@@ -71,7 +72,7 @@ export async function getProjectLabels (
       source: 'cache',
       fetchedAt: new Date(memoryEntry.timestamp).toISOString(),
       projectKey,
-      projectId
+      projectId,
     };
   }
 
@@ -86,73 +87,73 @@ export async function getProjectLabels (
 
         // Try fast gadget API first
         try {
-          const gadgetLabels = await fetchLabelsFromGadgetApi(projectId, logger);
+          const gadgetLabels = await fetchLabelsFromGadgetApi(httpClient, projectId, logger);
           if (gadgetLabels.length > 0) {
             logger.info('Labels fetched from gadget API', {
               projectKey,
               count: gadgetLabels.length,
-              method: 'gadget'
+              method: 'gadget',
             });
             return {
               labels: gadgetLabels,
               source: 'gadget',
               fetchedAt: new Date().toISOString(),
               projectKey,
-              projectId
+              projectId,
             };
           }
         } catch (gadgetError) {
           logger.warn('Gadget API failed, trying fallback method', {
             projectKey,
-            error: gadgetError instanceof Error ? gadgetError.message : String(gadgetError)
+            error: gadgetError instanceof Error ? gadgetError.message : String(gadgetError),
           });
         }
 
         // Fallback to issue search
         try {
-          const searchLabels = await fetchLabelsFromIssueSearch(projectKey, logger);
+          const searchLabels = await fetchLabelsFromIssueSearch(httpClient, projectKey, logger);
           logger.info('Labels fetched from issue search', {
             projectKey,
             count: searchLabels.length,
-            method: 'search'
+            method: 'search',
           });
           return {
             labels: searchLabels,
             source: 'search',
             fetchedAt: new Date().toISOString(),
             projectKey,
-            projectId
+            projectId,
           };
         } catch (searchError) {
           logger.error('Both methods failed to fetch labels', {
             projectKey,
             gadgetError: 'gadget API failed',
-            searchError: searchError instanceof Error ? searchError.message : String(searchError)
+            searchError: searchError instanceof Error ? searchError.message : String(searchError),
           });
           return {
             labels: [],
             source: 'empty',
             fetchedAt: new Date().toISOString(),
             projectKey,
-            projectId
+            projectId,
           };
         }
       },
-      LABELS_CACHE_TTL / 1000 // Cache TTL in seconds
+      LABELS_CACHE_TTL / 1000, // Cache TTL in seconds
     );
 
     // Update memory cache
     labelsMemoryCache.set(memoryCacheKey, {
       labels: cachedLabels.labels,
       timestamp: Date.now(),
-      ttl: LABELS_CACHE_TTL
+      ttl: LABELS_CACHE_TTL,
     });
 
     return cachedLabels;
   } catch (error) {
     logger.error('Failed to get project labels', {
       projectKey,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     });
 
     return {
@@ -160,7 +161,7 @@ export async function getProjectLabels (
       source: 'empty',
       fetchedAt: new Date().toISOString(),
       projectKey,
-      projectId
+      projectId,
     };
   }
 }
@@ -169,18 +170,13 @@ export async function getProjectLabels (
  * Fetch labels using fast gadget API
  */
 async function fetchLabelsFromGadgetApi (
+  httpClient: AxiosInstance,
   projectId: string,
-  logger: any
+  logger: any,
 ): Promise<string[]> {
-  if (!powerHttpClient) {
-    throw new Error('powerHttpClient is required for gadget API');
-  }
-
   logger.debug('Fetching labels from gadget API', { projectId });
 
-  const response = await powerHttpClient.get(
-    `/rest/gadget/1.0/labels/gadget/project-${projectId}/labels`
-  );
+  const response = await httpClient.get(`/rest/gadget/1.0/labels/gadget/project-${projectId}/labels`);
 
   const data = response.data as GadgetApiResponse;
 
@@ -208,7 +204,7 @@ async function fetchLabelsFromGadgetApi (
     projectId,
     totalGroups: data.groups.length,
     totalLabels: allLabels.length,
-    uniqueLabels: uniqueLabels.length
+    uniqueLabels: uniqueLabels.length,
   });
 
   return uniqueLabels;
@@ -218,22 +214,19 @@ async function fetchLabelsFromGadgetApi (
  * Fallback: fetch labels by searching issues with labels
  */
 async function fetchLabelsFromIssueSearch (
+  httpClient: AxiosInstance,
   projectKey: string,
-  logger: any
+  logger: any,
 ): Promise<string[]> {
-  if (!powerHttpClient) {
-    throw new Error('powerHttpClient is required for issue search');
-  }
-
   logger.debug('Fetching labels from issue search', { projectKey });
 
   const searchPayload = {
     jql: `project = ${projectKey} AND labels IS NOT EMPTY ORDER BY updated DESC`,
     fields: ['labels'],
-    maxResults: 1000
+    maxResults: 1000,
   };
 
-  const response = await powerHttpClient.post('/rest/api/2/search', searchPayload);
+  const response = await httpClient.post('/rest/api/2/search', searchPayload);
   const data = response.data as SearchApiResponse;
 
   if (!data.issues || !Array.isArray(data.issues)) {
@@ -245,12 +238,10 @@ async function fetchLabelsFromIssueSearch (
   const allLabels = new Set<string>();
 
   for (const issue of data.issues) {
-    if (issue.fields?.labels && Array.isArray(issue.fields.labels)) {
-      for (const label of issue.fields.labels) {
-        if (typeof label === 'string' && label.trim()) {
-          allLabels.add(label.trim());
-        }
-      }
+    if (Array.isArray(issue.fields?.labels)) {
+      issue.fields.labels.map((v) => v.trim()).filter(Boolean).forEach((v) => {
+        allLabels.add(v);
+      });
     }
   }
 
@@ -259,7 +250,7 @@ async function fetchLabelsFromIssueSearch (
   logger.debug('Issue search labels extracted', {
     projectKey,
     totalIssues: data.issues.length,
-    totalLabels: uniqueLabels.length
+    totalLabels: uniqueLabels.length,
   });
 
   return uniqueLabels;

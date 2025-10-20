@@ -64,17 +64,18 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     if (!includeCompleted) {
       jqlParts.push('statusCategory != Done');
     }
-
     // Get epic name field ID from config
-    const epicNameFieldId = (config as any).customFields?.epicName || 'customfield_10011';
+    const { epicName = '' } = config.fieldId!;
 
     // Search for epics
     const requestBody = {
-      jql: jqlParts.join(' AND '),
-      fields: ['summary', epicNameFieldId, 'status', 'created', 'updated'],
+      jql: jqlParts.join(' AND ') + ' ORDER BY updated DESC',
+      fields: ['summary', epicName, 'status', 'created', 'updated'].filter(Boolean),
       maxResults,
     };
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-search
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-get
     const { data } = (await httpClient.post('/rest/api/2/search', requestBody)) || {};
 
     const { issues = [], total } = data || {};
@@ -83,7 +84,7 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
       const { key, fields } = epic;
       return {
         key,
-        epicName: fields[epicNameFieldId] || fields.summary,
+        epicName: fields[epicName] || fields.summary,
         summary: fields.summary,
         status: fields.status?.name,
         statusCategory: fields.status?.statusCategory?.name,

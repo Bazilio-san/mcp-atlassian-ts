@@ -7,6 +7,7 @@
 import NodeCache from 'node-cache';
 
 import { createLogger } from './utils/logger.js';
+import { ServiceModeJC } from '../types/config';
 
 
 const logger = createLogger('cache');
@@ -366,7 +367,7 @@ export class CacheManager {
  * Generate cache key for API requests
  */
 export function generateCacheKey (
-  service: 'jira' | 'confluence',
+  service: ServiceModeJC,
   endpoint: string,
   params?: Record<string, any>,
 ): string {

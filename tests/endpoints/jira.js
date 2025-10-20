@@ -314,7 +314,7 @@ class JiraDirectApiExecutor {
         summary: `Temporary test issue for deletion ${Date.now()}`,
         description: 'This issue will be deleted by test 8-11',
         issuetype: { id: '1' }, // Try standard Task ID
-        customfield_10304: 'TEST', // Environment/Contour field for Finam JIRA
+        customfield_10304: 'TEST', // Environment/Contour field for JIRA
       },
     };
 

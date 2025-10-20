@@ -162,7 +162,7 @@ if (typeof require !== 'undefined' && require.main === module) {
   ];
   for (const [x, y] of tests) {
     const s = phraseSimilarity(x, y);
-    // eslint-disable-next-line no-console
+     
     console.log(`${JSON.stringify(x)} vs ${JSON.stringify(y)}: ${s.toFixed(3)} → ${s >= 0.72 ? 'CLOSE' : 'far'}`);
   }
 }

@@ -12,7 +12,7 @@ import { setCurrentToolName } from '../utils/http-logger.js';
 
 import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { ServiceMode } from './factory.js';
+import { ServiceMode } from '../../types/config';
 
 /**
  * Check if a specific tool is enabled
@@ -380,37 +380,6 @@ export class ToolRegistry {
       }
     }
   }
-
-  /**
-   * Get tool by name
-   */
-  getTool (name: string): Tool | undefined {
-    return this.toolsMap.get(name);
-  }
-
-  /**
-   * Check if tool exists and is enabled
-   */
-  hastool (name: string): boolean {
-    return this.toolsMap.has(name);
-  }
-
-  /**
-   * Get enabled tool names by category
-   */
-  getEnabledToolsByCategory (): {
-    jira: string[];
-    confluence: string[];
-    utility: string[];
-  } {
-    const tools = Array.from(this.toolsMap.keys());
-
-    return {
-      jira: tools.filter(name => name.startsWith('jira_')),
-      confluence: tools.filter(name => name.startsWith('confluence_')),
-      utility: tools.filter(name => !name.startsWith('jira_') && !name.startsWith('confluence_')),
-    };
-  }
 }
 
 /**
@@ -555,12 +524,5 @@ export class ServiceToolRegistry extends ToolRegistry {
     }
 
     return health;
-  }
-
-  /**
-   * Get service mode
-   */
-  getServiceMode (): ServiceMode {
-    return this.serviceMode;
   }
 }

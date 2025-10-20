@@ -28,7 +28,6 @@ export class ConfluenceServer extends McpAtlassianServer {
         } = {},
         url,
         origin,
-        maxResults,
       },
       cache,
       logger: { level: logLevel },
@@ -59,10 +58,10 @@ export class ConfluenceServer extends McpAtlassianServer {
       auth = { type: 'basic', username, password };
     }
 
-    const confluenceConfig: JCConfig = { url, origin, auth, maxResults };
+    const confluenceConfig: JCConfig = { url, origin, auth };
 
     // Initialize parent with service mode configuration
-    super(serverConfig, confluenceConfig);
+    super(serverConfig, confluenceConfig, 'confluence');
 
     // Replace the default tool registry with Confluence-only registry
     this.toolRegistry = new ServiceToolRegistry(confluenceConfig, 'confluence');

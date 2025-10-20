@@ -1,0 +1,186 @@
+---
+# ==================================================
+# MCP Atlassian TS Server Configuration
+# Primary configuration file - most settings should be here
+# Use environment variables only for sensitive data (URLs, credentials)
+# ==================================================
+
+# --------------------------------------------------
+# SERVER CONFIGURATION
+# --------------------------------------------------
+server:
+  # HTTP server port (range: 1024-65535). ENV: SERVER_PORT
+  port: 3000
+
+  # Server bind address. ENV: SERVER_HOST
+  # '0.0.0.0' - Listen on all network interfaces. 'localhost' - Listen only on local interface
+  host: '0.0.0.0'
+
+  # Transport type for MCP communication. Options: stdio, http, sse. ENV: TRANSPORT_TYPE
+  transportType: http
+
+  # Service mode - which service to run: jira | confluence. ENV: MCP_SERVICE
+  serviceMode: jira
+
+  # Server authentication token for HTTP mode. ENV: SERVER_TOKEN
+  token: test_server_token
+
+# Response format configuration. ENV: TOOL_ANSWER_AS
+# - structuredContent - default - the response in result.structuredContent returns JSON
+# - text - in the response, serialized JSON is returned in result.content[0].text
+toolAnswerAs: structuredContent
+
+# --------------------------------------------------
+# LOGGING CONFIGURATION
+# --------------------------------------------------
+logger:
+  # Log level: debug, info, warn, error. ENV: LOG_LEVEL
+  level: info
+
+  # Pretty-print logs (true/false). ENV: LOG_PRETTY
+  # Set to true for readable logs in development
+  pretty: true
+
+# --------------------------------------------------
+# RATE LIMITING
+# --------------------------------------------------
+rateLimit:
+  # Rate limit window in milliseconds (default: 60000 = 1 minute). ENV: RATE_LIMIT_WINDOW_MS
+  windowMs: 60000
+
+  # Maximum requests per window (default: 1000). ENV: RATE_LIMIT_MAX_REQUESTS
+  maxRequests: 1000
+
+# --------------------------------------------------
+# CACHING
+# --------------------------------------------------
+cache: # VVA испоьзуется ли?
+  # Cache TTL in seconds (default: 300 = 5 minutes). ENV: CACHE_TTL_SECONDS
+  # Reduces API calls by caching responses
+  ttlSeconds: 300
+
+  # Maximum number of cached items (default: 1000). ENV: CACHE_MAX_ITEMS
+  maxItems: 1000
+
+# --------------------------------------------------
+# SSL/TLS CONFIGURATION
+# --------------------------------------------------
+ssl:
+  # Reject unauthorized SSL certificates (true/false). ENV: NODE_TLS_REJECT_UNAUTHORIZED
+  # Set to false for self-signed certificates (not recommended for production)
+  rejectUnauthorized: true
+
+# --------------------------------------------------
+# JIRA CONFIGURATION
+# --------------------------------------------------
+jira:
+  # JIRA instance URL. ENV: JIRA_URL
+  url: https://jira.company.com
+
+  # Authentication configuration - Choose ONE method:
+  auth:
+    # 1. Basic Auth: username + password/token
+    basic:
+      # ENV: JIRA_USERNAME, JIRA_PASSWORD
+      username: <jira_username>
+      password: <jira_password>
+
+    # 2. Personal Access Token. ENV: JIRA_PAT
+    # pat: <jira_pat>
+
+    # 3. OAuth 2.0
+    # ENV: JIRA_OAUTH_CLIENT_ID, JIRA_OAUTH_CLIENT_SECRET, JIRA_OAUTH_ACCESS_TOKEN
+    # ENV: JIRA_OAUTH_REFRESH_TOKEN, JIRA_OAUTH_REDIRECT_URI
+    # oauth2:
+    #   clientId: <jira_oauth_client_id>
+    #   clientSecret: <jira_oauth_client_secret>
+    #   accessToken: <jira_oauth_access_token>
+    #   refreshToken: <jira_oauth_refresh_token>
+    #   redirectUri: <jira_oauth_redirect_uri>
+
+  fieldId:
+    # Epic Link custom field ID (varies by JIRA instance). ENV: JIRA_EPIC_LINK_FIELD_ID
+    # To find: JIRA Settings → Issues → Custom Fields → Epic Link
+    epicLink: customfield_10008
+    # Epic Name custom field ID: JIRA_EPIC_NAME_FIELD_ID
+    epicName: customfield_10011
+    # Story Points custom field ID: JIRA_STORY_POINTS_FIELD_ID
+    storyPoints: customfield_10024
+
+  # Tool configuration
+  usedInstruments:
+    # Include ALL to enable all tools, or specify a list of tool names
+    include: ALL
+    # Exclude specific tools (optional)
+    exclude: []
+
+    # Example of selective inclusion:
+    # include:
+    #   - jira_get_issue
+    #   - jira_search_issues
+    #   - jira_create_issue
+    #   - jira_update_issue
+    # exclude: []
+
+# --------------------------------------------------
+# CONFLUENCE CONFIGURATION
+# --------------------------------------------------
+confluence:
+  # Confluence instance URL. ENV: CONFLUENCE_URL
+  # Example: https://wiki.company.com
+  url: CONFLUENCE_URL
+
+  # Authentication configuration - Choose ONE method:
+  auth:
+    # 1. Basic Auth: username + password/token
+    # ENV: CONFLUENCE_USERNAME, CONFLUENCE_PASSWORD
+    basic:
+      username: <confluence_username>
+      password: <confluence_password>
+
+    # 2. Personal Access Token. ENV: CONFLUENCE_PAT
+    # pat: <confluence_pat>
+
+    # 3. OAuth 2.0
+    # ENV: CONFLUENCE_OAUTH_CLIENT_ID, CONFLUENCE_OAUTH_CLIENT_SECRET
+    # ENV: CONFLUENCE_OAUTH_ACCESS_TOKEN, CONFLUENCE_OAUTH_REFRESH_TOKEN
+    # ENV: CONFLUENCE_OAUTH_REDIRECT_URI
+    # oauth2:
+    #   clientId: <confluence_oauth_client_id>
+    #   clientSecret: <confluence_oauth_client_secret>
+    #   accessToken: <confluence_oauth_access_token>
+    #   refreshToken: <confluence_oauth_refresh_token>
+    #   redirectUri: <confluence_oauth_redirect_uri>
+
+  # Tool configuration
+  usedInstruments:
+    # Include ALL to enable all tools, or specify a list of tool names
+    include: ALL
+    # Exclude specific tools (optional)
+    exclude: []
+
+    # Example of selective inclusion:
+    # include:
+    #   - confluence_search
+    #   - confluence_get_page
+    #   - confluence_create_page
+    # exclude: []
+
+    # Example with exclusions:
+    # include: ALL
+    # exclude:
+    #   - confluence_delete_page
+    #   - confluence_update_page
+
+#--------------------------------------------------
+#USER SUBSTITUTION (Multi-tenant support)
+#--------------------------------------------------
+subst:
+  # HTTP header for user substitution
+  httpHeader: x-on-behalf-of-user
+  # User mapping configuration
+  jira:
+    jsmith: bobama
+  confluence:
+    jsmith: bobama
+

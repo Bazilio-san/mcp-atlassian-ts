@@ -2,6 +2,7 @@
  * Core TypeScript type definitions for the MCP Atlassian server
  */
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { ISubstitutionConfig } from './config';
 
 
 // Authentication types
@@ -27,12 +28,6 @@ export interface OAuth2Auth {
 
 export type AuthConfig = BasicAuth | PersonalAccessToken | OAuth2Auth;
 
-// User substitution configuration
-export interface SubstitutionConfig {
-  users: Record<string, string>; // Mapping from original user to substitute user
-  httpHeader: string; // HTTP header name to modify
-}
-
 // Server configuration
 export interface ServerConfig {
   port: number;
@@ -46,7 +41,7 @@ export interface ServerConfig {
     ttlSeconds: number;
     maxItems: number;
   };
-  subst?: SubstitutionConfig; // Optional user substitution configuration
+  subst?: ISubstitutionConfig; // Optional user substitution configuration
 }
 
 // JIRA configuration
@@ -54,12 +49,11 @@ export interface JCConfig {
   url: string;
   origin: string;
   auth: AuthConfig;
-  maxResults: number;
-  epicLinkFieldId?: string; // Custom field ID for Epic Link (defaults to customfield_10014)
-  powerEndpoint?: {
-    baseUrl: string;
-    auth: AuthConfig;
-  };
+  fieldId?: {
+    epicLink: string;
+    epicName: string;
+    storyPoints: string;
+  }
 }
 
 // Error types

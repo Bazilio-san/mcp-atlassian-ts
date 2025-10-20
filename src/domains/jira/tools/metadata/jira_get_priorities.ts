@@ -7,6 +7,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { getCachedPriorityObjects } from '../../shared/priority-service.js';
 import { ToolWithHandler } from '../../../../types';
+import type { ToolContext } from '../../shared/tool-context';
 
 /**
  * Tool definition for getting JIRA priorities
@@ -32,9 +33,10 @@ export const jira_get_priorities: ToolWithHandler = {
 /**
  * Handler function for getting JIRA priorities
  */
-async function getPrioritiesHandler (): Promise<any> {
+async function getPrioritiesHandler (args_: any, context: ToolContext): Promise<any> {
+  const { httpClient } = context;
   return withErrorHandling(async () => {
-    const priorities = await getCachedPriorityObjects();
+    const priorities = await getCachedPriorityObjects(httpClient);
 
     const json = {
       success: true,

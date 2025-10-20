@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { appConfig } from '../../bootstrap/init-config.js';
 import { createLogger } from '../utils/logger.js';
+import { ServiceModeJC } from '../../types/config';
 
 const logger = createLogger('auth-manager');
 
@@ -53,8 +54,8 @@ export class AuthenticationManager {
           id: 1,
           error: {
             code: -32001,
-            message: 'Authentication failed'
-          }
+            message: 'Authentication failed',
+          },
         });
       }
     };
@@ -69,14 +70,14 @@ export class AuthenticationManager {
       logger.debug('[Auth] Using system authentication mode');
       return {
         mode: 'system',
-        headers: this.getSystemAuthHeaders()
+        headers: this.getSystemAuthHeaders(),
       };
     } else {
       // Header mode: use request headers
       logger.debug('[Auth] Using header-based authentication mode');
       return {
         mode: 'headers',
-        headers: this.extractAuthHeaders(headers)
+        headers: this.extractAuthHeaders(headers),
       };
     }
   }
@@ -135,7 +136,7 @@ export class AuthenticationManager {
     Object.keys(headers).forEach(headerName => {
       const lowerHeaderName = headerName.toLowerCase();
       if (lowerHeaderName.startsWith('x-') &&
-          !lowerHeaderName.includes('server-token')) {
+        !lowerHeaderName.includes('server-token')) {
         const headerValue = headers[headerName];
         if (typeof headerValue === 'string') {
           authHeaders[lowerHeaderName] = headerValue;
@@ -164,7 +165,7 @@ export class AuthenticationManager {
   /**
    * Get service-specific authentication headers
    */
-  static getServiceAuthHeaders (req: Request, service: 'jira' | 'confluence'): Record<string, string> {
+  static getServiceAuthHeaders (req: Request, service: ServiceModeJC): Record<string, string> {
     const authContext = this.getAuthContext(req);
     if (!authContext) {
       return {};

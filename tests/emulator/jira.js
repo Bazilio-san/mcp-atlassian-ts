@@ -176,7 +176,7 @@ const MOCK_FIELDS = [
   { id: 'description', name: 'Description', custom: false, orderable: false, navigable: false, searchable: true },
   { id: 'customfield_10001', name: 'Epic Link', custom: true, orderable: true, navigable: true, searchable: true },
   { id: 'customfield_10002', name: 'Story Points', custom: true, orderable: true, navigable: false, searchable: true },
-  { id: 'customfield_10014', name: 'Epic Link', custom: true, orderable: true, navigable: true, searchable: true },
+  { id: 'customfield_10008', name: 'Epic Link', custom: true, orderable: true, navigable: true, searchable: true },
   { id: 'customfield_10015', name: 'Sprint', custom: true, orderable: true, navigable: true, searchable: true },
 ];
 

@@ -8,7 +8,6 @@ import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
-import { getPriorityNamesArray } from '../../shared/priority-service.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
@@ -20,7 +19,10 @@ Workflow:
 1) Collect or receive: projectIdOrKey, issueType, summary.
 2) If project is not specified, ask the user for clarification.
 3) Use the 'jira_find_project' tool to obtain the exact project key.
-4) With this project key, use 'jira_get_project' tool to list available issue types.
+4) With this project key, USE 'jira_get_project' tool to list available: 
+   - issue types
+   - priorities
+   - labels.
 5) For bug reports, encourage user to provide detailed reproduction steps in the description.
 6) If assignee or reporter are not specified - leave blank. If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
 7) Display all collected parameters for confirmation before creation.
@@ -63,10 +65,7 @@ If not indicated explicitly, form a short title according to the description`,
         },
         priority: {
           type: 'string',
-          description: `Optional. The priority level of the issue.
-If the user indicated priority, find the most suitable from the MCP resource jira://priorities.
-Access the resource to get available priority names, then choose the most appropriate one. If none suit, choose null.`,
-          enum: await getPriorityNamesArray(), // Dynamic priority enum
+          description: 'Optional. The priority level of the issue',
           nullable: true,
         },
         labels: {
@@ -251,8 +250,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
 
     // Add epic link if provided (using configured epic link field)
     if (epicKey) {
-      const epicLinkFieldId = (config as any).customFields?.epicLink || config.epicLinkFieldId || 'customfield_10014';
-      issueInput.fields[epicLinkFieldId] = epicKey;
+      issueInput.fields[config.fieldId!.epicLink] = epicKey;
     }
 
     // Add time tracking if provided

@@ -1,9 +1,12 @@
 import './dotenv.js';  // Load environment variables first
-import { readFileSync, existsSync } from 'fs';
+import configModule from 'config';
+import { IConfig, IToolsConfig, ServiceModeJC } from '../types/config.js';
+
+export const config: IConfig = configModule.util.toObject();
+
+import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import YAML from 'yaml';
-import type { IConfig, IToolsConfig } from '../types/config.js';
 import { createLogger } from '../core/utils/logger.js';
 import { getBaseUrl } from '../core/utils/tools.js';
 
@@ -18,109 +21,47 @@ const packageJsonPath = isProduction
   : join(__dirname, '..', '..', 'package.json');        // src/bootstrap -> project root
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 
-/**
- * Get environment variable value with type conversion
- */
-function getEnv (key: string, defaultValue: any = undefined): any {
-  const value = process.env[key];
 
-  if (value === undefined) {
-    return defaultValue;
-  }
-
-  // Handle boolean values
-  if (defaultValue === true || defaultValue === false) {
-    return value.toLowerCase() === 'true';
-  }
-
-  // Handle numeric values
-  if (typeof defaultValue === 'number') {
-    const num = Number(value);
-    return isNaN(num) ? defaultValue : num;
-  }
-
-  // Handle array values (comma-separated)
-  if (Array.isArray(defaultValue)) {
-    return value ? value.split(',').map(s => s.trim()).filter(Boolean) : defaultValue;
-  }
-
-  // Return string value or undefined if empty
-  return value || defaultValue;
+interface IConfigSource {
+  name: string;
+  original?: string | undefined;
+  parsed: any;
 }
 
-/**
- * Check if a string value is meaningful (not empty, not just asterisks)
- */
-function hasValue (value: any): boolean {
-  if (typeof value !== 'string') {
-    return false;
-  }
-  const cleaned = value.replace(/\*+/g, '').trim();
-  return cleaned.length > 0;
-}
+export const configInfo = () => {
+  const configSrc: IConfigSource[] = configModule.util.getConfigSources();
+  const customEnvSrc = configSrc.find((o) => o.name.includes('custom-environment-variables'))?.original || '';
+  const envsUsed: any = {};
+  [...customEnvSrc.matchAll(/^ *[^\s:]+: ([A-Z_\d]+)/img)].map((arr) => arr[1]).forEach((name) => {
+    if (process.env[name!] !== undefined) {
+      envsUsed[name!] = process.env[name!];
+    }
+  });
+
+  const [, configDir = ''] = /^(.+?)([^\\/]+)$/.exec(configSrc[0]!.name) || [];
+  console.log('configDir', configDir);
+  console.log(configSrc.map((v) => v.name.replace(configDir, '')));
+};
+
 
 export const hasStringValue = (v: any): boolean => (typeof v === 'string' && v.replace(/\*+/g, '').length > 0);
 
 /**
- * Build authentication configuration from yaml and environment
- */
-function buildAuthConfig (prefix: 'JIRA' | 'CONFLUENCE', yamlAuth?: any) {
-  const auth: any = {};
-
-  // Basic auth - check env first, then yaml
-  const username = getEnv(`${prefix}_USERNAME`) || yamlAuth?.basic?.username;
-  const password = getEnv(`${prefix}_PASSWORD`) || yamlAuth?.basic?.password;
-
-  if (hasValue(username) && hasValue(password)) {
-    auth.basic = { username, password };
-  }
-
-  // PAT - check env first, then yaml
-  const pat = getEnv(`${prefix}_PAT`) || yamlAuth?.pat;
-  if (hasValue(pat)) {
-    auth.pat = pat;
-  }
-
-  // OAuth2 - check env first, then yaml
-  const clientId = getEnv(`${prefix}_OAUTH_CLIENT_ID`) || yamlAuth?.oauth2?.clientId;
-  const clientSecret = getEnv(`${prefix}_OAUTH_CLIENT_SECRET`) || yamlAuth?.oauth2?.clientSecret;
-  const accessToken = getEnv(`${prefix}_OAUTH_ACCESS_TOKEN`) || yamlAuth?.oauth2?.accessToken;
-  const refreshToken = getEnv(`${prefix}_OAUTH_REFRESH_TOKEN`) || yamlAuth?.oauth2?.refreshToken;
-  const redirectUri = getEnv(`${prefix}_OAUTH_REDIRECT_URI`) || yamlAuth?.oauth2?.redirectUri;
-
-  if (hasValue(clientId) && hasValue(clientSecret) && hasValue(accessToken)) {
-    auth.oauth2 = {
-      type: 'oauth2' as const,
-      clientId: clientId!,
-      clientSecret: clientSecret!,
-      accessToken: accessToken!,
-      ...(hasValue(refreshToken) && { refreshToken }),
-      ...(hasValue(redirectUri) && { redirectUri }),
-    };
-  }
-
-  return auth;
-}
-
-
-/**
  * Normalize tools configuration
  */
-function normalizeToolsConfig (config: any): IToolsConfig | undefined {
-  if (!config) {
-    return undefined;
-  }
-
+function normalizeToolsConfig (cfg: IToolsConfig | undefined): IToolsConfig {
   const result: IToolsConfig = {
     include: 'ALL',
     exclude: [],
   };
-
+  if (!cfg) {
+    return result;
+  }
   // Handle include
-  if (config.include === 'ALL' || config.include === undefined || config.include === null) {
+  if (cfg.include === 'ALL' || cfg.include === undefined || cfg.include === null) {
     result.include = 'ALL';
-  } else if (Array.isArray(config.include)) {
-    result.include = config.include.filter((item: any) => typeof item === 'string');
+  } else if (Array.isArray(cfg.include)) {
+    result.include = cfg.include.filter((item: any) => typeof item === 'string');
     if (result.include.length === 0) {
       result.include = 'ALL';
     }
@@ -129,41 +70,13 @@ function normalizeToolsConfig (config: any): IToolsConfig | undefined {
   }
 
   // Handle exclude
-  if (Array.isArray(config.exclude)) {
-    result.exclude = config.exclude.filter((item: any) => typeof item === 'string');
-  } else if (config.exclude && typeof config.exclude === 'string') {
-    result.exclude = [config.exclude];
+  if (Array.isArray(cfg.exclude)) {
+    result.exclude = cfg.exclude.filter((item: any) => typeof item === 'string');
+  } else if (cfg.exclude && typeof cfg.exclude === 'string') {
+    result.exclude = [cfg.exclude];
   }
 
   return result;
-}
-
-/**
- * Load raw YAML configuration if it exists
- */
-function loadYamlConfig (): any | null {
-  try {
-    const configPath = join(process.cwd(), 'config.yaml');
-
-    if (!existsSync(configPath)) {
-      logger.debug('No config.yaml found, using environment variables only');
-      return null;
-    }
-
-    const fileContent = readFileSync(configPath, 'utf8');
-    const yamlConfig = YAML.parse(fileContent);
-
-    if (!yamlConfig) {
-      logger.warn('config.yaml exists but is empty');
-      return null;
-    }
-
-    logger.info('Configuration loaded from config.yaml');
-    return yamlConfig;
-  } catch (error) {
-    logger.error('Failed to load config.yaml', error instanceof Error ? error : new Error(String(error)));
-    return null;
-  }
 }
 
 /**
@@ -171,164 +84,60 @@ function loadYamlConfig (): any | null {
  * Priority: environment variables > config.yaml > defaults
  */
 function buildConfig (): IConfig {
-  const yaml = loadYamlConfig();
-
-  // Helper to get value with priority: env > yaml > default
-  const getValue = <T> (envKey: string, yamlPath: string[], defaultValue: T): T => {
-    if (process.env[envKey] !== undefined) {
-      return getEnv(envKey, defaultValue);
-    }
-    // Navigate through yaml path
-    let yamlValue = yaml;
-    for (const key of yamlPath) {
-      yamlValue = yamlValue?.[key];
-    }
-    if (yamlValue !== undefined && yamlValue !== null) {
-      return yamlValue;
-    }
-
-    return defaultValue;
-  };
-
-  // Service mode from env or yaml
-  const serviceMode = getEnv('MCP_SERVICE') || yaml?.server?.serviceMode;
-
-  return {
+  const cfg = {
+    ...config,
     // Package metadata from package.json
     name: packageJson.name,
-    productName: 'MCP Atlassian TS',
+    productName: packageJson.productName,
     version: packageJson.version,
     description: packageJson.description,
-
-    // Server configuration
-    server: {
-      port: getValue('SERVER_PORT', ['server', 'port'], 3000),
-      host: getValue('SERVER_HOST', ['server', 'host'], '0.0.0.0'),
-      transportType: getValue('TRANSPORT_TYPE', ['server', 'transportType'], 'http') as 'stdio' | 'http' | 'sse',
-      token: getValue('SERVER_TOKEN', ['server', 'token'], undefined),
-      ...(serviceMode && { serviceMode: serviceMode as 'jira' | 'confluence' }),
-    },
-
-    // Response format configuration
-    toolAnswerAs: getValue('TOOL_ANSWER_AS', ['toolAnswerAs'], 'structuredContent'),
-
-    // JIRA configuration
-    jira: (() => {
-      const url = getValue('JIRA_URL', ['jira', 'url'], '');
-      const jiraConfig: any = {
-        url,
-        origin: getBaseUrl(url),
-        auth: buildAuthConfig('JIRA', yaml?.jira?.auth),
-        maxResults: getValue('JIRA_MAX_RESULTS', ['jira', 'maxResults'], 50),
-        epicLinkFieldId: getValue('JIRA_EPIC_LINK_FIELD_ID', ['jira', 'epicLinkFieldId'], 'customfield_10014'),
-      };
-      const jiraTools = normalizeToolsConfig(yaml?.jira?.usedInstruments);
-      if (jiraTools) {
-        jiraConfig.usedInstruments = jiraTools;
-      }
-
-      // Power endpoint configuration
-      const powerBaseUrl = getEnv('JIRA_POWER_BASE_URL') || yaml?.jira?.powerEndpoint?.baseUrl;
-      if (hasValue(powerBaseUrl)) {
-        const powerAuth: any = {};
-
-        // Power endpoint basic auth
-        const powerUsername = getEnv('JIRA_POWER_USER') || yaml?.jira?.powerEndpoint?.auth?.basic?.username;
-        const powerPassword = getEnv('JIRA_POWER_PASS') || yaml?.jira?.powerEndpoint?.auth?.basic?.password;
-
-        if (hasValue(powerUsername) && hasValue(powerPassword)) {
-          powerAuth.basic = { username: powerUsername, password: powerPassword };
-        }
-
-        // Power endpoint PAT
-        const powerPat = getEnv('JIRA_POWER_PAT') || yaml?.jira?.powerEndpoint?.auth?.pat;
-        if (hasValue(powerPat)) {
-          powerAuth.pat = powerPat;
-        }
-
-        // Power endpoint OAuth2
-        const powerClientId = getEnv('JIRA_POWER_OAUTH_CLIENT_ID') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.clientId;
-        const powerClientSecret = getEnv('JIRA_POWER_OAUTH_CLIENT_SECRET') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.clientSecret;
-        const powerAccessToken = getEnv('JIRA_POWER_OAUTH_ACCESS_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.accessToken;
-
-        if (hasValue(powerClientId) && hasValue(powerClientSecret) && hasValue(powerAccessToken)) {
-          powerAuth.oauth2 = {
-            type: 'oauth2' as const,
-            clientId: powerClientId,
-            clientSecret: powerClientSecret,
-            accessToken: powerAccessToken,
-            ...(hasValue(getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken) &&
-              { refreshToken: getEnv('JIRA_POWER_OAUTH_REFRESH_TOKEN') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.refreshToken }),
-            ...(hasValue(getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri) &&
-              { redirectUri: getEnv('JIRA_POWER_OAUTH_REDIRECT_URI') || yaml?.jira?.powerEndpoint?.auth?.oauth2?.redirectUri }),
-          };
-        }
-
-        // Only add powerEndpoint if auth is configured
-        if (Object.keys(powerAuth).length > 0) {
-          jiraConfig.powerEndpoint = {
-            baseUrl: powerBaseUrl,
-            auth: powerAuth,
-          };
-        }
-      }
-
-      return jiraConfig;
-    })(),
-
-    // Confluence configuration
-    confluence: (() => {
-      const url = getValue('CONFLUENCE_URL', ['confluence', 'url'], '');
-      const confConfig: any = {
-        url,
-        origin: getBaseUrl(url),
-        auth: buildAuthConfig('CONFLUENCE', yaml?.confluence?.auth),
-        maxResults: getValue('CONFLUENCE_MAX_RESULTS', ['confluence', 'maxResults'], 50),
-      };
-      const confTools = normalizeToolsConfig(yaml?.confluence?.usedInstruments);
-      if (confTools) {
-        confConfig.usedInstruments = confTools;
-      }
-      return confConfig;
-    })(),
-
-    // Logging configuration
-    logger: {
-      level: getValue('LOG_LEVEL', ['logger', 'level'], 'info') as 'debug' | 'info' | 'warn' | 'error',
-      pretty: getValue('LOG_PRETTY', ['logger', 'pretty'], true),
-    },
-
-    // Rate limiting configuration
-    rateLimit: {
-      windowMs: getValue('RATE_LIMIT_WINDOW_MS', ['rateLimit', 'windowMs'], 60000), // 1 min
-      maxRequests: getValue('RATE_LIMIT_MAX_REQUESTS', ['rateLimit', 'maxRequests'], 1000),
-    },
-
-    // Cache configuration
-    cache: {
-      ttlSeconds: getValue('CACHE_TTL_SECONDS', ['cache', 'ttlSeconds'], 300), // 5 minutes
-      maxItems: getValue('CACHE_MAX_ITEMS', ['cache', 'maxItems'], 1000),
-    },
-
-    // SSL/TLS configuration
-    ssl: {
-      rejectUnauthorized: getValue('NODE_TLS_REJECT_UNAUTHORIZED', ['ssl', 'rejectUnauthorized'], true),
-    },
-
-    // Feature flags
-    features: yaml?.features || {},
-
-    // User substitution configuration
-    ...(yaml?.subst && yaml.subst.users && yaml.subst.httpHeader ? {
-      subst: {
-        users: yaml.subst.users,
-        httpHeader: yaml.subst.httpHeader,
-      },
-    } : {}),
   };
+  const { jira, confluence } = cfg;
+  jira.origin = getBaseUrl(jira.url);
+  jira.usedInstruments = normalizeToolsConfig(jira.usedInstruments);
+  if (!jira.fieldId.epicLink) {
+    jira.fieldId.epicLink = 'customfield_10008';
+  }
+  if (!jira.fieldId.epicName) {
+    jira.fieldId.epicName = 'customfield_10011';
+  }
+  if (!jira.fieldId.storyPoints) {
+    jira.fieldId.storyPoints = 'customfield_10024';
+  }
+
+  jira.usedInstruments = normalizeToolsConfig(jira.usedInstruments);
+  confluence.origin = getBaseUrl(confluence.url);
+  confluence.usedInstruments = normalizeToolsConfig(confluence.usedInstruments);
+  const serviceMode = cfg.server.serviceMode || 'both';
+  if (!['jira', 'confluence', 'both'].includes(serviceMode)) {
+    throw new Error(`serviceMode has an incorrect value: ${serviceMode}`);
+  }
+
+  const validateServiceConfig = (service: ServiceModeJC) => {
+    if ([service, 'both'].includes(serviceMode)) {
+      const sc = cfg[service];
+
+      if (!sc.url) {
+        throw new Error('JIRA URL configuration is missing. Please provide JIRA_URL or set it in config.');
+      }
+
+      const hasBasicAuth = sc.auth?.basic?.username && sc.auth?.basic?.password;
+      const hasPat = hasStringValue(sc.auth?.pat);
+      const hasOAuth = sc.auth?.oauth2?.clientId;
+
+      if (!hasBasicAuth && !hasPat && !hasOAuth) {
+        throw new Error('No JIRA authentication method configured. Please provide Basic Auth (username/password), PAT, or OAuth2 credentials');
+      }
+    }
+  };
+  validateServiceConfig('jira');
+  validateServiceConfig('confluence');
+  return cfg;
 }
 
 export const appConfig: IConfig = buildConfig();
+
+configInfo();
 
 /**
  * Returns configuration with sensitive data masked for safe display
@@ -353,57 +162,12 @@ export function getSafeAppConfig (): any {
     if (a?.oauth2?.refreshToken) {
       a.oauth2.refreshToken = '[MASKED]';
     }
-    if (config[v]?.powerEndpoint?.auth?.basic?.password) {
-      config[v].powerEndpoint.auth.basic.password = '[MASKED]';
-    }
   });
   if (config.server?.token) {
     config.server.token = '[MASKED]';
   }
   return config;
 }
-
-const { confluence, jira } = appConfig;
-
-// Optional: Validate required configuration
-const validateConfig = () => {
-  const serviceMode = appConfig.server.serviceMode;
-
-  // Validate service-specific configuration based on MCP_SERVICE
-  if (serviceMode === 'jira' || !serviceMode) {
-    // Validate JIRA configuration
-    if (!jira.url) {
-      throw new Error('JIRA URL configuration is missing. Please provide JIRA_URL or set it in config.');
-    }
-
-    // Validate JIRA authentication is configured
-    const hasBasicAuth = jira.auth?.basic?.username && jira.auth?.basic?.password;
-    const hasPat = hasStringValue(jira.auth?.pat);
-    const hasOAuth = jira.auth?.oauth2?.clientId;
-
-    if (!hasBasicAuth && !hasPat && !hasOAuth) {
-      throw new Error('No JIRA authentication method configured. Please provide Basic Auth (username/password), PAT, or OAuth2 credentials');
-    }
-  }
-
-  if (serviceMode === 'confluence') {
-    // Validate Confluence configuration
-    if (!confluence.url) {
-      throw new Error('Confluence URL configuration is missing. Please provide CONFLUENCE_URL or set it in config.');
-    }
-
-    // Validate Confluence authentication is configured
-    const hasBasicAuth = confluence.auth?.basic?.username && confluence.auth?.basic?.password;
-    const hasPat = hasStringValue(confluence.auth?.pat);
-    const hasOAuth = confluence.auth?.oauth2?.clientId;
-
-    if (!hasBasicAuth && !hasPat && !hasOAuth) {
-      throw new Error('No Confluence authentication method configured. Please provide Basic Auth (username/password), PAT, or OAuth2 credentials');
-    }
-  }
-};
-
-validateConfig();
 
 /**
  * Check if a specific tool should be enabled based on configuration
@@ -445,12 +209,4 @@ export function isToolEnabledByConfig (toolName: string): boolean {
   }
 
   return isIncluded;
-}
-
-/**
- * Get tool configuration for a service
- */
-export function getServiceToolConfig (service: 'jira' | 'confluence'): IToolsConfig | undefined {
-  const serviceConfig = service === 'jira' ? appConfig.jira : appConfig.confluence;
-  return serviceConfig.usedInstruments;
 }

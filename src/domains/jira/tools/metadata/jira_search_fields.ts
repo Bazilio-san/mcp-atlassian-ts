@@ -8,7 +8,6 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
-import { powerHttpClient } from '../../../../core/server/jira-server.js';
 
 /**
  * Tool definition for searching JIRA fields
@@ -46,9 +45,6 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
 
     logger.info('Searching JIRA fields', { query });
 
-    // Use power client if available for general field metadata
-    const client = powerHttpClient || httpClient;
-
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'fields', { query });
 
@@ -56,7 +52,7 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
     const fields = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#field-getFields
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-fields/#api-rest-api-2-field-get
-      const response = await client.get('/rest/api/2/field');
+      const response = await httpClient.get('/rest/api/2/field');
       let allFields = response.data;
 
       if (query) {

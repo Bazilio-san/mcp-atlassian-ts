@@ -9,8 +9,6 @@ import {
 } from '../../dist/src/domains/jira/tools/projects/search-project/index.js';
 import { getJiraProjects, setUpdateProjectsIndexFunction, initializeProjectsCache } from '../../dist/src/domains/jira/tools/projects/search-project/projects-cache.js';
 import { createAuthenticationManager } from '../../dist/src/core/auth.js';
-import { getCache } from '../../dist/src/core/cache.js';
-import { createLogger } from '../../dist/src/core/utils/logger.js';
 
 // Тестовые поисковые запросы (основаны на реальных проектах)
 const testQueries = [
@@ -52,22 +50,9 @@ async function runDirectSearchTests () {
     };
 
     const authManager = createAuthenticationManager(authConfig, jiraUrl);
-    const httpClient = authManager.getHttpClient();
-    const cache = getCache();
-    const logger = createLogger('test');
 
-    const mockContext = {
-      httpClient,
-      cache,
-      config: { url: jiraUrl, auth: authConfig, maxResults: 50 },
-      logger,
-      normalizeToArray: (value) => Array.isArray(value) ? value : [value].filter(Boolean),
-      formatDescription: (description) => String(description || ''),
-      expandStringOrArray: (value, separator = ',') => Array.isArray(value) ? value.join(separator) : value,
-    };
-
-    // Initialize projects cache with context
-    initializeProjectsCache(mockContext);
+    // Initialize projects cache
+    initializeProjectsCache(authManager.getHttpClient());
 
     resetVectorSearchSingleton();
     await initializeVectorSearch();

@@ -1,4 +1,4 @@
-/* eslint-disable camelcase */
+
 import type { AxiosInstance } from 'axios';
 import {
   TErrorProjKeyNameResult,
@@ -6,14 +6,12 @@ import {
 } from '../../../../../types/index.js';
 import { createLogger } from '../../../../../core/utils/logger.js';
 import { transliterate, transliterateRU, enToRuVariants } from '../../../../../core/utils/transliterate.js';
-import type { ToolContext } from '../../../shared/tool-context.js';
-import { powerHttpClient } from '../../../../../core/server/jira-server.js';
 
 // Lazy import для избежания циклических зависимостей
 let updateProjectsIndex: any;
 
 // HTTP client from ToolContext (passed via initialization)
-let httpClient: AxiosInstance | null = null;
+let httpClient: AxiosInstance | null = null; // VVQ
 
 const logger = createLogger('JIRA_PROJECTS');
 
@@ -38,10 +36,9 @@ const projectsCache: {
 const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 // Initialize projects cache with ToolContext
-export const initializeProjectsCache = (context: ToolContext): void => {
-  // Use powerHttpClient if available, otherwise use regular httpClient
-  httpClient = powerHttpClient || context.httpClient;
-  logger.info('Projects cache initialized with HTTP client', { usingPowerEndpoint: !!powerHttpClient });
+export const initializeProjectsCache = (httpClient_: AxiosInstance): void => {
+  httpClient = httpClient_;
+  logger.info('Projects cache initialized with HTTP client');
 };
 
 // Получить все проекты (пространства) Jira (с кешированием)

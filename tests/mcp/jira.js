@@ -16,12 +16,12 @@ import path from 'path';
 import chalk from 'chalk';
 import { JiraMcpTestCases, getJsonFromResult } from './jira-test-cases.js';
 
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3000';
-const JIRA_EMULATOR_URL = process.env.JIRA_URL || 'http://localhost:8080';
+const TEST_MCP_SERVER_URL = process.env.TEST_MCP_SERVER_URL || 'http://localhost:3000';
+const JIRA_URL = process.env.JIRA_URL || 'http://localhost:8080';
 const RESULTS_DIR = path.join(process.cwd(), 'tests/mcp/_logs/jira');
 const TEST_USE_EMOJI = process.env.TEST_USE_EMOJI === true;
 
-console.log('MCP_SERVER_URL', MCP_SERVER_URL);
+console.log('TEST_MCP_SERVER_URL', TEST_MCP_SERVER_URL);
 
 if (!fss.existsSync(RESULTS_DIR)) {
   fss.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -334,7 +334,7 @@ class JiraMcpHttpTester {
     console.log();
 
     // Initialize client with default custom headers from .env
-    this.client = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
+    this.client = new McpHttpClient(TEST_MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
 
     // Check server health
     try {
@@ -342,7 +342,7 @@ class JiraMcpHttpTester {
       console.log(chalk.green(`✓ MCP server is healthy: ${chalk.dim(JSON.stringify(health))}`));
     } catch (error) {
       console.log(chalk.red(`✗ MCP server health check failed: ${error.message}`));
-      console.log(chalk.yellow('Make sure the MCP server is running on ' + MCP_SERVER_URL));
+      console.log(chalk.yellow('Make sure the MCP server is running on ' + TEST_MCP_SERVER_URL));
       process.exit(1);
     }
 
@@ -395,7 +395,7 @@ class JiraMcpHttpTester {
     const startTime = Date.now();
 
     // Create client with default custom headers from .env
-    const testClient = new McpHttpClient(MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
+    const testClient = new McpHttpClient(TEST_MCP_SERVER_URL, DEFAULT_CUSTOM_HEADERS);
 
     // Resolve parameters if they are a function
     let resolvedParams = testCase.params;
@@ -719,8 +719,8 @@ ${responseText}${errorText}`;
   generateSummaryMarkdown () {
     let md = '# JIRA MCP HTTP Test Summary\n\n';
     md += `**Generated:** ${new Date().toISOString()}\n\n`;
-    md += `**MCP Server:** ${MCP_SERVER_URL}\n\n`;
-    md += `**JIRA Emulator:** ${JIRA_EMULATOR_URL}\n\n`;
+    md += `**MCP Server:** ${TEST_MCP_SERVER_URL}\n\n`;
+    md += `**JIRA Server:** ${JIRA_URL}\n\n`;
 
     md += '## Statistics\n\n';
     md += '| Metric | Count |\n';

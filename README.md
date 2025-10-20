@@ -74,7 +74,10 @@ rateLimit:
 jira:
   url: ${JIRA_URL}                  # From environment variable
   maxResults: 50
-  epicLinkFieldId: customfield_10014
+  fieldId:
+    epicLink: customfield_10008
+    epicName: customfield_10011
+    storyPoints: customfield_10024
 
   # Authentication via environment variables
   auth:

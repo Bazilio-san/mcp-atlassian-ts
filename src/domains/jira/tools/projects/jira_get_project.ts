@@ -10,6 +10,7 @@ import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { getProjectLabels } from './search-project/labels-cache.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { getPriorityNamesArray } from '../../shared/priority-service.js';
 
 /**
  * Tool definition for jira_get_project
@@ -106,17 +107,25 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
       return formatToolResult(json);
     }
+    let priorityNames: string[] | undefined;
+    try {
+      priorityNames = await getPriorityNamesArray(httpClient);
+    } catch (error) {
+      logger.warn('Failed to retrieve priority names', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     // Get project labels using cache system
     let projectLabels: string[] = [];
     if (project.key && project.id) {
       try {
-        const labelsResult = await getProjectLabels(project.key, String(project.id), context);
+        const labelsResult = await getProjectLabels(httpClient, project.key, String(project.id), context);
         projectLabels = labelsResult.labels;
       } catch (error) {
         logger.warn('Failed to retrieve project labels', {
           projectKey: project.key,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -136,6 +145,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
           ? p.issueTypes.map(({ id, name, description, subtask }: any) => ({ id, name, description, subtask }))
           : undefined,
         labels: projectLabels,
+        priorityNames,
         lead: p.lead ? {
           key: p.lead.key,
           name: p.lead.name,

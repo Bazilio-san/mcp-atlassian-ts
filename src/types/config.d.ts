@@ -16,13 +16,15 @@ export interface IOAuth2Auth {
   refreshToken?: string;
   redirectUri?: string;
 }
+export type ServiceMode = 'jira' | 'confluence' | 'both';
+export type ServiceModeJC = 'jira' | 'confluence';
 
 // Server configuration
 export interface IServerConfig {
   port: number;
   host: string;
   transportType: 'stdio' | 'http' | 'sse';
-  serviceMode?: 'jira' | 'confluence';
+  serviceMode: ServiceMode;
   token?: string; // Server token for trusted clients authentication
 }
 
@@ -50,16 +52,6 @@ export interface IToolsConfig {
   exclude: string[];
 }
 
-// Power endpoint configuration
-export interface IPowerEndpoint {
-  baseUrl: string;
-  auth: {
-    basic?: IBasicAuth;
-    pat?: string;
-    oauth2?: IOAuth2Auth;
-  };
-}
-
 // JIRA configuration
 export interface IJiraConfig {
   url: string;
@@ -69,10 +61,12 @@ export interface IJiraConfig {
     pat?: string;
     oauth2?: IOAuth2Auth;
   };
-  maxResults: number;
-  epicLinkFieldId?: string;
+  fieldId: {
+    epicLink: string;
+    epicName: string;
+    storyPoints: string;
+  },
   usedInstruments?: IToolsConfig;
-  powerEndpoint?: IPowerEndpoint;
 }
 
 // Confluence configuration
@@ -84,7 +78,6 @@ export interface IConfluenceConfig {
     pat?: string;
     oauth2?: IOAuth2Auth;
   };
-  maxResults: number;
   usedInstruments?: IToolsConfig;
 }
 
@@ -95,8 +88,9 @@ export interface ISslConfig {
 
 // User substitution configuration
 export interface ISubstitutionConfig {
-  users: Record<string, string>; // Mapping from original user to substitute user
-  httpHeader: string; // HTTP header name to modify
+  httpHeader?: string; // HTTP header name to modify
+  jira?: Record<string, string>; // Mapping from original user to substitute user
+  confluence?: Record<string, string>; // Mapping from original user to substitute user
 }
 
 // Main configuration interface

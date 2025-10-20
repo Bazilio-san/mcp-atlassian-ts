@@ -10,11 +10,11 @@ import { ToolWithHandler } from '../../../../types';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
- * Create tool definition for updating a JIRA issue with dynamic epicLinkFieldId
+ * Create tool definition for updating a JIRA issue with dynamic fieldIdEpicLin
  */
-export function jira_update_issue (epicLinkFieldId?: string): ToolWithHandler {
-  const epicLinkInfo = epicLinkFieldId
-    ? `\nTo unlink an issue from an Epic, set custom field "${epicLinkFieldId}" to null`
+export function jira_update_issue (fieldIdEpicLin?: string): ToolWithHandler {
+  const epicLinkInfo = fieldIdEpicLin
+    ? `\nTo unlink an issue from an Epic, set custom field "${fieldIdEpicLin}" to null`
     : '';
 
   return {

@@ -105,17 +105,20 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
       throw new NotFoundError('Sprint', sprintId.toString());
     }
 
-    const issuesResult = response.data;
-    const count = issuesResult?.issues?.length || 0;
-    const issues = issuesResult?.issues || [];
+    const { issues = [], total } = response.data || {};
+    const count = issues?.length || 0;
 
     const json = {
       success: true,
       operation: 'get_sprint_issues',
       message: count
         ? `Found ${count} issue(s) in sprint ${sprintId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${count})`}`
+Total: ${total} issue(s) available, showing ${count}`
         : `No issues found in sprint ${sprintId}`,
+      total,
+      count,
+      startAt,
+      maxResults,
       issues: issues.map((issue: any) => {
         const f = issue.fields || {};
         const statusName = f.status?.name;
@@ -138,7 +141,7 @@ Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (s
             name: f.project?.name,
           },
           // Доп. поле спринтовой метрики (если есть)
-          storyPoints: f.customfield_10016,
+          storyPoints: f[config.fieldId!.storyPoints],
           created: convertToIsoUtc(f.created),
           updated: convertToIsoUtc(f.updated),
         };

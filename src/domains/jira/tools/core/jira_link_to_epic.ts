@@ -63,22 +63,15 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       logger.info('Successfully linked using Agile API');
     } catch (agileError: any) {
       // If Agile API fails, try using Epic Link field as fallback
-      const epicLinkFieldId = config.epicLinkFieldId;
-
-      logger.info('Epic Link field configuration', {
-        epicLinkFieldId,
-        configuredValue: config.epicLinkFieldId,
-        envValue: process.env.JIRA_EPIC_LINK_FIELD_ID,
-      });
-
-      if (epicLinkFieldId) {
-        logger.info('Agile API failed, trying Epic Link field', { epicLinkFieldId });
+      const fieldIdEpicLink = config.fieldId!.epicLink;
+      if (fieldIdEpicLink) {
+        logger.info('Agile API failed, trying Epic Link field', { fieldIdEpicLink });
 
         try {
           // Update the epic link field
           const updateData = {
             fields: {
-              [epicLinkFieldId]: epicKey,
+              [fieldIdEpicLink]: epicKey,
             },
           };
 
@@ -87,7 +80,7 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
           logger.info('Successfully linked using Epic Link field');
         } catch (fieldError: any) {
           // If both methods fail, provide comprehensive error
-          const errorMessage = fieldError.response?.data?.errors?.[epicLinkFieldId] ||
+          const errorMessage = fieldError.response?.data?.errors?.[fieldIdEpicLink] ||
             fieldError.message ||
             'Failed to link issue to epic';
           throw new Error(`Unable to link issue to epic. ${errorMessage}. Epic: ${epicKey}, Issue: ${issueIdOrKey}`);

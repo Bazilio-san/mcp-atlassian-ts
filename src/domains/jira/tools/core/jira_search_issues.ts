@@ -11,6 +11,7 @@ import { ToolWithHandler } from '../../../../types';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 
+const LIMIT_OF_ISSUES = 100; // The tool does not return more than the specified number of tasks
 /**
  * Tool definition for searching JIRA issues
  */
@@ -73,7 +74,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
     const searchRequest: any = {
       jql,
       startAt,
-      maxResults: Math.min(maxResults, config.maxResults || 100),
+      maxResults: Math.min(maxResults, LIMIT_OF_ISSUES),
       expand: normalizeToArray(expand),
     };
     if (fields) {

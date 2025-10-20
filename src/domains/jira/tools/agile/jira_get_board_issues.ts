@@ -105,17 +105,20 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
       throw new NotFoundError('Board', boardId.toString());
     }
 
-    const issuesResult = response.data;
-    const count = issuesResult?.issues?.length || 0;
-    const issues = issuesResult?.issues || [];
+    const { issues = [], total } = response.data || {};
+    const count = issues?.length || 0;
 
     const json = {
       success: true,
       operation: 'get_board_issues',
       message: count
         ? `Found ${count} issue(s) on board ${boardId}
-Total: ${issuesResult.total} issue(s) available${issuesResult.isLast ? '' : ` (showing ${count})`}`
+Total: ${total} issue(s) available, showing ${count}`
         : `No issues found on board ${boardId}`,
+      total,
+      count,
+      startAt,
+      maxResults,
       issues: issues.map((issue: any) => {
         const f = issue.fields || {};
         return {

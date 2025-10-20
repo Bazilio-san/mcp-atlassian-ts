@@ -1,0 +1,61 @@
+---
+server:
+  port: SERVER_PORT
+  host: SERVER_HOST
+  transportType: TRANSPORT_TYPE
+  serviceMode: MCP_SERVICE
+  token: SERVER_TOKEN
+toolAnswerAs: TOOL_ANSWER_AS
+
+logger:
+  level: LOG_LEVEL
+  pretty: LOG_PRETTY
+
+rateLimit:
+  windowMs: RATE_LIMIT_WINDOW_MS
+  maxRequests: RATE_LIMIT_MAX_REQUESTS
+
+cache: # VVA испоьзуется ли?
+  ttlSeconds: CACHE_TTL_SECONDS
+  maxItems: CACHE_MAX_ITEMS
+
+ssl:
+  rejectUnauthorized: NODE_TLS_REJECT_UNAUTHORIZED
+
+jira:
+  url: JIRA_URL
+  auth:
+    basic:
+      username: JIRA_USERNAME
+      password: JIRA_PASSWORD
+    pat: JIRA_PAT
+
+    oauth2:
+      clientId: JIRA_OAUTH_CLIENT_ID
+      clientSecret: JIRA_OAUTH_CLIENT_SECRET
+      accessToken: JIRA_OAUTH_ACCESS_TOKEN
+      refreshToken: JIRA_OAUTH_REFRESH_TOKEN
+      redirectUri: JIRA_OAUTH_REDIRECT_URI
+
+  fieldId:
+    epicLink: JIRA_EPIC_LINK_FIELD_ID
+    epicName: JIRA_EPIC_NAME_FIELD_ID
+
+confluence:
+  url: CONFLUENCE_URL
+  auth:
+    basic:
+      username: CONFLUENCE_USERNAME
+      password: CONFLUENCE_PASSWORD
+    pat: CONFLUENCE_PAT
+    oauth2:
+      clientId: CONFLUENCE_OAUTH_CLIENT_ID
+      clientSecret: CONFLUENCE_OAUTH_CLIENT_SECRET
+      accessToken: CONFLUENCE_OAUTH_ACCESS_TOKEN
+      refreshToken: CONFLUENCE_OAUTH_REFRESH_TOKEN
+      redirectUri: CONFLUENCE_OAUTH_REDIRECT_URI
+
+subst:
+  httpHeader: SUBST_HTTP_HEADER # VVQ
+
+

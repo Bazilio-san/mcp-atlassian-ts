@@ -13,13 +13,12 @@ const logger = createLogger('server-factory');
 /**
  * Service mode type
  */
-export type ServiceMode = 'jira' | 'confluence';
 
 /**
  * Create appropriate MCP server based on service mode
  */
 export function createServiceServer (config: IConfig): McpAtlassianServer {
-  const serviceMode: ServiceMode = config.server.serviceMode as ServiceMode;
+  const serviceMode = config.server.serviceMode!;
 
   if (!serviceMode) {
     throw new Error('Service mode is required. Set MCP_SERVICE environment variable to "jira" or "confluence"');
@@ -37,18 +36,4 @@ export function createServiceServer (config: IConfig): McpAtlassianServer {
     default:
       throw new Error(`Invalid service mode: ${serviceMode}. Must be 'jira' or 'confluence'`);
   }
-}
-
-/**
- * Get available service modes
- */
-export function getAvailableServiceModes (): ServiceMode[] {
-  return ['jira', 'confluence'];
-}
-
-/**
- * Validate service mode
- */
-export function validateServiceMode (mode: string): mode is ServiceMode {
-  return getAvailableServiceModes().includes(mode as ServiceMode);
 }

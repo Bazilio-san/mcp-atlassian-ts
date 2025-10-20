@@ -6,22 +6,37 @@
  * Atlassian JIRA and Confluence with modern architecture and features.
  */
 
+import { pathToFileURL } from 'url';
 import { appConfig, hasStringValue } from './bootstrap/init-config.js';
 import { createAuthenticationManager, validateAuthConfig } from './core/auth.js';
 import { initializeCache } from './core/cache.js';
 import { ServerError } from './core/errors.js';
-import { createServiceServer, validateServiceMode, type ServiceMode } from './core/server/factory.js';
+import { createServiceServer } from './core/server/factory.js';
 import { createLogger } from './core/utils/logger.js';
-import { pathToFileURL } from 'url';
+import { ServiceModeJC } from './types/config';
 
 const logger = createLogger('main');
 
 /**
+ * Get available service modes
+ */
+export function getAvailableServiceModes (): ServiceModeJC[] {
+  return ['jira', 'confluence'];
+}
+
+/**
+ * Validate service mode
+ */
+export function validateServiceMode (mode: string): mode is ServiceModeJC {
+  return getAvailableServiceModes().includes(mode as ServiceModeJC);
+}
+
+/**
  * Parse CLI arguments
  */
-function parseCliArguments (): { serviceMode?: ServiceMode; help?: boolean } {
+function parseCliArguments (): { serviceMode?: ServiceModeJC; help?: boolean } {
   const args = process.argv.slice(2);
-  const options: { serviceMode?: ServiceMode; help?: boolean } = {};
+  const options: { serviceMode?: ServiceModeJC; help?: boolean } = {};
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -113,7 +128,7 @@ function buildAuthConfig (
 /**
  * Main application entry point
  */
-async function main (cliServiceMode?: ServiceMode) {
+async function main (cliServiceMode?: ServiceModeJC) {
   try {
     // Determine service mode (CLI args override config)
     const serviceMode = cliServiceMode || appConfig.server.serviceMode;
@@ -244,7 +259,7 @@ function setupProcessHandlers () {
 /**
  * Display startup banner
  */
-function displayBanner (serviceMode: ServiceMode) {
+function displayBanner (serviceMode: ServiceModeJC) {
   if (process.env.NODE_ENV === 'development') {
     const serviceDescription = {
       jira: '🎯 JIRA-Only Server',

@@ -17,6 +17,8 @@ out/
 .env.test.local
 .env.production.local
 
+local-*.*
+
 # Logs
 logs
 *.log

@@ -117,19 +117,19 @@ export class JiraToolsManager {
     this.context.logger.info('JIRA tools manager initializing...');
 
     // Initialize projects cache with HTTP client
-    initializeProjectsCache(this.context);
+    initializeProjectsCache(this.context.httpClient);
     this.context.logger.info('Projects cache initialized');
 
     this.context.logger.info('JIRA tools manager initialized');
 
     // Build tools list
-    await this.buildToolsList(this.context.config.epicLinkFieldId);
+    await this.buildToolsList(this.context.config.fieldId!.epicLink);
   }
 
   /**
    * Build the tools list
    */
-  private async buildToolsList (epicLinkFieldId?: string): Promise<void> {
+  private async buildToolsList (fieldIdEpicLink?: string): Promise<void> {
     // Clear existing tools
     this.tools.clear();
     this.toolsArray = [];
@@ -140,7 +140,7 @@ export class JiraToolsManager {
       jira_get_issue,
       jira_search_issues,
       jira_create_issue, // Create fresh instance with current priorities
-      jira_update_issue(epicLinkFieldId), // Create jira_update_issue with dynamic epicLinkFieldId
+      jira_update_issue(fieldIdEpicLink), // Create jira_update_issue with dynamic fieldIdEpicLink
       jira_delete_issue,
       jira_batch_create_issues,
       jira_link_to_epic,

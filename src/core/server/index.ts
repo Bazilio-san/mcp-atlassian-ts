@@ -29,6 +29,7 @@ import { appConfig, getSafeAppConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
+import { ServiceModeJC } from '../../types/config';
 
 const logger = createLogger('server');
 
@@ -55,8 +56,9 @@ export class McpAtlassianServer {
   protected authManager: AuthenticationManager;
   protected app?: express.Application;
   protected aboutPageRenderer?: AboutPageRenderer;
+  protected serviceMode: ServiceModeJC;
 
-  constructor (serverConfig: ServerConfig, serviceConfig: JCConfig) {
+  constructor (serverConfig: ServerConfig, serviceConfig: JCConfig, serviceMode: ServiceModeJC) {
     this.serverConfig = serverConfig;
     this.serviceConfig = serviceConfig;
 
@@ -89,6 +91,7 @@ export class McpAtlassianServer {
     this.toolRegistry = new ToolRegistry(serviceConfig);
 
     this.setupServerHandlers();
+    this.serviceMode = serviceMode;
     // Don't call registerTools here - let it be called explicitly after construction
   }
 
@@ -124,13 +127,13 @@ export class McpAtlassianServer {
         const resourceContent = await this.handleResourceRead(resource.uri);
         resourcesWithContent.push({
           ...resource,
-          content: resourceContent
+          content: resourceContent,
         });
       } catch (error) {
         logger.warn(`Failed to read resource content for ${resource.uri}`, { error: error instanceof Error ? error.message : String(error) });
         resourcesWithContent.push({
           ...resource,
-          content: { error: 'Failed to load resource content' }
+          content: { error: 'Failed to load resource content' },
         });
       }
     }
@@ -170,7 +173,7 @@ export class McpAtlassianServer {
   /**
    * Handle tools list requests
    */
-  private async handleToolsList (): Promise<{tools: any[]}> {
+  private async handleToolsList (): Promise<{ tools: any[] }> {
     const tools = await this.toolRegistry.listTools();
     logger.info('Tools listed', { count: tools.length });
     return { tools };
@@ -217,7 +220,7 @@ export class McpAtlassianServer {
   /**
    * Handle ping requests
    */
-  private handlePing (): {pong: boolean} {
+  private handlePing (): { pong: boolean } {
     return { pong: true };
   }
 
@@ -478,7 +481,7 @@ export class McpAtlassianServer {
             // Apply user substitution if configured
             let headers = authContext.headers;
             if (this.serverConfig.subst) {
-              headers = substituteUserInHeaders(headers, this.serverConfig.subst);
+              headers = substituteUserInHeaders(headers, this.serviceMode, this.serverConfig.subst);
             }
 
             const context: ExecutionContext = {
@@ -553,7 +556,7 @@ export class McpAtlassianServer {
 
           // Apply user substitution if configured
           if (this.serverConfig.subst) {
-            authHeaders = substituteUserInHeaders(authHeaders, this.serverConfig.subst);
+            authHeaders = substituteUserInHeaders(authHeaders, this.serviceMode, this.serverConfig.subst);
           }
 
           // Process MCP request directly

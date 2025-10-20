@@ -148,7 +148,7 @@ All configuration via `.env` file (see `.env.example` for template):
 - **Transport**: `TRANSPORT_TYPE` (stdio/http/sse), `SERVER_PORT` (default: 3000)
 - **Performance**: `CACHE_TTL_SECONDS`, `RATE_LIMIT_MAX_REQUESTS`, `JIRA_MAX_RESULTS`
 - **Logging**: `LOG_LEVEL` (debug/info/warn/error), `LOG_PRETTY` (true/false)
-- **JIRA Custom**: `JIRA_EPIC_LINK_FIELD_ID` (default: customfield_10014)
+- **JIRA Custom**: `JIRA_EPIC_LINK_FIELD_ID` (default: customfield_10008)
 
 ### Tool Configuration (`config.yaml`)
 Tools can be selectively enabled/disabled:
