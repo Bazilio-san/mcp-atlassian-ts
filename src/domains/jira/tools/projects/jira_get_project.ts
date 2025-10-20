@@ -28,7 +28,6 @@ labels: // Project label array
 projectTypeKey,
 archived,
 lead?: {key, name, displayName},
-versions?: {id, name, description, archived, released}[]
 `,
   inputSchema: {
     type: 'object',
@@ -151,9 +150,6 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
           name: p.lead.name,
           displayName: p.lead.displayName,
         } : undefined,
-        versions: Array.isArray(p.versions)
-          ? p.versions.map(({ id, name, description, archived, released }: any) => ({ id, name, description, archived, released }))
-          : undefined,
       };
     })();
 
@@ -188,11 +184,4 @@ interface FilteredProject {
     name?: string;
     displayName?: string;
   } | undefined;
-  versions?: {
-    id?: string;
-    name?: string;
-    description?: string;
-    archived?: boolean;
-    released?: boolean;
-  }[];
 }

@@ -184,6 +184,7 @@ confluence:
 - `jira_get_projects` - Get all accessible projects
 - `jira_get_project` - Get specific project details
 - `jira_find_project` - Find project by name/key
+- `jira_get_project_versions` - Get project versions/releases
 - `jira_create_project_version` - Create new project version
 - `jira_batch_create_versions` - Create multiple versions
 

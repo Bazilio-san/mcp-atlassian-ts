@@ -211,6 +211,7 @@ docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 - [`jira_get_projects`](#jira_get_projects) - Get all accessible projects
 - [`jira_get_project`](#jira_get_project) - Get specific project details
 - [`jira_find_project`](#jira_find_project) - Find project by name/key
+- [`jira_get_project_versions`](#jira_get_project_versions) - Get project versions/releases
 - [`jira_create_project_version`](#jira_create_project_version) - Create new project version
 - [`jira_batch_create_versions`](#jira_batch_create_versions) - Create multiple versions
 

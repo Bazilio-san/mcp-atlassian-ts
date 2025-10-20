@@ -507,6 +507,13 @@ export class JiraMcpTestCases {
         description: 'Get specific project details',
       },
       {
+        fullId: '2-3',
+        name: 'Get Project Versions',
+        toolName: 'jira_get_project_versions',
+        params: { projectIdOrKey: this.testProjectKey },
+        description: 'Get project versions',
+      },
+      {
         fullId: '2-4',
         name: 'Find Project by Name',
         toolName: 'jira_find_project',
