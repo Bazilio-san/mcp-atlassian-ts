@@ -211,7 +211,7 @@ repo_info
 echo_g "====== CLEAN INSTALL DEPENDENCIES ======"
 
 rm -rf node_modules/
-npm ci
+yarn install --frozen-lockfile
 
 echo_g "========== TYPESCRIPT BUILD =========="
 rm -rf ./dist
