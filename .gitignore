@@ -17,8 +17,6 @@ out/
 .env.test.local
 .env.production.local
 
-local-*.*
-
 # Logs
 logs
 *.log
@@ -86,3 +84,4 @@ vectors.txt
 
 /_misc_/
 /deploy/config.yml
+/config/__server__/

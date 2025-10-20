@@ -2,6 +2,8 @@
   "service_aliases": {
     "mb": "multi-bot",
     "jb": "jira-bot",
+    "mcp-jira": "mcp-jira",
+    "mcp-confluence": "mcp-confluence",
     "pg": "postgresql",
     "ng": "nginx",
     "do": "docker"

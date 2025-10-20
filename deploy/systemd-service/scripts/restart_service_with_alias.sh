@@ -11,6 +11,13 @@ fi
 
 # Чтение алиасов из конфигурации
 declare -A service_aliases
+
+if ! jq -e '.service_aliases' "$CONFIG_FILE" > /dev/null 2>&1; then
+    echo "Ошибка: Некорректный формат конфигурационного файла $CONFIG_FILE"
+    echo "Пожалуйста, проверьте синтаксис JSON"
+    exit 1
+fi
+
 while read -r alias service; do
     service_aliases["$alias"]="$service"
 done < <(jq -r '.service_aliases | to_entries[] | "\(.key) \(.value)"' "$CONFIG_FILE")
