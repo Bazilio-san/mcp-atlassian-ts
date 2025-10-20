@@ -141,6 +141,11 @@ fi
 # На всякий случай трим итоговое имя сервиса (убираем CR/LF и внешние пробелы)
 SERVICE=$(echo "$SERVICE" | tr -d '\r' | xargs)
 
+service_exists() {
+  local n=$1
+  systemctl show --no-page "${n}.service" >/dev/null 2>&1
+}
+
 # ... existing code ...
 if service_exists "$SERVICE"
 echo_g "**** Перезапуск сервиса ${SERVICE} ****"
@@ -213,10 +218,6 @@ rm -rf ./dist
 npm run build
 echo_y "typescript build done"
 
-service_exists() {
-  local n=$1
-  systemctl show --no-page "${n}.service" >/dev/null 2>&1
-}
 echo "**** Перезапуск сервиса ${SERVICE} ****"
 
 if service_exists "$SERVICE"
