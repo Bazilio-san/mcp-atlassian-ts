@@ -245,17 +245,17 @@ class JiraMcpHttpTester {
 
     try {
       // Get project versions
-      const { result } = await this.client.callTool('jira_get_project_versions', {
+      const { result } = await this.client.callTool('jira_get_project', {
         projectIdOrKey: TEST_JIRA_PROJECT,
       });
 
       const versionsData = getJsonFromResult(result);
-      if (!versionsData?.versions?.length) {
+      if (!versionsData?.project?.versions?.length) {
         console.log('  📦  No versions found to clean up');
         return;
       }
 
-      const versions = versionsData.versions;
+      const { versions } = versionsData.project;
 
       // Find test versions (starting with test prefixes)
       const batchVersions = versions.filter(v => v.name.startsWith('Batch-'));

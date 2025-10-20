@@ -81,8 +81,9 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     const { issues = [], total } = data || {};
 
     const epics = issues.map((epic: any) => {
-      const { key, fields } = epic;
+      const { id, key, fields } = epic;
       return {
+        id,
         key,
         epicName: fields[epicName] || fields.summary,
         summary: fields.summary,

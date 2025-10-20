@@ -184,10 +184,8 @@ confluence:
 - `jira_get_projects` - Get all accessible projects
 - `jira_get_project` - Get specific project details
 - `jira_find_project` - Find project by name/key
-- `jira_get_project_versions` - Get project versions/releases
 - `jira_create_project_version` - Create new project version
 - `jira_batch_create_versions` - Create multiple versions
-- `jira_get_epics_for_project` - Get all epics in project
 
 #### Agile/Scrum (6 tools)
 - `jira_get_agile_boards` - Get all Agile boards
@@ -217,7 +215,7 @@ confluence:
 - `jira_search_fields` - Search and get field metadata
 
 #### Attachments (1 tool)
-- `jira_download_attachments` - Download issue attachments
+- `jira_get_attachments_info` - Download issue attachments
 
 ### Confluence Tools (17 total)
 

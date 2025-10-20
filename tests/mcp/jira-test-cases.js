@@ -507,13 +507,6 @@ export class JiraMcpTestCases {
         description: 'Get specific project details',
       },
       {
-        fullId: '2-3',
-        name: 'Get Project Versions',
-        toolName: 'jira_get_project_versions',
-        params: { projectIdOrKey: this.testProjectKey },
-        description: 'Get project versions',
-      },
-      {
         fullId: '2-4',
         name: 'Find Project by Name',
         toolName: 'jira_find_project',
@@ -565,13 +558,6 @@ export class JiraMcpTestCases {
           };
         },
         description: 'Delete project version (creates temp version first)',
-      },
-      {
-        fullId: '2-7',
-        name: 'Get Epics for Project',
-        toolName: 'jira_get_epics_for_project',
-        params: { projectKey: this.testProjectKey, maxResults: 10 },
-        description: 'Get active epics for a project',
       },
     ];
 
@@ -775,7 +761,7 @@ export class JiraMcpTestCases {
       {
         fullId: '7-1',
         name: 'Get Issue Attachments',
-        toolName: 'jira_download_attachments',
+        toolName: 'jira_get_attachments_info',
         params: { issueIdOrKey: this.testIssueKey },
         description: 'Get issue attachments',
       },

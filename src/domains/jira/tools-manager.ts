@@ -33,12 +33,10 @@ import { jira_transition_issue } from './tools/core/jira_transition_issue.js';
 // Import project tools
 import { jira_get_projects } from './tools/projects/jira_get_projects.js';
 import { jira_get_project } from './tools/projects/jira_get_project.js';
-import { jira_get_project_versions } from './tools/projects/jira_get_project_versions.js';
 import { jira_create_project_version } from './tools/projects/jira_create_project_version.js';
 import { jira_delete_version } from './tools/projects/jira_delete_version.js';
 import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
 import { jira_find_project } from './tools/projects/jira_find_project.js';
-import { jira_get_epics_for_project } from './tools/projects/jira_get_epics_for_project.js';
 
 // Import user tools
 import { jira_get_user_profile } from './tools/metadata/jira_get_user_profile.js';
@@ -54,7 +52,7 @@ import { jira_get_worklog } from './tools/worklog/jira_get_worklog.js';
 import { jira_add_worklog } from './tools/worklog/jira_add_worklog.js';
 
 // Import attachment tools
-import { jira_download_attachments } from './tools/attachments/jira_download_attachments.js';
+import { jira_get_attachments_info } from './tools/attachments/jira_get_attachments_info.js';
 
 // Import agile tools
 import { jira_get_agile_boards } from './tools/agile/jira_get_agile_boards.js';
@@ -157,12 +155,10 @@ export class JiraToolsManager {
       // Project tools
       jira_get_projects,
       jira_get_project,
-      jira_get_project_versions,
       jira_create_project_version,
       jira_delete_version,
       jira_batch_create_versions,
       jira_find_project,
-      jira_get_epics_for_project,
 
       // User tools
       jira_get_user_profile,
@@ -178,7 +174,7 @@ export class JiraToolsManager {
       jira_add_worklog,
 
       // Attachment tools
-      jira_download_attachments,
+      jira_get_attachments_info,
 
       // Agile tools
       jira_get_agile_boards,

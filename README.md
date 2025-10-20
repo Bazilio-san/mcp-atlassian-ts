@@ -211,10 +211,8 @@ docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 - [`jira_get_projects`](#jira_get_projects) - Get all accessible projects
 - [`jira_get_project`](#jira_get_project) - Get specific project details
 - [`jira_find_project`](#jira_find_project) - Find project by name/key
-- [`jira_get_project_versions`](#jira_get_project_versions) - Get project versions/releases
 - [`jira_create_project_version`](#jira_create_project_version) - Create new project version
 - [`jira_batch_create_versions`](#jira_batch_create_versions) - Create multiple versions
-- [`jira_get_epics_for_project`](#jira_get_epics_for_project) - Get all epics in project
 
 #### Agile/Scrum (6 tools) {#jira-agile}
 - [`jira_get_agile_boards`](#jira_get_agile_boards) - Get all Agile boards
@@ -244,7 +242,7 @@ docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 - [`jira_search_fields`](#jira_search_fields) - Search and get field metadata
 
 #### Attachments (1 tool) {#jira-attachments}
-- [`jira_download_attachments`](#jira_download_attachments) - Download issue attachments
+- [`jira_get_attachments_info`](#jira_get_attachments_info) - Download issue attachments
 
 ### 📝 Confluence Tools (17 tools) {#confluence-tools}
 

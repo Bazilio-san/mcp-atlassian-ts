@@ -12,8 +12,8 @@ import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 /**
  * Tool definition for downloading JIRA attachments
  */
-export const jira_download_attachments: ToolWithHandler = {
-  name: 'jira_download_attachments',
+export const jira_get_attachments_info: ToolWithHandler = {
+  name: 'jira_get_attachments_info',
   description: 'Get metadata and download links for JIRA issue attachments',
   inputSchema: {
     type: 'object',
@@ -56,7 +56,7 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
 
     const json = {
       success: true,
-      operation: 'jira_download_attachments',
+      operation: 'jira_get_attachments_info',
       message: count ? `Found ${attachments.length} attachment(s) for ${issueIdOrKey}` : `No attachments found for ${issueIdOrKey}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,

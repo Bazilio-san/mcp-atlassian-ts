@@ -2,7 +2,7 @@
   <configuration default="false" name="=== START ===" type="NodeJSConfigurationType" path-to-js-file="dist/src/index.js" working-dir="$PROJECT_DIR$">
     <envs>
       <env name="NODE_NO_WARNINGS" value="1" />
-      <env name="NODE_ENV" value="dev" />
+      <env name="NODE_ENV" value="subst" />
     </envs>
     <method v="2" />
   </configuration>
