@@ -151,7 +151,7 @@ export class AboutPageRenderer {
       <section class="info-section">
         <div class="info-row">
           <span class="label">Health Check:</span>
-          <a href="/health" class="value link">Check Server Health</a>
+          <span class="value clickable" onclick="openHealthCheckModal()">Check Server Health</span>
         </div>
       </section>
 
@@ -233,6 +233,24 @@ export class AboutPageRenderer {
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Check Modal -->
+    <div id="health-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Server Health Check</h3>
+          <button class="modal-close" onclick="closeModal('health')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="loading-cell" id="health-loading">
+            <div class="loading-spinner"></div>
+            Checking server health...
+          </div>
+          <pre class="json-content" id="health-result" style="display: none;"></pre>
+          <div class="error-message" id="health-error" style="display: none;"></div>
         </div>
       </div>
     </div>
@@ -426,6 +444,40 @@ export class AboutPageRenderer {
         // Hide the detail row
         detailRow.style.display = 'none';
         toggleLink.textContent = 'подробнее';
+      }
+    }
+
+    // Health Check Modal
+    async function openHealthCheckModal() {
+      const modal = document.getElementById('health-modal');
+      const loading = document.getElementById('health-loading');
+      const result = document.getElementById('health-result');
+      const error = document.getElementById('health-error');
+
+      // Show modal with loading state
+      modal.style.display = 'flex';
+      loading.style.display = 'block';
+      result.style.display = 'none';
+      error.style.display = 'none';
+
+      try {
+        const response = await fetch('/health');
+
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        }
+
+        const data = await response.json();
+
+        // Hide loading and show result
+        loading.style.display = 'none';
+        result.style.display = 'block';
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        // Hide loading and show error
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        error.textContent = 'Error: ' + (err.message || 'Failed to fetch health check data');
       }
     }
 
@@ -796,8 +848,20 @@ body {
   border: 1px solid var(--color-neutral-200);
 }
 
+/* Error message styles */
+.error-message {
+  padding: 16px;
+  background: #ffebe9;
+  color: var(--color-danger-600);
+  border: 1px solid var(--color-danger-400);
+  border-radius: var(--border-radius-100);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-075);
+  text-align: center;
+}
+
 .clickable {
-  color: var(--color-primary-500);
+  color: var(--color-primary-500) !important;
   text-decoration: none;
   cursor: pointer;
   transition: color 0.2s ease;

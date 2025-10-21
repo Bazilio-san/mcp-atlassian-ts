@@ -629,8 +629,22 @@ export class McpAtlassianServer {
         }
       });
 
-      // Error handling middleware
-      this.app.use((error: Error, req: express.Request, res: express.Response) => {
+      // 404 handler for unknown routes
+      this.app.use((req: express.Request, res: express.Response) => {
+        res.status(404).json({
+          error: 'Not Found',
+          message: `Cannot ${req.method} ${req.path}`,
+          availableEndpoints: {
+            about: 'GET /',
+            health: 'GET /health',
+            sse: 'GET /sse',
+            mcp: 'POST /mcp',
+          },
+        });
+      });
+
+      // Error handling middleware (must have 4 parameters for Express to recognize it)
+      this.app.use((error: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
         logger.error('Express error handler', error);
 
         if (!res.headersSent) {
