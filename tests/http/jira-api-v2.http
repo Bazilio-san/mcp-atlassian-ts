@@ -42,7 +42,8 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 {
   "fields": {
     "summary": "Updated Test Issue - 2025-09-19T18-15",
-    "description": "Updated description for API testing 2"
+    "description": "Updated description for API testing 2",
+    "customfield_10040": [{"Impediment": true}]
   }
 }
 

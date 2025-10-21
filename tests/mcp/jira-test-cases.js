@@ -246,6 +246,7 @@ export class JiraMcpTestCases {
         params: {
           issueIdOrKey: this.testIssueKey,
           summary: 'Updated via MCP HTTP test',
+          customFields: { 'customfield_10040': [{ 'Impediment': true }] },
         },
         description: 'Update existing issue',
       },
