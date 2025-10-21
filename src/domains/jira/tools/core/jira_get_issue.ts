@@ -91,24 +91,24 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
     if (!issue) {
       throw new NotFoundError('Issue', issueIdOrKey);
     }
-    const fields = issue.fields;
+    const fields = issue.fields || {};
     const jiraIssue: any = {
       key: issue.key,
-      summary: fields.summary,
+      summary: fields.summary || '',
       status: {
-        name: fields.status.name,
-        description: fields.status.description,
+        name: fields.status?.name || 'Unknown',
+        description: fields.status?.description || '',
       },
       assignee: fields.assignee?.displayName || 'Unassigned',
       reporter: fields.reporter?.displayName || 'Unknown',
       created: convertToIsoUtc(fields.created),
       updated: convertToIsoUtc(fields.updated),
       priority: fields.priority?.name || 'None',
-      issueType: fields.issuetype.name,
+      issueType: fields.issuetype?.name || 'Unknown',
       issueUrl: `${config.origin}/browse/${issue.key}`,
       project: {
-        name: fields.project.name,
-        key: fields.project.key,
+        name: fields.project?.name || 'Unknown',
+        key: fields.project?.key || 'Unknown',
       },
       labels: fields.labels || [],
       description: fields.description || '',
@@ -119,9 +119,11 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       jiraIssue,
     };
 
-    if (fields.comment?.comments?.length) {
-      jiraIssue.commentsCount = fields.comment?.total || 0;
-      jiraIssue.lastComments = fields.comment.comments
+    const { comment, attachment, subtasks, fixVersions, timetracking, issuelinks } = fields;
+
+    if (comment?.comments?.length) {
+      jiraIssue.commentsCount = comment?.total || 0;
+      jiraIssue.lastComments = comment.comments
         .filter(isObject)
         .sort((a: any, b: any) => {
           return new Date(b.updated).getTime() - new Date(a.updated).getTime();
@@ -137,10 +139,9 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
           };
         });
     }
-
-    if (fields.attachment?.length) {
-      jiraIssue.attachmentsCount = fields.attachment?.total || 0;
-      jiraIssue.attachments = fields.attachment
+    if (attachment?.length) {
+      jiraIssue.attachmentsCount = attachment?.total || 0;
+      jiraIssue.attachments = attachment
         .filter(isObject)
         .map((a: any) => {
           return {
@@ -155,8 +156,8 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
         });
     }
 
-    if (fields.subtasks?.length) {
-      jiraIssue.subtasks = fields.subtasks
+    if (subtasks?.length) {
+      jiraIssue.subtasks = subtasks
         .filter(isObject)
         .map((s: any) => {
           const f = s.fields;
@@ -170,18 +171,20 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
           };
         });
     }
-    if (fields.fixVersions) {
-      jiraIssue.fixVersions = fields.fixVersions
+
+    if (fixVersions?.length) {
+      jiraIssue.fixVersions = fixVersions
         .filter(isObject)
         .map(({ id, name }: any) => ({ id, name }));
     }
-    if (fields.timetracking) {
-      jiraIssue.timetracking = fields.timetracking;
+
+    if (timetracking) {
+      jiraIssue.timetracking = timetracking;
     }
 
     // Add issue links if present
-    if (fields.issuelinks?.length) {
-      jiraIssue.issueLinks = fields.issuelinks
+    if (issuelinks?.length) {
+      jiraIssue.issueLinks = issuelinks
         .filter(isObject)
         .map((link: any) => {
           const { inwardIssue, outwardIssue } = link;
