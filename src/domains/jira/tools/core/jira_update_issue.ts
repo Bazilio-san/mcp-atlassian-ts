@@ -14,12 +14,23 @@ import { normalizeToArray } from '../../../../core/utils/tools.js';
  */
 export function jira_update_issue (fieldIdEpicLin?: string): ToolWithHandler {
   const epicLinkInfo = fieldIdEpicLin
-    ? `\nTo unlink an issue from an Epic, set custom field "${fieldIdEpicLin}" to null`
+    ? `To unlink an issue from an Epic, set custom field "${fieldIdEpicLin}" to null`
     : '';
 
   return {
     name: 'jira_update_issue',
-    description: `Update a JIRA issue fields: summary, description, assignee, priority, labels, customFields${epicLinkInfo}`,
+    description: `Update a JIRA issue fields: 
+- summary
+- description
+- assignee
+- priority
+- labels
+- customFields
+
+To update custom fields pass object to customFields parameter E.g.:
+{ "customfield_<nnnnnn>": <_customfield_value_>, ... }
+
+${epicLinkInfo}`,
     inputSchema: {
       type: 'object',
       properties: {
