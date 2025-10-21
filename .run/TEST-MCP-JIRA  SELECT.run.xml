@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TEST-MCP-JIRA  SELECT" type="NodeJSConfigurationType" application-parameters="--tests=jira_find_epic" path-to-js-file="tests/mcp/jira.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="TEST-MCP-JIRA  SELECT" type="NodeJSConfigurationType" application-parameters="--tests=jira_get_issue" path-to-js-file="tests/mcp/jira.js" working-dir="$PROJECT_DIR$">
     <envs>
       <env name="NODE_NO_WARNINGS" value="1" />
     </envs>

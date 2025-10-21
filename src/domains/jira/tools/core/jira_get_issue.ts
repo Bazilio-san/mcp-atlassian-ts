@@ -79,7 +79,12 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
     if (expandArray?.length) {
       params.expand = expandArray.join(',');
     }
+
+    const mandatoryFields = ['summary', 'status', 'assignee', 'reporter', 'created', 'updated', 'priority', 'issuetype', 'project', 'labels', 'description'];
+
+    let additionalFields: string[] = [];
     if (fieldsArray?.length) {
+      additionalFields = fieldsArray.filter((f: string) => !mandatoryFields.includes(f));
       params.fields = fieldsArray.join(',');
     }
 
@@ -91,6 +96,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
     if (!issue) {
       throw new NotFoundError('Issue', issueIdOrKey);
     }
+
     const fields = issue.fields || {};
     const jiraIssue: any = {
       key: issue.key,
@@ -112,6 +118,10 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       },
       labels: fields.labels || [],
       description: fields.description || '',
+      fields: additionalFields.length ? additionalFields.reduce((a, fieldName) => {
+        a[fieldName] = fields[fieldName];
+        return a;
+      }, {} as any) : undefined,
     };
     const json = {
       success: true,

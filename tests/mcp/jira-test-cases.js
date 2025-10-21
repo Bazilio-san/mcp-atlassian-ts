@@ -22,17 +22,14 @@ import yaml from 'yaml';
 import path from 'path';
 import { appConfig } from '../../dist/src/bootstrap/init-config.js';
 
-
 export const getJsonFromResult = (result) => {
   if (appConfig.toolAnswerAs === 'structuredContent') {
     return result?.result?.structuredContent || result?.structuredContent;
-  }
-  else {
+  } else {
     const text = result?.result?.content?.[0]?.text || result?.content?.[0]?.text || '';
     try {
       return JSON.parse(text);
-    }
-    catch {
+    } catch {
       //
     }
   }
@@ -214,7 +211,13 @@ export class JiraMcpTestCases {
         fullId: '1-1',
         name: 'Get Issue Details',
         toolName: 'jira_get_issue',
-        params: { issueIdOrKey: this.testIssueKey },
+        params: {
+          issueIdOrKey: this.testIssueKey,
+          fields: [
+            'summary', 'status', 'assignee', 'reporter', 'priority',
+            'issuetype', 'project', 'labels', 'description', 'customfield_10040',
+          ],
+        },
         description: 'Get issue details',
       },
       {
@@ -367,16 +370,11 @@ export class JiraMcpTestCases {
         name: 'Transition Issue Status',
         toolName: 'jira_transition_issue',
         params: async (client) => {
-          // const res = await client.callTool('jira_get_issue', { issueIdOrKey: this.testIssueKey });
-          // console.log(res.result.content[0].text);
-
-          // Сначала получаем доступные переходы для задачи
-
           const result = await client.callTool('jira_get_transitions', {
             issueIdOrKey: this.testIssueKey,
           });
 
-          const  { transitions } = getJsonFromResult(result);
+          const { transitions } = getJsonFromResult(result);
           // Проверяем, есть ли доступные переходы
           if (!transitions?.length) {
             throw new Error('  ❌  No transitions available for this issue');

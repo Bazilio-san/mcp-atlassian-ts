@@ -24,6 +24,13 @@ GET {{baseUrl}}/rest/api/2/issue/AITECH-7?expand=changelog
 Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+### Get full issue data
+# https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+# https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
+GET {{baseUrl}}/rest/api/2/issue/AITECH-7?fields=summary,status,assignee,reporter,priority,issuetype,project,labels,description,customfield_10040
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
 
 ### Update issue
 # https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-editIssue
