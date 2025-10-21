@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting all comments from a JIRA issue
@@ -108,13 +108,13 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
           updated: convertToIsoUtc(updated),
           body,
           renderedBody,
-          author: {
-            key: author?.key,
-            name: author?.name,
-            displayName: author?.displayName,
-            emailAddress: author?.emailAddress,
-          },
-          updateAuthor: updateAuthor ? {
+          author: isObject(author) ? {
+            key: author.key,
+            name: author.name,
+            displayName: author.displayName,
+            emailAddress: author.emailAddress,
+          } : undefined,
+          updateAuthor: isObject(updateAuthor) ? {
             key: updateAuthor.key,
             name: updateAuthor.name,
             displayName: updateAuthor.displayName,

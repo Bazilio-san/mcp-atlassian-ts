@@ -8,6 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting JIRA issue link types
@@ -52,12 +53,14 @@ async function getLinkTypesHandler (_args: any, context: ToolContext): Promise<a
     const json = {
       success: true,
       operation: 'get_link_types',
-      issueLinkTypes: linkTypes.map((lt: any) => ({
-        id: lt.id,
-        name: lt.name,
-        inward: lt.inward,
-        outward: lt.outward,
-      })),
+      issueLinkTypes: linkTypes
+        .filter(isObject)
+        .map((lt: any) => ({
+          id: lt.id,
+          name: lt.name,
+          inward: lt.inward,
+          outward: lt.outward,
+        })),
     };
 
     return formatToolResult(json);

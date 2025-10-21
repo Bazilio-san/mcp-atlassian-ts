@@ -86,25 +86,21 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addWorklog
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-post
     const response = await httpClient.post(`/rest/api/2/issue/${issueIdOrKey}/worklog`, worklogInput);
-    const worklog = response.data;
-
+    const worklog = response.data || {};
+    const { accountId, displayName, emailAddress } = worklog.author || {};
     const json = {
       success: true,
       operation: 'add_worklog',
-      message: `Worklog added successfully to ${issueIdOrKey}: ${timeSpent} by ${worklog.author.displayName}`,
+      message: `Worklog added successfully to ${issueIdOrKey}: ${timeSpent} by ${displayName || 'Unknown'}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       worklog: {
         id: worklog.id,
         timeSpent: timeSpent,
         timeSpentSeconds: worklog.timeSpentSeconds,
-        comment: comment || null,
+        comment: comment || undefined,
         started: convertToIsoUtc(worklog.started),
-        author: {
-          accountId: worklog.author.accountId,
-          displayName: worklog.author.displayName,
-          emailAddress: worklog.author.emailAddress || null,
-        },
-        visibility: visibility || null,
+        author: accountId || displayName || emailAddress ? { accountId, displayName, emailAddress } : undefined,
+        visibility: visibility || undefined,
       },
       link: `${config.origin}/browse/${issueIdOrKey}`,
       timestamp: new Date().toISOString(),

@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for finding JIRA epics
@@ -80,20 +80,23 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
 
     const { issues = [], total } = data || {};
 
-    const epics = issues.map((epic: any) => {
-      const { id, key, fields } = epic;
-      return {
-        id,
-        key,
-        epicName: fields[epicName] || fields.summary,
-        summary: fields.summary,
-        status: fields.status?.name,
-        statusCategory: fields.status?.statusCategory?.name,
-        created: convertToIsoUtc(fields.created),
-        updated: convertToIsoUtc(fields.updated),
-        url: `${config.origin}/browse/${epic.key}`,
-      };
-    });
+    const epics = issues
+      .filter(isObject)
+      .map((epic: any) => {
+        const { id, key } = epic;
+        const fields = epic.fields || {};
+        return {
+          id,
+          key,
+          epicName: fields[epicName] || fields.summary,
+          summary: fields.summary,
+          status: fields.status?.name,
+          statusCategory: fields.status?.statusCategory?.name,
+          created: convertToIsoUtc(fields.created),
+          updated: convertToIsoUtc(fields.updated),
+          url: `${config.origin}/browse/${epic.key}`,
+        };
+      });
 
     // Sort epics by updated date (most recent first)
     epics.sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());

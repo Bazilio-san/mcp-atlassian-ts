@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for updating a comment in a JIRA issue
@@ -109,13 +109,13 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
         body: b,
         renderedBody,
         linkToComment,
-        author: {
+        author: isObject(author) ? {
           key: author?.key,
           name: author?.name,
           displayName: author?.displayName,
           emailAddress: author?.emailAddress,
-        },
-        updateAuthor: comment.updateAuthor ? {
+        } : undefined,
+        updateAuthor: isObject(comment.updateAuthor) ? {
           key: updateAuthor.key,
           name: updateAuthor.name,
           displayName: updateAuthor.displayName,

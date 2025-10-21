@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting JIRA worklog entries
@@ -61,8 +61,8 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
     const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
       params: { startAt, maxResults },
     });
-    const { worklogs = [], total = 0 } = response.data || {};
-
+    const { worklogs_ = [], total = 0 } = response.data || {};
+    const worklogs = worklogs_.filter(isObject);
     const json = {
       success: true,
       operation: 'get_worklog',
@@ -72,21 +72,21 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total,
       showing: worklogs.length,
-      worklogs: worklogs.map((w: any) => ({
-        id: w.id,
-        timeSpent: w.timeSpent,
-        timeSpentSeconds: w.timeSpentSeconds,
-        comment: w.comment || null,
-        started: convertToIsoUtc(w.started),
-        created: convertToIsoUtc(w.created),
-        updated: convertToIsoUtc(w.updated),
-        author: {
-          accountId: w.author.accountId,
-          displayName: w.author.displayName,
-          emailAddress: w.author.emailAddress || null,
-        },
-        visibility: w.visibility || null,
-      })),
+      worklogs: worklogs.map((w: any) => {
+        const { accountId, displayName, emailAddress } = w.author || {};
+        const author = accountId || displayName || emailAddress ? { accountId, displayName, emailAddress } : undefined;
+        return {
+          id: w.id,
+          timeSpent: w.timeSpent,
+          timeSpentSeconds: w.timeSpentSeconds,
+          comment: w.comment || undefined,
+          started: convertToIsoUtc(w.started),
+          created: convertToIsoUtc(w.created),
+          updated: convertToIsoUtc(w.updated),
+          author,
+          visibility: w.visibility || undefined,
+        };
+      }),
       timestamp: new Date().toISOString(),
     };
 

@@ -8,6 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting a JIRA user profile
@@ -91,7 +92,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
       operation: 'get_user_profile',
       login,
       message: 'User profile retrieved',
-      user: {
+      user: isObject(user) ? {
         accountId: user.accountId,
         displayName: user.displayName,
         emailAddress: user.emailAddress || undefined,
@@ -100,7 +101,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
         avatarUrls: user.avatarUrls || undefined,
         key: user.key || undefined,
         name: user.name || undefined,
-      },
+      } : null,
       timestamp: new Date().toISOString(),
     };
 

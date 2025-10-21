@@ -50,3 +50,5 @@ export const expandStringOrArray = (value: string | string[] | undefined, separa
   const arr = normalizeToArray(value);
   return arr.length > 0 ? arr.join(separator) : undefined;
 };
+
+export const isObject = (value: any): boolean => (value && typeof value === 'object');

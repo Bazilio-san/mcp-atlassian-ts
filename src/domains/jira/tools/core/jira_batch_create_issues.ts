@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for batch creating JIRA issues
@@ -117,16 +118,15 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     const response = await httpClient.post('/rest/api/2/issue/bulk', { issueUpdates });
 
     const result = response.data;
-    const successCount = result.issues?.length || 0;
-    const errorCount = result.errors?.length || 0;
+    const createdIssues = (result.issues || []).filter(isObject);
 
     // Build structured JSON
     const json = {
       operation: 'batch_create_issues',
       totalRequested: issues.length,
-      successCount,
-      errorCount,
-      createdIssues: result.issues?.map((issue: any) => ({
+      successCount: createdIssues.length || 0,
+      errorCount: result.errors?.length || 0,
+      createdIssues: createdIssues.map((issue: any) => ({
         key: issue.key,
         id: issue.id,
         self: issue.self,

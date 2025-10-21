@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for adding a comment to a JIRA issue
@@ -92,12 +92,12 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
         created: convertToIsoUtc(created),
         updated: convertToIsoUtc(updated),
         body: b,
-        author: {
-          key: author.key,
-          name: author.name,
-          displayName: author.displayName,
-          emailAddress: author.emailAddress,
-        },
+        author: isObject(author) ? {
+          key: author?.key,
+          name: author?.name,
+          displayName: author?.displayName,
+          emailAddress: author?.emailAddress,
+        } : undefined,
         visibility: vis,
         issueUrl,
       },

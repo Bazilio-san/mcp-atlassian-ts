@@ -7,7 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for downloading JIRA attachments
@@ -60,21 +60,23 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
       message: count ? `Found ${attachments.length} attachment(s) for ${issueIdOrKey}` : `No attachments found for ${issueIdOrKey}`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,
-      attachments: attachments.map((a: any) => ({
-        id: a.id,
-        filename: a.filename,
-        size: a.size,
-        sizeKB: Math.round(a.size / 1024),
-        mimeType: a.mimeType,
-        created: convertToIsoUtc(a.created),
-        downloadUrl: a.content,
-        author: {
-          key: a.author.key,
-          name: a.author.name,
-          displayName: a.author.displayName,
-          emailAddress: a.author.emailAddress,
-        },
-      })),
+      attachments: attachments.map((a: any) => {
+        return isObject(a) ? {
+          id: a.id,
+          filename: a.filename,
+          size: a.size,
+          sizeKB: Math.round(a.size / 1024),
+          mimeType: a.mimeType,
+          created: convertToIsoUtc(a.created),
+          downloadUrl: a.content,
+          author: isObject(a.author) ? {
+            key: a.author?.key,
+            name: a.author?.name,
+            displayName: a.author?.displayName,
+            emailAddress: a.author?.emailAddress,
+          } : undefined,
+        } : undefined;
+      }).filter(Boolean),
     };
 
     return formatToolResult(json);

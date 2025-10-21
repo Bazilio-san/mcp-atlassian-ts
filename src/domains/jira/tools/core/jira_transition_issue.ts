@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for transitioning a JIRA issue to a new status
@@ -71,7 +72,7 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
     const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
-    const transitions = response.data.transitions;
+    const transitions = (response.data.transitions || []).filter(isObject);
 
     // Make API call to transition issue
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-doTransition
@@ -85,7 +86,7 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
       message: `Issue ${issueIdOrKey} transitioned successfully (transition ID: ${transitionId})`,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       transitionId: transitionId,
-      transitionName: transitions.find((t: any) => t.id === transitionId)?.name || undefined,
+      transitionName: transitions.find((t: any) => t?.id === transitionId)?.name || undefined,
       comment: comment || null,
       fields: fields,
       link: `${config.origin}/browse/${issueIdOrKey}`,

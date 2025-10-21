@@ -7,6 +7,7 @@ import type { ToolContext } from '../../shared/tool-context.js';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
+import { isObject } from '../../../../core/utils/tools.js';
 
 /**
  * Tool definition for getting available transitions for a JIRA issue
@@ -60,11 +61,11 @@ async function getTransitionsHandler (args: any, context: ToolContext): Promise<
       transitions: transitions.map((t: any) => ({
         id: t.id,
         name: t.name,
-        to: {
+        to: isObject(t.to) ? {
           id: t.to.id,
           name: t.to.name,
           description: t.to.description,
-        },
+        } : undefined,
       })),
     };
 

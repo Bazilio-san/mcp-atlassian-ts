@@ -8,7 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 const LIMIT_OF_ISSUES = 100; // The tool does not return more than the specified number of tasks
@@ -118,16 +118,21 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
       jql: jql,
       total: searchResult.total || 0,
       showing: searchResult.issues.length,
-      issues: (searchResult.issues || []).map(({ key, fields }: any) => ({
-        key,
-        summary: fields.summary,
-        status: fields.status.name,
-        assignee: fields.assignee ? fields.assignee.displayName : 'Unassigned',
-        priority: fields.priority ? fields.priority.name : 'None',
-        issueType: fields.issuetype ? fields.issuetype.name : 'Unknown',
-        created: convertToIsoUtc(fields.created),
-        updated: convertToIsoUtc(fields.updated),
-      })),
+      issues: (searchResult.issues || [])
+        .filter(isObject)
+        .map((issue: any) => {
+          const fields = issue.fields || {};
+          return {
+            key: issue.key,
+            summary: fields.summary,
+            status: fields.status?.name,
+            assignee: fields.assignee?.displayName || 'Unassigned',
+            priority: fields.priority?.name || 'None',
+            issueType: fields.issuetype?.name || 'Unknown',
+            created: convertToIsoUtc(fields.created),
+            updated: convertToIsoUtc(fields.updated),
+          };
+        }),
       searchUrl: `${config.origin}/issues/?jql=${encodeURIComponent(jql)}`,
       timestamp: new Date().toISOString(),
     };
