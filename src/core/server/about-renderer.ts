@@ -6,8 +6,21 @@ import { createLogger } from '../utils/logger.js';
 import { appConfig } from '../../bootstrap/init-config.js';
 import type { JCConfig, ServerConfig } from '../../types/index.js';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
+import { ServiceModeJC } from '../../types/config';
 
 const logger = createLogger('about-renderer');
+
+const jiraSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="#0f65dc" d="M11.4 0a5.2 5.2 0 0 0 5.3 5.2h2v2a5.2 5.2 0 0 0 5.3 5.3V1a1 1 0 0 0-1-1H11.4M5.7 5.8A5.2 5.2 0 0 0 11 11h2.2v2a5.2 5.2 0 0 0 5.2 5.2V6.8a1 1 0 0 0-1-1H5.7M0 11.5a5.2 5.2 0 0 0 5.2 5.2h2.2v2a5.2 5.2 0 0 0 5.2 5.3V12.5a1 1 0 0 0-1-1H0Z"/>
+</svg>`;
+
+const confluenceSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="#0f65dc" d="m23.1 6 .8-1.3a.8.8 0 0 0-.3-1l-5-3a.8.8 0 0 0-1 .2L16.9 2c-2 3.3-4 2.9-7.6 1.2L4.4.9a.8.8 0 0 0-1 .4L1 6.7a.8.8 0 0 0 .4 1l5 2.3C13 13.3 18.8 13 23 6ZM1 18l-1 1.4a.8.8 0 0 0 .3 1l5 3a.8.8 0 0 0 1-.2L7 22c2-3.3 4-2.9 7.5-1.2l5 2.4a.8.8 0 0 0 1-.4l2.3-5.4a.8.8 0 0 0-.3-1l-5-2.3c-6.7-3.3-12.4-3-16.7 4Z"/>
+</svg>`;
+
+const atlassianSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="#0f65dc" d="M7.1 11q-.6-.5-1.1.2L0 23q-.2.8.7 1h8.2q.4 0 .6-.4c1.8-3.6.7-9.2-2.4-12.5M11.5.5c-5.8 9-.4 16.3 3 23.2q.2.3.6.4h8.2c.5 0 .9-.6.6-1L12.7.4c-.3-.5-1-.5-1.2 0"/>
+</svg>`;
 
 interface AboutPageData {
   serviceTitle: string;
@@ -17,7 +30,6 @@ interface AboutPageData {
   serviceVersion: string;
   serviceUrl: string;
   serviceUrlLabel: string;
-  externalServiceUrl: string;
   toolsCount: number;
   resourcesCount: number;
   promptsCount: number;
@@ -46,10 +58,12 @@ export class AboutPageRenderer {
   private resources: Resource[];
   private prompts: Prompt[];
   private startTime: Date;
+  private serviceMode: ServiceModeJC;
 
-  constructor (serverConfig: ServerConfig, serviceConfig: JCConfig, toolsCount: number = 0) {
+  constructor (serverConfig: ServerConfig, serviceConfig: JCConfig, serviceMode: ServiceModeJC, toolsCount: number = 0) {
     this.serverConfig = serverConfig;
     this.serviceConfig = serviceConfig;
+    this.serviceMode = serviceMode;
     this.toolsCount = toolsCount;
     this.resourcesCount = 0;
     this.promptsCount = 0;
@@ -72,14 +86,17 @@ export class AboutPageRenderer {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{SERVICE_TITLE}} MCP Server</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>{{SERVICE_ICON}}</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,{{SERVICE_ICON_ENCODED}}">
 </head>
 <body>
   <div class="simple-container">
     <!-- Header -->
     <header class="simple-header">
       <div class="header-row">
-        <h1>{{SERVICE_TITLE}} MCP Server</h1>
+        <div class="header-title">
+          <div class="service-icon">{{SERVICE_ICON}}</div>
+          <h1>{{SERVICE_TITLE}} MCP Server</h1>
+        </div>
         <div class="status {{STATUS_CLASS}}">{{STATUS_TEXT}}</div>
       </div>
     </header>
@@ -563,6 +580,26 @@ body {
   align-items: center;
 }
 
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.service-icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  margin-right: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
 .simple-header h1 {
   font-size: 30px;
   font-weight: 700;
@@ -872,6 +909,15 @@ body {
     gap: 12px;
   }
 
+  .header-title {
+    gap: 12px;
+  }
+
+  .service-icon {
+    width: 32px;
+    height: 32px;
+  }
+
   .simple-main {
     padding: 16px 24px;
   }
@@ -898,80 +944,35 @@ body {
   }
 
   private getServiceInfo (): { title: string; icon: string; description: string; mode: string } {
-    const mcpService = process.env.MCP_SERVICE?.toLowerCase();
-
-    if (mcpService === 'jira') {
+    if (this.serviceMode === 'jira') {
       return {
         title: 'JIRA',
-        icon: '🎫',
+        icon: jiraSvg,
         description: 'Atlassian JIRA project management and issue tracking',
-        mode: 'jira'
+        mode: 'jira',
       };
-    } else if (mcpService === 'confluence') {
+    } else if (this.serviceMode === 'confluence') {
       return {
         title: 'Confluence',
-        icon: '📖',
+        icon: confluenceSvg,
         description: 'Atlassian Confluence knowledge management and documentation',
-        mode: 'confluence'
+        mode: 'confluence',
       };
     } else {
       return {
         title: 'Atlassian',
-        icon: '🏢',
+        icon: atlassianSvg,
         description: 'Atlassian JIRA and Confluence integration',
-        mode: 'combined'
+        mode: 'combined',
       };
     }
   }
 
-  private getServiceUrl (): { url: string; label: string; externalUrl: string } {
-    const mcpService = process.env.MCP_SERVICE?.toLowerCase();
-
-    if (mcpService === 'jira') {
-      const uiUrl = process.env.UI_JIRA_URL || process.env.JIRA_URL;
-      return {
-        url: uiUrl || this.serviceConfig.url || 'Not configured',
-        label: 'JIRA URL',
-        externalUrl: uiUrl || this.serviceConfig.url || '#'
-      };
-    } else if (mcpService === 'confluence') {
-      const uiUrl = process.env.UI_CONFLUENCE_URL || process.env.CONFLUENCE_URL;
-      return {
-        url: uiUrl || this.serviceConfig.url || 'Not configured',
-        label: 'Confluence URL',
-        externalUrl: uiUrl || this.serviceConfig.url || '#'
-      };
-    } else {
-      // Combined mode - show both URLs if available
-      const jiraUrl = process.env.UI_JIRA_URL || process.env.JIRA_URL;
-      const confluenceUrl = process.env.UI_CONFLUENCE_URL || process.env.CONFLUENCE_URL;
-
-      if (jiraUrl && confluenceUrl) {
-        return {
-          url: `JIRA: ${jiraUrl}, Confluence: ${confluenceUrl}`,
-          label: 'Service URLs',
-          externalUrl: jiraUrl // Default to JIRA for external link
-        };
-      } else if (jiraUrl) {
-        return {
-          url: jiraUrl,
-          label: 'JIRA URL',
-          externalUrl: jiraUrl
-        };
-      } else if (confluenceUrl) {
-        return {
-          url: confluenceUrl,
-          label: 'Confluence URL',
-          externalUrl: confluenceUrl
-        };
-      } else {
-        return {
-          url: 'Not configured',
-          label: 'Service URL',
-          externalUrl: '#'
-        };
-      }
-    }
+  private getServiceUrl (): { url: string; label: string } {
+    return {
+      url: this.serviceConfig.url || 'Not configured',
+      label: `${this.serviceMode === 'jira' ? 'JIRA' : 'Confluence'} URL`,
+    };
   }
 
   private getAuthStatus (): { status: string; statusClass: string } {
@@ -995,7 +996,7 @@ body {
 
     return {
       status: hasAuth ? 'Configured' : 'Missing',
-      statusClass: hasAuth ? 'configured' : 'missing'
+      statusClass: hasAuth ? 'configured' : 'missing',
     };
   }
 
@@ -1021,42 +1022,51 @@ body {
     return JSON.stringify(data);
   }
 
+  private encodeSvgForDataUri (svg: string): string {
+    // Encode SVG for use in data URI
+    return encodeURIComponent(svg)
+      .replace(/'/g, '%27')
+      .replace(/"/g, '%22');
+  }
+
   private substitutePlaceholders (template: string, data: AboutPageData): string {
+    const iconEncoded = this.encodeSvgForDataUri(data.serviceIcon);
+
     return template
-      .replace(/\{\{SERVICE_TITLE\}\}/g, data.serviceTitle)
-      .replace(/\{\{SERVICE_ICON\}\}/g, data.serviceIcon)
-      .replace(/\{\{SERVICE_DESCRIPTION\}\}/g, data.serviceDescription)
-      .replace(/\{\{SERVICE_MODE\}\}/g, data.serviceMode)
-      .replace(/\{\{SERVICE_VERSION\}\}/g, data.serviceVersion)
-      .replace(/\{\{SERVICE_URL\}\}/g, data.serviceUrl)
-      .replace(/\{\{SERVICE_URL_LABEL\}\}/g, data.serviceUrlLabel)
-      .replace(/\{\{EXTERNAL_SERVICE_URL\}\}/g, data.externalServiceUrl)
-      .replace(/\{\{TOOLS_COUNT\}\}/g, data.toolsCount.toString())
-      .replace(/\{\{RESOURCES_COUNT\}\}/g, data.resourcesCount.toString())
-      .replace(/\{\{PROMPTS_COUNT\}\}/g, data.promptsCount.toString())
-      .replace(/\{\{TOOLS_JSON\}\}/g, this.escapeJsonForScript(data.tools))
-      .replace(/\{\{RESOURCES_JSON\}\}/g, this.escapeJsonForScript(data.resources))
-      .replace(/\{\{PROMPTS_JSON\}\}/g, this.escapeJsonForScript(data.prompts))
-      .replace(/\{\{AUTH_STATUS\}\}/g, data.authStatus)
-      .replace(/\{\{AUTH_STATUS_CLASS\}\}/g, data.authStatusClass)
-      .replace(/\{\{STATUS_TEXT\}\}/g, data.statusText)
-      .replace(/\{\{STATUS_CLASS\}\}/g, data.statusClass)
-      .replace(/\{\{UPTIME\}\}/g, data.uptime)
-      .replace(/\{\{SERVER_NAME\}\}/g, data.serverName)
-      .replace(/\{\{START_TIME\}\}/g, data.startTime)
+      .replace(/\{\{SERVICE_TITLE}}/g, data.serviceTitle)
+      .replace(/\{\{SERVICE_ICON}}/g, data.serviceIcon)
+      .replace(/\{\{SERVICE_ICON_ENCODED}}/g, iconEncoded)
+      .replace(/\{\{SERVICE_DESCRIPTION}}/g, data.serviceDescription)
+      .replace(/\{\{SERVICE_MODE}}/g, data.serviceMode)
+      .replace(/\{\{SERVICE_VERSION}}/g, data.serviceVersion)
+      .replace(/\{\{SERVICE_URL}}/g, data.serviceUrl)
+      .replace(/\{\{SERVICE_URL_LABEL}}/g, data.serviceUrlLabel)
+      .replace(/\{\{TOOLS_COUNT}}/g, data.toolsCount.toString())
+      .replace(/\{\{RESOURCES_COUNT}}/g, data.resourcesCount.toString())
+      .replace(/\{\{PROMPTS_COUNT}}/g, data.promptsCount.toString())
+      .replace(/\{\{TOOLS_JSON}}/g, this.escapeJsonForScript(data.tools))
+      .replace(/\{\{RESOURCES_JSON}}/g, this.escapeJsonForScript(data.resources))
+      .replace(/\{\{PROMPTS_JSON}}/g, this.escapeJsonForScript(data.prompts))
+      .replace(/\{\{AUTH_STATUS}}/g, data.authStatus)
+      .replace(/\{\{AUTH_STATUS_CLASS}}/g, data.authStatusClass)
+      .replace(/\{\{STATUS_TEXT}}/g, data.statusText)
+      .replace(/\{\{STATUS_CLASS}}/g, data.statusClass)
+      .replace(/\{\{UPTIME}}/g, data.uptime)
+      .replace(/\{\{SERVER_NAME}}/g, data.serverName)
+      .replace(/\{\{START_TIME}}/g, data.startTime)
       // Handle conditional sections for additional links
-      .replace(/\{\{#ADDITIONAL_LINKS\}\}[\s\S]*?\{\{\/ADDITIONAL_LINKS\}\}/g,
+      .replace(/\{\{#ADDITIONAL_LINKS}}[\s\S]*?\{\{\/ADDITIONAL_LINKS}}/g,
         data.additionalLinks && data.additionalLinks.length > 0
           ? data.additionalLinks.map(link =>
-              `<a href="${link.url}" target="_blank" rel="noopener" class="link-button tertiary">
+            `<a href="${link.url}" target="_blank" rel="noopener" class="link-button tertiary">
                 <svg class="link-icon" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
                   <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" fill="none"/>
                 </svg>
                 ${link.title}
-              </a>`
-            ).join('')
-          : ''
+              </a>`,
+          ).join('')
+          : '',
       );
   }
 
@@ -1102,7 +1112,6 @@ body {
       serviceVersion: appConfig.version,
       serviceUrl: serviceUrls.url,
       serviceUrlLabel: serviceUrls.label,
-      externalServiceUrl: serviceUrls.externalUrl,
       toolsCount: this.toolsCount,
       resourcesCount: this.resourcesCount,
       promptsCount: this.promptsCount,
@@ -1119,9 +1128,9 @@ body {
       additionalLinks: [
         {
           title: 'GitHub Repository',
-          url: 'https://github.com/anthropics/mcp'
-        }
-      ]
+          url: 'https://github.com/anthropics/mcp',
+        },
+      ],
     };
 
     return this.substitutePlaceholders(this.htmlTemplate, data);
@@ -1143,7 +1152,8 @@ body {
 export function createAboutPageRenderer (
   serverConfig: ServerConfig,
   serviceConfig: JCConfig,
-  toolsCount: number = 0
+  serviceMode: ServiceModeJC,
+  toolsCount: number = 0,
 ): AboutPageRenderer {
-  return new AboutPageRenderer(serverConfig, serviceConfig, toolsCount);
+  return new AboutPageRenderer(serverConfig, serviceConfig, serviceMode, toolsCount);
 }

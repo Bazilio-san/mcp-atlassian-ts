@@ -400,6 +400,7 @@ export class McpAtlassianServer {
       this.aboutPageRenderer = createAboutPageRenderer(
         this.serverConfig,
         this.serviceConfig,
+        this.serviceMode,
         0, // Will be updated after tools are registered
       );
 
