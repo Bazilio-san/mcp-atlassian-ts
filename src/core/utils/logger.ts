@@ -3,6 +3,7 @@
  */
 
 import pino from 'pino';
+import pinoPretty from 'pino-pretty';
 import type { LogContext } from '../../types/index.js';
 
 // Sensitive data patterns to mask
@@ -89,7 +90,7 @@ function createPinoLogger () {
 
   const pinoConfig: pino.LoggerOptions = {
     level: logLevel,
-    timestamp: pino.stdTimeFunctions.isoTime,
+    timestamp: pino.stdTimeFunctions.epochTime,
     formatters: {
       level (label) {
         return { level: label };
@@ -107,20 +108,21 @@ function createPinoLogger () {
     },
   };
 
-  // Pretty print for development
-  if ((process.env.NODE_ENV || 'development') === 'development') {
-    pinoConfig.transport = {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        ignore: 'pid,hostname,component',
-        translateTime: 'yyyy-mm-dd HH:MM:ss',
-        messageFormat: '[{component}] {msg}',
-      },
-    };
-  }
+  const prettyOptions = {
+    colorize: true,
+    customColors: 'err:red,info:blue', // --customColors
+    // Hide meta fields and level from the output line
+    ignore: 'pid,hostname,level,component',
+    // Format: 16:10:47 [auth] Testing authentication...
+    messageFormat: '[{component}] {message}',
+    translateTime: 'HH:MM:ss',
+    // Force single-line output; do not print objects (context) on new lines
+    hideObject: true,
+  };
 
-  return pino(pinoConfig);
+  const prettyStream = pinoPretty(prettyOptions);
+
+  return pino(pinoConfig, prettyStream as any);
 }
 
 // Global logger instance
@@ -136,15 +138,12 @@ export function createLogger (component: string) {
     debug: (message: string, context?: LogContext, ...args: any[]) => {
       componentLogger.debug(maskSensitiveData({ ...context, message }), ...args);
     },
-
     info: (message: string, context?: LogContext, ...args: any[]) => {
       componentLogger.info(maskSensitiveData({ ...context, message }), ...args);
     },
-
     warn: (message: string, context?: LogContext, ...args: any[]) => {
       componentLogger.warn(maskSensitiveData({ ...context, message }), ...args);
     },
-
     error: (message: string, error?: Error | LogContext, ...args: any[]) => {
       const logData: any = { message };
 
@@ -160,7 +159,6 @@ export function createLogger (component: string) {
 
       componentLogger.error(maskSensitiveData(logData), ...args);
     },
-
     fatal: (message: string, error?: Error | LogContext, ...args: any[]) => {
       const logData: any = { message };
 
@@ -176,7 +174,6 @@ export function createLogger (component: string) {
 
       componentLogger.fatal(maskSensitiveData(logData), ...args);
     },
-
     child: (bindings: Record<string, any>) => {
       return componentLogger.child(maskSensitiveData(bindings));
     },

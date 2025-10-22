@@ -156,8 +156,8 @@ export class AuthenticationManager {
   async testAuthentication (baseUrl: string): Promise<boolean> {
     try {
       logger.info('Testing authentication...');
-
       setCurrentToolName('serverInfo');
+
       // Test with a simple API call
       const response = await this.httpClient.get('/rest/api/2/serverInfo', {
         baseURL: baseUrl,
@@ -170,7 +170,8 @@ export class AuthenticationManager {
 
       return false;
     } catch (error: Error | any) {
-      logger.error('Authentication test failed', error instanceof Error ? error : new Error(String(error)));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Authentication test failed: ${errorMessage}`);
       return false;
     }
   }
