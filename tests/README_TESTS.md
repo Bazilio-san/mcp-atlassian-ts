@@ -70,7 +70,7 @@ node tests/emulator/jira.js
 
 ## Запустить MCP сервер (в отдельном терминале)
 JIRA_URL="http://localhost:8080" JIRA_USERNAME="admin" JIRA_PASSWORD="admin" \
-MCP_SERVICE="jira" TRANSPORT_TYPE="http" SERVER_PORT="3000" \
+MCP_SERVICE_MODE="jira" TRANSPORT_TYPE="http" SERVER_PORT="3000" \
 node dist/src/index.js
 
 ## Запустить тесты (в третьем терминале)

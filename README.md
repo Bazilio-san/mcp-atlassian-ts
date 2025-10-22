@@ -423,7 +423,7 @@ Create or edit `.vscode/mcp.json`:
       "command": "node",
       "args": ["dist/index.js"],
       "env": {
-        "MCP_SERVICE": "jira",
+        "MCP_SERVICE_MODE": "jira",
         "JIRA_URL": "https://your-company.atlassian.net",
         "JIRA_USERNAME": "your-login",
         "JIRA_PASSWORD": "your-api-token-or-password"
@@ -468,7 +468,7 @@ For connecting to a locally running MCP server:
     command: 'node',
     args: ['dist/index.js'],
     env: {
-      MCP_SERVICE: 'jira',
+      MCP_SERVICE_MODE: 'jira',
       JIRA_URL: 'http://localhost:8080',
       JIRA_USERNAME: 'your-login',
       JIRA_PASSWORD: 'your-api-token-or-password'
@@ -488,7 +488,7 @@ const transport = new StdioClientTransport({
   command: 'node',
   args: ['path/to/mcp-atlassian-ts/dist/index.js'],
   env: {
-    MCP_SERVICE: 'jira',
+    MCP_SERVICE_MODE: 'jira',
     JIRA_URL: 'https://your-company.atlassian.net',
     JIRA_USERNAME: 'your-login',
     JIRA_PASSWORD: 'your-api-token-or-password'
@@ -518,7 +518,7 @@ async def main():
         command="node",
         args=["path/to/mcp-atlassian-ts/dist/index.js"],
         env={
-            "MCP_SERVICE": "jira",
+            "MCP_SERVICE_MODE": "jira",
             "JIRA_URL": "https://your-company.atlassian.net",
             "JIRA_USERNAME": "your-login",
             "JIRA_PASSWORD": "your-api-token-or-password"

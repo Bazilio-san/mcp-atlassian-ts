@@ -19,7 +19,7 @@ server:
   # Transport type for MCP communication. Options: stdio, http, sse. ENV: TRANSPORT_TYPE
   transportType: http
 
-  # Service mode - which service to run: jira | confluence. ENV: MCP_SERVICE
+  # Service mode - which service to run: jira | confluence. ENV: MCP_SERVICE_MODE
   serviceMode: jira
 
   # Server authentication token for HTTP mode. ENV: SERVER_TOKEN

@@ -27,7 +27,7 @@ The server is built with **TypeScript** and supports modern features including m
 - `npm run test:watch` - Run tests in watch mode
 
 ### Production
-- `npm start` - Start production server (requires MCP_SERVICE env var)
+- `npm start` - Start production server (requires MCP_SERVICE_MODE env var)
 - `npm run start:jira` - Start in JIRA-only mode
 - `npm run start:confluence` - Start in Confluence-only mode
 
@@ -97,8 +97,8 @@ src/
 
 ### Service Mode Support
 The server supports single-service operation:
-- `MCP_SERVICE=jira` - JIRA-only mode (34 tools + 3 utility tools)
-- `MCP_SERVICE=confluence` - Confluence-only mode (17 tools + 3 utility tools)
+- `MCP_SERVICE_MODE=jira` - JIRA-only mode (34 tools + 3 utility tools)
+- `MCP_SERVICE_MODE=confluence` - Confluence-only mode (17 tools + 3 utility tools)
 
 ### Transport Support
 - `stdio` - For MCP client integration (Claude Desktop)
@@ -129,7 +129,7 @@ The server supports single-service operation:
 All configuration via `.env` file (see `.env.example` for template):
 
 #### Required Variables
-- **Service Mode**: `MCP_SERVICE` (jira|confluence) - **REQUIRED**
+- **Service Mode**: `MCP_SERVICE_MODE` (jira|confluence) - **REQUIRED**
 - **URLs**: `JIRA_URL` and/or `CONFLUENCE_URL`
 
 #### Authentication (Choose ONE method per service)

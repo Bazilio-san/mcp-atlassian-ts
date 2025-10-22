@@ -79,11 +79,11 @@ Service Modes:
 Examples:
   npm start -- --service jira         # Run JIRA-only server
   npm start -- --service confluence   # Run Confluence-only server
-  MCP_SERVICE=jira npm start          # Run JIRA-only server via env var
-  MCP_SERVICE=confluence npm start    # Run Confluence-only server via env var
+  MCP_SERVICE_MODE=jira npm start          # Run JIRA-only server via env var
+  MCP_SERVICE_MODE=confluence npm start    # Run Confluence-only server via env var
 
 Environment Variables:
-  MCP_SERVICE            Service mode (jira|confluence) - required
+  MCP_SERVICE_MODE            Service mode (jira|confluence) - required
   JIRA_URL              JIRA instance URL
   JIRA_USERNAME         Username for JIRA authentication
   JIRA_PASSWORD         Password/token for JIRA authentication
@@ -134,7 +134,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
     const serviceMode = cliServiceMode || appConfig.server.serviceMode;
 
     if (!serviceMode) {
-      throw new ServerError('Service mode is required. Set MCP_SERVICE environment variable or use --service flag');
+      throw new ServerError('Service mode is required. Set MCP_SERVICE_MODE environment variable or use --service flag');
     }
 
     logger.info(`Starting ${appConfig.productName} Server v${appConfig.version}`, { serviceMode });

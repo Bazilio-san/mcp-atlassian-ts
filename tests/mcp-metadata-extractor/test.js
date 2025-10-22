@@ -66,7 +66,7 @@ const localAtlassianConfig = {
       JIRA_URL: 'http://localhost:80',
       JIRA_USERNAME: 'admin',
       JIRA_PASSWORD: 'admin',
-      MCP_SERVICE: 'jira',
+      MCP_SERVICE_MODE: 'jira',
       TRANSPORT_TYPE: 'stdio',
       LOG_LEVEL: 'error'
     }

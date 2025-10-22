@@ -3,7 +3,7 @@ server:
   port: SERVER_PORT
   host: SERVER_HOST
   transportType: TRANSPORT_TYPE
-  serviceMode: MCP_SERVICE
+  serviceMode: MCP_SERVICE_MODE
   token: SERVER_TOKEN
 toolAnswerAs: TOOL_ANSWER_AS
 
