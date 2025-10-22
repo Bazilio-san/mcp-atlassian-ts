@@ -38,7 +38,7 @@ export const confluence_add_comment: ConfluenceToolWithHandler = {
 
       const commentInput: any = {
         type: 'comment',
-        container: { id: pageId },
+        container: { type: 'page', id: pageId },
         body: {
           storage: {
             value: processBodyContent(body),

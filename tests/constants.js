@@ -10,3 +10,7 @@ export const TEST_ISSUE_TYPE_NAME = process.env.TEST_ISSUE_TYPE_NAME || 'Task';
 export const TEST_USERNAME = process.env.TEST_USERNAME || 'vpupkin';
 export const JIRA_EPIC_LINK_FIELD_ID = process.env.JIRA_EPIC_LINK_FIELD_ID || 'customfield_10008';
 export const TEST_ISSUE_LINK_TYPE = process.env.TEST_ISSUE_LINK_TYPE || 'Clone';
+
+// Confluence test constants
+export const TEST_CONFLUENCE_SPACE = process.env.TEST_CONFLUENCE_SPACE || 'AITECH';
+export const TEST_CONFLUENCE_USERNAME = process.env.TEST_CONFLUENCE_USERNAME || 'admin';
