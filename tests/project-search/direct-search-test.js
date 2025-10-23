@@ -2,12 +2,9 @@
 // Тестируем текстовый поиск с реальными данными из JIRA
 
 import {
-  initializeVectorSearch,
-  updateProjectsIndex,
   searchProjects,
-  resetVectorSearchSingleton,
 } from '../../dist/src/domains/jira/tools/projects/search-project/index.js';
-import { getJiraProjects, setUpdateProjectsIndexFunction, initializeProjectsCache } from '../../dist/src/domains/jira/tools/projects/search-project/projects-cache.js';
+import { getProjectsCache } from '../../dist/src/domains/jira/tools/projects/search-project/projects-cache.js';
 import { createAuthenticationManager } from '../../dist/src/core/auth.js';
 
 // Тестовые поисковые запросы (основаны на реальных проектах)
@@ -51,20 +48,12 @@ async function runDirectSearchTests () {
 
     const authManager = createAuthenticationManager(authConfig, jiraUrl);
 
-    // Initialize projects cache
-    initializeProjectsCache(authManager.getHttpClient());
-
-    resetVectorSearchSingleton();
-    await initializeVectorSearch();
-    setUpdateProjectsIndexFunction(updateProjectsIndex);
-
-    const projectsResult = await getJiraProjects();
+    const projectsResult = await getProjectsCache(); // VVA
     if (projectsResult.error || projectsResult.result.length === 0) {
       console.log('ошибка загрузки проектов');
       return;
     }
 
-    await updateProjectsIndex(projectsResult.result, true);
     console.log('загружено проектов:', projectsResult.result.length);
     console.log('');
 

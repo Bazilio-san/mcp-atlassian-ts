@@ -70,9 +70,6 @@ import { jira_get_priorities } from './tools/metadata/jira_get_priorities.js';
 // Import bulk operation tools
 import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
 
-// Import projects cache initialization
-import { initializeProjectsCache } from './tools/projects/search-project/projects-cache.js';
-
 /**
  * Modular JIRA Tools Manager
  */
@@ -115,8 +112,6 @@ export class JiraToolsManager {
   async initialize (): Promise<void> {
     this.context.logger.info('JIRA tools manager initializing...');
 
-    // Initialize projects cache with HTTP client
-    initializeProjectsCache(this.context.httpClient);
     this.context.logger.info('Projects cache initialized');
 
     this.context.logger.info('JIRA tools manager initialized');

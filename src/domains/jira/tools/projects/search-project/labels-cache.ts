@@ -60,7 +60,7 @@ export async function getProjectLabels (
   projectId: string,
   context: ToolContext,
 ): Promise<ProjectLabelsResult> {
-  const { cache, logger } = context;
+  const { cache, logger, config } = context;
 
   // Check memory cache first
   const memoryCacheKey = `labels_${projectKey}`;
@@ -111,7 +111,7 @@ export async function getProjectLabels (
 
         // Fallback to issue search
         try {
-          const searchLabels = await fetchLabelsFromIssueSearch(httpClient, projectKey, logger);
+          const searchLabels = await fetchLabelsFromIssueSearch(httpClient, projectKey, logger, config.restPath);
           logger.info('Labels fetched from issue search', {
             projectKey,
             count: searchLabels.length,
@@ -217,6 +217,7 @@ async function fetchLabelsFromIssueSearch (
   httpClient: AxiosInstance,
   projectKey: string,
   logger: any,
+  restPath: string,
 ): Promise<string[]> {
   logger.debug('Fetching labels from issue search', { projectKey });
 
@@ -226,9 +227,7 @@ async function fetchLabelsFromIssueSearch (
     maxResults: 1000,
   };
 
-  // Note: This function doesn't have access to config, using hardcoded path
-  // TODO: Refactor to accept config parameter
-  const response = await httpClient.post('/rest/api/2/search', searchPayload);
+  const response = await httpClient.post(`${restPath}/search`, searchPayload);
   const data = response.data as SearchApiResponse;
 
   if (!data.issues || !Array.isArray(data.issues)) {

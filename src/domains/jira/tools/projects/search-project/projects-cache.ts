@@ -1,32 +1,25 @@
 
 import type { AxiosInstance } from 'axios';
-import {
-  TErrorProjKeyNameResult,
-  IJiraCreateMetaResponse, IJiraProject, TKeyName,
-} from '../../../../../types/index.js';
+import { IJiraCreateMetaResponse, IJiraProject, TKeyName } from '../../../../../types/index.js';
 import { createLogger } from '../../../../../core/utils/logger.js';
 import { transliterate, transliterateRU, enToRuVariants } from '../../../../../core/utils/transliterate.js';
-
-// Lazy import для избежания циклических зависимостей
-let updateProjectsIndex: any;
-
-// HTTP client from ToolContext (passed via initialization)
-let httpClient: AxiosInstance | null = null; // VVQ
 
 const logger = createLogger('JIRA_PROJECTS');
 
 // Новая оптимизированная структура кеша
-interface ProjectCacheEntry {
+interface IProjectCacheEntry {
   project: TKeyName;
   variants: string[];
 }
 
+interface IProjectCache {
+  [key: string]: IProjectCacheEntry;
+}
+
 const projectsCache: {
-  cache: {
-    [key: string]: ProjectCacheEntry;
-  } | null;
+  cache: IProjectCache | null;
   expire: number;
-  cachePromise: Promise<TErrorProjKeyNameResult> | null;
+  cachePromise: Promise<IProjectCache> | null;
 } = {
   cache: null,
   expire: 0,
@@ -35,14 +28,8 @@ const projectsCache: {
 
 const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// Initialize projects cache with ToolContext
-export const initializeProjectsCache = (httpClient_: AxiosInstance): void => {
-  httpClient = httpClient_;
-  logger.info('Projects cache initialized with HTTP client');
-};
-
 // Получить все проекты (пространства) Jira (с кешированием)
-export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
+export const getProjectsCache = async (httpClient: AxiosInstance, restPath: string): Promise<IProjectCache> => {
   const now = Date.now();
   // Return cached if not expired
   if (projectsCache.cache && now < projectsCache.expire) {
@@ -51,7 +38,7 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
     cachedProjects.forEach(p => {
       hash[p.key] = p;
     });
-    return { error: null, result: cachedProjects, hash };
+    return projectsCache.cache;
   }
   // If a request is already in flight, reuse it
   if (projectsCache.cachePromise) {
@@ -61,25 +48,20 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
   projectsCache.cachePromise = (async () => {
     try {
       if (!httpClient) {
-        throw new Error('Projects cache not initialized - call initializeProjectsCache() first');
+        throw new Error('httpClient is not provided');
       }
 
-      // Note: This function doesn't have access to config, using hardcoded path
-      // TODO: Refactor to accept config parameter
-      const res = await httpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project', {
+      const res = await httpClient.get<IJiraCreateMetaResponse>(`${restPath}/project`, {
         params: { expand: 'description,projectKeys' },
       });
       const projects = res.data;
 
       // Создаем новую структуру кеша с вариантами
-      const cacheEntries: { [key: string]: ProjectCacheEntry } = {};
-      const result: TKeyName[] = [];
+      const cacheEntries: { [key: string]: IProjectCacheEntry } = {};
 
       if (Array.isArray(projects)) {
         projects.forEach(({ key, name, description = '' }: IJiraProject) => {
           const project: TKeyName = { key, name };
-          result.push(project);
-
           // Создаем все варианты для поиска
           const keyLC = key.toLowerCase();
           const nameLC = name.toLowerCase();
@@ -107,25 +89,11 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
         });
       }
 
-      // Обновляем индекс векторного поиска если он доступен
-      if (typeof updateProjectsIndex === 'function') {
-        updateProjectsIndex(result).catch((err: any) => {
-          logger.error('Failed to update vector index', err);
-        });
-      }
       projectsCache.cache = cacheEntries;
       projectsCache.expire = Date.now() + PROJECTS_TTL_MS;
-
-      // Создаем hash для обратной совместимости
-      const hash: { [key: string]: TKeyName } = {};
-      result.forEach(p => {
-        hash[p.key] = p;
-      });
-
-      return { error: null, result, hash };
+      return cacheEntries;
     } catch (err) {
-      logger.error('Failed to fetch JIRA projects', err as Error);
-      return { error: err, result: [], hash: {} };
+      throw err;
     } finally {
       projectsCache.cachePromise = null;
     }
@@ -141,15 +109,5 @@ export const clearProjectsCache = (): void => {
   logger.debug('Projects cache cleared');
 };
 
-// Set the function to update vector index (to avoid circular dependencies)
-export const setUpdateProjectsIndexFunction = (fn: any): void => {
-  updateProjectsIndex = fn;
-};
-
-// Get optimized projects cache for search
-export const getOptimizedProjectsCache = (): { [key: string]: ProjectCacheEntry } | null => {
-  return projectsCache.cache;
-};
-
 // Export ProjectCacheEntry type for use in text-search
-export type { ProjectCacheEntry };
+export type { IProjectCacheEntry };
