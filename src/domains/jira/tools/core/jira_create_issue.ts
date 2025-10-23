@@ -18,7 +18,7 @@ export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
 Workflow:
 1) Collect or receive: projectIdOrKey, issueType, summary.
 2) If project is not specified, ask the user for clarification.
-3) Use the 'jira_find_project' tool to obtain the exact project key.
+3) Use the 'jira_project_finder' tool to obtain the exact project key.
 4) With this project key, USE 'jira_get_project' tool to list available: 
    - issue types
    - priorities
@@ -26,7 +26,7 @@ Workflow:
 5) For bug reports, encourage user to provide detailed reproduction steps in the description.
 6) If assignee or reporter are not specified - leave blank. If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
 7) Display all collected parameters for confirmation before creation.
-8) If issue is under an Epic, use 'jira_find_epic' to pick epic’s issue key and pass it as epicKey.
+8) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic’s issue key and pass it as epicKey.
 9) Upon user confirmation, call jira_create_issue with the final parameters.
 
 Non-interactive mode:
@@ -37,13 +37,13 @@ If called by another agent (without user input), skip clarification and confirma
       properties: {
         projectIdOrKey: {
           type: 'string',
-          description: 'Project key (e.g., \'AITECH\' or \'REQ\') or ID (e.g.,1003)',
+          description: `Project key (e.g., 'AITECH' or 'REQ') or ID (e.g.,1003)
+Use 'jira_project_finder' tool to clarify Project Key`,
         },
         issueType: {
           type: 'string',
           description: `Issue type name or ID.
-When using 'jira_find_project', the response includes available issue types to choose from.
-Among them you need to choose the right one.`,
+After clarifying the project key, use 'jira_get_project' tool which returns  available issue types for project`,
         },
         summary: {
           type: 'string',
@@ -77,8 +77,8 @@ If not indicated explicitly, form a short title according to the description`,
         epicKey: {
           type: 'string',
           description: `Epic issue key to link this issue
-When searching for a project by jira_find_project tool will return a list of available epics.
-Among them you need to choose the right one`,
+If user ask to link new issue to epik, after clarifying the project key, 
+use 'jira_get_epics_for_project' tool to clarify epic key`,
         },
         components: {
           type: 'array',
@@ -88,11 +88,13 @@ Among them you need to choose the right one`,
         },
         originalEstimate: {
           type: 'string',
-          description: 'Optional. Original time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 1.5d, 2h, 30m; convert natural language inputs into this format',
+          description: `Optional. Original time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 1.5d, 2h, 30m;
+Convert natural language inputs into this format`,
         },
         remainingEstimate: {
           type: 'string',
-          description: 'Optional. Remaining time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 3d, 4h; convert natural language inputs into this format',
+          description: `Optional. Remaining time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 3d, 4h;
+Convert natural language inputs into this format`,
         },
         customFields: {
           type: 'object',

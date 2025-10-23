@@ -20,7 +20,7 @@ import { jira_update_issue } from './tools/core/jira_update_issue.js';
 import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
 import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
 import { jira_link_to_epic } from './tools/core/jira_link_to_epic.js';
-import { jira_find_epic } from './tools/core/jira_find_epic.js';
+import { jira_get_epics_for_project } from './tools/core/jira_get_epics_for_project.js';
 
 // Import comment and transition tools
 import { jira_add_comment } from './tools/comments/jira_add_comment.js';
@@ -37,7 +37,7 @@ import { jira_get_project_versions } from './tools/projects/jira_get_project_ver
 import { jira_create_project_version } from './tools/projects/jira_create_project_version.js';
 import { jira_delete_version } from './tools/projects/jira_delete_version.js';
 import { jira_batch_create_versions } from './tools/projects/jira_batch_create_versions.js';
-import { jira_find_project } from './tools/projects/jira_find_project.js';
+import { jira_project_finder } from './tools/projects/jira_project_finder.js';
 
 // Import user tools
 import { jira_get_user_profile } from './tools/metadata/jira_get_user_profile.js';
@@ -138,7 +138,7 @@ export class JiraToolsManager {
       jira_delete_issue,
       jira_batch_create_issues,
       jira_link_to_epic,
-      jira_find_epic,
+      jira_get_epics_for_project,
 
       // Comment and transition tools
       jira_add_comment,
@@ -155,7 +155,7 @@ export class JiraToolsManager {
       jira_create_project_version,
       jira_delete_version,
       jira_batch_create_versions,
-      jira_find_project,
+      jira_project_finder,
 
       // User tools
       jira_get_user_profile,

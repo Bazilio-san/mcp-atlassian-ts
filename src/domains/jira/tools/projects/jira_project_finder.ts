@@ -1,8 +1,8 @@
 import type { ToolContext } from '../../shared/tool-context.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { searchProjects } from './search-project/text-search';
-import { withErrorHandling } from '../../../../core/errors';
+import { searchProjects } from './search-project/text-search.js';
+import { withErrorHandling } from '../../../../core/errors.js';
 
 const removeScore = ({ name, key }: any) => ({ name, key });
 
@@ -14,9 +14,9 @@ const removeScore = ({ name, key }: any) => ({ name, key });
  * - Transliteration (RU↔EN)
  * - Wildcard search (*)
  */
-export const jira_find_project: ToolWithHandler = {
-  name: 'jira_find_project',
-  description: `Searches Jira projects by name or key (including typos) via semantic search.
+export const jira_project_finder: ToolWithHandler = {
+  name: 'jira_project_finder',
+  description: `Searches Jira projects by fuzzy search.
 Returns exact projects names and keys similar to search.
 Use this tool to verify the correct project key when working with AI Agent tools that require the project key as a parameter.`,
   annotations: {

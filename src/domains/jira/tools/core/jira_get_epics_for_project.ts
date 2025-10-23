@@ -12,9 +12,9 @@ import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 /**
  * Tool definition for finding JIRA epics
  */
-export const jira_find_epic: ToolWithHandler = {
-  name: 'jira_find_epic',
-  description: `Use this tool when a user asks to create a task under a specific epic and the project key is already known. 
+export const jira_get_epics_for_project: ToolWithHandler = {
+  name: 'jira_get_epics_for_project',
+  description: `Use this tool when a user asks to create a issue under a specific epic and the project key is already known. 
 It fetches the project’s epics so you can pick the exact epic key. For each epic it returns: key, epicName, summary, status, url.`,
   inputSchema: {
     type: 'object',
@@ -26,6 +26,12 @@ It fetches the project’s epics so you can pick the exact epic key. For each ep
       includeCompleted: {
         type: 'boolean',
         description: 'Include completed epics (statusCategory = Done). Default is false.',
+        default: false,
+      },
+      includeMoreInfo: {
+        type: 'boolean',
+        description: `If true, include epics details: id, summary, status, url. 
+Otherwise returns only epic names. Default is false.`,
         default: false,
       },
       maxResults: {
@@ -52,7 +58,7 @@ It fetches the project’s epics so you can pick the exact epic key. For each ep
  */
 async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { projectKey, includeCompleted = false, maxResults = 1000 } = args;
+    const { projectKey, includeCompleted = false, maxResults = 1000, includeMoreInfo } = args;
     const { httpClient, config, logger } = context;
 
     logger.info('Finding epics for project', { projectKey, includeCompleted });
@@ -100,15 +106,22 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
 
     // Sort epics by updated date (most recent first)
     epics.sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+    const count = epics.length;
 
-    const result = {
-      projectKey,
-      epicCount: epics.length,
-      total,
-      epics,
-      epicNames: epics.map((e: any) => e.epicName), // Quick list of just epic names for easy reference
+    const json: any = {
+      success: true,
+      operation: 'get_epics_for_project',
+      message: count
+        ? `Found ${count} epics for project ${projectKey}${
+          total !== count ? ` (showing ${count} of ${total} total)` : ''}`
+        : `No epics found for project ${projectKey}`,
     };
 
-    return formatToolResult(result);
+    if (includeMoreInfo) {
+      json.epics = epics;
+    } else {
+      json.epicNames = epics.map((e: any) => e.epicName);
+    }
+    return formatToolResult(json);
   });
 }

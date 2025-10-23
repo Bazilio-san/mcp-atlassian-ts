@@ -445,7 +445,7 @@ export class JiraMcpTestCases {
       {
         fullId: '1-10',
         name: 'Find Epics in Project',
-        toolName: 'jira_find_epic',
+        toolName: 'jira_get_epics_for_project',
         params: {
           projectKey: this.testProjectKey,
           includeCompleted: false,
@@ -515,7 +515,7 @@ export class JiraMcpTestCases {
       {
         fullId: '2-4',
         name: 'Find Project by Name',
-        toolName: 'jira_find_project',
+        toolName: 'jira_project_finder',
         params: { query: 'аитех', limit: 5 },
         description: 'Find project using semantic search',
       },

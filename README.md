@@ -205,12 +205,12 @@ docker run -p 3000:3000 --env-file .env mcp-atlassian-ts
 - [`jira_batch_create_issues`](#jira_batch_create_issues) - Create multiple issues efficiently
 - [`jira_get_transitions`](#jira_get_transitions) - Get available transitions for issue
 - [`jira_transition_issue`](#jira_transition_issue) - Transition issue to new status
-- [`jira_find_epic`](#jira_find_epic) - Find epic by name
+- [`jira_get_epics_for_project`](#jira_get_epics_for_project) - Find epic by name
 
 #### Project Management (8 tools) {#jira-projects}
 - [`jira_get_projects`](#jira_get_projects) - Get all accessible projects
 - [`jira_get_project`](#jira_get_project) - Get specific project details
-- [`jira_find_project`](#jira_find_project) - Find project by name/key
+- [`jira_project_finder`](#jira_project_finder) - Find project by name/key
 - [`jira_get_project_versions`](#jira_get_project_versions) - Get project versions/releases
 - [`jira_create_project_version`](#jira_create_project_version) - Create new project version
 - [`jira_batch_create_versions`](#jira_batch_create_versions) - Create multiple versions
