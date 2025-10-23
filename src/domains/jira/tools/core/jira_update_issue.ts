@@ -120,7 +120,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
     // Make API call
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-editIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-put
-    await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
+    await httpClient.put(`${config.restPath}/issue/${issueIdOrKey}`, updateData);
 
     const json = {
       success: true,

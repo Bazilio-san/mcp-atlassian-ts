@@ -153,15 +153,12 @@ export class AuthenticationManager {
   /**
    * Test authentication by making a simple API call
    */
-  async testAuthentication (baseUrl: string): Promise<boolean> {
+  async testAuthentication (url: string): Promise<boolean> {
     try {
       logger.info('Testing authentication...');
       setCurrentToolName('serverInfo');
 
-      // Test with a simple API call
-      const response = await this.httpClient.get('/rest/api/2/serverInfo', {
-        baseURL: baseUrl,
-      });
+      const response = await this.httpClient.get(url);
 
       if (response.status === 200) {
         logger.info('Authentication test successful');
@@ -169,9 +166,17 @@ export class AuthenticationManager {
       }
 
       return false;
-    } catch (error: Error | any) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Authentication test failed: ${errorMessage}`);
+    } catch (err: Error | any) {
+      const status = err?.response?.status;
+      const code = err?.code;
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (status === 401 || status === 403) {
+        logger.error(`Authentication test failed ${status}: ${errorMessage}`);
+      } else if (code === 'ENOTFOUND' || code === 'ECONNREFUSED' || code === 'ETIMEDOUT') {
+        logger.error(`Connection error while testing auth: ${code}: ${errorMessage}`);
+      } else {
+        logger.error(`Authentication test failed: ${errorMessage}`);
+      }
       return false;
     }
   }

@@ -49,7 +49,7 @@ export const jira_get_projects: ToolWithHandler = {
  */
 async function getProjectsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, logger, config } = context;
     const { expand, recent } = args;
 
     logger.info('Fetching JIRA projects', { expand, recent });
@@ -70,7 +70,7 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
     const projects = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getAllProjects
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-get
-      const response = await httpClient.get('/rest/api/2/project', { params });
+      const response = await httpClient.get(`${config.restPath}/project`, { params });
       return response.data || [];
     });
 

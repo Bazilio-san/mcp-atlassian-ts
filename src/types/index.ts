@@ -48,6 +48,8 @@ export interface ServerConfig {
 export interface JCConfig {
   url: string;
   origin: string;
+  apiVersion: 2 | 3;
+  restPath: string;
   auth: AuthConfig;
   fieldId?: {
     epicLink: string;

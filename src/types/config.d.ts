@@ -55,6 +55,8 @@ export interface IToolsConfig {
 // JIRA configuration
 export interface IJiraConfig {
   url: string;
+  apiVersion: 2 | 3
+  restPath: string; // /rest/api/<2|3>
   origin: string;
   auth?: {
     basic?: IBasicAuth;

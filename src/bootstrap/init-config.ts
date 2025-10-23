@@ -93,6 +93,8 @@ function buildConfig (): IConfig {
     description: packageJson.description,
   };
   const { jira, confluence } = cfg;
+  jira.apiVersion = String(jira.apiVersion) === '2' ? 2 : 3;
+  jira.restPath = `/rest/api/${jira.apiVersion}`;
   jira.origin = getBaseUrl(jira.url);
   jira.usedInstruments = normalizeToolsConfig(jira.usedInstruments);
   if (!jira.fieldId.epicLink) {

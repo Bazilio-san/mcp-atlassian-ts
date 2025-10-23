@@ -64,6 +64,8 @@ export const getJiraProjects = async (): Promise<TErrorProjKeyNameResult> => {
         throw new Error('Projects cache not initialized - call initializeProjectsCache() first');
       }
 
+      // Note: This function doesn't have access to config, using hardcoded path
+      // TODO: Refactor to accept config parameter
       const res = await httpClient.get<IJiraCreateMetaResponse>('/rest/api/2/project', {
         params: { expand: 'description,projectKeys' },
       });

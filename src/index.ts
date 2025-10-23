@@ -145,7 +145,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
     // Override service mode in config for the server
     (appConfig.server as any).serviceMode = serviceMode;
 
-    logger.info('Configuration loaded', { transportType, serviceMode, jira });
+    logger.info(`Configuration loaded ${JSON.stringify({ transportType, serviceMode, jira }, null, 2)} `);
 
     // Initialize cache
     initializeCache(cache);
@@ -159,7 +159,8 @@ async function main (cliServiceMode?: ServiceModeJC) {
       const authConfig = buildAuthConfig(jira.auth || {});
       validateAuthConfig(authConfig);
       const authManager = createAuthenticationManager(authConfig, jira.url);
-      const isConnected = await authManager.testAuthentication(jira.url);
+      const v = jira.apiVersion;
+      const isConnected = await authManager.testAuthentication(`${jira.url}/rest/api/${v}/${v === 2 ? 'serverInfo' : 'myself'}`);
       if (!isConnected) {
         throw new ServerError('Failed to authenticate with JIRA');
       }
@@ -171,7 +172,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
       const authConfig = buildAuthConfig(confluence.auth || {});
       validateAuthConfig(authConfig);
       const authManager = createAuthenticationManager(authConfig, confluence.url);
-      const isConnected = await authManager.testAuthentication(confluence.url);
+      const isConnected = await authManager.testAuthentication(`${confluence.url}/rest/api/user/current`);
       if (!isConnected) {
         throw new ServerError('Failed to authenticate with Confluence');
       }

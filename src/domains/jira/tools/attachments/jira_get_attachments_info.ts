@@ -42,13 +42,13 @@ export const jira_get_attachments_info: ToolWithHandler = {
 async function downloadAttachmentsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
-    const { httpClient, logger } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Fetching JIRA attachments', { issueIdOrKey });
 
     // Generate cache key
 
-    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, {
+    const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}`, {
       params: { expand: 'attachment' },
     });
     const attachments = response.data.fields.attachment || [];

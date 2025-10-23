@@ -42,13 +42,13 @@ export const jira_get_transitions: ToolWithHandler = {
 async function getTransitionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
-    const { httpClient, logger } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Fetching JIRA transitions', { issueIdOrKey });
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
-    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/transitions`);
+    const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}/transitions`);
     const transitions = response.data.transitions;
 
     const json = {

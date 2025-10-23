@@ -292,6 +292,7 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 GET {{baseUrl}}/rest/api/2/user?username=vvmakarov
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
+
 ### Search users
 # https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-findUsers
 # https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-search-get

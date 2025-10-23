@@ -31,6 +31,8 @@ export class JiraServer extends McpAtlassianServer {
         } = {},
         url,
         origin,
+        apiVersion,
+        restPath,
         fieldId,
       },
       cache,
@@ -62,7 +64,14 @@ export class JiraServer extends McpAtlassianServer {
       auth = { ...oauth2, type: 'oauth2' };
     }
 
-    const jiraConfig: JCConfig = { url, origin, auth, fieldId };
+    const jiraConfig: JCConfig = {
+      url,
+      origin,
+      apiVersion,
+      restPath,
+      auth,
+      fieldId,
+    };
 
     // Initialize parent with service mode configuration
     super(serverConfig, jiraConfig, 'jira');

@@ -34,9 +34,9 @@ export const jira_get_priorities: ToolWithHandler = {
  * Handler function for getting JIRA priorities
  */
 async function getPrioritiesHandler (args_: any, context: ToolContext): Promise<any> {
-  const { httpClient } = context;
+  const { httpClient, config } = context;
   return withErrorHandling(async () => {
-    const priorities = await getCachedPriorityObjects(httpClient);
+    const priorities = await getCachedPriorityObjects(httpClient, config);
 
     const json = {
       success: true,

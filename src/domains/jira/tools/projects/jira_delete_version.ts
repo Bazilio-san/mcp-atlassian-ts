@@ -48,7 +48,7 @@ export const jira_delete_version: ToolWithHandler = {
  */
 async function deleteVersionHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, logger, config } = context;
     const { versionId, moveFixIssuesTo, moveAffectedIssuesTo } = args;
 
     logger.info('Deleting JIRA version', { versionId, moveFixIssuesTo, moveAffectedIssuesTo });
@@ -65,7 +65,7 @@ async function deleteVersionHandler (args: any, context: ToolContext): Promise<a
     }
 
     // Delete the version using removeAndSwap API
-    const response = await httpClient.post(`/rest/api/2/version/${versionId}/removeAndSwap`, requestBody);
+    const response = await httpClient.post(`${config.restPath}/version/${versionId}/removeAndSwap`, requestBody);
 
     // Invalidate project versions cache
     cache.keys().filter(key => key.includes('versions')).forEach(key => cache.del(key));

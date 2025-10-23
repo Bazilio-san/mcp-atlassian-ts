@@ -67,7 +67,7 @@ lead?: {key, name, displayName},
  */
 async function getProjectHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, logger, config } = context;
     const { projectIdOrKey, expand, properties } = args;
 
     logger.info('Fetching JIRA project details', { projectIdOrKey, expand, properties });
@@ -92,7 +92,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     const project = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProject
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-projectidorkey-get
-      const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}`, { params });
+      const response = await httpClient.get(`${config.restPath}/project/${projectIdOrKey}`, { params });
       return response.data;
     });
 
@@ -108,7 +108,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     }
     let priorityNames: string[] | undefined;
     try {
-      priorityNames = await getPriorityNamesArray(httpClient);
+      priorityNames = await getPriorityNamesArray(httpClient, config);
     } catch (error) {
       logger.warn('Failed to retrieve priority names', {
         error: error instanceof Error ? error.message : String(error),

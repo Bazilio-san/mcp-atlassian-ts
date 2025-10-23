@@ -110,11 +110,28 @@ function createPinoLogger () {
 
   const prettyOptions = {
     colorize: true,
-    customColors: 'err:red,info:blue', // --customColors
-    // Hide meta fields and level from the output line
-    ignore: 'pid,hostname,level,component',
-    // Format: 16:10:47 [auth] Testing authentication...
-    messageFormat: '[{component}] {message}',
+    // Colorize levels properly - customPrettifiers for level formatting
+    customPrettifiers: {
+      level: (logLevel: string | object) => {
+        if (typeof logLevel !== 'string') {
+          return String(logLevel);
+        }
+
+        const colors: Record<string, string> = {
+          'TRACE': '\x1b[90m[TRACE]\x1b[0m',   // gray
+          'DEBUG': '\x1b[36m[DEBUG]\x1b[0m',   // cyan
+          'INFO': '\x1b[32m[INFO]\x1b[0m',     // green
+          'WARN': '\x1b[33m[WARN]\x1b[0m',     // yellow
+          'ERROR': '\x1b[31m[ERROR]\x1b[0m',   // red
+          'FATAL': '\x1b[41m[FATAL]\x1b[0m',   // red background
+        };
+        return colors[logLevel] || logLevel;
+      },
+    },
+    // Hide meta fields from the output line
+    ignore: 'pid,hostname,component',
+    // Format: 16:10:47 [INFO] [auth] Testing authentication...
+    messageFormat: '{level} [{component}] {message}',
     translateTime: 'HH:MM:ss',
     // Force single-line output; do not print objects (context) on new lines
     hideObject: true,

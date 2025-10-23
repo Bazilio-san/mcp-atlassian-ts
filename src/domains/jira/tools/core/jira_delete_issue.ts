@@ -46,7 +46,7 @@ export const jira_delete_issue: ToolWithHandler = {
 async function deleteIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, deleteSubtasks = false } = args;
-    const { httpClient, logger } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Deleting JIRA issue', { issueIdOrKey, deleteSubtasks });
 
@@ -56,7 +56,7 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
     // Make API call
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-delete
-    await httpClient.delete(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+    await httpClient.delete(`${config.restPath}/issue/${issueIdOrKey}`, { params });
 
     // Format response for MCP
     const json = {

@@ -58,7 +58,13 @@ export class ConfluenceServer extends McpAtlassianServer {
       auth = { type: 'basic', username, password };
     }
 
-    const confluenceConfig: JCConfig = { url, origin, auth };
+    const confluenceConfig: JCConfig = {
+      url,
+      origin,
+      apiVersion: 3,
+      restPath: 'foo',
+      auth,
+    };
 
     // Initialize parent with service mode configuration
     super(serverConfig, confluenceConfig, 'confluence');

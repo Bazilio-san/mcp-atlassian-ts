@@ -84,7 +84,7 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
       params.append('expand', expand);
     }
 
-    const url = `/rest/api/2/issue/${issueIdOrKey}/comment/${commentId}${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${config.restPath}/issue/${issueIdOrKey}/comment/${commentId}${params.toString() ? '?' + params.toString() : ''}`;
 
     // Make API call to update comment
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-updateComment

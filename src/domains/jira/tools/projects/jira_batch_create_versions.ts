@@ -80,7 +80,7 @@ export const jira_batch_create_versions: ToolWithHandler = {
  */
 async function batchCreateVersionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, logger, config } = context;
     const { versions } = args;
 
     logger.info('Batch creating JIRA versions', { count: versions.length });
@@ -92,7 +92,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
       try {
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
-        const response = await httpClient.post('/rest/api/2/version', version);
+        const response = await httpClient.post(`${config.restPath}/version`, version);
         results.push(response.data);
         logger.debug('Successfully created version', { name: version.name, id: response.data.id });
       } catch (error) {

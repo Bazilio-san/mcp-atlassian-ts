@@ -41,7 +41,7 @@ export const jira_search_fields: ToolWithHandler = {
 async function searchFieldsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { query } = args;
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, logger, config } = context;
 
     logger.info('Searching JIRA fields', { query });
 
@@ -52,7 +52,7 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
     const fields = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#field-getFields
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-fields/#api-rest-api-2-field-get
-      const response = await httpClient.get('/rest/api/2/field');
+      const response = await httpClient.get(`${config.restPath}/field`);
       let allFields = response.data;
 
       if (query) {

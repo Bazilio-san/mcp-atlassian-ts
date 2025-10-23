@@ -76,7 +76,7 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
           };
 
           // Update the issue with the epic link
-          await httpClient.put(`/rest/api/2/issue/${issueIdOrKey}`, updateData);
+          await httpClient.put(`${config.restPath}/issue/${issueIdOrKey}`, updateData);
           logger.info('Successfully linked using Epic Link field');
         } catch (fieldError: any) {
           // If both methods fail, provide comprehensive error

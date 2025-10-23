@@ -35,7 +35,7 @@ export const jira_get_link_types: ToolWithHandler = {
  */
 async function getLinkTypesHandler (_args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, config, logger } = context;
 
     logger.info('Fetching JIRA issue link types');
 
@@ -46,7 +46,7 @@ async function getLinkTypesHandler (_args: any, context: ToolContext): Promise<a
     const linkTypes = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLinkType-getIssueLinkTypes
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-link-types/#api-rest-api-2-issuelinktype-get
-      const response = await httpClient.get('/rest/api/2/issueLinkType');
+      const response = await httpClient.get(`${config.restPath}/issueLinkType`);
       return response.data.issueLinkTypes || [];
     }, 600); // Cache for 10 minutes
 

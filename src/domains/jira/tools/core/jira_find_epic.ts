@@ -76,7 +76,7 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-search
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-get
-    const { data } = (await httpClient.post('/rest/api/2/search', requestBody)) || {};
+    const { data } = (await httpClient.post(`${config.restPath}/search`, requestBody)) || {};
 
     const { issues = [], total } = data || {};
 

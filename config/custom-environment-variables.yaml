@@ -24,6 +24,7 @@ ssl:
 
 jira:
   url: JIRA_URL
+  apiVersion: JIRA_API_VERSION
   auth:
     basic:
       username: JIRA_USERNAME

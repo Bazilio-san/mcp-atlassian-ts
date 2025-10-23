@@ -226,6 +226,8 @@ async function fetchLabelsFromIssueSearch (
     maxResults: 1000,
   };
 
+  // Note: This function doesn't have access to config, using hardcoded path
+  // TODO: Refactor to accept config parameter
   const response = await httpClient.post('/rest/api/2/search', searchPayload);
   const data = response.data as SearchApiResponse;
 

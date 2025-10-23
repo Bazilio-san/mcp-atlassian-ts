@@ -76,7 +76,7 @@ ssl:
 jira:
   # JIRA instance URL. ENV: JIRA_URL
   url: https://jira.company.com
-
+  apiVersion: 2
   # Authentication configuration - Choose ONE method:
   auth:
     # 1. Basic Auth: username + password/token

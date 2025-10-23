@@ -52,13 +52,13 @@ export const jira_get_worklog: ToolWithHandler = {
 async function getWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, startAt = 0, maxResults = 50 } = args;
-    const { httpClient, logger } = context;
+    const { httpClient, config, logger } = context;
 
     logger.info('Fetching JIRA worklog entries', { issueIdOrKey });
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getWorklog
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-get
-    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}/worklog`, {
+    const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}/worklog`, {
       params: { startAt, maxResults },
     });
     const { worklogs_ = [], total = 0 } = response.data || {};

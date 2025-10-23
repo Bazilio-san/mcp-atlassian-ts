@@ -41,7 +41,7 @@ export const jira_get_project_versions: ToolWithHandler = {
  */
 async function getProjectVersionsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { httpClient, cache, logger } = context;
+    const { httpClient, cache, logger, config } = context;
     const { projectIdOrKey } = args;
 
     logger.info('Fetching JIRA project versions', { projectIdOrKey });
@@ -53,7 +53,7 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
     const versions = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#project-getProjectVersions
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-project-projectidorkey-versions-get
-      const response = await httpClient.get(`/rest/api/2/project/${projectIdOrKey}/versions`);
+      const response = await httpClient.get(`${config.restPath}/project/${projectIdOrKey}/versions`);
       return response.data || [];
     });
 

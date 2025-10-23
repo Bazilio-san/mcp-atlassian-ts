@@ -102,7 +102,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
 
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#search-search
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-get
-        const response = await httpClient.get('/rest/api/2/search', { params });
+        const response = await httpClient.get(`${config.restPath}/search`, { params });
         return response.data || [];
       },
       60, // Cache for 1 minute

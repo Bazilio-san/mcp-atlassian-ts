@@ -85,7 +85,7 @@ interface JiraIssueWithError {
 async function batchGetChangelogsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueKeys } = args;
-    const { httpClient, logger } = context;
+    const { httpClient, logger, config } = context;
 
     logger.info('Batch fetching JIRA changelogs', { count: issueKeys.length });
 
@@ -95,7 +95,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
     const fn = async (issueKey: string): Promise<JiraIssueWithChangelog | JiraIssueWithError> => {
       try {
         logger.debug(`Direct changelog endpoint not supported for ${issueKey}, trying fallback`);
-        const { data } = await httpClient.get(`/rest/api/2/issue/${issueKey}?expand=changelog`) || {};
+        const { data } = await httpClient.get(`${config.restPath}/issue/${issueKey}?expand=changelog`) || {};
         const { changelog } = data || {};
         const { startAt, maxResults, total, histories = [] } = changelog || {};
         const issueWithChangelog: JiraIssueWithChangelog = {

@@ -1,6 +1,8 @@
 # Confluence REST API Documentation Links
 
-This document contains a mapping of Confluence REST API endpoints used in this project to their official documentation links, specifically focused on Confluence version 7.13.3.
+This document contains a mapping of Confluence REST API endpoints used in this 
+project to their official documentation links, specifically focused on Confluence 
+version 7.13.3.
 
 ## Confluence REST API v2 Endpoints
 
@@ -159,7 +161,7 @@ This document contains a mapping of Confluence REST API endpoints used in this p
 ### Confluence 7.13.3 Specific Notes
 
 #### API Version
-- **Primary API:** REST API v2 (`/rest/api/2/...`)
+- **Primary API:** REST API (`/rest/api/...`)
 - **Base URL:** `https://your-confluence-domain.com`
 - **Authentication:** Basic Auth, Personal Access Tokens, OAuth 2.0
 
@@ -186,8 +188,8 @@ This document contains a mapping of Confluence REST API endpoints used in this p
 ## Confluence 7.13.3 vs Cloud API Differences
 
 ### API Structure
-- **Server 7.13.3:** REST API v2 (`/rest/api/2/...`)
-- **Cloud:** REST API v2 and v3 available (`/rest/api/2/...` and `/rest/api/3/...`)
+- **Server 7.13.3:** REST API (`/rest/api/...`)
+- **Cloud:** REST API v1 and v2 available (`/rest/api/...` and `/wiki/api/v2/...`)
 
 ### Content Format
 - **Server 7.13.3:** Storage format primarily (HTML-like)
@@ -238,4 +240,5 @@ Latest cloud API documentation for reference and comparison.
 
 ## Notes
 
-This documentation focuses on Confluence 7.13.3 as specified in the requirements. All API endpoints are validated against this version's capabilities and limitations.
+This documentation focuses on Confluence 7.13.3 as specified in the requirements. 
+All API endpoints are validated against this version's capabilities and limitations.

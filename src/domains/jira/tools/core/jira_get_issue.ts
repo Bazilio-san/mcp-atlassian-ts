@@ -90,7 +90,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
-    const response = await httpClient.get(`/rest/api/2/issue/${issueIdOrKey}`, { params });
+    const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}`, { params });
     const issue = response.data;
 
     if (!issue) {
