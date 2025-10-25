@@ -61,3 +61,23 @@ export const jiraUserObj = (u: IJiraUser): {
   };
   return isNonEmptyObject(user) ? user : undefined;
 };
+
+export const getVisibility = (what: string) => {
+  const visibility = {
+    type: 'object',
+    description: `${what} visibility restrictions`,
+    properties: {
+      type: {
+        type: 'string',
+        enum: ['group', 'role'],
+        description: 'Whether visibility of this item is restricted to a group or role',
+      },
+      value: {
+        type: 'string',
+        description: 'The name of the group or role that visibility of this item is restricted to',
+      },
+    },
+    required: ['type', 'value'],
+  };
+  return visibility;
+};

@@ -8,6 +8,8 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { inRFC3339 } from '../../../../core/constants.js';
+import { trim } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for creating a sprint
@@ -32,11 +34,13 @@ export const jira_create_sprint: ToolWithHandler = {
       },
       startDate: {
         type: 'string',
-        description: 'Start date of the sprint in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.',
+        description: `Start date of the sprint ${inRFC3339}. Optional.`,
+        format: 'date-time',
       },
       endDate: {
         type: 'string',
-        description: 'End date of the sprint in ISO 8601 format (e.g., 2023-01-15T00:00:00.000Z). Optional.',
+        description: `End date of the sprint ${inRFC3339}. Optional.`,
+        format: 'date-time',
       },
     },
     required: ['name', 'originBoardId'],
@@ -54,6 +58,7 @@ export const jira_create_sprint: ToolWithHandler = {
 
 /**
  * Handler function for creating a sprint
+ * VVM: ALL FIELDS ARE VALIDATED
  */
 async function createSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
@@ -63,16 +68,22 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
     logger.info(`Creating JIRA sprint '${name}' on board id: ${originBoardId} | goal: ${goal}`);
 
     // Build sprint data
-    const sprintData: any = { name, originBoardId };
+    const sprintData: any = { name: trim(name).substring(0, 400), originBoardId };
 
     if (goal) {
       sprintData.goal = goal;
     }
     if (startDate) {
-      sprintData.startDate = convertToIsoUtc(startDate);
+      sprintData.startDate = convertToIsoUtc(
+        startDate,
+        `The Start date (startDate) parameter was passed in the wrong format '${startDate}'. Needed ${inRFC3339}`,
+      );
     }
     if (endDate) {
-      sprintData.endDate = convertToIsoUtc(endDate);
+      sprintData.endDate = convertToIsoUtc(
+        endDate,
+        `The End date (endDate) parameter was passed in the wrong format: '${endDate}'. Needed ${inRFC3339}`,
+      );
     }
 
     // Create sprint via API

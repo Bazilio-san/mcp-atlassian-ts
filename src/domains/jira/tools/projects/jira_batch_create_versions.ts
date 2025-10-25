@@ -8,6 +8,7 @@ import { eh, withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { stringOrADF2markdown } from '../../shared/utils.js';
+import { getVersionData } from './_validate-version-params.js';
 
 /**
  * Tool definition for jira_batch_create_versions
@@ -39,12 +40,12 @@ export const jira_batch_create_versions: ToolWithHandler = {
             releaseDate: { // VVA не задействовано
               type: 'string',
               description: 'Optional release date in YYYY-MM-DD format',
-              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+              format: 'date',
             },
             startDate: { // VVA не задействовано
               type: 'string',
               description: 'Optional start date in YYYY-MM-DD format',
-              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+              format: 'date',
             },
             archived: { // VVA не задействовано
               type: 'boolean',
@@ -85,22 +86,22 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
     const { versions } = args;
 
     logger.info(`Batch creating ${versions.length} JIRA versions`);
-// VVA валидировать и добавлять параметры если есть
-
     const results: any[] = [];
 
     // Process each version sequentially to handle dependencies and errors properly
-    for (const version of versions) {
+    for (const versionData of versions) {
+      const version = getVersionData(versionData);
+      const { name } = version;
       try {
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
         const response = await httpClient.post(`${config.restPath}/version`, version);
         results.push(response.data);
-        logger.debug(`Successfully created version: name: ${version.name} | id: ${response.data.id}`);
+        logger.debug(`Successfully created version: name: ${name} | id: ${response.data.id}`);
       } catch (err) {
         const error = eh(err);
-        logger.warn(`Failed to create version: version: ${version.name} | error: ${error.message}`);
-        results.push({ error: error.message, version: version.name });
+        logger.warn(`Failed to create version: version: ${name} | error: ${error.message}`);
+        results.push({ error: error.message, version: name });
       }
     }
 

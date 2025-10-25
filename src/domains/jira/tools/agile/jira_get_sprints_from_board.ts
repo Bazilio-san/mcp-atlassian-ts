@@ -4,11 +4,12 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
+import { withErrorHandling, NotFoundError, ValidationError } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { STATE_ENUM } from '../../../../core/constants.js';
 
 /**
  * Tool definition for getting sprints from board
@@ -36,6 +37,7 @@ export const jira_get_sprints_from_board: ToolWithHandler = {
       state: {
         type: 'string',
         description: 'Filter sprints by state. Valid values: active, future, closed',
+        enum: STATE_ENUM,
       },
     },
     required: ['boardId'],
@@ -63,10 +65,13 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
 
     // Build query parameters
     const params: any = { startAt, maxResults };
-    if (state) {
+
+    if (state !== undefined) {
+      if (!STATE_ENUM.includes(state)) {
+        throw new ValidationError(`Valid value for parameter state is: ${STATE_ENUM.join(', ')}`);
+      }
       params.state = state;
     }
-
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'boardSprints', { boardId, ...params });
 

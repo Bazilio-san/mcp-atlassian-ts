@@ -157,11 +157,15 @@ Content-Type: application/json
     },
     "description": "Three maidens by the window\nSpinning late in the evening",
     "assignee": {
-      "name": "vvpupkin"
+      "name": "{{SUBST_USER}}"
     },
     "labels": ["CS-BOT"],
     "priority": {
       "id": "10504"
+    },
+    "timetracking": {
+      "originalEstimate":  "1w 2d",
+      "remainingEstimate": "1w"
     }
   }
 }

@@ -7,8 +7,9 @@ import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
-import { convertToIsoUtc } from '../../../../core/utils/tools.js';
-import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
+import { convertToIsoUtc, parseAndNormalizeTimeSpent } from '../../../../core/utils/tools.js';
+import { getVisibility, jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
+import { inJiraDuration, inRFC3339 } from '../../../../core/constants.js';
 
 /**
  * Tool definition for adding JIRA worklog entry
@@ -25,29 +26,17 @@ export const jira_add_worklog: ToolWithHandler = {
       },
       timeSpent: {
         type: 'string',
-        description: 'Time spent (e.g., "1h 30m", "2d 4h")',
+        description: `Time spent ${inJiraDuration}`,
       },
       comment: {
-        type: 'string',
+        type: 'string', // markdown
         description: 'Worklog comment in markdown format',
       },
       started: {
         type: 'string',
-        description: 'When work started. ISO 8601 format (e.g., 2023-01-15T00:00:00.000Z)',
+        description: `When work started. ${inRFC3339}`,
       },
-      visibility: {
-        type: 'object',
-        properties: {
-          type: {
-            type: 'string',
-            enum: ['group', 'role'],
-          },
-          value: {
-            type: 'string',
-          },
-        },
-        description: 'Worklog visibility restrictions',
-      },
+      visibility: getVisibility('Worklog'),
     },
     required: ['issueIdOrKey', 'timeSpent'],
     additionalProperties: false,
@@ -64,21 +53,27 @@ export const jira_add_worklog: ToolWithHandler = {
 
 /**
  * Handler function for adding JIRA worklog entry
+ * VVM: ALL FIELDS ARE VALIDATED
  */
 async function addWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueIdOrKey, timeSpent, comment, started, visibility } = args;
+    const { issueIdOrKey, comment, started, visibility } = args;
     const { httpClient, config, logger, mdToADF } = context;
+
+    const { normalized: timeSpent, seconds } = parseAndNormalizeTimeSpent(args.timeSpent, 'timeSpent');
 
     logger.info(`Adding JIRA worklog to the issue ${issueIdOrKey} | timeSpent: ${timeSpent}`);
 
     // Build worklog input
-    const worklogInput: any = { timeSpent };
+    const worklogInput: any = { timeSpentSeconds: seconds };
     if (comment) {
       worklogInput.comment = mdToADF(comment);
     }
     if (started) {
-      worklogInput.started = convertToIsoUtc(started);
+      worklogInput.started = convertToIsoUtc(
+        started,
+        `Parameter 'started' was passed in the wrong format: '${started}'. Needed ${inRFC3339}`,
+      );
     }
     if (visibility) {
       worklogInput.visibility = visibility;
@@ -102,7 +97,7 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
       [i]: issueIdOrKey,
       worklog: {
         id: worklog.id,
-        timeSpent: timeSpent,
+        timeSpent,
         timeSpentSeconds: worklog.timeSpentSeconds,
         comment: stringOrADF2markdown(comment) || undefined,
         started: convertToIsoUtc(worklog.started),

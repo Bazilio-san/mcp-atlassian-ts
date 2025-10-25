@@ -8,6 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { isObject } from '../../../../core/utils/tools.js';
+import { trim } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for batch creating JIRA issues
@@ -43,23 +44,23 @@ export const jira_batch_create_issues: ToolWithHandler = {
               type: 'string',
               description: 'Assignee account ID or email',
             },
-            priority: {
+            priority: { // VVA
               type: 'string',
               description: 'Priority name (e.g., High, Medium, Low)',
             },
-            labels: {
+            labels: { // VVA
               type: 'array',
               items: { type: 'string' },
               description: 'Array of labels',
               default: [],
             },
-            components: {
+            components: { // VVA
               type: 'array',
               items: { type: 'string' },
               description: 'Array of component names',
               default: [],
             },
-            customFields: {
+            customFields: { // VVA
               type: 'object',
               description: 'Custom field values as key-value pairs',
               default: {},
@@ -102,7 +103,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
           [/^\d+$/.test(issue.projectIdOrKey) ? 'id' : 'key']: issue.projectIdOrKey,
         },
         issuetype: { name: issue.issueType },
-        summary: issue.summary,
+        summary: trim(issue.summary).substring(0, 400),
         description: mdToADF(issue.description),
         assignee: issue.assignee ? { accountId: issue.assignee } : undefined,
         priority: issue.priority ? { name: issue.priority } : undefined,

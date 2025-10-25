@@ -1,3 +1,5 @@
+// noinspection UnnecessaryLocalVariableJS
+
 /**
  * JIRA tool module: Create Issue
  * Creates a new JIRA issue with specified fields
@@ -8,11 +10,14 @@ import { withErrorHandling, ValidationError, ehs } from '../../../../core/errors
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
-import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { normalizeToArray, parseAndNormalizeTimeSpent } from '../../../../core/utils/tools.js';
 import { stringOrADF2markdown } from '../../shared/utils.js';
+import { inJiraDuration } from '../../../../core/constants.js';
+import { trim } from '../../../../core/utils/text.js';
+import { getPriorityNamesArray } from '../../shared/priority-service.js';
 
-export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
-  return {
+export async function createJiraCreateIssueTool (priorityNamesArray?: string[]): Promise<ToolWithHandler> {
+  const result: ToolWithHandler = {
     name: 'jira_create_issue',
     description: `Create a new issue (task, bug, story, etc.) in JIRA.
 
@@ -31,8 +36,7 @@ Workflow:
 9) Upon user confirmation, call jira_create_issue with the final parameters.
 
 Non-interactive mode:
-If called by another agent (without user input), skip clarification and confirmation steps. Use available data only.`
-    ,
+If called by another agent (without user input), skip clarification and confirmation steps. Use available data only.`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -44,7 +48,7 @@ Use 'jira_project_finder' tool to clarify Project Key`,
         issueType: {
           type: 'string',
           description: `Issue type name or ID.
-After clarifying the project key, use 'jira_get_project' tool which returns  available issue types for project`,
+After clarifying the project key, use 'jira_get_project' tool which returns available issue types for project`,
         },
         summary: {
           type: 'string',
@@ -89,12 +93,12 @@ use 'jira_get_epics_for_project' tool to clarify epic key`,
         },
         originalEstimate: {
           type: 'string',
-          description: `Optional. Original time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 1.5d, 2h, 30m;
+          description: `Optional. Original time estimate ${inJiraDuration};
 Convert natural language inputs into this format`,
         },
         remainingEstimate: {
           type: 'string',
-          description: `Optional. Remaining time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 3d, 4h;
+          description: `Optional. Remaining time estimate ${inJiraDuration};
 Convert natural language inputs into this format`,
         },
         customFields: { // VVQ из сведений о проекте брать схему и правила заполнения кастомных полей
@@ -115,6 +119,12 @@ Convert natural language inputs into this format`,
     },
     handler: createIssueHandler,
   };
+
+  if (priorityNamesArray?.length) {
+    // @ts-ignore
+    result.inputSchema.properties.priority.enum = priorityNamesArray;
+  }
+  return result;
 }
 
 /**
@@ -179,7 +189,6 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     const {
       projectIdOrKey,
       issueType,
-      summary,
       description,
       assignee,
       reporter,
@@ -193,7 +202,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     } = args;
     const { httpClient, config, logger, mdToADF } = context;
 
-    logger.info(`Creating JIRA issue in project: ${projectIdOrKey} | issueType: ${issueType} | summary: ${summary}`);
+    logger.info(`Creating JIRA issue in project: ${projectIdOrKey} | issueType: ${issueType} | summary: ${args.summary}`);
 
     // Validate required fields
     if (!projectIdOrKey) {
@@ -202,9 +211,10 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     if (!issueType) {
       throw new ValidationError('Issue type is required');
     }
-    if (!summary) {
+    if (!args.summary) {
       throw new ValidationError('Summary is required');
     }
+    const summary = trim(args.summary).substring(0, 400);
 
     // Validate project exists and issueType is correct
     const projectValidation = await validateProjectAndIssueType(projectIdOrKey, issueType, context);
@@ -242,6 +252,11 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
       issueInput.fields.reporter = { name: reporter };
     }
     if (priority) {
+      const priorityNamesArray = await getPriorityNamesArray(httpClient, config);
+      if (priorityNamesArray.length && !priorityNamesArray.includes(priority)) {
+        throw new ValidationError(`Priority name '${priority
+        }' does not match any valid priority name: ${JSON.stringify(priorityNamesArray)}.`);
+      }
       issueInput.fields.priority = { name: priority };
     }
     if (normalizedLabels.length > 0) {
@@ -260,10 +275,12 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     if (originalEstimate || remainingEstimate) {
       issueInput.fields.timetracking = {};
       if (originalEstimate) {
-        issueInput.fields.timetracking.originalEstimate = originalEstimate;
+        const { normalized } = parseAndNormalizeTimeSpent(originalEstimate, 'originalEstimate');
+        issueInput.fields.timetracking.originalEstimate = normalized;
       }
       if (remainingEstimate) {
-        issueInput.fields.timetracking.remainingEstimate = remainingEstimate;
+        const { normalized } = parseAndNormalizeTimeSpent(remainingEstimate, 'remainingEstimate');
+        issueInput.fields.timetracking.remainingEstimate = normalized;
       }
     }
 

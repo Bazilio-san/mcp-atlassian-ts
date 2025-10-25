@@ -5,11 +5,105 @@
 
 import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
-import { ToolWithHandler } from '../../../../types';
+import { IJiraIssue, ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 import { stringOrADF2markdown } from '../../shared/utils.js';
+
+// Data shape returned in jiraIssue (constructed below based on fetched JIRA issue)
+export interface JiraIssueStatus {
+  name: string;
+  description: string;
+}
+
+export interface JiraIssueProject {
+  name: string;
+  key: string;
+}
+
+export interface JiraIssueCommentItem {
+  id: string;
+  author: string;
+  body: string;
+  created?: string;
+  url?: string;
+}
+
+export interface JiraIssueAttachmentItem {
+  id: string;
+  filename: string;
+  author: string;
+  created?: string;
+  size?: number;
+  mimeType?: string;
+  downloadUrl?: string;
+}
+
+export interface JiraIssueSubtaskItem {
+  id: string;
+  key: string;
+  summary: string;
+  statusName?: string;
+  priority: string;
+  issueType?: string;
+}
+
+export interface JiraFixVersionItem {
+  id: string;
+  name: string;
+}
+
+export interface JiraLinkedMiniIssue {
+  key: string;
+  summary: string;
+}
+
+export interface JiraIssueLinkItem {
+  id: string;
+  type: string;
+  inwardIssue?: JiraLinkedMiniIssue;
+  outwardIssue?: JiraLinkedMiniIssue;
+}
+
+export interface JiraTimeTracking {
+  originalEstimate: string | undefined; // Исходная оценка, как строка (например, "1w 2d", "3h", "45m")
+  remainingEstimate: string | undefined; //Оставшаяся оценка, как строка
+  timeSpent: string | undefined; // Потраченное время, как строка
+}
+
+export interface JiraIssue {
+  key: string;
+  summary: string;
+  status: JiraIssueStatus;
+  assignee: string;
+  reporter: string;
+  created?: string;
+  updated?: string;
+  priority: string;
+  issueType: string;
+  issueUrl: string;
+  project: JiraIssueProject;
+  labels: string[];
+  description: string;
+  // Additional fields requested by the caller (if any)
+  fields?: Record<string, unknown>;
+
+  // Optional enrichments, present only when available
+  commentsCount?: number;
+  lastComments?: JiraIssueCommentItem[];
+
+  attachmentsCount?: number;
+  attachments?: JiraIssueAttachmentItem[];
+
+  subtasks?: JiraIssueSubtaskItem[];
+  fixVersions?: JiraFixVersionItem[];
+
+  // Keep as unknown to pass through whatever Jira provides
+  timetracking?: JiraTimeTracking;
+
+  issueLinks?: JiraIssueLinkItem[];
+}
 
 /**
  * Tool definition for getting a JIRA issue
@@ -37,13 +131,13 @@ Issue ID is a numerical identifier (e.g. 123).
 Issue key is formatted as <project key>-<id> (e.g. ISSUE-123).
 An example issue key is ISSUE-1.`,
       },
-      expand: {
+      expand: { // VVQ а формализовать?
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand. e.g.: ["changelog", "transitions"]',
         default: [],
       },
-      fields: {
+      fields: { // VVQ а формализовать?
         type: 'array',
         items: { type: 'string' },
         description: 'Specific fields to return. e.g.: ["summary", "status", "assignee"]',
@@ -93,14 +187,14 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
     const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}`, { params });
-    const issue = response.data;
+    const issue = response.data as IJiraIssue;
 
     if (!issue) {
       throw new NotFoundError('Issue', issueIdOrKey);
     }
 
     const fields = issue.fields || {};
-    const jiraIssue: any = {
+    const jiraIssue: JiraIssue = {
       key: issue.key,
       summary: fields.summary || '',
       status: {
@@ -152,7 +246,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
         });
     }
     if (attachment?.length) {
-      jiraIssue.attachmentsCount = attachment?.total || 0;
+      jiraIssue.attachmentsCount = attachment?.length || 0;
       jiraIssue.attachments = attachment
         .filter(isObject)
         .map((a: any) => {
@@ -191,7 +285,11 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
     }
 
     if (timetracking) {
-      jiraIssue.timetracking = timetracking;
+      jiraIssue.timetracking = {
+        originalEstimate: timetracking.originalEstimate,
+        remainingEstimate: timetracking.remainingEstimate,
+        timeSpent: timetracking.timeSpent,
+       };
     }
 
     // Add issue links if present

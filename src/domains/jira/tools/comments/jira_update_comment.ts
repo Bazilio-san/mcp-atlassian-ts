@@ -8,7 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
-import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
+import { getVisibility, jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for updating a comment in a JIRA issue
@@ -31,20 +31,7 @@ export const jira_update_comment: ToolWithHandler = {
         type: 'string', // markdown
         description: 'Updated comment text in markdown format',
       },
-      visibility: {
-        type: 'object',
-        properties: {
-          type: {
-            type: 'string',
-            enum: ['group', 'role'],
-          },
-          value: {
-            type: 'string',
-            description: 'Group name or role name',
-          },
-        },
-        description: 'Comment visibility restrictions',
-      },
+      visibility: getVisibility('Comment'),
       expand: {
         type: 'string',
         description: 'Comma-separated list of fields to expand (e.g., "renderedBody,properties")',

@@ -71,6 +71,7 @@ import { jira_get_priorities } from './tools/metadata/jira_get_priorities.js';
 import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
 // @ts-ignore
 import { md2Adf } from './shared/utils.js';
+import { getPriorityNamesArray } from './shared/priority-service.js';
 
 /**
  * Modular JIRA Tools Manager
@@ -122,17 +123,20 @@ export class JiraToolsManager {
     this.context.logger.info('JIRA tools manager initialized');
 
     // Build tools list
-    await this.buildToolsList(this.context.config.fieldId!.epicLink);
+    await this.buildToolsList();
   }
 
   /**
    * Build the tools list
    */
-  private async buildToolsList (fieldIdEpicLink?: string): Promise<void> {
+  private async buildToolsList (): Promise<void> {
+    const fieldIdEpicLink: string = this.context.config.fieldId!.epicLink;
     // Clear existing tools
     this.tools.clear();
     this.toolsArray = [];
-    const jira_create_issue = await createJiraCreateIssueTool();
+    const priorityNamesArray = await getPriorityNamesArray(this.context.httpClient, this.context.config);
+
+    const jira_create_issue = await createJiraCreateIssueTool(priorityNamesArray);
     // Register all tools with their handlers
     const toolInstances = [
       // Core tools

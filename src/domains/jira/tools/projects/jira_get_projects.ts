@@ -16,19 +16,20 @@ import { stringOrADF2markdown } from '../../shared/utils.js';
  */
 export const jira_get_projects: ToolWithHandler = {
   name: 'jira_get_projects',
-  description: 'Get *ALL ACCESSIBLE* JIRA projects for the authenticated user',
+  description: `Get *ALL ACCESSIBLE* JIRA projects for the authenticated user. 
+For each project returns: key, name, description, projectTypeKey`,
   inputSchema: {
     type: 'object',
     properties: {
-      expand: {
+      expand: { // VVA помочь LLM с этим работать
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand (e.g. ["description", "lead", "issueTypes"])',
         default: [],
       },
-      recent: {
+      topRecentProjects: {
         type: 'number',
-        description: 'Number of recent projects to return',
+        description: 'Number of recent projects to return. Default - no restrictions',
         minimum: 1,
       },
     },
@@ -51,21 +52,21 @@ export const jira_get_projects: ToolWithHandler = {
 async function getProjectsHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
-    const { expand, recent } = args;
+    const { expand, topRecentProjects } = args;
 
-    logger.info(`Fetching JIRA projects: expand: ${expand} | recent: ${recent}`);
+    logger.info(`Fetching JIRA projects: expand: ${expand} | topRecentProjects: ${topRecentProjects}`);
 
     // Build query parameters
     const params: any = {};
     if (expand?.length) {
       params.expand = normalizeToArray(expand).join(',');
     }
-    if (recent) {
-      params.recent = recent;
+    if (topRecentProjects) {
+      params.recent = topRecentProjects;
     }
 
     // Generate cache key
-    const cacheKey = generateCacheKey('jira', 'projects', { expand: normalizeToArray(expand), recent });
+    const cacheKey = generateCacheKey('jira', 'projects', { expand: normalizeToArray(expand), topRecentProjects });
 
     // Fetch from cache or API
     const projects = await cache.getOrSet(cacheKey, async () => {

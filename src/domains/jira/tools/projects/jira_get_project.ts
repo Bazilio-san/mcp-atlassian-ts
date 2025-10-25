@@ -37,13 +37,13 @@ lead?: {key, name, displayName},
         type: 'string',
         description: 'The project key or ID',
       },
-      expand: {
+      expand: { // VVA помочь LLM с этим работать
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand (e.g. ["description", "issueTypes", "lead", "issueTypeHierarchy" ])',
         default: [],
       },
-      properties: {
+      properties: { // VVA помочь LLM с этим работать
         type: 'array',
         items: { type: 'string' },
         description: 'Project properties to include in the response',

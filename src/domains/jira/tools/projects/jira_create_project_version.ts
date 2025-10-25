@@ -8,6 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { stringOrADF2markdown } from '../../shared/utils.js';
+import { getVersionData } from './_validate-version-params.js';
 
 /**
  * Tool definition for jira_create_project_version
@@ -33,12 +34,12 @@ export const jira_create_project_version: ToolWithHandler = {
       releaseDate: {
         type: 'string',
         description: 'Optional release date in YYYY-MM-DD format',
-        pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+        format: 'date',
       },
       startDate: {
         type: 'string',
         description: 'Optional start date in YYYY-MM-DD format',
-        pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+        format: 'date',
       },
       archived: {
         type: 'boolean',
@@ -64,14 +65,14 @@ export const jira_create_project_version: ToolWithHandler = {
   handler: createVersionHandler,
 };
 
+
 /**
  * Handler function for jira_create_project_version
  */
 async function createVersionHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
-    const versionData = args;
-// VVA валидировать и добавлять параметры если есть
+    const versionData = getVersionData(args);
     logger.info(`Creating JIRA version '${versionData.name}' in project id '${versionData.projectId}'`);
 
     // Create the version
@@ -92,8 +93,9 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
       message,
       version: {
         id: version.id,
-        name: version.name,
+        name: versionData.name,
         projectId: versionData.projectId,
+        // VVQ брать не из versionData а из version
         description: stringOrADF2markdown(versionData.description) || null,
         releaseDate: versionData.releaseDate || null,
         startDate: versionData.startDate || null,

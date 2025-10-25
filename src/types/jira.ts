@@ -42,6 +42,26 @@ export interface IADFDocument {
   content: IADFNode[];        // Top-level nodes
 }
 
+export interface IJiraTimeTracking {
+  /** Исходная оценка, как строка (например, "1w 2d", "3h", "45m") */
+  originalEstimate?: string;
+
+  /** Оставшаяся оценка, как строка */
+  remainingEstimate?: string;
+
+  /** Потраченное время, как строка */
+  timeSpent?: string;
+
+  /** Исходная оценка в секундах */
+  originalEstimateSeconds?: number;
+
+  /** Оставшаяся оценка в секундах */
+  remainingEstimateSeconds?: number;
+
+  /** Потраченное время в секундах */
+  timeSpentSeconds?: number;
+}
+
 export interface IJiraIssueFields {
   summary: string;
   description?: string | IADFDocument; // Can be string or ADF
@@ -64,6 +84,10 @@ export interface IJiraIssueFields {
     comments: IJiraComment[];
     total: number;
   };
+  timetracking?: IJiraTimeTracking;
+  watches?: {
+    isWatching: boolean;
+  }
   worklog?: {
     worklogs: IJiraWorklog[];
     total: number;

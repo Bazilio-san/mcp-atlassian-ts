@@ -73,7 +73,7 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
     params.append('maxResults', maxResults.toString());
 
     if (orderBy) {
-      params.append('orderBy', orderBy);
+      params.append('orderBy', orderBy); // VVT
     }
 
     if (expand) {

@@ -8,7 +8,7 @@ import { withErrorHandling } from '../../../../core/errors.js';
 import { IJiraComment, ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
-import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
+import { getVisibility, jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for adding a comment to a JIRA issue
@@ -27,20 +27,7 @@ export const jira_add_comment: ToolWithHandler = {
         type: 'string', // markdown
         description: 'Comment text in markdown format',
       },
-      visibility: {
-        type: 'object',
-        properties: {
-          type: {
-            type: 'string',
-            enum: ['group', 'role'],
-          },
-          value: {
-            type: 'string',
-            description: 'Group name or role name',
-          },
-        },
-        description: 'Comment visibility restrictions',
-      },
+      visibility: getVisibility('Comment'),
     },
     required: ['issueIdOrKey', 'body'],
     additionalProperties: false,

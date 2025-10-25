@@ -4,10 +4,12 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
+import { withErrorHandling, NotFoundError, ValidationError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { inRFC3339, STATE_ENUM } from '../../../../core/constants.js';
+import { trim } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for updating a sprint
@@ -30,21 +32,24 @@ export const jira_update_sprint: ToolWithHandler = {
         type: 'string',
         description: 'New goal or objective for the sprint (optional)',
       },
-      state: {
+      state: { // VVT
         type: 'string',
         description: 'New state for the sprint. Valid values: active, closed, future',
+        enum: STATE_ENUM,
       },
       startDate: {
         type: 'string',
-        description: 'New start date in ISO 8601 format (e.g., 2023-01-01T00:00:00.000Z). Optional.',
+        description: `New start date ${inRFC3339}. Optional.`,
+        format: 'date-time',
       },
       endDate: {
         type: 'string',
-        description: 'New end date in ISO 8601 format (e.g., 2023-01-15T00:00:00.000Z). Optional.',
+        description: `New end date ${inRFC3339}. Optional.`,
+        format: 'date-time',
       },
       completeDate: {
         type: 'string',
-        description: 'Complete date in ISO 8601 format when closing a sprint. Optional.',
+        description: `Complete date when closing a sprint ${inRFC3339}. Optional.`,
       },
     },
     required: ['sprintId'],
@@ -62,6 +67,7 @@ export const jira_update_sprint: ToolWithHandler = {
 
 /**
  * Handler function for updating a sprint
+ * VVM: ALL FIELDS ARE VALIDATED
  */
 async function updateSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
@@ -72,28 +78,48 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
 
     // Build update data - only include provided fields
     const sprintData: any = {};
-    if (name !== undefined) {
-      sprintData.name = name;
+    if (name != null) {
+      if (!trim(name)) {
+        throw new ValidationError('Sprint name cannot be empty');
+      }
+      sprintData.name = trim(name).substring(0, 400);
     }
+
     if (goal !== undefined) {
       sprintData.goal = goal;
     }
+
     if (state !== undefined) {
+      if (!STATE_ENUM.includes(state)) {
+        throw new ValidationError(`Valid value for parameter state is: ${STATE_ENUM.join(', ')}`);
+      }
       sprintData.state = state;
     }
+
     if (startDate) {
-      sprintData.startDate = convertToIsoUtc(startDate);
+      sprintData.startDate = convertToIsoUtc(
+        startDate,
+        `The Start date (startDate) parameter was passed in the wrong format '${startDate}'. Needed ${inRFC3339}`,
+      );
     }
+
     if (endDate) {
-      sprintData.endDate = convertToIsoUtc(endDate);
+      sprintData.endDate = convertToIsoUtc(
+        endDate,
+        `The End date (endDate) parameter was passed in the wrong format: '${endDate}'. Needed ${inRFC3339}`,
+      );
     }
+
     if (completeDate) {
-      sprintData.completeDate = convertToIsoUtc(completeDate);
+      sprintData.completeDate = convertToIsoUtc(
+        completeDate,
+        `The Complete date (completeDate) parameter was passed in the wrong format: '${completeDate}'. Needed ${inRFC3339}`,
+      );
     }
 
     // If no fields to update, return error
     if (Object.keys(sprintData).length === 0) {
-      throw new Error('No fields specified for update. Provide at least one field to update.');
+      throw new Error('No fields specified for update sprint. Provide at least one field to update.');
     }
 
     // Update sprint via API

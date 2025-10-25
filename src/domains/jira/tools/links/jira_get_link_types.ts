@@ -18,6 +18,7 @@ export const jira_get_link_types: ToolWithHandler = {
   description: 'Get all available JIRA issue link types',
   inputSchema: {
     type: 'object',
+    properties: {},
     additionalProperties: false,
   },
   annotations: {

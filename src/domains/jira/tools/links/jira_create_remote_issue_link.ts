@@ -7,6 +7,7 @@ import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { trim } from '../../../../core/utils/text.js';
 
 /**
  * Tool definition for creating a JIRA remote issue link
@@ -24,6 +25,7 @@ export const jira_create_remote_issue_link: ToolWithHandler = {
       url: {
         type: 'string',
         description: 'External URL to link to',
+        format: 'url',
       },
       title: {
         type: 'string',
@@ -36,6 +38,7 @@ export const jira_create_remote_issue_link: ToolWithHandler = {
       iconUrl: {
         type: 'string',
         description: 'URL to link icon',
+        format: 'url',
       },
     },
     required: ['issueIdOrKey', 'url', 'title'],
@@ -56,15 +59,16 @@ export const jira_create_remote_issue_link: ToolWithHandler = {
  */
 async function createRemoteIssueLinkHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueIdOrKey, url, title, summary, iconUrl } = args;
+    const { issueIdOrKey, url, summary, iconUrl } = args;
     const { httpClient, config, logger } = context;
 
+    const title = trim(args.title).substring(0, 400);
     logger.info(`Creating JIRA remote issue link: issueIdOrKey: ${issueIdOrKey} | url: ${url} | title: ${title}`);
 
     // Build link data
     const linkData: any = { url, title };
     if (summary) {
-      linkData.summary = summary;
+      linkData.summary = trim(summary).substring(0, 400);
     }
     if (iconUrl) {
       linkData.icon = { url16x16: iconUrl, title };
