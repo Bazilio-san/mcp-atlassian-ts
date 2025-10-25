@@ -59,7 +59,7 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
     const { httpClient, cache, logger } = context;
     const { boardId, startAt = 0, maxResults = 50, state } = args;
 
-    logger.info('Fetching JIRA board sprints', { boardId, state });
+    logger.info(`Fetching JIRA board sprints: boardId: ${boardId} | state: ${state}`);
 
     // Build query parameters
     const params: any = { startAt, maxResults };
@@ -72,7 +72,6 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
 
     // Fetch from cache or API
     const sprintsResult = await cache.getOrSet(cacheKey, async () => {
-      logger.info('Making API call to get board sprints');
       // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
       // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
       const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/sprint`, { params });
@@ -85,13 +84,16 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
     });
     const { values = [], total } = sprintsResult || {};
     const count = values?.length || 0;
+
+    const message = count
+      ? `Found ${count} sprint(s) on board ${boardId}. Total: ${total || count} sprint(s) available${sprintsResult.isLast ? '' : ` (showing ${count})`}`
+      : `No sprints found on board ${boardId}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_sprints_from_board',
-      message: count
-        ? `Found ${count} sprint(s) on board ${boardId}
-Total: ${total || count} sprint(s) available${sprintsResult.isLast ? '' : ` (showing ${count})`}`
-        : `No sprints found on board ${boardId}`,
+      message,
       sprints: values.map((sprint: any) => {
         return {
           id: sprint.id,

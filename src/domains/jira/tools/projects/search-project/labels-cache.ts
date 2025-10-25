@@ -66,7 +66,7 @@ export async function getProjectLabels (
   const memoryCacheKey = `labels_${projectKey}`;
   const memoryEntry = labelsMemoryCache.get(memoryCacheKey);
   if (memoryEntry && Date.now() - memoryEntry.timestamp < memoryEntry.ttl) {
-    logger.debug('Labels found in memory cache', { projectKey, count: memoryEntry.labels.length });
+    logger.debug(`Labels found in memory cache: projectKey; ${projectKey} | count: ${memoryEntry.labels.length}`);
     return {
       labels: memoryEntry.labels,
       source: 'cache',
@@ -83,17 +83,13 @@ export async function getProjectLabels (
     const cachedLabels = await cache.getOrSet(
       cacheKey,
       async (): Promise<ProjectLabelsResult> => {
-        logger.info('Fetching project labels', { projectKey, projectId });
+        logger.info(`Fetching labels for ${projectKey} #${projectId}`);
 
         // Try fast gadget API first
         try {
           const gadgetLabels = await fetchLabelsFromGadgetApi(httpClient, projectId, logger);
           if (gadgetLabels.length > 0) {
-            logger.info('Labels fetched from gadget API', {
-              projectKey,
-              count: gadgetLabels.length,
-              method: 'gadget',
-            });
+            logger.info(`Labels fetched from gadget API for project ${projectKey} | count: ${gadgetLabels.length}`);
             return {
               labels: gadgetLabels,
               source: 'gadget',
@@ -103,20 +99,14 @@ export async function getProjectLabels (
             };
           }
         } catch (gadgetError) {
-          logger.warn('Gadget API failed, trying fallback method', {
-            projectKey,
-            error: gadgetError instanceof Error ? gadgetError.message : String(gadgetError),
-          });
+          logger.warn(`Gadget API failed, trying fallback method: projectKey: ${projectKey}
+           | error: ${gadgetError instanceof Error ? gadgetError.message : String(gadgetError)}`);
         }
 
         // Fallback to issue search
         try {
           const searchLabels = await fetchLabelsFromIssueSearch(httpClient, projectKey, logger, config.restPath);
-          logger.info('Labels fetched from issue search', {
-            projectKey,
-            count: searchLabels.length,
-            method: 'search',
-          });
+          logger.info(`Labels fetched from issue search for project ${projectKey} | count: ${searchLabels.length}`);
           return {
             labels: searchLabels,
             source: 'search',
@@ -125,11 +115,7 @@ export async function getProjectLabels (
             projectId,
           };
         } catch (searchError) {
-          logger.error('Both methods failed to fetch labels', {
-            projectKey,
-            gadgetError: 'gadget API failed',
-            searchError: searchError instanceof Error ? searchError.message : String(searchError),
-          });
+          logger.error(`Both methods failed to fetch labels: project ${projectKey} | searchError: ${searchError instanceof Error ? searchError.message : String(searchError)}`);
           return {
             labels: [],
             source: 'empty',
@@ -151,10 +137,7 @@ export async function getProjectLabels (
 
     return cachedLabels;
   } catch (error) {
-    logger.error('Failed to get project labels', {
-      projectKey,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    logger.error(`Failed to get project labels: project ${projectKey} | error: ${error instanceof Error ? error.message : String(error)}`);
 
     return {
       labels: [],
@@ -174,15 +157,14 @@ async function fetchLabelsFromGadgetApi (
   projectId: string,
   logger: any,
 ): Promise<string[]> {
-  logger.debug('Fetching labels from gadget API', { projectId });
+  logger.debug(`Fetching labels from gadget API: projectId: ${projectId}`);
 
   const response = await httpClient.get(`/rest/gadget/1.0/labels/gadget/project-${projectId}/labels`);
 
   const data = response.data as GadgetApiResponse;
 
   if (!data.groups || !Array.isArray(data.groups)) {
-    logger.warn('Invalid gadget API response format', { data });
-    throw new Error('Invalid gadget API response format');
+    throw new Error(`Invalid gadget API response format: data: ${data}`);
   }
 
   // Extract all labels from all groups
@@ -200,12 +182,7 @@ async function fetchLabelsFromGadgetApi (
   // Remove duplicates and sort
   const uniqueLabels = [...new Set(allLabels)].sort();
 
-  logger.debug('Gadget API labels extracted', {
-    projectId,
-    totalGroups: data.groups.length,
-    totalLabels: allLabels.length,
-    uniqueLabels: uniqueLabels.length,
-  });
+  logger.debug(`Gadget API labels extracted: projectId ${projectId} | totalGroups: ${data.groups.length} | totalLabels: ${allLabels.length} | uniqueLabels: ${uniqueLabels.length}`);
 
   return uniqueLabels;
 }
@@ -219,7 +196,7 @@ async function fetchLabelsFromIssueSearch (
   logger: any,
   restPath: string,
 ): Promise<string[]> {
-  logger.debug('Fetching labels from issue search', { projectKey });
+  logger.debug(`Fetching labels from issue search: projectKey: ${projectKey}`);
 
   const searchPayload = {
     jql: `project = ${projectKey} AND labels IS NOT EMPTY ORDER BY updated DESC`,
@@ -231,7 +208,7 @@ async function fetchLabelsFromIssueSearch (
   const data = response.data as SearchApiResponse;
 
   if (!data.issues || !Array.isArray(data.issues)) {
-    logger.warn('Invalid search API response format', { data });
+    logger.warn(`Invalid search API response format: data: ${data}`);
     throw new Error('Invalid search API response format');
   }
 
@@ -248,11 +225,7 @@ async function fetchLabelsFromIssueSearch (
 
   const uniqueLabels = [...allLabels].sort();
 
-  logger.debug('Issue search labels extracted', {
-    projectKey,
-    totalIssues: data.issues.length,
-    totalLabels: uniqueLabels.length,
-  });
+  logger.debug(`Issue search labels extracted: projectKey | totalIssues: ${data.issues.length} | totalLabels: ${uniqueLabels.length}`);
 
   return uniqueLabels;
 }
@@ -267,7 +240,7 @@ export function clearProjectLabelsCache (projectKey: string, context: ToolContex
   const cacheKey = generateCacheKey('jira', 'project_labels', { projectKey });
   context.cache.del(cacheKey);
 
-  context.logger.info('Project labels cache cleared', { projectKey });
+  context.logger.info(`Project labels cache cleared: projectKey: ${projectKey}`);
 }
 
 /**

@@ -59,7 +59,7 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
     const { issueIdOrKey, url, title, summary, iconUrl } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Creating JIRA remote issue link', { issueIdOrKey, url, title });
+    logger.info(`Creating JIRA remote issue link: issueIdOrKey: ${issueIdOrKey} | url: ${url} | title: ${title}`);
 
     // Build link data
     const linkData: any = { url, title };
@@ -77,10 +77,13 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
       object: linkData,
     });
 
+    const message = `Remote link "${title}" created successfully for issue ${issueIdOrKey} (ID: ${response.data.id})`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'create_remote_issue_link',
-      message: `Remote link "${title}" created successfully for issue ${issueIdOrKey} (ID: ${response.data.id})`,
+      message,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       linkId: response.data.id,
       linkTitle: title,

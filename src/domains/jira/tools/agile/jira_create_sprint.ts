@@ -60,7 +60,7 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
     const { httpClient, logger, config } = context;
     const { name, originBoardId, goal, startDate, endDate } = args;
 
-    logger.info('Creating JIRA sprint', { name, originBoardId, goal });
+    logger.info(`Creating JIRA sprint '${name}' on board id: ${originBoardId} | goal: ${goal}`);
 
     // Build sprint data
     const sprintData: any = { name, originBoardId };
@@ -86,12 +86,14 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
 
     const sprint = response.data;
 
-    logger.info('Sprint created successfully', { sprintId: sprint.id, name: sprint.name });
+
+    const message = `Sprint '${sprint.name}' #${sprint.id} created successfully`;
+    logger.info(message);
 
     const json = {
       success: true,
       operation: 'create_sprint',
-      message: 'Sprint created successfully',
+      message,
       sprint: {
         id: sprint.id,
         name: sprint.name,

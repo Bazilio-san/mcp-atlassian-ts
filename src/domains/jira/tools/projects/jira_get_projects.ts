@@ -15,7 +15,7 @@ import { normalizeToArray } from '../../../../core/utils/tools.js';
  */
 export const jira_get_projects: ToolWithHandler = {
   name: 'jira_get_projects',
-  description: 'Get all accessible JIRA projects for the authenticated user',
+  description: 'Get *ALL ACCESSIBLE* JIRA projects for the authenticated user',
   inputSchema: {
     type: 'object',
     properties: {
@@ -52,7 +52,7 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
     const { httpClient, cache, logger, config } = context;
     const { expand, recent } = args;
 
-    logger.info('Fetching JIRA projects', { expand, recent });
+    logger.info(`Fetching JIRA projects: expand: ${expand} | recent: ${recent}`);
 
     // Build query parameters
     const params: any = {};
@@ -74,12 +74,16 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
       return response.data || [];
     });
 
+    const count = projects.length;
+    const message = count
+      ? `Found ${projects.length} JIRA projects`
+      : 'No JIRA projects found';
+    logger.info(message);
+
     const json = {
-      found: !!projects.length,
+      found: !!count,
       operation: 'get_projects',
-      message: projects.length
-        ? `JIRA Projects (${projects.length} found)`
-        : 'No JIRA projects found',
+      message,
       projects: projects.map(({ key, name, description, projectTypeKey }: any) => ({ key, name, description, projectTypeKey })),
     };
 

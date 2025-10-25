@@ -87,6 +87,11 @@ class McpHttpClient {
         throw error;
       }
 
+      const res = getJsonFromResult(data.result);
+      if (res?.message) {
+        console.log('  message:', res.message);
+      }
+
       // Return both result and request headers
       return {
         result: data.result,
@@ -287,7 +292,7 @@ class JiraMcpHttpTester {
             try {
               // Use the new jira_delete_version tool
               await this.client.callTool('jira_delete_version', {
-                versionId: version.id.toString()
+                versionId: version.id.toString(),
               });
               console.log(`    ✅  Deleted version ${version.name} (${version.id})`);
             } catch (error) {

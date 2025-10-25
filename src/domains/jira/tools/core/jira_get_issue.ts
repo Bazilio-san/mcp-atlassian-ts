@@ -69,7 +69,8 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey } = args;
     const { httpClient, config, logger } = context;
-    logger.info('Fetching JIRA issue', { issueIdOrKey });
+
+    logger.info(`Fetching JIRA issue ${issueIdOrKey}`);
 
     const expandArray = args.expand && normalizeToArray(args.expand);
     const fieldsArray = args.fields && normalizeToArray(args.fields);
@@ -212,6 +213,8 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
           };
         });
     }
+
+    logger.info(`Return JIRA issue ${issue.key}`);
 
     return formatToolResult(json);
   });

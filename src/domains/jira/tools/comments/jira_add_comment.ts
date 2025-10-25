@@ -62,7 +62,7 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
     const { issueIdOrKey, body, visibility } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Adding JIRA comment', { issueIdOrKey });
+    logger.info(`Adding JIRA comment to ${issueIdOrKey}`);
 
     // Build comment input
     const commentInput: any = { body };
@@ -80,12 +80,15 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
     const { id, created, updated, body: b, author, visibility: vis } = comment;
     const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
     const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
-    // Build structured JSON
+
+    const message = `Comment ${id} added successfully to ${issueIdOrKey}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'add_comment',
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      message: `Comment added successfully to ${issueIdOrKey}`,
+      message,
       comment: {
         id,
         linkToComment,

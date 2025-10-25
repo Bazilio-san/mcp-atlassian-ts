@@ -60,7 +60,7 @@ ${epicLinkInfo}`,
           description: 'Labels to set (replaces existing). e.g.: ["bug", "urgent"]',
           default: [],
         },
-        customFields: {
+        customFields: {  // VVQ из сведений о проекте брать схему и правила заполнения кастомных полей
           type: 'object',
           description: 'Custom field values as key-value pairs',
           default: {},
@@ -96,42 +96,46 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
     } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Updating JIRA issue', { issueIdOrKey });
+    logger.info(`Updating JIRA issue: issueIdOrKey: ${issueIdOrKey}`);
 
-    // Build update data
-    const updateData: any = { fields: { ...customFields } };
+
+    const fields = { ...customFields };
 
     if (summary) {
-      updateData.fields.summary = summary;
+      fields.summary = summary;
     }
     if (description) {
-      updateData.fields.description = description;
+      fields.description = description;
     }
     if (assignee) {
-      updateData.fields.assignee = { accountId: assignee };
+      fields.assignee = { accountId: assignee };
     }
     if (priority) {
-      updateData.fields.priority = { name: priority };
+      fields.priority = { name: priority };
     }
     if (labels) {
-      updateData.fields.labels = normalizeToArray(labels);
+      fields.labels = normalizeToArray(labels);
     }
 
     // Make API call
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-editIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-put
-    await httpClient.put(`${config.restPath}/issue/${issueIdOrKey}`, updateData);
+    await httpClient.put(`${config.restPath}/issue/${issueIdOrKey}`, { fields });
+
+    const i = `${/^\d+$/.test(issueIdOrKey) ? 'id' : 'key'} ${issueIdOrKey}`;
+    const message = `JIRA issue ${i} updated successfully`;
+    logger.info(message);
 
     const json = {
       success: true,
       operation: 'update_issue',
-      message: `JIRA issue ${issueIdOrKey} updated successfully`,
-      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      updatedFields: Object.keys(updateData.fields),
-      fieldValues: updateData.fields,
+      message,
+      updatedFields: Object.keys(fields),
+      fieldValues: fields,
       link: `${config.origin}/browse/${issueIdOrKey}`,
       updated: new Date().toISOString(),
     };
+
     return formatToolResult(json);
   });
 }

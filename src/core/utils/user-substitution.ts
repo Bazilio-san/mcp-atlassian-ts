@@ -30,7 +30,7 @@ export function substituteUserInHeaders (
   const targetHeaderKey = headerKeys.find((key) => key.toLowerCase() === httpHeaderName);
 
   if (!targetHeaderKey) {
-    logger.debug('Target header not found in request', { httpHeader, availableHeaders: headerKeys });
+    logger.debug(`Target header '${httpHeader}' not found in request; available headers: ${JSON.stringify(headerKeys)}`);
     return modifiedHeaders;
   }
 

@@ -70,7 +70,7 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
     const { issueIdOrKey, commentId, body, visibility, expand } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Updating JIRA comment', { issueIdOrKey, commentId });
+    logger.info(`Updating JIRA comment #${commentId} on ${issueIdOrKey}`);
 
     // Build comment update input
     const commentInput: any = { body };
@@ -96,12 +96,15 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
     const { id, created, updated, body: b, renderedBody, author, updateAuthor, visibility: vis, properties } = comment;
     const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
     const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
-    // Build structured JSON
+
+    const message = `Comment ${commentId} updated successfully in ${issueIdOrKey}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'update_comment',
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      message: `Comment ${commentId} updated successfully in ${issueIdOrKey}`,
+      message,
       comment: {
         id,
         created: convertToIsoUtc(created),

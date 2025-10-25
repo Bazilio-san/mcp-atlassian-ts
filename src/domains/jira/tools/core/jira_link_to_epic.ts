@@ -47,7 +47,7 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
     const { issueIdOrKey, epicKey } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Linking issue to epic', { issueIdOrKey, epicKey });
+    logger.info(`Linking issue ${issueIdOrKey} to epic ${epicKey}`);
 
     // Try using Agile API first (most reliable method)
     try {
@@ -65,7 +65,7 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       // If Agile API fails, try using Epic Link field as fallback
       const fieldIdEpicLink = config.fieldId!.epicLink;
       if (fieldIdEpicLink) {
-        logger.info('Agile API failed, trying Epic Link field', { fieldIdEpicLink });
+        logger.info(`Agile API failed, trying Epic Link field: fieldIdEpicLink: ${fieldIdEpicLink}`);
 
         try {
           // Update the epic link field
@@ -94,13 +94,13 @@ async function linkToEpicHandler (args: any, context: ToolContext): Promise<any>
       }
     }
 
-    // Format response for MCP
+    const message = `Issue ${/^\d+$/.test(issueIdOrKey) ? 'id' : 'key'} ${issueIdOrKey} successfully linked to epic ${epicKey}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'link_to_epic',
-      message: `Issue ${issueIdOrKey} successfully linked to epic ${epicKey}`,
-      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      epicKey: epicKey,
+      message,
       links: {
         issue: `${config.origin}/browse/${issueIdOrKey}`,
         epic: `${config.origin}/browse/${epicKey}`,

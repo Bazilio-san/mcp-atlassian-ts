@@ -223,7 +223,7 @@ export class AuthenticationManager {
    */
   updateAuthConfig (newConfig: AuthConfig): void {
     this.authConfig = newConfig;
-    logger.info('Authentication configuration updated', { type: newConfig.type });
+    logger.info(`Authentication configuration '${newConfig.type}' updated`);
   }
 }
 

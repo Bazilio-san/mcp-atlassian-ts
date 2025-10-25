@@ -44,7 +44,7 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
     const { httpClient, cache, logger, config } = context;
     const { projectIdOrKey } = args;
 
-    logger.info('Fetching JIRA project versions', { projectIdOrKey });
+    logger.info(`Fetching JIRA versions for project ${projectIdOrKey}`);
 
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'versions', { projectIdOrKey });
@@ -57,13 +57,16 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
       return response.data || [];
     });
 
+    const i = `project ${/^\d+$/.test(projectIdOrKey) ? 'id' : 'key'}`;
+    const message = versions.length
+      ? `Found ${versions.length} versions for ${i}`
+      : `No versions found for ${i}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_project_versions',
-      message: versions.length
-        ? `Found ${versions.length} versions for project ${projectIdOrKey}`
-        : `No versions found for project ${projectIdOrKey}`,
-      [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
+      message,
       total: versions.length,
       versions: versions.map((v: any) => ({
         id: v.id,

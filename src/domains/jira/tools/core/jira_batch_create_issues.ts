@@ -93,7 +93,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     const { issues } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Batch creating JIRA issues', { count: issues.length });
+    logger.info(`Batch creating ${issues.length} JIRA issues`);
 
     // Convert to the format expected by the JIRA API
     const issueUpdates = issues.map((issue: any) => ({
@@ -120,25 +120,36 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
     const result = response.data;
     const createdIssues = (result.issues || []).filter(isObject);
 
-    // Build structured JSON
-    const json = {
-      operation: 'batch_create_issues',
-      totalRequested: issues.length,
-      successCount: createdIssues.length || 0,
-      errorCount: result.errors?.length || 0,
-      createdIssues: createdIssues.map((issue: any) => ({
-        key: issue.key,
-        id: issue.id,
-        self: issue.self,
-        summary: issue.summary || null,
-        created: new Date().toISOString(),
-      })) || [],
-      errors: result.errors?.map((error: any, index: number) => ({
+    const errorCount = result.errors?.length || undefined;
+
+    const errors = errorCount
+      ? result.errors?.map((error: any, index: number) => ({
         issueIndex: index,
         status: error.status,
         errorMessages: error.elementErrors?.errorMessages || [],
         fieldErrors: error.elementErrors?.errors || {},
+      }))
+      : undefined;
+
+    const successCount = createdIssues.length;
+    const totalRequested = issues.length;
+
+    const message = `Created ${successCount} issues${successCount === totalRequested ? '' : ` of ${totalRequested} requested`}`;
+    logger.info(message);
+
+    // Build structured JSON
+    const json = {
+      operation: 'batch_create_issues',
+      message,
+      errorCount,
+      createdIssues: createdIssues.map((issue: any) => ({
+        key: issue.key,
+        id: issue.id,
+        self: issue.self, // VVQ
+        summary: issue.summary || null,
+        created: new Date().toISOString(),
       })) || [],
+      errors,
     };
 
     return formatToolResult(json);

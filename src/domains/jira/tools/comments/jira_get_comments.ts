@@ -64,7 +64,7 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
     const { issueIdOrKey, startAt = 0, maxResults = 50, orderBy, expand } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Getting JIRA comments', { issueIdOrKey, startAt, maxResults });
+    logger.info(`Getting JIRA comments for ${issueIdOrKey} | startAt: ${startAt} | maxResults: ${maxResults}`);
 
     // Build query parameters
     const params = new URLSearchParams();
@@ -86,13 +86,16 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
 
     const commentsData = response.data;
 
+    const message = `Retrieved ${commentsData.comments?.length || 0} comments for ${issueIdOrKey}`;
+    logger.info(message);
+
     // Build structured JSON
     const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
     const json = {
       success: true,
       operation: 'get_comments',
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      message: `Retrieved ${commentsData.comments?.length || 0} comments for ${issueIdOrKey}`,
+      message,
       pagination: {
         startAt: commentsData.startAt,
         maxResults: commentsData.maxResults,

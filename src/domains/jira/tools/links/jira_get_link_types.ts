@@ -50,17 +50,24 @@ async function getLinkTypesHandler (_args: any, context: ToolContext): Promise<a
       return response.data.issueLinkTypes || [];
     }, 600); // Cache for 10 minutes
 
+    const count = linkTypes?.length || 0;
+    const message = count
+      ? `Found ${linkTypes.length} issue link types`
+      : 'No issue link types found';
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_link_types',
-      issueLinkTypes: linkTypes
+      message,
+      issueLinkTypes: count ? linkTypes
         .filter(isObject)
         .map((lt: any) => ({
           id: lt.id,
           name: lt.name,
           inward: lt.inward,
           outward: lt.outward,
-        })),
+        })) : undefined,
     };
 
     return formatToolResult(json);

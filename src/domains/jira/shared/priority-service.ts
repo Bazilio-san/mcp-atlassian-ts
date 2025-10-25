@@ -34,10 +34,10 @@ export async function getCachedPriorityObjects (httpClient: AxiosInstance, confi
         const response = await httpClient!.get(`${config.restPath}/priority`);
         const priorities = response.data;
         if (!Array.isArray(priorities)) {
-          logger.warn('Invalid priorities response format', { response: priorities });
+          logger.warn(`Invalid priorities response format: ${priorities}`);
           return;
         }
-        logger.info('Priorities fetched successfully', { count: priorities.length });
+        logger.info(`Priorities fetched successfully: count: ${priorities.length}`);
         return priorities.map(({ id, name, description }) => ({ id, name, description }));
       },
       3600, // Cache for 1 hour

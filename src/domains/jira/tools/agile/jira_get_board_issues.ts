@@ -75,7 +75,7 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
     const { httpClient, logger, config } = context;
     const { boardId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;
 
-    logger.info('Fetching JIRA board issues', { boardId, maxResults, jql });
+    logger.info(`Fetching JIRA board issues: boardId: ${boardId} | maxResults: ${maxResults} | jql: ${jql}`);
 
     // Build query parameters
     const params: any = { startAt, maxResults };
@@ -96,7 +96,6 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
       params.expand = normalizedExpand.join(',');
     }
 
-    logger.info('Making API call to get board issues');
     // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getIssuesForBoard
     // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-issue-get
     const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/issue`, { params });
@@ -108,13 +107,15 @@ async function getBoardIssuesHandler (args: any, context: ToolContext): Promise<
     const { issues = [], total } = response.data || {};
     const count = issues?.length || 0;
 
+    const message = count
+      ? `Found ${count} issue(s) on board ${boardId}. Total: ${total} issue(s) available, showing ${count}`
+      : `No issues found on board ${boardId}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_board_issues',
-      message: count
-        ? `Found ${count} issue(s) on board ${boardId}
-Total: ${total} issue(s) available, showing ${count}`
-        : `No issues found on board ${boardId}`,
+      message,
       total,
       count,
       startAt,
@@ -141,6 +142,7 @@ Total: ${total} issue(s) available, showing ${count}`
         };
       }),
     };
+
     return formatToolResult(json);
   });
 }

@@ -44,20 +44,23 @@ async function getTransitionsHandler (args: any, context: ToolContext): Promise<
     const { issueIdOrKey } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Fetching JIRA transitions', { issueIdOrKey });
+    logger.info(`Fetching JIRA transitions for ${issueIdOrKey}`);
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
     const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}/transitions`);
     const transitions = response.data.transitions;
 
+    const i = `issue ${/^\d+$/.test(issueIdOrKey) ? 'id' : 'key'} ${issueIdOrKey}`;
+    const message = transitions.length
+      ? `${transitions.length} available transitions for ${i}`
+      : `No transitions available for ${i}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_transitions',
-      message: transitions.length
-        ? `Available Transitions for issue ${issueIdOrKey}`
-        : `No transitions available for issue ${issueIdOrKey}`,
-      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      message,
       transitions: transitions.map((t: any) => ({
         id: t.id,
         name: t.name,

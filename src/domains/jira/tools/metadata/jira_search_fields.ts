@@ -43,7 +43,7 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
     const { query } = args;
     const { httpClient, cache, logger, config } = context;
 
-    logger.info('Searching JIRA fields', { query });
+    logger.info(`Searching JIRA fields: query: ${query}`);
 
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'fields', { query });

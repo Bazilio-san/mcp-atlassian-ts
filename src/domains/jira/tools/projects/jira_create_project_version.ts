@@ -71,7 +71,7 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
     const { httpClient, cache, logger, config } = context;
     const versionData = args;
 
-    logger.info('Creating JIRA version', { name: versionData.name, projectId: versionData.projectId });
+    logger.info(`Creating JIRA version '${versionData.name}' in project id '${versionData.projectId}'`);
 
     // Create the version
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
@@ -82,10 +82,13 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
     // Invalidate project versions cache
     cache.keys().filter(key => key.includes('versions')).forEach(key => cache.del(key));
 
+    const message = `Version "${version.name}" created successfully (ID: ${version.id})`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'create_project_version',
-      message: `Version "${version.name}" created successfully (ID: ${version.id})`,
+      message,
       version: {
         id: version.id,
         name: version.name,

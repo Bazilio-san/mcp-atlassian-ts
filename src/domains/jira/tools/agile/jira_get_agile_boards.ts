@@ -62,7 +62,7 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
     const { httpClient, logger } = context;
     const { startAt = 0, maxResults = 50, type, name, projectIdOrKey } = args;
 
-    logger.info('Fetching JIRA agile boards', args);
+    logger.info(`Fetching JIRA agile boards ${JSON.stringify(args)}`);
 
     // Build query parameters
     const params: any = { startAt, maxResults };
@@ -76,7 +76,6 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
       params.projectIdOrKey = projectIdOrKey;
     }
 
-    logger.info('Making API call to get agile boards');
     // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
     // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
     const response = await httpClient.get('/rest/agile/1.0/board', { params });
@@ -85,10 +84,13 @@ async function getAgileBoardsHandler (args: any, context: ToolContext): Promise<
     const { values = [], total } = boardsResult || {};
     const count = values?.length || 0;
 
+    const message =  count ? `Returned ${count} agile board(s) of ${total} (startAt ${startAt})` : 'No agile boards found';
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_agile_boards',
-      message: count ? `Returned ${count} agile board(s) of ${total} (startAt ${startAt})` : 'No agile boards found',
+      message,
       total,
       startAt,
       maxResults,

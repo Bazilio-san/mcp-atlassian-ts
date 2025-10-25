@@ -51,7 +51,7 @@ async function deleteVersionHandler (args: any, context: ToolContext): Promise<a
     const { httpClient, cache, logger, config } = context;
     const { versionId, moveFixIssuesTo, moveAffectedIssuesTo } = args;
 
-    logger.info('Deleting JIRA version', { versionId, moveFixIssuesTo, moveAffectedIssuesTo });
+    logger.info(`Deleting JIRA version id: ${versionId} | moveFixIssuesTo: ${moveFixIssuesTo} | moveAffectedIssuesTo: ${moveAffectedIssuesTo}`);
 
     // Build the request body for removeAndSwap
     const requestBody: any = {};
@@ -70,10 +70,13 @@ async function deleteVersionHandler (args: any, context: ToolContext): Promise<a
     // Invalidate project versions cache
     cache.keys().filter(key => key.includes('versions')).forEach(key => cache.del(key));
 
+    const message = `Version ${versionId} deleted successfully`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'delete_version',
-      message: `Version ${versionId} deleted successfully`,
+      message,
       versionId,
       moveFixIssuesTo: moveFixIssuesTo || null,
       moveAffectedIssuesTo: moveAffectedIssuesTo || null,

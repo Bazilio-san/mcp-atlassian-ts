@@ -83,7 +83,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
     const { httpClient, cache, logger, config } = context;
     const { versions } = args;
 
-    logger.info('Batch creating JIRA versions', { count: versions.length });
+    logger.info(`Batch creating ${versions.length} JIRA versions`);
 
     const results: any[] = [];
 
@@ -94,10 +94,10 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
         const response = await httpClient.post(`${config.restPath}/version`, version);
         results.push(response.data);
-        logger.debug('Successfully created version', { name: version.name, id: response.data.id });
+        logger.debug(`Successfully created version: name: ${version.name} | id: ${response.data.id}`);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
-        logger.warn('Failed to create version', { version: version.name, error: err.message });
+        logger.warn(`Failed to create version: version: ${version.name} | error: ${err.message}`);
         results.push({ error: err.message, version: version.name });
       }
     }
@@ -108,9 +108,14 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
     const successResults = results.filter(r => !r.error);
     const errorResults = results.filter(r => r.error);
 
+    const message = `Batch created ${successResults.length}/${versions.length
+    } versions${errorResults.length > 0 ? ` (${errorResults.length} errors)` : ''}`;
+
+    logger.info(message);
+
     const json = {
       operation: 'batch_create_versions',
-      message: `Batch created ${successResults.length}/${versions.length} versions${errorResults.length > 0 ? ` (${errorResults.length} errors)` : ''}`,
+      message,
       total: versions.length,
       successful: successResults.length,
       errors: errorResults.length,
@@ -128,7 +133,6 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
       })),
       timestamp: new Date().toISOString(),
     };
-
 
     return formatToolResult(json);
   });

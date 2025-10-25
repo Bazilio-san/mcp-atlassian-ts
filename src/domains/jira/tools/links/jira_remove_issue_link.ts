@@ -43,7 +43,7 @@ async function removeIssueLinkHandler (args: any, context: ToolContext): Promise
     const { linkId } = args;
     const { httpClient, cache, config, logger } = context;
 
-    logger.info('Removing JIRA issue link', { linkId });
+    logger.info(`Removing JIRA issue link: linkId: ${linkId}`);
 
     // Remove the link
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-deleteIssueLink
@@ -55,10 +55,13 @@ async function removeIssueLinkHandler (args: any, context: ToolContext): Promise
       .filter(key => key.includes('jira:search'))
       .forEach(key => cache.del(key));
 
+    const message = `Issue Link #${linkId} removed successfully`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'remove_issue_link',
-      imessage: `Issue Link Removed Successfully\nLink ID: ${linkId}`,
+      message,
     };
 
     return formatToolResult(json);

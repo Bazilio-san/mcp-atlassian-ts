@@ -69,7 +69,7 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
     const { issueIdOrKey, timeSpent, comment, started, visibility } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Adding JIRA worklog', { issueIdOrKey, timeSpent });
+    logger.info(`Adding JIRA worklog to the issue ${issueIdOrKey} | timeSpent: ${timeSpent}`);
 
     // Build worklog input
     const worklogInput: any = { timeSpent };
@@ -88,11 +88,17 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
     const response = await httpClient.post(`${config.restPath}/issue/${issueIdOrKey}/worklog`, worklogInput);
     const worklog = response.data || {};
     const { accountId, displayName, emailAddress } = worklog.author || {};
+
+    const i = `issue${/^\d+$/.test(issueIdOrKey) ? 'Id' : 'Key'}`;
+    const message = `Worklog added successfully to ${i} ${issueIdOrKey}: ${timeSpent} by ${displayName || 'Unknown'}`;
+
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'add_worklog',
-      message: `Worklog added successfully to ${issueIdOrKey}: ${timeSpent} by ${displayName || 'Unknown'}`,
-      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
+      message,
+      [i]: issueIdOrKey,
       worklog: {
         id: worklog.id,
         timeSpent: timeSpent,

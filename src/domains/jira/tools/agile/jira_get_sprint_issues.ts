@@ -75,7 +75,7 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
     const { httpClient, logger, config } = context;
     const { sprintId, startAt = 0, maxResults = 50, jql, validateQuery = true, fields = [], expand = [] } = args;
 
-    logger.info('Fetching JIRA sprint issues', { sprintId, maxResults, jql });
+    logger.info(`Fetching JIRA sprint issues: sprintId: ${sprintId} | maxResults: ${maxResults} | jql: ${jql}`);
 
     // Build query parameters
     const params: any = { startAt, maxResults };
@@ -96,7 +96,6 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
       params.expand = normalizedExpand.join(',');
     }
 
-    logger.info('Making API call to get sprint issues');
     // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-getIssuesForSprint
     // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-sprintid-issue-get
     const response = await httpClient.get(`/rest/agile/1.0/sprint/${sprintId}/issue`, { params });
@@ -108,13 +107,15 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
     const { issues = [], total } = response.data || {};
     const count = issues?.length || 0;
 
+    const message = count
+      ? `Found ${count} issue(s) in sprint ${sprintId}. Total: ${total} issue(s) available, showing ${count}`
+      : `No issues found in sprint ${sprintId}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_sprint_issues',
-      message: count
-        ? `Found ${count} issue(s) in sprint ${sprintId}
-Total: ${total} issue(s) available, showing ${count}`
-        : `No issues found in sprint ${sprintId}`,
+      message,
       total,
       count,
       startAt,

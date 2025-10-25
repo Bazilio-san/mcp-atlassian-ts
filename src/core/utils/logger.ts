@@ -209,28 +209,13 @@ export function createRequestLogger () {
 
     const start = Date.now();
 
-    requestLogger.info({
-      message: 'Request started',
-      method: req.method,
-      url: req.url,
-      userAgent: req.get('User-Agent'),
-      ip: req.ip,
-    });
+    requestLogger.info(`Request started: ${req.method} ${req.url} | IP: ${req.ip} | UA: ${req.get('User-Agent')}`);
 
     // Log response
     const originalSend = res.send;
     res.send = function (body: any) {
       const duration = Date.now() - start;
-
-      requestLogger.info({
-        message: 'Request completed',
-        method: req.method,
-        url: req.url,
-        statusCode: res.statusCode,
-        duration,
-        responseSize: (Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0,
-      });
-
+      requestLogger.info(`Request completed: ${req.method} ${req.url} | Code: ${res.statusCode} | ${duration} | size: ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0}`);
       return originalSend.call(this, body);
     };
 

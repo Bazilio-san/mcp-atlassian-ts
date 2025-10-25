@@ -53,11 +53,7 @@ export class CacheManager {
     // Set up event listeners
     this.setupEventListeners();
 
-    logger.info('Cache manager initialized', {
-      ttlSeconds,
-      maxItems,
-      checkPeriod,
-    });
+    logger.info(`Cache manager initialized: ttl: ${ttlSeconds} s | max items: ${maxItems} | check period: ${checkPeriod}`);
   }
 
   /**
@@ -65,15 +61,15 @@ export class CacheManager {
    */
   private setupEventListeners (): void {
     this.cache.on('set', (key, value) => {
-      logger.debug('Cache set', { key, hasValue: !!value });
+      logger.debug(`Cache set: key: ${key} | hasValue: ${!!value}`);
     });
 
     this.cache.on('del', (key, value) => {
-      logger.debug('Cache delete', { key, hasValue: !!value });
+      logger.debug(`Cache delete: key: ${key} | hasValue: ${!!value}`);
     });
 
     this.cache.on('expired', (key, value) => {
-      logger.debug('Cache expired', { key, hasValue: !!value });
+      logger.debug(`Cache expired: key: ${key} | hasValue: ${!!value}`);
     });
 
     this.cache.on('flush', () => {
@@ -90,15 +86,15 @@ export class CacheManager {
 
       if (value !== undefined) {
         this.stats.hits++;
-        logger.debug('Cache hit', { key });
+        logger.debug(`Cache hit: key: ${key}`);
         return value;
       } else {
         this.stats.misses++;
-        logger.debug('Cache miss', { key });
+        logger.debug(`Cache miss: key: ${key}`);
         return undefined;
       }
     } catch (error) {
-      logger.error('Cache get error', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache get error: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
       this.stats.misses++;
       return undefined;
     }
@@ -114,14 +110,14 @@ export class CacheManager {
 
       if (success) {
         this.stats.sets++;
-        logger.debug('Cache set successful', { key, ttl });
+        logger.debug(`Cache set successful: key: ${key} | ttl: ${ttl}`);
       } else {
-        logger.warn('Cache set failed', { key, ttl });
+        logger.warn(`Cache set failed: key: ${key} | ttl: ${ttl}`);
       }
 
       return success;
     } catch (error) {
-      logger.error('Cache set error', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache set error: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -133,10 +129,10 @@ export class CacheManager {
     try {
       const deleted = this.cache.del(key);
       this.stats.deletes += deleted;
-      logger.debug('Cache delete', { key, deleted });
+      logger.debug(`Cache delete: key: ${key} | deleted: ${deleted}`);
       return deleted;
     } catch (error) {
-      logger.error('Cache delete error', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache delete error: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
       return 0;
     }
   }
@@ -148,7 +144,7 @@ export class CacheManager {
     try {
       return this.cache.has(key);
     } catch (error) {
-      logger.error('Cache has error', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache has error: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -169,7 +165,7 @@ export class CacheManager {
 
       return result;
     } catch (error) {
-      logger.error('Cache mget error', error instanceof Error ? error : new Error(String(error)), { keys });
+      logger.error(`Cache mget error: keys: ${JSON.stringify(keys)}`, error instanceof Error ? error : new Error(String(error)));
       return {};
     }
   }
@@ -207,18 +203,18 @@ export class CacheManager {
       }
     } catch (error) {
       // Cache read error - log but continue to factory
-      logger.error('Cache get error during getOrSet', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache get error during getOrSet: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
     }
 
     // Execute factory function
-    logger.debug('Cache miss - executing factory function', { key });
+    logger.debug(`Cache miss - executing factory function: key: ${key}`);
     let value: T;
 
     try {
       value = await factory();
     } catch (error) {
       // Factory function error - rethrow as is (don't wrap in CacheError)
-      logger.error('Factory function error in getOrSet', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Factory function error in getOrSet: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
 
@@ -227,7 +223,7 @@ export class CacheManager {
       this.set(key, value, ttlSeconds);
     } catch (error) {
       // Cache write error - log but return value anyway
-      logger.error('Cache set error during getOrSet', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache set error during getOrSet: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
     }
 
     return value;
@@ -320,7 +316,7 @@ export class CacheManager {
     try {
       return this.cache.ttl(key, ttlSeconds);
     } catch (error) {
-      logger.error('Cache setTtl error', error instanceof Error ? error : new Error(String(error)), { key, ttlSeconds });
+      logger.error(`Cache setTtl error: key: ${key} | ttlSeconds: ${ttlSeconds}`, error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -333,7 +329,7 @@ export class CacheManager {
       const ttl = this.cache.getTtl(key);
       return ttl ? Math.floor((ttl - Date.now()) / 1000) : 0;
     } catch (error) {
-      logger.error('Cache getTtl error', error instanceof Error ? error : new Error(String(error)), { key });
+      logger.error(`Cache getTtl error: key: ${key}`, error instanceof Error ? error : new Error(String(error)));
       return 0;
     }
   }

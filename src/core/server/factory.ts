@@ -24,7 +24,7 @@ export function createServiceServer (config: IConfig): McpAtlassianServer {
     throw new Error('Service mode is required. Set MCP_SERVICE_MODE environment variable to "jira" or "confluence"');
   }
 
-  logger.info('Creating server', { serviceMode });
+  logger.info(`Creating server: serviceMode: ${serviceMode}`);
 
   switch (serviceMode) {
     case 'jira':

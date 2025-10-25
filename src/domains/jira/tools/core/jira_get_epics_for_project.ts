@@ -61,7 +61,7 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     const { projectKey, includeCompleted = false, maxResults = 1000, includeMoreInfo } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Finding epics for project', { projectKey, includeCompleted });
+    logger.info(`Getting epics for project ${projectKey}${includeCompleted ? ' include completed' : ''}`);
 
     // Build JQL query
     const jqlParts = ['issuetype=Epic', `project=${projectKey}`];
@@ -108,13 +108,16 @@ async function findEpicHandler (args: any, context: ToolContext): Promise<any> {
     epics.sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
     const count = epics.length;
 
+
+    const message = count
+      ? `Found ${count} epics for project ${projectKey}${total !== count ? ` (showing ${count} of ${total} total)` : ''}`
+      : `No epics found for project ${projectKey}`;
+    logger.info(message);
+
     const json: any = {
       success: true,
       operation: 'get_epics_for_project',
-      message: count
-        ? `Found ${count} epics for project ${projectKey}${
-          total !== count ? ` (showing ${count} of ${total} total)` : ''}`
-        : `No epics found for project ${projectKey}`,
+      message,
     };
 
     if (includeMoreInfo) {

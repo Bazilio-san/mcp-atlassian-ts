@@ -137,7 +137,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
       throw new ServerError('Service mode is required. Set MCP_SERVICE_MODE environment variable or use --service flag');
     }
 
-    logger.info(`Starting ${appConfig.productName} Server v${appConfig.version}`, { serviceMode });
+    logger.info(`Starting ${appConfig.productName} Server v${appConfig.version}: serviceMode: ${serviceMode}`);
 
     // Configuration is already loaded and validated in init-config.ts
     const { server: { transportType, port }, jira, confluence, cache } = appConfig;
@@ -149,7 +149,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
 
     // Initialize cache
     initializeCache(cache);
-    logger.info('Cache initialized', { ...cache });
+    logger.info(`Cache initialized: ${JSON.stringify(cache)}`);
 
     // Test service-specific connectivity
     if (serviceMode === 'jira') {
@@ -194,7 +194,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
 
       case 'http':
       case 'sse':
-        logger.info('Starting server with HTTP/SSE transport', { port });
+        logger.info(`Starting server with HTTP/SSE transport: port: ${port}`);
         await mcpServer.startHttp();
         break;
 
@@ -202,7 +202,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
         throw new ServerError(`Unsupported transport type: ${transportType}`);
     }
 
-    logger.info('MCP Atlassian Server started successfully', { serviceMode });
+    logger.info(`MCP Atlassian Server started successfully: serviceMode: ${serviceMode}`);
 
     // Keep the process alive for HTTP/SSE transport
     if (transportType === 'http' || transportType === 'sse') {
@@ -237,10 +237,7 @@ function setupProcessHandlers () {
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
-    logger.fatal('Unhandled promise rejection', {
-      reason: reason instanceof Error ? reason : new Error(String(reason)),
-      promise: String(promise),
-    });
+    logger.fatal(`Unhandled promise rejection: reason: ${reason instanceof Error ? reason.message : String(reason)} | promise: ${String(promise)}`, reason instanceof Error ? reason : new Error(String(reason)));
     process.exit(1);
   });
 

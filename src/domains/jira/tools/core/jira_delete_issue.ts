@@ -48,7 +48,8 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
     const { issueIdOrKey, deleteSubtasks = false } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Deleting JIRA issue', { issueIdOrKey, deleteSubtasks });
+    const withSubtasks = deleteSubtasks ? ' with subtasks' : '';
+    logger.info(`Deleting JIRA issue ${issueIdOrKey}${withSubtasks}`);
 
     // Build query parameters
     const params = deleteSubtasks ? { deleteSubtasks: 'true' } : {};
@@ -58,13 +59,13 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-delete
     await httpClient.delete(`${config.restPath}/issue/${issueIdOrKey}`, { params });
 
-    // Format response for MCP
+    const message = `Issue ${/^\d+$/.test(issueIdOrKey) ? 'id' : 'key'} ${issueIdOrKey}${withSubtasks} successfully deleted`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'delete_issue',
-      message: 'Issue deleted successfully',
-      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      isSubtasksDeleted: deleteSubtasks,
+      message,
       timestamp: new Date().toISOString(),
     };
 

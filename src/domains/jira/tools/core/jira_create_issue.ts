@@ -96,7 +96,7 @@ Convert natural language inputs into this format`,
           description: `Optional. Remaining time estimate (Jira duration format: Xd, Xh, Xm, Xw), e.g. 3d, 4h;
 Convert natural language inputs into this format`,
         },
-        customFields: {
+        customFields: { // VVQ из сведений о проекте брать схему и правила заполнения кастомных полей
           type: 'object',
           description: 'Custom field values (field ID as key)',
           additionalProperties: true,
@@ -192,7 +192,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Creating JIRA issue', { projectIdOrKey, issueType, summary });
+    logger.info(`Creating JIRA issue in project: ${projectIdOrKey} | issueType: ${issueType} | summary: ${summary}`);
 
     // Validate required fields
     if (!projectIdOrKey) {
@@ -272,21 +272,23 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     const response = await httpClient.post(`${config.restPath}/issue`, issueInput);
     const createdIssue = response.data;
 
+    const message = `Issue ${createdIssue.key} created successfully in project ${projectIdOrKey}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'create_issue',
-      message: 'Issue created successfully',
+      message,
       newIssue: {
         id: createdIssue.id,
         key: createdIssue.key,
         issueUrl: `${config.origin}/browse/${createdIssue.key}`,
         summary,
-        project: {
-          [/^\d+$/.test(projectIdOrKey) ? 'id' : 'key']: projectIdOrKey,
-        },
+        [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
         created: new Date().toISOString(),
       },
     };
+
     return formatToolResult(json);
   });
 }

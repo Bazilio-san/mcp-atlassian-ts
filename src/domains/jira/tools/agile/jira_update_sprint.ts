@@ -68,7 +68,7 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
     const { httpClient, logger, config } = context;
     const { sprintId, name, goal, state, startDate, endDate, completeDate } = args;
 
-    logger.info('Updating JIRA sprint', { sprintId, name, state });
+    logger.info(`Updating JIRA sprint: sprintId: ${sprintId} | name: ${name} | state: ${state}`);
 
     // Build update data - only include provided fields
     const sprintData: any = {};
@@ -107,12 +107,13 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
 
     const sprint = response.data;
 
-    logger.info('Sprint updated successfully', { sprintId: sprint.id, name: sprint.name, state: sprint.state });
+    const message = `Sprint ${sprint.name} #${sprint.id} updated successfully`;
+    logger.info(message);
 
     const json = {
       success: true,
       operation: 'update_sprint',
-      message: 'Sprint updated successfully',
+      message,
       sprint: {
         id: sprint.id,
         name: sprint.name,

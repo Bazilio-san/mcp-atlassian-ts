@@ -44,7 +44,7 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
     const { issueIdOrKey } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Fetching JIRA attachments', { issueIdOrKey });
+    logger.info(`Fetching JIRA attachments: issueIdOrKey: ${issueIdOrKey}`);
 
     // Generate cache key
 
@@ -54,10 +54,15 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
     const attachments = response.data.fields.attachment || [];
     const count = attachments.length;
 
+    const message = count
+      ? `Found ${attachments.length} attachment(s) for ${issueIdOrKey}`
+      : `No attachments found for ${issueIdOrKey}`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'jira_get_attachments_info',
-      message: count ? `Found ${attachments.length} attachment(s) for ${issueIdOrKey}` : `No attachments found for ${issueIdOrKey}`,
+      message,
       [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
       total: attachments.length,
       attachments: attachments.map((a: any) => {

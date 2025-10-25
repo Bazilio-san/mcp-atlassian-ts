@@ -87,7 +87,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
     const { issueKeys } = args;
     const { httpClient, logger, config } = context;
 
-    logger.info('Batch fetching JIRA changelogs', { count: issueKeys.length });
+    logger.info(`Batch fetching JIRA changelogs: count: ${issueKeys.length}`);
 
     // Normalize to array
     const normalizedKeys = normalizeToArray(issueKeys);
@@ -119,7 +119,7 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
         };
         return issueWithChangelog;
       } catch (err: any) {
-        logger.warn(`Failed to fetch changelog for ${issueKey} using fallback`, { error: err.message });
+        logger.warn(`Failed to fetch changelog for ${issueKey} using fallback: error: ${err.message}`);
         return {
           issueKey,
           changelog: null,
@@ -135,13 +135,16 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
     const errors = results.filter(r => r.changelog === null);
     const total = normalizedKeys.length;
 
+    const message = changelogs.length
+      ? `Retrieved changelogs for ${changelogs.length} of ${total} issue(s)`
+      : 'No changelogs found for the specified issues';
+    logger.info(message);
+
     // Build structured JSON
     const json = {
       success: true,
       operation: 'batch_get_changelogs',
-      message: changelogs.length
-        ? `Retrieved changelogs for ${changelogs.length} of ${total} issue(s)`
-        : 'No changelogs found for the specified issues',
+      message,
       issueKeys: normalizedKeys,
       total,
       changelogs,

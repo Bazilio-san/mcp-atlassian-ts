@@ -68,7 +68,7 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
     const { jql, startAt = 0, maxResults = 50, fields, expand } = args;
     const { httpClient, cache, config, logger } = context;
 
-    logger.info('Searching JIRA issues', { jql, maxResults });
+    logger.info(`Searching JIRA issues: jql: ${jql} | maxResults: ${maxResults}`);
 
     // Build search request
     const searchRequest: any = {
@@ -108,17 +108,16 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
       60, // Cache for 1 minute
     );
 
-    // Format search results as JSON
-    const json = {
-      success: true,
-      operation: 'search_issues',
-      message: searchResult.issues.length
-        ? `Found ${searchResult.total} issues (showing ${searchResult.issues.length})`
-        : 'No issues found',
-      jql: jql,
-      total: searchResult.total || 0,
-      showing: searchResult.issues.length,
-      issues: (searchResult.issues || [])
+    const showing = searchResult.issues.length;
+    const { total = 0 } = searchResult;
+
+    const message = showing
+      ? `Found ${total} issues (showing ${showing})`
+      : 'No issues found';
+    logger.info(message);
+
+    const issues = showing
+      ? (searchResult.issues || [])
         .filter(isObject)
         .map((issue: any) => {
           const fields = issue.fields || {};
@@ -132,7 +131,16 @@ async function searchIssuesHandler (args: any, context: ToolContext): Promise<an
             created: convertToIsoUtc(fields.created),
             updated: convertToIsoUtc(fields.updated),
           };
-        }),
+        })
+      : undefined;
+
+    // Format search results as JSON
+    const json = {
+      success: true,
+      operation: 'search_issues',
+      message,
+      jql,
+      issues,
       searchUrl: `${config.origin}/issues/?jql=${encodeURIComponent(jql)}`,
       timestamp: new Date().toISOString(),
     };

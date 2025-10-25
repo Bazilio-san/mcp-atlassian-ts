@@ -55,7 +55,7 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
     const { linkType, inwardIssue, outwardIssue, comment } = args;
     const { httpClient, cache, config, logger } = context;
 
-    logger.info('Creating JIRA issue link', { linkType, inwardIssue, outwardIssue });
+    logger.info(`Creating JIRA issue link: linkType: ${linkType} | inwardIssue: ${inwardIssue} | outwardIssue: ${outwardIssue}`);
 
     // Build link data
     const linkData: any = {
@@ -94,10 +94,15 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
       .filter(key => key.includes('jira:search'))
       .forEach(key => cache.del(key));
 
+    const newLinkId = newLink[0]?.id;
+
+    const message = `Issue Link #${newLinkId} created successfully`;
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'create_issue_link',
-      message: 'Issue Link Created Successfully',
+      message,
       link: {
         id: newLink[0]?.id,
         ...linkData,

@@ -44,19 +44,26 @@ Use this tool to verify the correct project key when working with AI Agent tools
 
 async function findProjectHandler (args: any, context: ToolContext) {
   const { limit = 50 } = args as { query: string; limit?: number };
-  const { httpClient, config } = context;
+  const { httpClient, config, logger } = context;
   const { restPath } = config;
   const query = args.query || '*';
   return withErrorHandling(async () => {
     const matches = await searchProjects(query, limit, httpClient, restPath);
+    const projects = matches.map(removeScore);
+
+    const count = projects.length;
+    const message = count
+      ? `Found ${count} project(s) matching "${query}"`
+      : `No projects found matching "${query}")`;
+    logger.info(message);
+
     const json = {
-      found: !!matches.length,
+      found: !!count,
       operation: 'find_project',
-      message: matches.length
-        ? `Found ${matches.length} project(s) matching "${query}"`
-        : `No projects found matching "${query}")`,
-      projects: matches.map(removeScore),
+      message,
+      projects,
     };
+
     return formatToolResult(json);
   });
 }

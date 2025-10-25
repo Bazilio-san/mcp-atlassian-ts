@@ -70,7 +70,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     const { httpClient, cache, logger, config } = context;
     const { projectIdOrKey, expand, properties } = args;
 
-    logger.info('Fetching JIRA project details', { projectIdOrKey, expand, properties });
+    logger.info(`Fetching JIRA project '${projectIdOrKey}' details | expand: ${expand} | properties: ${properties}`);
 
     // Build query parameters
     const params: any = {};
@@ -95,13 +95,15 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       const response = await httpClient.get(`${config.restPath}/project/${projectIdOrKey}`, { params });
       return response.data;
     });
-
+    const i = `project ${/^\d+$/.test(projectIdOrKey) ? 'id' : 'key'}`;
     if (!project) {
+      const message = `Project ${i} not found`;
+      logger.info(message);
+
       const json = {
         found: false,
         operation: 'get_project',
-        message: 'Project not found',
-        [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
+        message,
       };
 
       return formatToolResult(json);
@@ -110,9 +112,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     try {
       priorityNames = await getPriorityNamesArray(httpClient, config);
     } catch (error) {
-      logger.warn('Failed to retrieve priority names', {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      logger.warn(`Failed to retrieve priority names: error: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     // Get project labels using cache system
@@ -122,10 +122,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         const labelsResult = await getProjectLabels(httpClient, project.key, String(project.id), context);
         projectLabels = labelsResult.labels;
       } catch (error) {
-        logger.warn('Failed to retrieve project labels', {
-          projectKey: project.key,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        logger.warn(`Failed to retrieve labels for project key: ${project.key} | error: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -153,10 +150,13 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       };
     })();
 
+    const message = `Details retrieved for project name '${filteredProject.name}', key '(${filteredProject.key}')`;
+    logger.info(message);
+
     const json = {
       found: true,
       operation: 'get_project',
-      message: `Project details retrieved: ${filteredProject.name} (${filteredProject.key})`,
+      message,
       project: filteredProject,
     };
 

@@ -239,7 +239,7 @@ export class JiraToolsManager {
         // Use header-based authentication
         const authManager = createAuthenticationManagerFromHeaders(jiraHeaders, this.context.config.url);
         customHttpClient = authManager.getHttpClient();
-        this.logger.debug('Using header-based authentication for JIRA', { headers: Object.keys(jiraHeaders) });
+        this.logger.debug(`Using header-based authentication for JIRA: headers: ${Object.keys(jiraHeaders)}`);
       } else {
         // Use system authentication with additional headers
         const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);

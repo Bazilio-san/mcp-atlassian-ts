@@ -54,7 +54,7 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
     const { issueIdOrKey, startAt = 0, maxResults = 50 } = args;
     const { httpClient, config, logger } = context;
 
-    logger.info('Fetching JIRA worklog entries', { issueIdOrKey });
+    logger.info(`Fetching JIRA worklog entries: issueIdOrKey: ${issueIdOrKey}`);
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getWorklog
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-get
@@ -63,15 +63,20 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
     });
     const { worklogs_ = [], total = 0 } = response.data || {};
     const worklogs = worklogs_.filter(isObject);
+
+    const showing = worklogs.length;
+    const i = `issue${/^\d+$/.test(issueIdOrKey) ? 'Id' : 'Key'}`;
+
+    const message = showing
+      ? `Found ${total} worklog entries for ${i} ${issueIdOrKey} (showing ${showing})`
+      : `No worklog entries found for ${i} ${issueIdOrKey}`;
+
+    logger.info(message);
+
     const json = {
       success: true,
       operation: 'get_worklog',
-      text: worklogs.length
-        ? `Found ${total} worklog entries for ${issueIdOrKey} (showing ${worklogs.length})`
-        : `No worklog entries found for ${issueIdOrKey}`,
-      [/^\d+$/.test(issueIdOrKey) ? 'issueId' : 'issueKey']: issueIdOrKey,
-      total,
-      showing: worklogs.length,
+      message,
       worklogs: worklogs.map((w: any) => {
         const { accountId, displayName, emailAddress } = w.author || {};
         const author = accountId || displayName || emailAddress ? { accountId, displayName, emailAddress } : undefined;

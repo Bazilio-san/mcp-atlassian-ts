@@ -130,7 +130,7 @@ export class McpAtlassianServer {
           content: resourceContent,
         });
       } catch (error) {
-        logger.warn(`Failed to read resource content for ${resource.uri}`, { error: error instanceof Error ? error.message : String(error) });
+        logger.warn(`Failed to read resource content for ${resource.uri}: error: ${error instanceof Error ? error.message : String(error)}`);
         resourcesWithContent.push({
           ...resource,
           content: { error: 'Failed to load resource content' },
@@ -175,7 +175,7 @@ export class McpAtlassianServer {
    */
   private async handleToolsList (): Promise<{ tools: any[] }> {
     const tools = await this.toolRegistry.listTools();
-    logger.info('Tools listed', { count: tools.length });
+    logger.info(`Tools listed: count: ${tools.length}`);
     return { tools };
   }
 
@@ -183,7 +183,7 @@ export class McpAtlassianServer {
    * Handle tool call requests with optional context
    */
   private async handleToolCall (name: string, args: any, context?: ExecutionContext): Promise<any> {
-    logger.info('Tool called', { name, hasArgs: !!args, authMode: context?.rateLimitKey ? 'http' : 'stdio' });
+    logger.info(`Tool '${name}' called | hasArgs: ${!!args} | authMode: ${context?.rateLimitKey ? 'http' : 'stdio'}`);
 
     try {
       // Apply rate limiting if enabled
@@ -194,7 +194,7 @@ export class McpAtlassianServer {
       // Execute tool
       const result = await this.toolRegistry.executeTool(name, args || {}, context?.authHeaders);
 
-      logger.info('Tool executed successfully', { name });
+      logger.info(`Tool '${name}' executed successfully`);
       return result;
     } catch (error) {
       // Handle rate limit errors
@@ -203,7 +203,7 @@ export class McpAtlassianServer {
           error as any,
           this.serverConfig.rateLimit.maxRequests,
         );
-        logger.warn('Rate limit exceeded', { name, rateLimitKey: context?.rateLimitKey });
+        logger.warn(`Rate limit exceeded: tool: '${name}' | rateLimitKey: ${context?.rateLimitKey}`);
         throw new ServerError(rateLimitMessage);
       }
 
@@ -265,11 +265,7 @@ export class McpAtlassianServer {
     switch (method) {
       case 'initialize':
         const { protocolVersion, capabilities: clientCapabilities, clientInfo } = params || {};
-        logger.info('MCP client initializing', {
-          protocolVersion,
-          clientCapabilities,
-          clientInfo,
-        });
+        logger.info(`MCP client initializing: protocolVersion: ${protocolVersion} | clientCapabilities: ${JSON.stringify(clientCapabilities)} | clientInfo: ${JSON.stringify(clientInfo)}`);
         return {
           protocolVersion: '2024-11-05',
           capabilities: {
@@ -452,10 +448,7 @@ export class McpAtlassianServer {
             });
           }
 
-          logger.info('SSE client connected', {
-            authMode: authContext.mode,
-            headersCount: Object.keys(authContext.headers)?.length || 0,
-          });
+          logger.info(`SSE client connected: authMode: ${authContext.mode} | headersCount: ${Object.keys(authContext.headers)?.length || 0}`);
 
           // Create a separate server instance for this SSE connection with custom auth headers
           const sseServer = new Server(
@@ -539,7 +532,7 @@ export class McpAtlassianServer {
                 rateLimitError as any,
                 this.serverConfig.rateLimit.maxRequests,
               );
-              logger.warn('Rate limit exceeded in HTTP', { ip: req.ip, authMode: authContext.mode });
+              logger.warn(`Rate limit exceeded in HTTP: ip: ${req.ip} | authMode: ${authContext.mode}`);
               return res.status(200).json({
                 jsonrpc: '2.0',
                 id: req.body?.id ?? 1,
@@ -563,12 +556,7 @@ export class McpAtlassianServer {
           // Process MCP request directly
           const { method, params, id } = req.body;
 
-          logger.info('HTTP MCP request received', {
-            method,
-            id,
-            authMode: authContext.mode,
-            headersCount: Object.keys(authHeaders)?.length || 0,
-          });
+          logger.info(`HTTP MCP request received: ${method} | id: ${id} | authMode: ${authContext.mode} | headersCount: ${Object.keys(authHeaders)?.length || 0}`);
 
           let result;
 

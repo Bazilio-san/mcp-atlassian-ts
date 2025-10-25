@@ -45,7 +45,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
     const { login } = args;
     const { httpClient, cache, logger, config } = context;
 
-    logger.info('Fetching JIRA user profile', { login });
+    logger.info(`Fetching JIRA user profile: login: ${login}`);
 
     // Generate cache key
     const cacheKey = generateCacheKey('jira', 'user', { login });

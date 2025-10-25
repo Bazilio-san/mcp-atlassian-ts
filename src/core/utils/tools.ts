@@ -51,4 +51,6 @@ export const expandStringOrArray = (value: string | string[] | undefined, separa
   return arr.length > 0 ? arr.join(separator) : undefined;
 };
 
-export const isObject = (value: any): boolean => (value && typeof value === 'object');
+export const isObject = (o: any): boolean => (o && typeof o === 'object');
+
+export const isNonEmptyObject = (o: any): boolean => isObject(o) &&  !Array.isArray(o) && Object.values(o).some((v) => v !== undefined);
