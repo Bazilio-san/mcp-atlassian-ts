@@ -93,14 +93,13 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
       message,
       version: {
         id: version.id,
-        name: versionData.name,
-        projectId: versionData.projectId,
-        // VVQ брать не из versionData а из version
-        description: stringOrADF2markdown(versionData.description) || null,
-        releaseDate: versionData.releaseDate || null,
-        startDate: versionData.startDate || null,
-        archived: versionData.archived || false,
-        released: versionData.released || false,
+        name: version.name,
+        projectId: version.projectId,
+        description: stringOrADF2markdown(version.description) || null,
+        releaseDate: version.releaseDate || null,
+        startDate: version.startDate || null,
+        archived: version.archived || false,
+        released: version.released || false,
       },
       timestamp: new Date().toISOString(),
     };

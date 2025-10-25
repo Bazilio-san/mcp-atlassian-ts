@@ -235,7 +235,7 @@ export class JiraMcpTestCases {
           projectIdOrKey: this.testProjectKey,
           issueType: TEST_ISSUE_TYPE_NAME,
           summary: 'MCP HTTP Test Issue',
-          description: 'Created via MCP HTTP tester',
+          description: '# Test issue\n\nCreated via **MCP HTTP** tester',
         },
         description: 'Create new issue',
       },
@@ -256,7 +256,7 @@ export class JiraMcpTestCases {
         toolName: 'jira_add_comment',
         params: {
           issueIdOrKey: this.testIssueKey,
-          body: 'Test comment from MCP HTTP tester',
+          body: '# Test comment\n\nfrom **MCP** HTTP tester',
         },
         description: 'Add comment to issue',
       },
@@ -295,7 +295,7 @@ export class JiraMcpTestCases {
             console.log('  ℹ️  No existing comments found, creating a new comment for update test...');
             const createResult = await client.callTool('jira_add_comment', {
               issueIdOrKey: this.testIssueKey,
-              body: 'Initial comment for update test',
+              body: '# Initial comment\n\nfor **update** test',
             });
 
             const createData = getJsonFromResult(createResult);
@@ -310,7 +310,7 @@ export class JiraMcpTestCases {
           return {
             issueIdOrKey: this.testIssueKey,
             commentId,
-            body: `Updated comment body - ${new Date().toISOString()}`,
+            body: `# Updated comment body\n\n- **${new Date().toISOString()}**`,
           };
         },
         description: 'Update existing comment (creates comment first if needed)',
@@ -340,7 +340,7 @@ export class JiraMcpTestCases {
             console.log('  ℹ️  Not enough comments found, creating a new comment for deletion test...');
             const createResult = await client.callTool('jira_add_comment', {
               issueIdOrKey: this.testIssueKey,
-              body: `Temporary comment for deletion test - ${Date.now()}`,
+              body: `# Temporary comment\n\nfor **deletion** test - ${Date.now()}`,
             });
 
             const createData = getJsonFromResult(createResult);
@@ -388,7 +388,7 @@ export class JiraMcpTestCases {
           return {
             issueIdOrKey: this.testIssueKey,
             transitionId: chosenTransition.id,
-            comment: 'Transitioned via MCP test',
+            comment: '# Transitioned\n\nvia **MCP** test',
           };
         },
         description: 'Transition issue status (gets valid transition first)',
@@ -404,7 +404,7 @@ export class JiraMcpTestCases {
             projectIdOrKey: TEST_JIRA_PROJECT || 'TEST',
             issueType: TEST_ISSUE_TYPE_NAME,
             summary: `Temp issue for delete test - ${Date.now()}`,
-            description: 'This issue will be deleted immediately',
+            description: '# Temp issue\n\nThis issue will be **deleted immediately**',
           });
           const json = getJsonFromResult(createResult);
 
@@ -529,7 +529,7 @@ export class JiraMcpTestCases {
           return {
             projectId, // Используем ID проекта
             name: `MCP-Test-v${Date.now()}`,
-            description: 'Created via MCP HTTP test',
+            description: '# Test version\n\nCreated via **MCP HTTP** test',
             releaseDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // YYYY-MM-DD
           };
         },
@@ -547,7 +547,7 @@ export class JiraMcpTestCases {
           const createResult = await client.callTool('jira_create_project_version', {
             projectId,
             name: `DeleteTest-v${Date.now()}`,
-            description: 'Temporary version for deletion test',
+            description: '# Temporary version\n\nfor **deletion** test',
           });
 
           const createData = getJsonFromResult(createResult);
@@ -588,12 +588,12 @@ export class JiraMcpTestCases {
               {
                 projectId,
                 name: `Batch-v1-${Date.now()}`,
-                description: 'Batch version 1',
+                description: '# Batch version 1\n\n**foo**',
               },
               {
                 projectId,
                 name: `Batch-v2-${Date.now()}`,
-                description: 'Batch version 2',
+                description: '# Batch version 2\n\n**boo**',
               },
             ],
           };

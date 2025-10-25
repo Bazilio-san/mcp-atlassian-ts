@@ -8,6 +8,8 @@ import { createLogger } from '../../../core/utils/logger.js';
 import { getCache } from '../../../core/cache.js';
 import type { JCConfig } from '../../../types/index.js';
 import { eh } from '../../../core/errors.js';
+import { ensureHeader } from '../../../core/auth.js';
+import { appConfig } from '../../../bootstrap/init-config.js';
 
 const logger = createLogger('priority-service');
 
@@ -32,7 +34,11 @@ export async function getCachedPriorityObjects (httpClient: AxiosInstance, confi
         logger.info('Fetching priorities from JIRA API');
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#priority-getPriorities
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-priorities/#api-rest-api-2-priority-get
-        const response = await httpClient!.get(`${config.restPath}/priority`);
+        let httpCfg = {};
+        if (appConfig.subst?.httpHeader && appConfig.subst?.loginIfNoHeader) {
+          httpCfg = ensureHeader(httpClient, appConfig.subst?.httpHeader, appConfig.subst?.loginIfNoHeader, 'get');
+        }
+        const response = await httpClient!.get(`${config.restPath}/priority`, httpCfg);
         const priorities = response.data;
         if (!Array.isArray(priorities)) {
           logger.warn(`Invalid priorities response format: ${priorities}`);

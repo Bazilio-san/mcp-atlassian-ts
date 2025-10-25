@@ -146,8 +146,8 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
       createdIssues: createdIssues.map((issue: any) => ({
         key: issue.key,
         id: issue.id,
-        self: issue.self, // VVQ
-        summary: issue.summary || null,
+        self: issue.self,
+        summary: issue.summary || undefined,
         created: new Date().toISOString(),
       })) || [],
       errors,

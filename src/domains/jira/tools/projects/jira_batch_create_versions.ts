@@ -110,18 +110,21 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
 
     const successResults = results.filter(r => !r.error);
     const errorResults = results.filter(r => r.error);
-
+    const isErrors = errorResults.length > 0;
     const message = `Batch created ${successResults.length}/${versions.length
-    } versions${errorResults.length > 0 ? ` (${errorResults.length} errors)` : ''}`;
+    } versions${isErrors ? ` (${errorResults.length} errors)` : ''}`;
 
     logger.info(message);
-
+    const failedVersions = errorResults.map((error: any) => ({
+      name: error.version,
+      error: error.error,
+    }));
     const json = {
       operation: 'batch_create_versions',
       message,
       total: versions.length,
       successful: successResults.length,
-      errors: errorResults.length,
+      errors: errorResults.length || undefined,
       createdVersions: successResults.map((version: any) => ({
         id: version.id,
         name: version.name,
@@ -130,10 +133,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
         archived: version.archived || false,
         released: version.released || false,
       })),
-      failedVersions: errorResults.map((error: any) => ({
-        name: error.version,
-        error: error.error,
-      })),
+      failedVersions: isErrors ? failedVersions : undefined,
       timestamp: new Date().toISOString(),
     };
 

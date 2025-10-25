@@ -90,7 +90,8 @@ export interface ISslConfig {
 
 // User substitution configuration
 export interface ISubstitutionConfig {
-  httpHeader?: string; // HTTP header name to modify
+  httpHeader?: string; // HTTP header name to use with impersonate plugin
+  loginIfNoHeader?: string, // login as this user if no header is provided
   jira?: Record<string, string>; // Mapping from original user to substitute user
   confluence?: Record<string, string>; // Mapping from original user to substitute user
 }

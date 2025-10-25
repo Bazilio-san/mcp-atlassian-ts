@@ -2,7 +2,7 @@
  * Authentication system for Atlassian APIs
  */
 
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders } from 'axios';
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders, AxiosRequestConfig } from 'axios';
 
 import { AuthenticationError, eh, ehs } from './errors.js';
 import { createLogger, getDebug } from './utils/logger.js';
@@ -439,3 +439,18 @@ export function validateAuthConfig (authConfig: AuthConfig): void {
       throw new AuthenticationError('Invalid authentication type');
   }
 }
+
+export const ensureHeader = (
+  client: AxiosInstance,
+  name: string,
+  value: string,
+  method: string = 'get',
+): AxiosRequestConfig => {
+  const defaults = client.defaults.headers as any;
+  const hasInDefaultsCommon = Object.keys(defaults.common || {}).some(k => k.toLowerCase() === name.toLowerCase());
+  const hasInDefaultsMethod = Object.keys(defaults[method] || {}).some(k => k.toLowerCase() === name.toLowerCase());
+  if (hasInDefaultsCommon || hasInDefaultsMethod) {
+    return {};
+  }
+  return { headers: { [name]: value } };
+};
