@@ -502,7 +502,10 @@ export class JiraMcpTestCases {
         fullId: '2-2',
         name: 'Get Project Details',
         toolName: 'jira_get_project',
-        params: { projectIdOrKey: this.testProjectKey },
+        params: {
+          projectIdOrKey: this.testProjectKey,
+          includeCustomFieldsMetadata: true,
+        },
         description: 'Get specific project details',
       },
       {

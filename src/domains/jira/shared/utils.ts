@@ -39,14 +39,15 @@ export const stringOrADF2markdown = (description: string | IADFDocument): string
   return String(description);
 };
 
+export interface IJiraUserOut {
+  key?: string | undefined;
+  name?: string | undefined;
+  accountId?: string | undefined;
+  displayName?: string | undefined;
+  emailAddress?: string | undefined;
+}
 
-export const jiraUserObj = (u: IJiraUser): {
-  name: string | undefined; // v2 Server
-  key: string | undefined; // v2 Server
-  accountId: string | undefined; // v3 Cloud
-  displayName: string;
-  emailAddress: string | undefined;
-} | undefined => {
+export const jiraUserObj = (u: IJiraUser): IJiraUserOut | undefined => {
   if (!isObject(u)) {
     return undefined;
   }

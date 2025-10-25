@@ -1,3 +1,5 @@
+// noinspection UnnecessaryLocalVariableJS
+
 /**
  * JIRA tool module: Get Project
  * Retrieves details of a specific JIRA project
@@ -11,7 +13,7 @@ import { ToolWithHandler } from '../../../../types';
 import { getProjectLabels } from './search-project/labels-cache.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
-import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for jira_get_project
@@ -29,6 +31,7 @@ labels: // Project label array
 projectTypeKey,
 archived,
 lead?: {key, name, displayName},
+customFieldsMetadata?: {fieldId, name, schema}
 `,
   inputSchema: {
     type: 'object',
@@ -36,6 +39,10 @@ lead?: {key, name, displayName},
       projectIdOrKey: {
         type: 'string',
         description: 'The project key or ID',
+      },
+      includeCustomFieldsMetadata: {
+        type: 'boolean',
+        description: 'If true, the response will include the customFieldsMetadata array - information about available custom fields, their types, and filling rules',
       },
       expand: { // VVA помочь LLM с этим работать
         type: 'array',
@@ -63,13 +70,70 @@ lead?: {key, name, displayName},
   handler: getProjectHandler,
 };
 
+
+interface ICustomFieldMeta {
+  fieldId: string,
+  name: string,
+  schema: {
+    type: string,
+    items?: string,
+  },
+  required: boolean,
+  hasDefaultValue: boolean,
+  allowedValues: string[],
+}
+
+interface FilteredProject {
+  id?: string | number;
+  key?: string | undefined;
+  name?: string;
+  description?: string | undefined;
+  projectTypeKey?: string;
+  archived?: boolean;
+  url?: string;
+  issueTypes?: {
+    id?: string;
+    name?: string;
+    description?: string | undefined;
+    subtask?: boolean;
+  }[];
+  labels: string[],
+  // lead?: IJiraUserOut | undefined;
+  customFieldsMetadata?: ICustomFieldMeta[] | undefined,
+  customFieldsFillingMemo?: string | undefined,
+}
+
+const getCustomFiedsFillMemo = (apiVersion: number) => {
+  const diff = apiVersion === 2
+    ? `user → "username"
+- array & items=="user" → ["username1", "username2"]
+- array & items=="option" → ["Opt1", "Opt2"]
+- option → { value: "OptionLabel" } or { id: "OPTION_ID" }`
+    : `user → { accountId: "USER_ID" }
+- array & items=="user" → [ { accountId: "USER_ID1" }, { accountId: "USER_ID2" } ]
+- array & items=="option" → [ { value: "Opt1" }, { value: "Opt2" } ]
+- option → { value: "OptionLabel" } or { id: "OPTION_ID" }
+`;
+  const fieldValueInstruct = `When creating or updating an issue, pass an object to the customFields parameter with keys and values:
+{ "customfield_xxx": <value> }
+Rules for filling <value> depending on the custom field type:
+- string → "text"
+- number → 123
+- boolean → true
+- date → "YYYY-MM-DD"
+- datetime → "YYYY-MM-DDTHH:MM:SSZ"
+- any → /* structure as per schema */
+${diff}`;
+  return fieldValueInstruct;
+};
+
 /**
  * Handler function for jira_get_project
  */
 async function getProjectHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
-    const { projectIdOrKey, expand, properties } = args;
+    const { projectIdOrKey, includeCustomFieldsMetadata, expand, properties } = args;
 
     logger.info(`Fetching JIRA project '${projectIdOrKey}' details | expand: ${expand} | properties: ${properties}`);
 
@@ -96,6 +160,55 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       const response = await httpClient.get(`${config.restPath}/project/${projectIdOrKey}`, { params });
       return response.data;
     });
+
+    let customFieldsMetadata: ICustomFieldMeta[] | undefined;
+    let customFieldsFillingMemo: string | undefined;
+
+    if (includeCustomFieldsMetadata) {
+      customFieldsFillingMemo = getCustomFiedsFillMemo(config.apiVersion);
+
+      // Generate cache key
+      const cacheKey = generateCacheKey('jira', 'createmeta-custom-fields', { projectKey: project.key });
+
+      // Fetch from cache or API
+      customFieldsMetadata = await cache.getOrSet(cacheKey, async () => {
+        const response = await httpClient.get(`${config.restPath}/issue/createmeta`, {
+          params: {
+            projectKeys: projectIdOrKey,
+            expand: 'projects.issuetypes.fields',
+          },
+        });
+        const apiData = response.data;
+        // const excludedFields = [
+        //   'summary', 'issuetype', 'reporter', 'components', 'description', 'fixVersions',
+        //   'priority', 'labels', 'attachment', 'issuelinks', 'timetracking', 'assignee', 'project'
+        // ];
+
+        const fieldsMap: any = {};
+        apiData.projects[0].issuetypes.forEach((issuetype: any) => {
+          Object.values(issuetype.fields).forEach((f: any) => {
+            fieldsMap[f.fieldId as string] = f;
+          });
+        });
+        const filteredFields = Object.values(fieldsMap).filter((f: any) => f.fieldId.startsWith('customfield_'));
+        const clearedFields: ICustomFieldMeta[] = filteredFields.map((f: any) => {
+          const { fieldId, name, schema, required, hasDefaultValue } = f;
+          const o: any = { fieldId, name, schema, required, hasDefaultValue };
+          if (f.allowedValues) {
+            o.allowedValues = f.allowedValues.map((av: any) => {
+              return av.value || av.key || av.id;
+            });
+          }
+          o.schema = { type: f.schema.type };
+          if (f.schema.items) {
+            o.schema.items = f.schema.items;
+          }
+          return o;
+        });
+        return clearedFields;
+      });
+    }
+
     const i = `project ${/^\d+$/.test(projectIdOrKey) ? 'id' : 'key'}`;
     if (!project) {
       const message = `Project ${i} not found`;
@@ -148,7 +261,9 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
           : undefined,
         labels: projectLabels,
         priorityNames,
-        lead: jiraUserObj(p.lead),
+        // lead: jiraUserObj(p.lead),
+        customFieldsMetadata, // VVT
+        customFieldsFillingMemo,
       };
     })();
 
@@ -162,28 +277,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
       project: filteredProject,
     };
 
-    return formatToolResult(json);
+    const res = formatToolResult(json);
+    return res;
   });
-}
-
-interface FilteredProject {
-  id?: string | number;
-  key?: string | undefined;
-  name?: string;
-  description?: string | undefined;
-  projectTypeKey?: string;
-  archived?: boolean;
-  url?: string;
-  issueTypes?: {
-    id?: string;
-    name?: string;
-    description?: string | undefined;
-    subtask?: boolean;
-  }[];
-  labels: string[],
-  lead?: {
-    key?: string | undefined;
-    name?: string | undefined;
-    displayName?: string | undefined;
-  } | undefined;
 }
