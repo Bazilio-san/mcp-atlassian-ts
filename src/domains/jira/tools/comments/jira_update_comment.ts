@@ -3,11 +3,12 @@
  * Updates a specific comment in a JIRA issue
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for updating a comment in a JIRA issue
@@ -27,8 +28,8 @@ export const jira_update_comment: ToolWithHandler = {
         description: 'The ID of the comment to update',
       },
       body: {
-        type: 'string',
-        description: 'Updated comment text',
+        type: 'string', // markdown
+        description: 'Updated comment text in markdown format',
       },
       visibility: {
         type: 'object',
@@ -67,13 +68,13 @@ export const jira_update_comment: ToolWithHandler = {
  */
 async function updateCommentHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueIdOrKey, commentId, body, visibility, expand } = args;
-    const { httpClient, config, logger } = context;
+    const { issueIdOrKey, commentId, visibility, expand } = args;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Updating JIRA comment #${commentId} on ${issueIdOrKey}`);
 
     // Build comment update input
-    const commentInput: any = { body };
+    const commentInput: any = { body: mdToADF(args.body) };
     if (visibility) {
       commentInput.visibility = visibility;
     }
@@ -93,7 +94,7 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
 
     const comment = response.data;
 
-    const { id, created, updated, body: b, renderedBody, author, updateAuthor, visibility: vis, properties } = comment;
+    const { id, created, updated, renderedBody, author, updateAuthor, visibility: vis, properties } = comment;
     const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
     const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
 
@@ -109,21 +110,11 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
         id,
         created: convertToIsoUtc(created),
         updated: convertToIsoUtc(updated),
-        body: b,
+        body: stringOrADF2markdown(comment.body), // VVT ADF
         renderedBody,
         linkToComment,
-        author: isObject(author) ? {
-          key: author?.key,
-          name: author?.name,
-          displayName: author?.displayName,
-          emailAddress: author?.emailAddress,
-        } : undefined,
-        updateAuthor: isObject(comment.updateAuthor) ? {
-          key: updateAuthor.key,
-          name: updateAuthor.name,
-          displayName: updateAuthor.displayName,
-          emailAddress: updateAuthor.emailAddress,
-        } : undefined,
+        author: jiraUserObj(author),
+        updateAuthor: jiraUserObj(updateAuthor),
         visibility: vis,
         properties,
         issueUrl,

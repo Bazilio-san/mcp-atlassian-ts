@@ -3,12 +3,13 @@
  * Retrieves detailed information about a JIRA issue by key or ID
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for getting a JIRA issue
@@ -104,7 +105,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
       summary: fields.summary || '',
       status: {
         name: fields.status?.name || 'Unknown',
-        description: fields.status?.description || '',
+        description: stringOrADF2markdown(fields.status?.description || ''),
       },
       assignee: fields.assignee?.displayName || 'Unassigned',
       reporter: fields.reporter?.displayName || 'Unknown',
@@ -118,7 +119,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
         key: fields.project?.key || 'Unknown',
       },
       labels: fields.labels || [],
-      description: fields.description || '',
+      description: stringOrADF2markdown(fields.description || ''),
       fields: additionalFields.length ? additionalFields.reduce((a, fieldName) => {
         a[fieldName] = fields[fieldName];
         return a;
@@ -144,7 +145,7 @@ async function getIssueHandler (args: any, context: ToolContext): Promise<any> {
           return {
             id: c.id,
             author: c.author?.displayName || 'Unknown',
-            body: c.body,
+            body: stringOrADF2markdown(c.body), // VVT ADF
             created: convertToIsoUtc(c.created),
             url: c.self,
           };

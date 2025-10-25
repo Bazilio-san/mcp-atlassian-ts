@@ -3,7 +3,7 @@
  * Transitions a JIRA issue to a new status with optional fields and comment
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
@@ -30,7 +30,7 @@ To get the transitions available for an issue, use 'jira_get_transitions' tool`,
       },
       comment: {
         type: 'string',
-        description: 'Optional comment to add with the transition',
+        description: 'Optional comment to add with the transition. In markdown format',
       },
       fields: {
         type: 'object',
@@ -57,7 +57,7 @@ To get the transitions available for an issue, use 'jira_get_transitions' tool`,
 async function transitionIssueHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, transitionId } = args;
-    const { httpClient, config, logger } = context;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Transitioning JIRA issue ${issueIdOrKey} | transitionId: ${transitionId}`);
 
@@ -71,7 +71,7 @@ async function transitionIssueHandler (args: any, context: ToolContext): Promise
     }
     const comment = trim(args.comment) ? args.comment : undefined;
     if (comment !== undefined) {
-      transitionData.comment = { body: comment };
+      transitionData.comment = { body: mdToADF(comment) }; // VVT ADF
     }
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get

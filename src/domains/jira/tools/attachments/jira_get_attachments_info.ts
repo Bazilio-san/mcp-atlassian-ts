@@ -3,11 +3,12 @@
  * Retrieves metadata and download links for JIRA issue attachments
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
+import { jiraUserObj } from '../../shared/utils.js';
 
 /**
  * Tool definition for downloading JIRA attachments
@@ -74,12 +75,7 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
           mimeType: a.mimeType,
           created: convertToIsoUtc(a.created),
           downloadUrl: a.content,
-          author: isObject(a.author) ? {
-            key: a.author?.key,
-            name: a.author?.name,
-            displayName: a.author?.displayName,
-            emailAddress: a.author?.emailAddress,
-          } : undefined,
+          author: jiraUserObj(a.author),
         } : undefined;
       }).filter(Boolean),
     };

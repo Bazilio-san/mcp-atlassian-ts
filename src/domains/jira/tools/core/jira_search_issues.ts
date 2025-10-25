@@ -3,7 +3,7 @@
  * Searches for JIRA issues using JQL (JIRA Query Language)
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';

@@ -3,7 +3,7 @@
  * Retrieves detailed user profile information by account ID or username
  */
 
-import type { ToolContext } from '../../shared/tool-context';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
@@ -51,7 +51,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
     const cacheKey = generateCacheKey('jira', 'user', { login });
 
     // Fetch from cache or API
-    const user = await cache.getOrSet(cacheKey, async () => {
+    const u = await cache.getOrSet(cacheKey, async () => {
       // Otherwise try as accountId first
       try {
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
@@ -86,22 +86,30 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
       }
     });
 
+    const user = isObject(u) ? {
+      key: u.key || undefined,
+      name: u.name || undefined,
+      accountId: u.accountId || undefined,
+      displayName: u.displayName,
+      emailAddress: u.emailAddress || undefined,
+      active: u.active || false,
+      timeZone: u.timeZone || undefined,
+      avatarUrls: u.avatarUrls || undefined,
+    } : null;
+
+    const message = user
+      ? 'User profile retrieved'
+      : `User not found for login ${login}`;
+
+    logger.info(message);
+
     // Format response for MCP
     const json = {
-      success: true,
+      success: !!user,
       operation: 'get_user_profile',
       login,
-      message: 'User profile retrieved',
-      user: isObject(user) ? {
-        accountId: user.accountId,
-        displayName: user.displayName,
-        emailAddress: user.emailAddress || undefined,
-        active: user.active || false,
-        timeZone: user.timeZone || undefined,
-        avatarUrls: user.avatarUrls || undefined,
-        key: user.key || undefined,
-        name: user.name || undefined,
-      } : null,
+      message,
+      user,
       timestamp: new Date().toISOString(),
     };
 

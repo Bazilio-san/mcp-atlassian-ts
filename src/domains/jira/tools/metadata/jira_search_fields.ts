@@ -3,7 +3,7 @@
  * Searches for JIRA fields (including custom fields)
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
@@ -42,7 +42,7 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
   return withErrorHandling(async () => {
     const { query } = args;
     const { httpClient, cache, logger, config } = context;
-
+// VVA должен возвращать инфу по наполнению
     logger.info(`Searching JIRA fields: query: ${query}`);
 
     // Generate cache key

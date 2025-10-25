@@ -3,10 +3,11 @@
  * Creates a new version in a JIRA project
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for jira_create_project_version
@@ -70,7 +71,7 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
     const versionData = args;
-
+// VVA валидировать и добавлять параметры если есть
     logger.info(`Creating JIRA version '${versionData.name}' in project id '${versionData.projectId}'`);
 
     // Create the version
@@ -93,7 +94,7 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
         id: version.id,
         name: version.name,
         projectId: versionData.projectId,
-        description: versionData.description || null,
+        description: stringOrADF2markdown(versionData.description) || null,
         releaseDate: versionData.releaseDate || null,
         startDate: versionData.startDate || null,
         archived: versionData.archived || false,

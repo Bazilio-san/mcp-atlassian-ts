@@ -4,7 +4,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { ToolContext } from '../../../shared/tool-context.js';
+import type { ToolContext } from '../../../../../types/tool-context';
 import { generateCacheKey } from '../../../../../core/cache.js';
 import { ehs } from '../../../../../core/errors.js';
 

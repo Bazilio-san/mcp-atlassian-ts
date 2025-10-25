@@ -3,7 +3,7 @@
  * Retrieves all sprints from a specific agile board
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';

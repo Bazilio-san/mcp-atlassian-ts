@@ -3,11 +3,12 @@
  * Gets all comments for a JIRA issue
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
-import { ToolWithHandler } from '../../../../types';
+import { IJiraComment, ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for getting all comments from a JIRA issue
@@ -101,7 +102,7 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
         maxResults: commentsData.maxResults,
         total: commentsData.total,
       },
-      comments: commentsData.comments?.map((comment: any) => {
+      comments: commentsData.comments?.map((comment: IJiraComment) => {
         const { id, created, updated, body, renderedBody, author, updateAuthor, visibility, properties } = comment;
         const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
         return {
@@ -109,20 +110,10 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
           linkToComment,
           created: convertToIsoUtc(created),
           updated: convertToIsoUtc(updated),
-          body,
+          body: stringOrADF2markdown(body), // VVT ADF
           renderedBody,
-          author: isObject(author) ? {
-            key: author.key,
-            name: author.name,
-            displayName: author.displayName,
-            emailAddress: author.emailAddress,
-          } : undefined,
-          updateAuthor: isObject(updateAuthor) ? {
-            key: updateAuthor.key,
-            name: updateAuthor.name,
-            displayName: updateAuthor.displayName,
-            emailAddress: updateAuthor.emailAddress,
-          } : undefined,
+          author: jiraUserObj(author),
+          updateAuthor: jiraUserObj(updateAuthor),
           visibility,
           properties,
         };

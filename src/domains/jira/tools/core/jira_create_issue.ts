@@ -3,12 +3,13 @@
  * Creates a new JIRA issue with specified fields
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling, ValidationError, ehs } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 export async function createJiraCreateIssueTool (): Promise<ToolWithHandler> {
   return {
@@ -160,7 +161,7 @@ async function validateProjectAndIssueType (
         availableIssueTypes: issueTypes.map((it: any) => ({
           id: it.id,
           name: it.name,
-          description: it.description,
+          description: stringOrADF2markdown(it.description),
           subtask: it.subtask,
         })),
       },
@@ -190,7 +191,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
       remainingEstimate,
       customFields = {},
     } = args;
-    const { httpClient, config, logger } = context;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Creating JIRA issue in project: ${projectIdOrKey} | issueType: ${issueType} | summary: ${summary}`);
 
@@ -232,7 +233,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
 
     // Add optional fields
     if (description) {
-      issueInput.fields.description = description;
+      issueInput.fields.description = mdToADF(description);
     }
     if (assignee) {
       issueInput.fields.assignee = { name: assignee };
@@ -272,7 +273,8 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     const response = await httpClient.post(`${config.restPath}/issue`, issueInput);
     const createdIssue = response.data;
 
-    const message = `Issue ${createdIssue.key} created successfully in project ${projectIdOrKey}`;
+    const i = `project${/^\d+$/.test(projectIdOrKey) ? 'Id' : 'Key'}`;
+    const message = `Issue ${createdIssue.key} created successfully in the ${i} ${projectIdOrKey}`;
     logger.info(message);
 
     const json = {
@@ -284,7 +286,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
         key: createdIssue.key,
         issueUrl: `${config.origin}/browse/${createdIssue.key}`,
         summary,
-        [/^\d+$/.test(projectIdOrKey) ? 'projectId' : 'projectKey']: projectIdOrKey,
+        [i]: projectIdOrKey,
         created: new Date().toISOString(),
       },
     };

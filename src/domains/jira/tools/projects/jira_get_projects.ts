@@ -3,12 +3,13 @@
  * Retrieves all accessible JIRA projects for the authenticated user
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for jira_get_projects
@@ -84,7 +85,12 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
       found: !!count,
       operation: 'get_projects',
       message,
-      projects: projects.map(({ key, name, description, projectTypeKey }: any) => ({ key, name, description, projectTypeKey })),
+      projects: projects.map(({ key, name, description, projectTypeKey }: any) => ({
+        key,
+        name,
+        description: stringOrADF2markdown(description),
+        projectTypeKey,
+      })),
     };
 
     return formatToolResult(json);

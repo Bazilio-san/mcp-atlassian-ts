@@ -3,11 +3,12 @@
  * Retrieves all versions for a specific JIRA project
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for jira_get_project_versions
@@ -71,7 +72,7 @@ async function getProjectVersionsHandler (args: any, context: ToolContext): Prom
       versions: versions.map((v: any) => ({
         id: v.id,
         name: v.name,
-        description: v.description || null,
+        description: stringOrADF2markdown(v.description) || null,
         released: v.released || false,
         archived: v.archived || false,
         releaseDate: v.releaseDate || null,

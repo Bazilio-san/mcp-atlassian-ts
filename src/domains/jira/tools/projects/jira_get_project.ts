@@ -3,7 +3,7 @@
  * Retrieves details of a specific JIRA project
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { ehs, withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
@@ -11,6 +11,7 @@ import { ToolWithHandler } from '../../../../types';
 import { getProjectLabels } from './search-project/labels-cache.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
+import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for jira_get_project
@@ -133,20 +134,21 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         id: p.id,
         key: p.key,
         name: p.name,
-        description: p.description,
+        description: stringOrADF2markdown(p.description),
         projectTypeKey: p.projectTypeKey,
         archived: p.archived,
         url: p.url,
         issueTypes: Array.isArray(p.issueTypes)
-          ? p.issueTypes.map(({ id, name, description, subtask }: any) => ({ id, name, description, subtask }))
+          ? p.issueTypes.map(({ id, name, description: d, subtask }: any) => ({
+            id,
+            name,
+            description: stringOrADF2markdown(d),
+            subtask,
+          }))
           : undefined,
         labels: projectLabels,
         priorityNames,
-        lead: p.lead ? {
-          key: p.lead.key,
-          name: p.lead.name,
-          displayName: p.lead.displayName,
-        } : undefined,
+        lead: jiraUserObj(p.lead),
       };
     })();
 
@@ -166,22 +168,22 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
 interface FilteredProject {
   id?: string | number;
-  key?: string;
+  key?: string | undefined;
   name?: string;
-  description?: string;
+  description?: string | undefined;
   projectTypeKey?: string;
   archived?: boolean;
   url?: string;
   issueTypes?: {
     id?: string;
     name?: string;
-    description?: string;
+    description?: string | undefined;
     subtask?: boolean;
   }[];
   labels: string[],
   lead?: {
-    key?: string;
-    name?: string;
-    displayName?: string;
+    key?: string | undefined;
+    name?: string | undefined;
+    displayName?: string | undefined;
   } | undefined;
 }

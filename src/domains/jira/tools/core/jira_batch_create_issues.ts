@@ -3,7 +3,7 @@
  * Creates multiple JIRA issues in a single request for improved efficiency
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
@@ -91,7 +91,7 @@ export const jira_batch_create_issues: ToolWithHandler = {
 async function batchCreateIssuesHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issues } = args;
-    const { httpClient, config, logger } = context;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Batch creating ${issues.length} JIRA issues`);
 
@@ -103,7 +103,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
         },
         issuetype: { name: issue.issueType },
         summary: issue.summary,
-        description: issue.description,
+        description: mdToADF(issue.description),
         assignee: issue.assignee ? { accountId: issue.assignee } : undefined,
         priority: issue.priority ? { name: issue.priority } : undefined,
         labels: issue.labels || [],

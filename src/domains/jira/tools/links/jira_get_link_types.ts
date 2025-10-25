@@ -3,7 +3,7 @@
  * Retrieves all available JIRA issue link types
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';

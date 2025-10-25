@@ -5,12 +5,13 @@
  * Retrieves changelogs for multiple issues (Cloud only)
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { jiraUserObj } from '../../shared/utils.js';
 
 /**
  * Tool definition for batch getting JIRA changelogs
@@ -106,12 +107,11 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
             maxResults,
             total,
             histories: histories.map((h: any) => {
-              const { id, created, author, items = [] } = h;
-              const { key, name, displayName, emailAddress } = author || {};
+              const { id, created, items = [] } = h;
               return {
                 id,
                 created: convertToIsoUtc(created),
-                author: { key, name, displayName, emailAddress },
+                author: jiraUserObj(h.author),
                 items,
               };
             }),

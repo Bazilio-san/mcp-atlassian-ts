@@ -3,11 +3,12 @@
  * Adds a comment to a JIRA issue with optional visibility restrictions
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
-import { ToolWithHandler } from '../../../../types';
+import { IJiraComment, ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
-import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
+import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for adding a comment to a JIRA issue
@@ -23,8 +24,8 @@ export const jira_add_comment: ToolWithHandler = {
         description: 'The issue ID (e.g., 123) or key (e.g., PROJ-123)',
       },
       body: {
-        type: 'string',
-        description: 'Comment text',
+        type: 'string', // markdown
+        description: 'Comment text in markdown format',
       },
       visibility: {
         type: 'object',
@@ -59,13 +60,13 @@ export const jira_add_comment: ToolWithHandler = {
  */
 async function addCommentHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { issueIdOrKey, body, visibility } = args;
-    const { httpClient, config, logger } = context;
+    const { issueIdOrKey, visibility } = args;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Adding JIRA comment to ${issueIdOrKey}`);
 
     // Build comment input
-    const commentInput: any = { body };
+    const commentInput: any = { body: mdToADF(args.body) }; // VVT ADF
     if (visibility) {
       commentInput.visibility = visibility;
     }
@@ -77,7 +78,7 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
 
     const comment = response.data;
 
-    const { id, created, updated, body: b, author, visibility: vis } = comment;
+    const { id, created, updated, author, visibility: vis } = comment as IJiraComment;
     const issueUrl = `${config.origin}/browse/${issueIdOrKey}`;
     const linkToComment = `${issueUrl}?focusedCommentId=${id}#comment-${id}`;
 
@@ -94,13 +95,8 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
         linkToComment,
         created: convertToIsoUtc(created),
         updated: convertToIsoUtc(updated),
-        body: b,
-        author: isObject(author) ? {
-          key: author?.key,
-          name: author?.name,
-          displayName: author?.displayName,
-          emailAddress: author?.emailAddress,
-        } : undefined,
+        body: stringOrADF2markdown(comment.body), // VVT ADF
+        author: jiraUserObj(author),
         visibility: vis,
         issueUrl,
       },

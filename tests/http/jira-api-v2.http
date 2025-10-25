@@ -97,6 +97,12 @@ Content-Type: application/json
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
+### Get comment
+GET {{baseUrl}}/rest/api/2/issue/AITECH-7/comment?expand=renderedBody,properties
+Content-Type: application/json
+Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
+
+
 
 ### Add comment
 # https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addComment
@@ -108,8 +114,6 @@ Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 {
   "body": "API test comment"
 }
-
-
 
 ### Create issue link
 # https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-linkIssues

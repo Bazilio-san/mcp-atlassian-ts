@@ -3,7 +3,7 @@
  */
 
 // JIRA Issue types
-export interface JiraIssue {
+export interface IJiraIssue {
   id: string;
   key: string;
   self: string;
@@ -11,6 +11,7 @@ export interface JiraIssue {
   expand?: string;
   transitions?: IJiraTransition[];
 }
+
 // /issue/createmeta
 interface IJiraAvatarUrls {
   '48x48': string;
@@ -19,9 +20,31 @@ interface IJiraAvatarUrls {
   '32x32': string;
 }
 
+// Marks describe formatting (bold, italic, link, etc.)
+interface IADFMark {
+  type: string;              // e.g. "strong", "em", "link", "code"
+  attrs?: Record<string, any>; // e.g. { href: "https://finam.ru" }
+}
+
+// Base node type
+export interface IADFNode {
+  type: string;              // e.g. "paragraph", "text", "codeBlock", "bulletList"
+  attrs?: Record<string, any>;
+  content?: IADFNode[];       // Nested nodes
+  marks?: IADFMark[];         // Text decorations
+  text?: string;             // Only for text nodes
+}
+
+// Root ADF document
+export interface IADFDocument {
+  version: number;           // Always 1
+  type: 'doc';
+  content: IADFNode[];        // Top-level nodes
+}
+
 export interface IJiraIssueFields {
   summary: string;
-  description?: any; // Can be string or ADF
+  description?: string | IADFDocument; // Can be string or ADF
   status: IJiraStatus;
   priority?: IJiraPriority;
   assignee?: IJiraUser;
@@ -31,27 +54,30 @@ export interface IJiraIssueFields {
   issuetype: IJiraIssueType;
   project: IJiraProject;
   labels?: string[];
-  components?: JiraComponent[];
-  fixVersions?: JiraVersion[];
-  versions?: JiraVersion[];
-  parent?: JiraIssue;
-  subtasks?: JiraIssue[];
-  attachment?: JiraAttachment[];
+  components?: IJiraComponent[];
+  fixVersions?: IJiraVersion[];
+  versions?: IJiraVersion[];
+  parent?: IJiraIssue;
+  subtasks?: IJiraIssue[];
+  attachment?: IJiraAttachment[];
   comment?: {
-    comments: JiraComment[];
+    comments: IJiraComment[];
     total: number;
   };
   worklog?: {
-    worklogs: JiraWorklog[];
+    worklogs: IJiraWorklog[];
     total: number;
   };
+
   // Custom fields can be added here
   [key: string]: any;
 }
 
 export interface IJiraUser {
   self: string;
-  accountId: string;
+  name: string; // v2 Server
+  key: string; // v2 Server
+  accountId: string; // v3 Cloud
   displayName: string;
   emailAddress?: string;
   avatarUrls?: IJiraAvatarUrls;
@@ -94,12 +120,12 @@ export interface IJiraProject {
   lead?: IJiraUser;
   projectTypeKey: string;
   avatarUrls?: IJiraAvatarUrls;
-  components?: JiraComponent[];
-  versions?: JiraVersion[];
+  components?: IJiraComponent[];
+  versions?: IJiraVersion[];
   issuetypes?: IJiraIssueType[];
 }
 
-export interface JiraComponent {
+export interface IJiraComponent {
   id: string;
   name: string;
   description?: string;
@@ -109,7 +135,7 @@ export interface JiraComponent {
   isAssigneeTypeValid: boolean;
 }
 
-export interface JiraVersion {
+export interface IJiraVersion {
   id: string;
   name: string;
   description?: string;
@@ -119,22 +145,32 @@ export interface JiraVersion {
   userReleaseDate?: string;
 }
 
-export interface JiraComment {
+export interface IJiraCommentProperty {
+  /** The unique key of the property */
+  key: string;
+  /** The stored value — can be any valid JSON */
+  value: any;
+}
+
+export interface IJiraComment {
   id: string;
   author: IJiraUser;
-  body: any; // Can be string or ADF
+  updateAuthor: IJiraUser;
+  body: string | IADFDocument; // Can be string or ADF
+  renderedBody?: string, // HTML-представление текста комментария
   created: string;
   updated: string;
   visibility?: {
     type: string;
     value: string;
   };
+  properties?: IJiraCommentProperty[];
 }
 
-export interface JiraWorklog {
+export interface IJiraWorklog {
   id: string;
   author: IJiraUser;
-  comment?: any; // Can be string or ADF
+  comment?: string | IADFDocument; // Can be string or ADF
   created: string;
   updated: string;
   started: string;
@@ -146,7 +182,7 @@ export interface JiraWorklog {
   };
 }
 
-export interface JiraAttachment {
+export interface IJiraAttachment {
   id: string;
   filename: string;
   author: IJiraUser;
@@ -186,12 +222,6 @@ export interface IJiraTransitionField {
 export interface TKeyName {
   key: string,
   name: string,
-}
-
-export interface TErrorProjKeyNameResult {
-  error?: any,
-  result: TKeyName[]
-  hash: { [key: string]: TKeyName }
 }
 
 export interface IJiraCreateMetaResponse {

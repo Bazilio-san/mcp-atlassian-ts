@@ -3,10 +3,11 @@
  * Creates multiple versions in JIRA projects in batch
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { eh, withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for jira_batch_create_versions
@@ -27,30 +28,30 @@ export const jira_batch_create_versions: ToolWithHandler = {
               type: 'string',
               description: 'Name of the version to create',
             },
-            projectId: {
+            projectId: { // VVA не задействовано
               type: 'number',
               description: 'Project ID where the version will be created',
             },
-            description: {
+            description: { // VVA не задействовано
               type: 'string',
               description: 'Optional description for the version',
             },
-            releaseDate: {
+            releaseDate: { // VVA не задействовано
               type: 'string',
               description: 'Optional release date in YYYY-MM-DD format',
               pattern: '^\\d{4}-\\d{2}-\\d{2}$',
             },
-            startDate: {
+            startDate: { // VVA не задействовано
               type: 'string',
               description: 'Optional start date in YYYY-MM-DD format',
               pattern: '^\\d{4}-\\d{2}-\\d{2}$',
             },
-            archived: {
+            archived: { // VVA не задействовано
               type: 'boolean',
               description: 'Whether the version should be archived',
               default: false,
             },
-            released: {
+            released: { // VVA не задействовано
               type: 'boolean',
               description: 'Whether the version should be marked as released',
               default: false,
@@ -84,6 +85,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
     const { versions } = args;
 
     logger.info(`Batch creating ${versions.length} JIRA versions`);
+// VVA валидировать и добавлять параметры если есть
 
     const results: any[] = [];
 
@@ -123,7 +125,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
         id: version.id,
         name: version.name,
         projectId: version.projectId,
-        description: version.description || null,
+        description: stringOrADF2markdown(version.description) || null,
         archived: version.archived || false,
         released: version.released || false,
       })),

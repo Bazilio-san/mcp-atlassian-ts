@@ -3,7 +3,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { JCConfig } from '../../../types/index.js';
+import { IADFDocument, JCConfig } from './index';
 
 /**
  * Context provided to each tool handler
@@ -38,4 +38,6 @@ export interface ToolContext {
     warn: (message: string, meta?: any) => void;
     error: (message: string, meta?: any) => void;
   };
+
+  mdToADF: (markdown: string) => string | IADFDocument;
 }

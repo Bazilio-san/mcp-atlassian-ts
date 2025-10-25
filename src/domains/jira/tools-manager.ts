@@ -8,9 +8,9 @@ import { getCache } from '../../core/cache.js';
 import { createLogger } from '../../core/utils/logger.js';
 import { ToolExecutionError } from '../../core/errors.js';
 
-import type { JCConfig, ToolWithHandler } from '../../types/index.js';
+import { IADFDocument, JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { ToolContext } from './shared/tool-context.js';
+import type { ToolContext } from '../../types/tool-context';
 
 // Import tool modules - Core tools
 import { jira_get_issue } from './tools/core/jira_get_issue.js';
@@ -69,6 +69,8 @@ import { jira_get_priorities } from './tools/metadata/jira_get_priorities.js';
 
 // Import bulk operation tools
 import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelogs.js';
+// @ts-ignore
+import { md2Adf } from './shared/utils.js';
 
 /**
  * Modular JIRA Tools Manager
@@ -99,6 +101,9 @@ export class JiraToolsManager {
       cache,
       config,
       logger: this.logger,
+      mdToADF: (md: string): string | IADFDocument => {
+        return config.apiVersion === 2 ? md : md2Adf(md);
+      },
     };
 
     // Initialize tools storage

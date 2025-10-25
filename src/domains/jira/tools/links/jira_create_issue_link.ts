@@ -3,7 +3,7 @@
  * Creates a link between two JIRA issues
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
@@ -69,7 +69,7 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
     };
 
     if (comment) {
-      linkData.comment = { body: comment };
+      linkData.comment = { body: comment }; // VVQ ADF?
     }
 
     // Create the link

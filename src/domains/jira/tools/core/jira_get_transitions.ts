@@ -3,11 +3,12 @@
  * Retrieves available transitions for a JIRA issue
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { isObject } from '../../../../core/utils/tools.js';
+import { stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for getting available transitions for a JIRA issue
@@ -67,7 +68,7 @@ async function getTransitionsHandler (args: any, context: ToolContext): Promise<
         to: isObject(t.to) ? {
           id: t.to.id,
           name: t.to.name,
-          description: t.to.description,
+          description: stringOrADF2markdown(t.to.description),
         } : undefined,
       })),
     };

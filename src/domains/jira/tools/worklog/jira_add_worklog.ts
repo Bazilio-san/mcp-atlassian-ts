@@ -3,11 +3,12 @@
  * Adds a worklog entry to a JIRA issue
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
+import { jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
 
 /**
  * Tool definition for adding JIRA worklog entry
@@ -67,14 +68,14 @@ export const jira_add_worklog: ToolWithHandler = {
 async function addWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { issueIdOrKey, timeSpent, comment, started, visibility } = args;
-    const { httpClient, config, logger } = context;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Adding JIRA worklog to the issue ${issueIdOrKey} | timeSpent: ${timeSpent}`);
 
     // Build worklog input
     const worklogInput: any = { timeSpent };
     if (comment) {
-      worklogInput.comment = comment;
+      worklogInput.comment = mdToADF(comment);
     }
     if (started) {
       worklogInput.started = convertToIsoUtc(started);
@@ -87,10 +88,10 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-post
     const response = await httpClient.post(`${config.restPath}/issue/${issueIdOrKey}/worklog`, worklogInput);
     const worklog = response.data || {};
-    const { accountId, displayName, emailAddress } = worklog.author || {};
+    const author = jiraUserObj(worklog.author);
 
     const i = `issue${/^\d+$/.test(issueIdOrKey) ? 'Id' : 'Key'}`;
-    const message = `Worklog added successfully to ${i} ${issueIdOrKey}: ${timeSpent} by ${displayName || 'Unknown'}`;
+    const message = `Worklog added successfully to ${i} ${issueIdOrKey}: ${timeSpent} by ${author?.displayName || 'Unknown'}`;
 
     logger.info(message);
 
@@ -103,9 +104,9 @@ async function addWorklogHandler (args: any, context: ToolContext): Promise<any>
         id: worklog.id,
         timeSpent: timeSpent,
         timeSpentSeconds: worklog.timeSpentSeconds,
-        comment: comment || undefined,
+        comment: stringOrADF2markdown(comment) || undefined,
         started: convertToIsoUtc(worklog.started),
-        author: accountId || displayName || emailAddress ? { accountId, displayName, emailAddress } : undefined,
+        author,
         visibility: visibility || undefined,
       },
       link: `${config.origin}/browse/${issueIdOrKey}`,

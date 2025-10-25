@@ -3,7 +3,7 @@
  * Updates an existing JIRA issue with new field values
  */
 
-import type { ToolContext } from '../../shared/tool-context.js';
+import type { ToolContext } from '../../../../types/tool-context';
 import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
@@ -94,7 +94,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
       labels,
       customFields = {},
     } = args;
-    const { httpClient, config, logger } = context;
+    const { httpClient, config, logger, mdToADF } = context;
 
     logger.info(`Updating JIRA issue: issueIdOrKey: ${issueIdOrKey}`);
 
@@ -105,7 +105,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
       fields.summary = summary;
     }
     if (description) {
-      fields.description = description;
+      fields.description = mdToADF(description); // VVT
     }
     if (assignee) {
       fields.assignee = { accountId: assignee };
