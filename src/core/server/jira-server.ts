@@ -11,6 +11,7 @@ import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
+import { eh } from '../errors.js';
 
 const logger = createLogger('jira-server');
 
@@ -92,7 +93,7 @@ export class JiraServer extends McpAtlassianServer {
       await this.toolRegistry.initializeTools();
       logger.info('JIRA tools registered successfully');
     } catch (error) {
-      logger.error('Failed to register JIRA tools', error instanceof Error ? error : new Error(String(error)));
+      logger.error('Failed to register JIRA tools', eh(error));
       throw new Error('Failed to register JIRA tools');
     }
   }

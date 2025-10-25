@@ -5,7 +5,7 @@
 import { ConfluenceToolsManager } from '../../domains/confluence/tools-manager.js';
 import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
 import { getCache } from '../cache.js';
-import { McpAtlassianError, ToolExecutionError, ValidationError } from '../errors.js';
+import { eh, ehs, McpAtlassianError, ToolExecutionError, ValidationError } from '../errors.js';
 import { createLogger } from '../utils/logger.js';
 import { isToolEnabledByConfig } from '../../bootstrap/init-config.js';
 import { setCurrentToolName } from '../utils/http-logger.js';
@@ -107,7 +107,7 @@ export class ToolRegistry {
 
       logger.info(`Tools initialized: total: ${this.toolsMap.size} | jira: registered: ${jiraToolsCount}, skipped: ${jiraSkippedCount} | confluence: registered: ${confluenceToolsCount}, skipped: ${confluenceSkippedCount}`);
     } catch (error) {
-      logger.error('Failed to initialize tools', error instanceof Error ? error : new Error(String(error)));
+      logger.error('Failed to initialize tools', eh(error));
       throw new ToolExecutionError('system', 'Failed to initialize tools');
     }
   }
@@ -205,7 +205,7 @@ export class ToolRegistry {
         return await this.executeUtilityTool(name, args);
       }
     } catch (error) {
-      logger.error(`Tool execution failed: ${name}`, error instanceof Error ? error : new Error(String(error)));
+      logger.error(`Tool execution failed: ${name}`, eh(error));
 
       if (error instanceof ValidationError || error instanceof ToolExecutionError) {
         throw error;
@@ -216,7 +216,7 @@ export class ToolRegistry {
         throw new ToolExecutionError(name, error.message, error.details);
       }
 
-      throw new ToolExecutionError(name, error instanceof Error ? error.message : String(error));
+      throw new ToolExecutionError(name, ehs(error));
     } finally {
       // Clear tool name from context
       setCurrentToolName('unknown');
@@ -311,7 +311,7 @@ export class ToolRegistry {
       } catch (error) {
         health.services.jira = {
           status: 'error',
-          error: error instanceof Error ? error.message : String(error),
+          error: ehs(error),
         };
         health.status = 'degraded';
       }
@@ -324,7 +324,7 @@ export class ToolRegistry {
       } catch (error) {
         health.services.confluence = {
           status: 'error',
-          error: error instanceof Error ? error.message : String(error),
+          error: ehs(error),
         };
         health.status = 'degraded';
       }
@@ -461,7 +461,7 @@ export class ServiceToolRegistry extends ToolRegistry {
 
       logger.info(`Service-specific tools initialized: serviceMode: ${this.serviceMode} | total: ${this.toolsMap.size} | registered: ${registeredCount} | skipped: ${skippedCount} | jira: ${jiraCount} | confluence: ${confluenceCount}`);
     } catch (error) {
-      logger.error('Failed to initialize service-specific tools', error instanceof Error ? error : new Error(String(error)));
+      logger.error('Failed to initialize service-specific tools', eh(error));
       throw new ToolExecutionError('system', 'Failed to initialize service-specific tools');
     }
   }
@@ -484,7 +484,7 @@ export class ServiceToolRegistry extends ToolRegistry {
       } catch (error) {
         health.services.jira = {
           status: 'error',
-          error: error instanceof Error ? error.message : String(error),
+          error: ehs(error),
         };
         health.status = 'degraded';
       }
@@ -497,7 +497,7 @@ export class ServiceToolRegistry extends ToolRegistry {
       } catch (error) {
         health.services.confluence = {
           status: 'error',
-          error: error instanceof Error ? error.message : String(error),
+          error: ehs(error),
         };
         health.status = 'degraded';
       }

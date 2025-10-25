@@ -7,6 +7,7 @@ import type { AxiosInstance } from 'axios';
 import { createLogger } from '../../../core/utils/logger.js';
 import { getCache } from '../../../core/cache.js';
 import type { JCConfig } from '../../../types/index.js';
+import { eh } from '../../../core/errors.js';
 
 const logger = createLogger('priority-service');
 
@@ -43,7 +44,7 @@ export async function getCachedPriorityObjects (httpClient: AxiosInstance, confi
       3600, // Cache for 1 hour
     );
   } catch (error) {
-    logger.error('Failed to fetch priorities from JIRA', error instanceof Error ? error : new Error(String(error)));
+    logger.error('Failed to fetch priorities from JIRA', eh(error));
   }
   return cachedPriorities || [];
 }

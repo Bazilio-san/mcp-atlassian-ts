@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { appConfig } from '../../bootstrap/init-config.js';
 import { createLogger } from '../utils/logger.js';
 import { ServiceModeJC } from '../../types/config';
+import { eh } from '../errors.js';
 
 const logger = createLogger('auth-manager');
 
@@ -47,7 +48,7 @@ export class AuthenticationManager {
         logger.info(`[Auth] ${authContext.mode} mode for ${req.method} ${req.path}`);
         next();
       } catch (error) {
-        logger.error('[Auth] Authentication failed:', error instanceof Error ? error : new Error(String(error)));
+        logger.error('[Auth] Authentication failed:', eh(error));
 
         res.status(401).json({
           jsonrpc: '2.0',

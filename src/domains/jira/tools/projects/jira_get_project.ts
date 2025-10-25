@@ -4,7 +4,7 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling } from '../../../../core/errors.js';
+import { ehs, withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
@@ -112,7 +112,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     try {
       priorityNames = await getPriorityNamesArray(httpClient, config);
     } catch (error) {
-      logger.warn(`Failed to retrieve priority names: error: ${error instanceof Error ? error.message : String(error)}`);
+      logger.warn(`Failed to retrieve priority names: error: ${ehs(error)}`);
     }
 
     // Get project labels using cache system
@@ -122,7 +122,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         const labelsResult = await getProjectLabels(httpClient, project.key, String(project.id), context);
         projectLabels = labelsResult.labels;
       } catch (error) {
-        logger.warn(`Failed to retrieve labels for project key: ${project.key} | error: ${error instanceof Error ? error.message : String(error)}`);
+        logger.warn(`Failed to retrieve labels for project key: ${project.key} | error: ${ehs(error)}`);
       }
     }
 

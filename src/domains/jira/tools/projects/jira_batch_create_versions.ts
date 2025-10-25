@@ -4,7 +4,7 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling } from '../../../../core/errors.js';
+import { eh, withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 
@@ -95,10 +95,10 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
         const response = await httpClient.post(`${config.restPath}/version`, version);
         results.push(response.data);
         logger.debug(`Successfully created version: name: ${version.name} | id: ${response.data.id}`);
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        logger.warn(`Failed to create version: version: ${version.name} | error: ${err.message}`);
-        results.push({ error: err.message, version: version.name });
+      } catch (err) {
+        const error = eh(err);
+        logger.warn(`Failed to create version: version: ${version.name} | error: ${error.message}`);
+        results.push({ error: error.message, version: version.name });
       }
     }
 

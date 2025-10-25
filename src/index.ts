@@ -10,7 +10,7 @@ import { pathToFileURL } from 'url';
 import { appConfig, hasStringValue } from './bootstrap/init-config.js';
 import { createAuthenticationManager, validateAuthConfig } from './core/auth.js';
 import { initializeCache } from './core/cache.js';
-import { ServerError } from './core/errors.js';
+import { eh, ehs, ServerError } from './core/errors.js';
 import { createServiceServer } from './core/server/factory.js';
 import { createLogger } from './core/utils/logger.js';
 import { ServiceModeJC } from './types/config';
@@ -220,7 +220,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
       });
     }
   } catch (error) {
-    logger.fatal('Failed to start MCP Atlassian Server', error instanceof Error ? error : new Error(String(error)));
+    logger.fatal('Failed to start MCP Atlassian Server', eh(error));
     process.exit(1);
   }
 }
@@ -237,7 +237,7 @@ function setupProcessHandlers () {
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
-    logger.fatal(`Unhandled promise rejection: reason: ${reason instanceof Error ? reason.message : String(reason)} | promise: ${String(promise)}`, reason instanceof Error ? reason : new Error(String(reason)));
+    logger.fatal(`Unhandled promise rejection: reason: ${ehs(reason)} | promise: ${String(promise)}`, eh(reason));
     process.exit(1);
   });
 
@@ -307,7 +307,7 @@ if (currentFileUrl === mainFileUrl) {
       process.exit(1);
     });
   } catch (error) {
-    console.error('Error parsing arguments:', error instanceof Error ? error.message : String(error));
+    console.error('Error parsing arguments:', ehs(error));
     displayHelp();
     process.exit(1);
   }

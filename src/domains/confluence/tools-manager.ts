@@ -168,7 +168,7 @@ export class ConfluenceToolsManager {
         // Use header-based authentication
         const authManager = createAuthenticationManagerFromHeaders(confluenceHeaders, this.context.config.url);
         customHttpClient = authManager.getHttpClient();
-        this.logger.debug('Using header-based authentication for Confluence', { headers: Object.keys(confluenceHeaders) });
+        this.logger.debug(`Using header-based authentication for Confluence: headers: ${Object.keys(confluenceHeaders).join(', ')}`);
       } else {
         // Use system authentication with additional headers
         const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);
@@ -236,9 +236,6 @@ export class ConfluenceToolsManager {
       cache.del(key);
     }
 
-    this.context.logger.debug('Cache invalidated for page', {
-      pageId,
-      keysCleared: relatedKeys.length,
-    });
+    this.context.logger.debug(`Cache invalidated for pageId: ${pageId} | keysCleared: ${relatedKeys.length}`);
   }
 }

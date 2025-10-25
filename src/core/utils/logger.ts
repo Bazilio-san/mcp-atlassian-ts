@@ -6,6 +6,10 @@ import pino from 'pino';
 import pinoPretty from 'pino-pretty';
 import type { LogContext } from '../../types/index.js';
 
+export const eh = (err: any): Error => {
+  return err instanceof Error ? err : new Error(String(err));
+};
+
 // Sensitive data patterns to mask
 const SENSITIVE_PATTERNS = [
   // API tokens and keys
@@ -238,7 +242,7 @@ process.on('uncaughtException', error => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logUnhandledError(reason instanceof Error ? reason : new Error(String(reason)), {
+  logUnhandledError(eh(reason), {
     type: 'unhandledRejection',
     promise: String(promise),
   });

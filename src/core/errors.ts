@@ -56,15 +56,6 @@ export class McpAtlassianError extends Error implements McpError {
 }
 
 /**
- * Configuration-related errors
- */
-export class ConfigurationError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('CONFIGURATION_ERROR', message, details, 500);
-  }
-}
-
-/**
  * Authentication-related errors
  */
 export class AuthenticationError extends McpAtlassianError {
@@ -147,64 +138,12 @@ export class ToolExecutionError extends McpAtlassianError {
 }
 
 /**
- * Cache-related errors
- */
-export class CacheError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('CACHE_ERROR', message, details, 500);
-  }
-}
-
-/**
  * Server-related errors
  */
 export class ServerError extends McpAtlassianError {
   constructor (message: string, details?: Record<string, unknown>) {
     super('SERVER_ERROR', message, details, 500);
   }
-}
-
-/**
- * Error response interface for API responses
- */
-export interface ErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-    requestId?: string;
-    timestamp: string;
-  };
-}
-
-/**
- * Create standardized error response
- */
-export function createErrorResponse (
-  error: Error | McpAtlassianError,
-  requestId?: string,
-): ErrorResponse {
-  const isCustomError = error instanceof McpAtlassianError;
-
-  const errorResponse = {
-    success: false as const,
-    error: {
-      code: isCustomError ? error.code : 'INTERNAL_ERROR',
-      message: error.message,
-      timestamp: new Date().toISOString(),
-    } as any,
-  };
-
-  if (isCustomError && error.details !== undefined) {
-    errorResponse.error.details = error.details;
-  }
-
-  if (requestId !== undefined) {
-    errorResponse.error.requestId = requestId;
-  }
-
-  return errorResponse;
 }
 
 /**
@@ -225,69 +164,6 @@ export function createJsonRpcErrorResponse (
       data: isCustomError && error.details !== undefined ? error.details : undefined,
     },
   };
-}
-
-/**
- * Error handler for async functions
- */
-export function asyncErrorHandler<T extends any[], R> (fn: (...args: T) => Promise<R>) {
-  return async (...args: T): Promise<R> => {
-    try {
-      return await fn(...args);
-    } catch (error) {
-      if (error instanceof McpAtlassianError) {
-        throw error;
-      }
-
-      // Convert unknown errors to ServerError
-      const message = error instanceof Error ? error.message : String(error);
-      throw new ServerError(message, {
-        originalError:
-          error instanceof Error
-            ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
-            : error,
-      });
-    }
-  };
-}
-
-/**
- * Error boundary decorator for class methods
- */
-export function errorBoundary (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-  const originalMethod = descriptor.value;
-
-  descriptor.value = async function (...args: any[]) {
-    try {
-      return await originalMethod.apply(this, args);
-    } catch (error) {
-      logger.error(`Error in ${target.constructor.name}.${propertyKey}:`, error instanceof Error ? error : undefined);
-
-      if (error instanceof McpAtlassianError) {
-        throw error;
-      }
-
-      // Convert unknown errors
-      const message = error instanceof Error ? error.message : String(error);
-      throw new ServerError(message, {
-        method: `${target.constructor.name}.${propertyKey}`,
-        originalError:
-          error instanceof Error
-            ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
-            : error,
-      });
-    }
-  };
-
-  return descriptor;
 }
 
 
@@ -355,6 +231,14 @@ export function handleAxiosError (error: any): never {
   }
 }
 
+export const eh = (err: any): Error => {
+  return err instanceof Error ? err : new Error(String(err));
+};
+
+export const ehs = (err: any): string => {
+  return err instanceof Error ? err.message : String(err);
+};
+
 /**
  * Wrap function calls with error handling
  */
@@ -368,7 +252,7 @@ export async function withErrorHandling<T> (
     // Log the error with context
     logger.error(
       'Operation failed',
-      error instanceof Error ? error : new Error(String(error)),
+      eh(error),
       context,
     );
 
@@ -383,7 +267,7 @@ export async function withErrorHandling<T> (
     }
 
     // Convert unknown errors
-    const message = error instanceof Error ? error.message : String(error);
+    const message = ehs(error);
     throw new ServerError(message, {
       context,
       originalError:

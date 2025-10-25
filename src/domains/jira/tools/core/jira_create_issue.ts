@@ -4,7 +4,7 @@
  */
 
 import type { ToolContext } from '../../shared/tool-context.js';
-import { withErrorHandling, ValidationError } from '../../../../core/errors.js';
+import { withErrorHandling, ValidationError, ehs } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
@@ -131,7 +131,7 @@ async function validateProjectAndIssueType (
   } catch (error) {
     return {
       error: 'VALIDATION_ERROR',
-      message: `Failed to validate project '${projectIdOrKey}'. ERROR: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Failed to validate project '${projectIdOrKey}'. ERROR: ${ehs(error)}`,
     };
   }
   const json = getJsonFromResult(projectResult);

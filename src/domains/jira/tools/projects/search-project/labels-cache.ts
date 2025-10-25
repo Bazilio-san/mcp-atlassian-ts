@@ -6,6 +6,7 @@
 import type { AxiosInstance } from 'axios';
 import type { ToolContext } from '../../../shared/tool-context.js';
 import { generateCacheKey } from '../../../../../core/cache.js';
+import { ehs } from '../../../../../core/errors.js';
 
 export interface ProjectLabelsResult {
   labels: string[];
@@ -98,9 +99,8 @@ export async function getProjectLabels (
               projectId,
             };
           }
-        } catch (gadgetError) {
-          logger.warn(`Gadget API failed, trying fallback method: projectKey: ${projectKey}
-           | error: ${gadgetError instanceof Error ? gadgetError.message : String(gadgetError)}`);
+        } catch (err) {
+          logger.warn(`Gadget API failed, trying fallback method: projectKey: ${projectKey} | error: ${ehs(err)}`);
         }
 
         // Fallback to issue search
@@ -114,8 +114,8 @@ export async function getProjectLabels (
             projectKey,
             projectId,
           };
-        } catch (searchError) {
-          logger.error(`Both methods failed to fetch labels: project ${projectKey} | searchError: ${searchError instanceof Error ? searchError.message : String(searchError)}`);
+        } catch (err) {
+          logger.error(`Both methods failed to fetch labels: project ${projectKey} | searchError: ${ehs(err)}`);
           return {
             labels: [],
             source: 'empty',
@@ -137,7 +137,7 @@ export async function getProjectLabels (
 
     return cachedLabels;
   } catch (error) {
-    logger.error(`Failed to get project labels: project ${projectKey} | error: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Failed to get project labels: project ${projectKey} | error: ${ehs(error)}`);
 
     return {
       labels: [],
