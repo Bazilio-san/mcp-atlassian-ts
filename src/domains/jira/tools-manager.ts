@@ -128,8 +128,9 @@ export class JiraToolsManager {
 
   /**
    * Build the tools list
+   * Made public to allow dynamic regeneration on each request
    */
-  private async buildToolsList (): Promise<void> {
+  public async buildToolsList (): Promise<void> {
     const fieldIdEpicLink: string = this.context.config.fieldId!.epicLink;
     // Clear existing tools
     this.tools.clear();

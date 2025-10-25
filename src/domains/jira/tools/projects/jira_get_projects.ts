@@ -86,12 +86,12 @@ async function getProjectsHandler (args: any, context: ToolContext): Promise<any
       found: !!count,
       operation: 'get_projects',
       message,
-      projects: projects.map(({ key, name, description, projectTypeKey, projectCategory }: any) => ({
+      projects: projects.map(({ key, name, description, projectTypeKey, projectCategory: _projectCategory }: any) => ({
         key,
         name,
         description: stringOrADF2markdown(description),
         projectTypeKey,
-        // projectCategory: projectCategory?.name || undefined,
+        // projectCategory: _projectCategory?.name || undefined,
       })),
     };
 

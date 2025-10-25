@@ -166,8 +166,22 @@ export class ToolRegistry {
 
   /**
    * List all available tools
+   * Dynamically rebuilds tools list to ensure context-dependent tools are current
    */
   async listTools (): Promise<Tool[]> {
+    // Rebuild JIRA tools if available (for dynamic priority updates)
+    if (this.jiraTools) {
+      await this.jiraTools.buildToolsList();
+
+      // Re-register updated JIRA tools
+      const jiraTools = this.jiraTools.getAvailableTools();
+      for (const tool of jiraTools) {
+        if (isToolEnabled(tool.name)) {
+          this.toolsMap.set(tool.name, tool);
+        }
+      }
+    }
+
     return Array.from(this.toolsMap.values());
   }
 
