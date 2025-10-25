@@ -29,7 +29,7 @@ export const jira_add_worklog: ToolWithHandler = {
       },
       comment: {
         type: 'string',
-        description: 'Worklog comment',
+        description: 'Worklog comment in markdown format',
       },
       started: {
         type: 'string',

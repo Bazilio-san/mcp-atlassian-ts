@@ -43,8 +43,8 @@ ${epicLinkInfo}`,
           description: 'Updated summary/title',
         },
         description: {
-          type: 'string',
-          description: 'Updated description',
+          type: 'string', // markdown
+          description: 'Updated description in markdown format',
         },
         assignee: {
           type: 'string',

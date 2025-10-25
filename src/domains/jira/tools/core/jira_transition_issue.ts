@@ -29,7 +29,7 @@ export const jira_transition_issue: ToolWithHandler = {
 To get the transitions available for an issue, use 'jira_get_transitions' tool`,
       },
       comment: {
-        type: 'string',
+        type: 'string', // markdown
         description: 'Optional comment to add with the transition. In markdown format',
       },
       fields: {

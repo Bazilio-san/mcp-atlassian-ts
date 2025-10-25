@@ -36,8 +36,8 @@ export const jira_batch_create_issues: ToolWithHandler = {
               description: 'Issue summary/title',
             },
             description: {
-              type: 'string',
-              description: 'Issue description',
+              type: 'string', // markdown
+              description: 'Issue description in markdown format',
             },
             assignee: {
               type: 'string',

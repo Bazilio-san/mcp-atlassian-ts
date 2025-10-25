@@ -52,8 +52,8 @@ After clarifying the project key, use 'jira_get_project' tool which returns  ava
 If not indicated explicitly, form a short title according to the description`,
         },
         description: {
-          type: 'string',
-          description: 'Detailed description of the issue. For bugs, this should include steps to reproduce.',
+          type: 'string', // markdown
+          description: 'Detailed description of the issue. In markdown format. For bugs, this should include steps to reproduce.',
           nullable: true,
         },
         assignee: {
