@@ -1,10 +1,10 @@
-
 import type { AxiosInstance } from 'axios';
 import { IJiraCreateMetaResponse, IJiraProject, TKeyName } from '../../../../../types/index.js';
 import { createLogger } from '../../../../../core/utils/logger.js';
 import { transliterate, transliterateRU, enToRuVariants } from '../../../../../core/utils/transliterate.js';
+import chalk from 'chalk';
 
-const logger = createLogger('JIRA_PROJECTS');
+const logger = createLogger('JIRA_PROJECTS', chalk.bgYellow);
 
 // New optimized cache structure
 interface IProjectCacheEntry {

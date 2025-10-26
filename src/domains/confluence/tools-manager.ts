@@ -31,6 +31,7 @@ import { confluence_get_pages_by_label } from './tools/labels/confluence_get_pag
 import { confluence_get_page_children } from './tools/hierarchy/confluence_get_page_children.js';
 import { confluence_get_page_history } from './tools/history/confluence_get_page_history.js';
 import { confluence_search_user } from './tools/users/confluence_search_user.js';
+import chalk from 'chalk';
 
 /**
  * Modular Confluence Tools Manager
@@ -39,7 +40,7 @@ export class ConfluenceToolsManager {
   private context: ConfluenceToolContext;
   private tools: Map<string, ToolWithHandler | ConfluenceToolWithHandler>;
   private toolsArray: Tool[];
-  private logger = createLogger('confluence-tools');
+  private logger = createLogger('confluence-tools', chalk.bgGreenBright);
 
   constructor (config: JCConfig) {
     // Validate configuration
@@ -54,7 +55,7 @@ export class ConfluenceToolsManager {
     const authManager = createAuthenticationManager(config.auth, config.url);
     const httpClient = authManager.getHttpClient();
     const cache = getCache();
-    const logger = createLogger('confluence-tools');
+    const logger = createLogger('confluence-tools', chalk.bgGreenBright);
 
     // Create tool context
     this.context = {

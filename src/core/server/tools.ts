@@ -13,6 +13,7 @@ import { setCurrentToolName } from '../utils/http-logger.js';
 import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceMode } from '../../types/config';
+import chalk from 'chalk';
 
 /**
  * Check if a specific tool is enabled
@@ -25,7 +26,7 @@ export function isToolEnabled (toolName: string): boolean {
 
 // Import tool implementations
 
-const logger = createLogger('tools');
+const logger = createLogger('tools', chalk.bgMagenta);
 
 /**
  * Central registry for all MCP tools

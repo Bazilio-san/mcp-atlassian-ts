@@ -12,8 +12,9 @@ import { createLogger } from '../utils/logger.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
 import { eh } from '../errors.js';
+import chalk from 'chalk';
 
-const logger = createLogger('jira-server');
+const logger = createLogger('jira-server', chalk.blueBright);
 
 /**
  * JIRA-only MCP server

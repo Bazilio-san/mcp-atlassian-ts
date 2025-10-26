@@ -12,7 +12,7 @@ import { appConfig } from '../bootstrap/init-config.js';
 import type { AuthConfig, HttpClientConfig } from '../types';
 import chalk from 'chalk';
 
-const logger = createLogger('auth');
+const logger = createLogger('auth', chalk.magenta);
 const debugHeadersToAPI = getDebug('headers-to-api');
 
 /**

@@ -7,8 +7,9 @@ import { appConfig } from '../../bootstrap/init-config.js';
 import type { JCConfig, ServerConfig } from '../../types/index.js';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceModeJC } from '../../types/config';
+import chalk from 'chalk';
 
-const logger = createLogger('about-renderer');
+const logger = createLogger('about-renderer', chalk.gray);
 
 const jiraSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
   <path fill="#0f65dc" d="M11.4 0a5.2 5.2 0 0 0 5.3 5.2h2v2a5.2 5.2 0 0 0 5.3 5.3V1a1 1 0 0 0-1-1H11.4M5.7 5.8A5.2 5.2 0 0 0 11 11h2.2v2a5.2 5.2 0 0 0 5.2 5.2V6.8a1 1 0 0 0-1-1H5.7M0 11.5a5.2 5.2 0 0 0 5.2 5.2h2.2v2a5.2 5.2 0 0 0 5.2 5.3V12.5a1 1 0 0 0-1-1H0Z"/>

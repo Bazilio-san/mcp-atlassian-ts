@@ -122,8 +122,7 @@ function createPinoLogger () {
       const component = log.component || 'default';
       // Pino might use 'msg' or 'message' as the key, check both
       const message = log.message || log.msg || log[messageKey] || '';
-      // Use custom color if provided, otherwise use default
-      return formatLogMessage(component, message, log.customColor);
+      return formatLogMessage(component, message);
     },
     translateTime: 'HH:MM:ss',
     hideObject: true,
@@ -134,13 +133,39 @@ function createPinoLogger () {
   return pino(pinoConfig, prettyStream as any);
 }
 
+/**
+ * Custom colors for specific components (can be overridden at runtime)
+ */
+const CUSTOM_COLORS: Record<string, any> = {};
+
+/**
+ * Set custom color for a component
+ */
+function setComponentColor (component: string, color: any) {
+  CUSTOM_COLORS[component] = color;
+}
+
+/**
+ * Format log message with component-specific coloring
+ */
+function formatLogMessage (component: string, message: string): string {
+  const color = CUSTOM_COLORS[component] || chalk.bgYellowBright.black;
+  const coloredComponent = color(`[${component}]`);
+  return `${coloredComponent} ${message}`;
+}
+
 // Global logger instance
 const globalLogger = createPinoLogger();
 
 /**
  * Create a component-specific logger
  */
-export function createLogger (component: string) {
+export function createLogger (component: string, color?: any) {
+  // Set custom color if provided
+  if (color) {
+    setComponentColor(component, color);
+  }
+
   const componentLogger = globalLogger.child({ component });
 
   return {
@@ -194,7 +219,7 @@ export function createLogger (component: string) {
  */
 export function createRequestLogger () {
   return (req: any, res: any, next: any) => {
-    const requestLogger = createLogger('http2');
+    const requestLogger = createLogger('http2', chalk.blue);
 
     const start = Date.now();
 
@@ -217,7 +242,7 @@ export function createRequestLogger () {
  * Global error handler logger
  */
 export function logUnhandledError (error: Error, context?: LogContext) {
-  const errorLogger = createLogger('unhandled');
+  const errorLogger = createLogger('unhandled', chalk.red);
   errorLogger.fatal('Unhandled error occurred', error, context);
 }
 

@@ -9,8 +9,9 @@ import { ServiceToolRegistry } from './tools.js';
 import { createLogger } from '../utils/logger.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 import { eh } from '../errors.js';
+import chalk from 'chalk';
 
-const logger = createLogger('confluence-server');
+const logger = createLogger('confluence-server', chalk.greenBright);
 
 /**
  * Confluence-only MCP server

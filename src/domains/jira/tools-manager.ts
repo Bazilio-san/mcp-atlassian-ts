@@ -72,6 +72,7 @@ import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelog
 // @ts-ignore
 import { md2Adf } from './shared/utils.js';
 import { getPriorityNamesArray } from './shared/priority-service.js';
+import chalk from 'chalk';
 
 /**
  * Modular JIRA Tools Manager
@@ -80,7 +81,7 @@ export class JiraToolsManager {
   private context: ToolContext;
   private tools: Map<string, ToolWithHandler>;
   private toolsArray: Tool[];
-  private logger = createLogger('jira-tools');
+  private logger = createLogger('jira-tools', chalk.bgBlueBright);
 
   constructor (config: JCConfig) {
     // Validate configuration

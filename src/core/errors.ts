@@ -6,8 +6,9 @@ import { createLogger } from './utils/logger.js';
 import { formatHttpRateLimitError } from './utils/rate-limit.js';
 
 import type { McpError } from '../types';
+import chalk from 'chalk';
 
-const logger = createLogger('errors');
+const logger = createLogger('errors', chalk.red);
 
 /**
  * Base error class for all MCP Atlassian errors

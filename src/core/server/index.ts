@@ -30,8 +30,9 @@ import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js'
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
 import { ServiceModeJC } from '../../types/config';
+import chalk from 'chalk';
 
-const logger = createLogger('server');
+const logger = createLogger('server', chalk.yellow);
 
 // Types for refactored MCP handlers
 interface ExecutionContext {

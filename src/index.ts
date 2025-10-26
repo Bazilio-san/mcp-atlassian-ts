@@ -14,8 +14,9 @@ import { eh, ehs, ServerError } from './core/errors.js';
 import { createServiceServer } from './core/server/factory.js';
 import { createLogger } from './core/utils/logger.js';
 import { ServiceModeJC } from './types/config';
+import chalk from 'chalk';
 
-const logger = createLogger('main');
+const logger = createLogger('main', chalk.bgYellow);
 
 /**
  * Get available service modes

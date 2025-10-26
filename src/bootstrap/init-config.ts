@@ -9,9 +9,10 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { createLogger } from '../core/utils/logger.js';
 import { getBaseUrl } from '../core/utils/tools.js';
+import chalk from 'chalk';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const logger = createLogger('config');
+const logger = createLogger('config', chalk.gray);
 
 // Read package.json for metadata (from project root)
 // Handle both development (src/) and production (dist/src/) scenarios

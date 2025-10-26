@@ -7,8 +7,9 @@ import { McpAtlassianServer } from './index.js';
 import { JiraServer } from './jira-server.js';
 import { ConfluenceServer } from './confluence-server.js';
 import { createLogger } from '../utils/logger.js';
+import chalk from 'chalk';
 
-const logger = createLogger('server-factory');
+const logger = createLogger('server-factory', chalk.yellow);
 
 /**
  * Service mode type

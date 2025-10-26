@@ -9,9 +9,10 @@ import NodeCache from 'node-cache';
 import { createLogger } from './utils/logger.js';
 import { ServiceModeJC } from '../types/config';
 import { eh } from './errors.js';
+import chalk from 'chalk';
 
 
-const logger = createLogger('cache');
+const logger = createLogger('cache', chalk.green);
 
 /**
  * Enhanced cache manager with TTL support and statistics

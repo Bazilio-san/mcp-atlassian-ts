@@ -4,8 +4,9 @@
 
 import { createLogger } from './logger.js';
 import { ISubstitutionConfig, ServiceModeJC } from '../../types/config';
+import chalk from 'chalk';
 
-const logger = createLogger('user-substitution');
+const logger = createLogger('user-substitution', chalk.cyan);
 
 /**
  * Apply user substitution to HTTP headers based on configuration

@@ -10,8 +10,9 @@ import type { JCConfig } from '../../../types/index.js';
 import { eh } from '../../../core/errors.js';
 import { ensureHeader } from '../../../core/auth.js';
 import { appConfig } from '../../../bootstrap/init-config.js';
+import chalk from 'chalk';
 
-const logger = createLogger('priority-service');
+const logger = createLogger('priority-service', chalk.bgBlue);
 
 export interface JiraPriority {
   id: string;

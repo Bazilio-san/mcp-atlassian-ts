@@ -3,8 +3,9 @@ import { appConfig } from '../../bootstrap/init-config.js';
 import { createLogger } from '../utils/logger.js';
 import { ServiceModeJC } from '../../types/config';
 import { eh } from '../errors.js';
+import chalk from 'chalk';
 
-const logger = createLogger('auth-manager');
+const logger = createLogger('auth-manager', chalk.magenta);
 
 export interface AuthContext {
   mode: 'system' | 'headers';
