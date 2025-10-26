@@ -132,10 +132,11 @@ function createPinoLogger () {
         return colors[logLevel] || logLevel;
       },
     },
-    // Hide meta fields from the output line
-    ignore: 'pid,hostname,component',
-    // Format: 16:10:47 [INFO] [auth] Testing authentication...
-    messageFormat: '{level} [{component}] {message}',
+    customColors: 'trace:gray,debug:cyan,info:green,warn:yellow,error:red,fatal:bgRed',
+    // Hide meta fields and level from the output line
+    ignore: 'pid,hostname,level,component',
+    // Format: 16:10:47 [auth] Testing authentication...
+    messageFormat: '[{component}] {message}',
     translateTime: 'HH:MM:ss',
     // Force single-line output; do not print objects (context) on new lines
     hideObject: true,

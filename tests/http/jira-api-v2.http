@@ -372,7 +372,7 @@ GET {{baseUrl}}/rest/agile/1.0/board/
 Authorization: Basic {{JIRA_USER}} {{JIRA_PASS}}
 
 
-### Поиск досок по проекту
+### Search boards by project
 # https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllBoards
 # https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-get
 GET {{baseUrl}}/rest/agile/1.0/board?startAt=0&maxResults=10&projectIdOrKey=AITECH

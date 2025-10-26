@@ -1,5 +1,5 @@
-// Прямой тест функции поиска проектов без HTTP интерфейса
-// Тестируем текстовый поиск с реальными данными из JIRA
+// Direct test of project search function without HTTP interface
+// Testing text search with real JIRA data
 
 import {
   searchProjects,
@@ -7,7 +7,7 @@ import {
 import { getProjectsCache } from '../../dist/src/domains/jira/tools/projects/search-project/projects-cache.js';
 import { createAuthenticationManager } from '../../dist/src/core/auth.js';
 
-// Тестовые поисковые запросы (основаны на реальных проектах)
+// Test search queries (based on real projects)
 const testQueries = [
   'антифрод',
   'антифрауд',
@@ -30,7 +30,7 @@ const testQueries = [
 ];
 
 /**
- * Основная функция тестирования
+ * Main testing function
  */
 async function runDirectSearchTests () {
   try {
@@ -50,11 +50,11 @@ async function runDirectSearchTests () {
 
     const projectsResult = await getProjectsCache(); // VVA
     if (projectsResult.error || projectsResult.result.length === 0) {
-      console.log('ошибка загрузки проектов');
+      console.log('error loading projects');
       return;
     }
 
-    console.log('загружено проектов:', projectsResult.result.length);
+    console.log('loaded projects:', projectsResult.result.length);
     console.log('');
 
     let totalTests = 0;
@@ -70,34 +70,34 @@ async function runDirectSearchTests () {
         if (results.length > 0) {
           successfulTests++;
 
-          // Показываем все результаты в одну строку через запятую
+          // Show all results in one line separated by commas
           const resultsLine = results.slice(0, 5).map((result) => {
-            // Используем реальный score от поисковой системы (уже в формате 0.0-1.0)
+            // Use real score from search engine (already in 0.0-1.0 format)
             const scorePercent = Math.floor(result.score * 100);
             return `${result.key} (${scorePercent})`;
           }).join(', ');
 
           console.log(`   ${resultsLine}`);
         } else {
-          console.log('   не найдено');
+          console.log('   not found');
         }
       } catch (error) {
-        console.log(`   ошибка: ${error.message}`);
+        console.log(`   error: ${error.message}`);
       }
 
-      // Небольшая пауза между запросами
+      // Small pause between requests
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     console.log('');
-    console.log(`успешно: ${successfulTests} из ${totalTests}`);
+    console.log(`successful: ${successfulTests} of ${totalTests}`);
 
   } catch (error) {
-    console.log('ошибка:', error.message);
+    console.log('error:', error.message);
   }
 }
 
-// Показываем только основные сообщения, скрывая логи инициализации
+// Show only main messages, hiding initialization logs
 const originalLog = console.log;
 console.log = (() => {
   let initializationComplete = false;
@@ -105,17 +105,17 @@ console.log = (() => {
   return (...args) => {
     const message = String(args[0] || '');
 
-    // Показываем сообщение о загрузке проектов и все последующие
-    if (initializationComplete || message.includes('загружено проектов')) {
+    // Show project loading message and all subsequent messages
+    if (initializationComplete || message.includes('loaded projects')) {
       initializationComplete = true;
       originalLog.apply(console, args);
     }
   };
 })();
 
-// Запуск тестов
+// Run tests
 runDirectSearchTests().catch((error) => {
-  console.error('💥 Фатальная ошибка:', error.message);
+  console.error('💥 Fatal error:', error.message);
   console.error('Stack:', error.stack);
   process.exit(1);
 });

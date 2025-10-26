@@ -1,30 +1,30 @@
-А как регулируется то, в каком виде возвращается body string или ADF? Этим можно управлять?
+How is it controlled whether the body is returned as a string or ADF? Can this be managed?
 
-Коротко:
+In short:
 
 * **Jira Cloud**
 
-  * `body` в ответах по комментариям и rich-text полям возвращается **в ADF (JSON, `type: "doc"`)**.
-  * Это **нельзя переключить** на строку параметром запроса.
-  * Для HTML используйте **`expand=renderedBody`** (для комментариев) или **`expand=renderedFields`** (для полей задачи, напр. `description`).
+  * `body` in responses for comments and rich-text fields is returned **in ADF (JSON, `type: "doc"`)**.
+  * This **cannot be switched** to a string via query parameter.
+  * For HTML use **`expand=renderedBody`** (for comments) or **`expand=renderedFields`** (for issue fields, e.g. `description`).
 
 * **Jira Server / Data Center**
 
-  * `body` возвращается как **строка** (plain/wiki-markup) — зависит от настроенного рендерера поля.
-  * На **ADF переключить нельзя**.
-  * HTML выдаёт Jira UI/рендерер; через REST можно получить уже отрендеренные поля (напр., `expand=renderedFields` у задачи). Для комментариев — аналогов Cloud’овскому `renderedBody` может не быть в старых версиях.
+  * `body` is returned as **string** (plain/wiki-markup) — depends on the configured field renderer.
+  * **Cannot switch to ADF**.
+  * HTML is provided by Jira UI/renderer; via REST you can get already rendered fields (e.g., `expand=renderedFields` for an issue). For comments — there may be no equivalent to Cloud's `renderedBody` in older versions.
 
-* **Создание/редактирование**
+* **Create/Edit**
 
-  * Cloud: отправляйте **ADF JSON** в `body`.
-  * Server/DC: отправляйте **строку** (plain/wiki) согласно рендереру поля.
+  * Cloud: send **ADF JSON** in `body`.
+  * Server/DC: send **string** (plain/wiki) according to the field renderer.
 
-Итого: формát `body` определяется **типом инстанса** (Cloud → ADF, Server/DC → string). Управлять этим через параметр запроса нельзя; для HTML используйте `expand` как выше.
+Summary: `body` format is determined by **instance type** (Cloud → ADF, Server/DC → string). Cannot control this via query parameter; for HTML use `expand` as above.
 
 ====================
 
 
 
-Валидация дат и периодов времени
+Date and time period validation
 
-src/domains/jira/tools/metadata/jira_search_fields.ts // VVA должен возвращать инфу по наполнению
+src/domains/jira/tools/metadata/jira_search_fields.ts // VVA should return population info

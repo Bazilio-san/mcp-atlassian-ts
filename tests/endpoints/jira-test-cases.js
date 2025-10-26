@@ -793,7 +793,7 @@ export class SharedJiraTestCases {
       {
         fullId: '8-12',
         name: 'Delete Issue',
-        requiresSetup: true, // ВАЖНО: Требует создания временной задачи!
+        requiresSetup: true, // IMPORTANT: Requires creating a temporary issue!
         setupNote: 'This test requires creating a temporary issue first',
         directApi: {
           method: 'DELETE',

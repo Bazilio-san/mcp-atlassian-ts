@@ -22,9 +22,9 @@ echo -e "$g========================================$c0"
 echo -e "$g**** REGISTER SERVICE $y${SERVICE}$g ****$c0"
 echo -e "$g========================================$c0"
 
-# Проверяем, существует ли сервис в PM2
+# Check if the service exists in PM2
 if pm2 list | grep -q "$SERVICE"; then
-  echo -e "$gНайден существующий процесс $y${SERVICE}$g. Удаление..."
+  echo -e "$gFound existing process $y${SERVICE}$g. Deleting..."
   pm2 delete $SERVICE
 fi
 
