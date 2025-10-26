@@ -26,11 +26,13 @@ export const jira_batch_create_issues: ToolWithHandler = {
           properties: {
             projectIdOrKey: {
               type: 'string',
-              description: 'Project id or key (e.g., 1000 or PROJ)',
+              description: `Project key (e.g., 'AITECH' or 'REQ') or ID (e.g.,1003)
+Use 'jira_project_finder' tool to clarify Project Key`,
             },
             issueType: {
               type: 'string',
-              description: 'Issue type name (e.g., Task, Bug, Story)',
+              description: `Issue type name or ID.
+After clarifying the project key, use 'jira_get_project' tool which returns available issue types for project`,
             },
             summary: {
               type: 'string',
@@ -42,16 +44,17 @@ export const jira_batch_create_issues: ToolWithHandler = {
             },
             assignee: {
               type: 'string',
-              description: 'Assignee account ID or email',
+              description: 'Optional. The Jira username/login of the person to assign the issue to. E.g.: vpupkun',
             },
             priority: { // VVA
               type: 'string',
               description: 'Priority name (e.g., High, Medium, Low)',
             },
-            labels: { // VVA
+            labels: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Array of labels',
+              description: `Optional. Array of Labels for the issue (e.g.: ["bug", "urgent"])
+The response of the 'jira_get_project' tool will contain available labels`,
               default: [],
             },
             components: { // VVA
@@ -60,9 +63,10 @@ export const jira_batch_create_issues: ToolWithHandler = {
               description: 'Array of component names',
               default: [],
             },
-            customFields: { // VVA
+            customFields: {
               type: 'object',
-              description: 'Custom field values as key-value pairs',
+              description: `Custom field values as key-value pairs (fieldId as key). 
+The response of the 'jira_get_project' tool will contain information about filling in the available custom fields`,
               default: {},
             },
           },

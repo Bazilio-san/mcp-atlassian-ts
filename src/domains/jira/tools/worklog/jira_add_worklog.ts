@@ -53,7 +53,6 @@ export const jira_add_worklog: ToolWithHandler = {
 
 /**
  * Handler function for adding JIRA worklog entry
- * VVM: ALL FIELDS ARE VALIDATED
  */
 async function addWorklogHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {

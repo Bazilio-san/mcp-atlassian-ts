@@ -43,7 +43,7 @@ function maskSensitiveData (data: any, visited = new WeakSet()): any {
         return '[MASKED]';
       });
     });
-    return masked;
+    return masked.substring(0, 400);
   }
 
   if (data === null || data === undefined) {
@@ -114,24 +114,6 @@ function createPinoLogger () {
 
   const prettyOptions = {
     colorize: true,
-    // Colorize levels properly - customPrettifiers for level formatting
-    customPrettifiers: {
-      level: (logLevel: string | object) => {
-        if (typeof logLevel !== 'string') {
-          return String(logLevel);
-        }
-
-        const colors: Record<string, string> = {
-          'TRACE': '\x1b[90m[TRACE]\x1b[0m',   // gray
-          'DEBUG': '\x1b[36m[DEBUG]\x1b[0m',   // cyan
-          'INFO': '\x1b[32m[INFO]\x1b[0m',     // green
-          'WARN': '\x1b[33m[WARN]\x1b[0m',     // yellow
-          'ERROR': '\x1b[31m[ERROR]\x1b[0m',   // red
-          'FATAL': '\x1b[41m[FATAL]\x1b[0m',   // red background
-        };
-        return colors[logLevel] || logLevel;
-      },
-    },
     customColors: 'trace:gray,debug:cyan,info:green,warn:yellow,error:red,fatal:bgRed',
     // Hide meta fields and level from the output line
     ignore: 'pid,hostname,level,component',
@@ -207,10 +189,7 @@ export function createLogger (component: string) {
  */
 export function createRequestLogger () {
   return (req: any, res: any, next: any) => {
-    const requestLogger = globalLogger.child({
-      component: 'http',
-      requestId: req.headers['x-request-id'] || Math.random().toString(36).substring(7),
-    });
+    const requestLogger = createLogger('http2');
 
     const start = Date.now();
 
@@ -220,7 +199,7 @@ export function createRequestLogger () {
     const originalSend = res.send;
     res.send = function (body: any) {
       const duration = Date.now() - start;
-      requestLogger.info(`Request completed: ${req.method} ${req.url} | Code: ${res.statusCode} | ${duration} | size: ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0}`);
+      requestLogger.info(`Request completed: ${res.statusCode} : ${req.method} ${req.url} / ${duration} ms | ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0} b`);
       return originalSend.call(this, body);
     };
 

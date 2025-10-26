@@ -58,7 +58,6 @@ export const jira_create_sprint: ToolWithHandler = {
 
 /**
  * Handler function for creating a sprint
- * VVM: ALL FIELDS ARE VALIDATED
  */
 async function createSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {

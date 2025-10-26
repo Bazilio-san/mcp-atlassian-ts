@@ -20,19 +20,16 @@ import { stringOrADF2markdown } from '../../shared/utils.js';
  */
 export const jira_get_project: ToolWithHandler = {
   name: 'jira_get_project',
-  description: `Returns details of a specific JIRA project by key or ID: 
-id, 
-key,
-name,
-description,
-url,
-issueTypes: {id, name, description, subtask)[], // list of issue types available in the project so the LLM Agent can choose the correct issueType name when creating an issue
-labels: // Project label array
-projectTypeKey,
-archived,
-lead?: {key, name, displayName},
-customFieldsMetadata?: {fieldId, name, schema}
-`,
+  description: `Get JIRA project by key or ID.
+Returns JSON:
+{
+ id, key, name, description, url, projectTypeKey, archived,
+ issueTypes: [{id, name, description, subtask}], // issue types available for the project
+ labels: string[], // available labels
+ customFieldsMetadata: [{id, name, schema, allowedValues?}], // available custom fields
+ customFieldsFillingRules: string // rules for filling custom fields
+}
+Use before issue create/update to fetch project metadata.`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -100,16 +97,16 @@ interface FilteredProject {
   labels: string[],
   // lead?: IJiraUserOut | undefined;
   customFieldsMetadata?: ICustomFieldMeta[] | undefined,
-  customFieldsFillingMemo?: string | undefined,
+  customFieldsFillingRules?: string | undefined,
 }
 
 const getCustomFiedsFillMemo = (apiVersion: number) => {
   const diff = apiVersion === 2
-    ? `user → "username"
+    ? `- user → "username"
 - array & items=="user" → ["username1", "username2"]
 - array & items=="option" → ["Opt1", "Opt2"]
 - option → { value: "OptionLabel" } or { id: "OPTION_ID" }`
-    : `user → { accountId: "USER_ID" }
+    : `- user → { accountId: "USER_ID" }
 - array & items=="user" → [ { accountId: "USER_ID1" }, { accountId: "USER_ID2" } ]
 - array & items=="option" → [ { value: "Opt1" }, { value: "Opt2" } ]
 - option → { value: "OptionLabel" } or { id: "OPTION_ID" }
@@ -165,10 +162,10 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     });
 
     let customFieldsMetadata: ICustomFieldMeta[] | undefined;
-    let customFieldsFillingMemo: string | undefined;
+    let customFieldsFillingRules: string | undefined;
 
     if (includeCustomFieldsMetadata) {
-      customFieldsFillingMemo = getCustomFiedsFillMemo(config.apiVersion);
+      customFieldsFillingRules = getCustomFiedsFillMemo(config.apiVersion);
 
       // Generate cache key
       const cacheKey = generateCacheKey('jira', 'createmeta-custom-fields', { projectKey: project.key });
@@ -266,7 +263,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         priorityNames,
         // lead: jiraUserObj(p.lead),
         customFieldsMetadata,
-        customFieldsFillingMemo,
+        customFieldsFillingRules,
       };
     })();
 

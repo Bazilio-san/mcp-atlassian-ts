@@ -21,11 +21,14 @@ export async function createJiraCreateIssueTool (priorityNamesArray?: string[]):
     name: 'jira_create_issue',
     description: `Create a new issue (task, bug, story, etc.) in JIRA.
 
-Workflow:
+# WORKFLOW 
+
+Always follow these steps when creating a task:
+
 1) Collect or receive: projectIdOrKey, issueType, summary.
 2) If project is not specified, ask the user for clarification.
 3) Use the 'jira_project_finder' tool to obtain the exact project key.
-4) With project key, USE 'jira_get_project' tool to list available issue types, priorities, labels, custom fields
+4) With project key, USE 'jira_get_project' tool to list available issue types, priorities, labels, custom fields.
 5) If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
 6) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic’s issue key (epicKey).
 7) IMPORTANT! DISPLAY ALL COLLECTED PARAMETERS FOR USER CONFIRMATION BEFORE CREATION.
@@ -72,7 +75,8 @@ If not indicated explicitly, form a short title according to the description`,
         labels: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Optional. Array of Labels for the issue (e.g.: ["bug", "urgent"])',
+          description: `Optional. Array of Labels for the issue (e.g.: ["bug", "urgent"])
+The response of the 'jira_get_project' tool will contain available labels`,
           default: [],
         },
         epicKey: {

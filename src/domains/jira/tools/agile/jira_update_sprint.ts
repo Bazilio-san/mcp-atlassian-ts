@@ -67,7 +67,6 @@ export const jira_update_sprint: ToolWithHandler = {
 
 /**
  * Handler function for updating a sprint
- * VVM: ALL FIELDS ARE VALIDATED
  */
 async function updateSprintHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
