@@ -10,9 +10,10 @@ import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from './ut
 import { appConfig } from '../bootstrap/init-config.js';
 
 import type { AuthConfig, HttpClientConfig } from '../types';
+import chalk from 'chalk';
 
 const logger = createLogger('auth');
-const debug = getDebug('headers-to-api');
+const debugHeadersToAPI = getDebug('headers-to-api');
 
 /**
  * Authentication manager for different auth methods
@@ -42,11 +43,13 @@ export class AuthenticationManager {
 
     // Add request interceptor for authentication
     client.interceptors.request.use(
-      requestConfig => {
+      (requestConfig) => {
         const configWithAuth = this.addAuthenticationHeaders(requestConfig);
-        if (debug.enabled) {
-          const headers = `\nheaders-to-api:\n${Object.entries(configWithAuth.headers).map(([k, v]) => `  ${k}: ${v}`).join('\n')}\n`;
-          console.log(headers);
+        if (debugHeadersToAPI.enabled) {
+          const logName = chalk.blue('[headers-to-api]');
+          const rq = chalk.blueBright(`  ${(requestConfig.method || '').toUpperCase()} ${requestConfig.url}`);
+          const headers = `${chalk.blueBright(Object.entries(configWithAuth.headers).map(([k, v]) => `  ${k}: ${v}`).join('\n'))}\n`;
+          console.log(`${logName}\n${rq}\n${headers}`);
         }
         return configWithAuth;
       },

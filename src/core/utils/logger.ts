@@ -4,6 +4,7 @@
 
 import pino from 'pino';
 import pinoPretty from 'pino-pretty';
+import chalk from 'chalk';
 import type { LogContext } from '../../types/index.js';
 
 export const eh = (err: any): Error => {
@@ -43,7 +44,7 @@ function maskSensitiveData (data: any, visited = new WeakSet()): any {
         return '[MASKED]';
       });
     });
-    return masked.substring(0, 400);
+    return masked;
   }
 
   if (data === null || data === undefined) {
@@ -113,14 +114,18 @@ function createPinoLogger () {
   };
 
   const prettyOptions = {
-    colorize: true,
-    customColors: 'trace:gray,debug:cyan,info:green,warn:yellow,error:red,fatal:bgRed',
+    colorize: false, // Disable default colorize to use chalk
     // Hide meta fields and level from the output line
-    ignore: 'pid,hostname,level,component',
+    ignore: 'pid,hostname,level',
     // Format: 16:10:47 [auth] Testing authentication...
-    messageFormat: '[{component}] {message}',
+    messageFormat: (log: any, messageKey: string) => {
+      const component = log.component || 'default';
+      // Pino might use 'msg' or 'message' as the key, check both
+      const message = log.message || log.msg || log[messageKey] || '';
+      // Use custom color if provided, otherwise use default
+      return formatLogMessage(component, message, log.customColor);
+    },
     translateTime: 'HH:MM:ss',
-    // Force single-line output; do not print objects (context) on new lines
     hideObject: true,
   };
 
@@ -193,13 +198,14 @@ export function createRequestLogger () {
 
     const start = Date.now();
 
-    requestLogger.info(`Request started: ${req.method} ${req.url} | IP: ${req.ip} | UA: ${req.get('User-Agent')}`);
+    requestLogger.info(`${chalk.green('→')} ${req.method} ${req.url} | IP: ${req.ip} | UA: ${req.get('User-Agent')}`);
 
     // Log response
     const originalSend = res.send;
     res.send = function (body: any) {
       const duration = Date.now() - start;
-      requestLogger.info(`Request completed: ${res.statusCode} : ${req.method} ${req.url} / ${duration} ms | ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0} b`);
+      const statusCode = res.statusCode >= 400 ? chalk.red(`[${res.statusCode}]`) : chalk.green(`[${res.statusCode}]`);
+      requestLogger.info(`${chalk.yellow('←')} ${req.method} ${req.url} ${statusCode} / ${duration} ms | ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0} b`);
       return originalSend.call(this, body);
     };
 

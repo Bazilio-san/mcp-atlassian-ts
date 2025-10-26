@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { debugJiraTool, debugJiraToolFile } from './debug.js';
+import chalk from 'chalk';
 
 
 // Ensure logs directory exists
@@ -120,7 +121,7 @@ export function logHttpTransaction (
   response?: AxiosResponse,
   error?: AxiosError,
 ): void {
-  if (!debugJiraTool.enabled) {
+  if (!debugJiraTool.enabled || !debugJiraToolFile.enabled) {
     return;
   }
 
@@ -138,32 +139,11 @@ export function logHttpTransaction (
       fs.writeFileSync(logFilePath, logContent, 'utf-8');
       console.log(`[api-http] HTTP transaction logged to ${logFilePath}`);
     }
-
-    console.log(logContent);
-
+    if (debugJiraTool.enabled) {
+      console.log(chalk.blue(logContent.substring(0, 500)));
+    }
   } catch (logError) {
     console.log(`[api-http] Failed to log HTTP transaction: ${logError}`);
-  }
-}
-
-/**
- * Clear log file for a specific tool
- */
-export function clearHttpLog (toolName: string): void {
-  if (!debugJiraTool.enabled) {
-    return;
-  }
-
-  try {
-    const logFileName = `HTTP_${toolName}.md`;
-    const logFilePath = path.join(LOGS_DIR, logFileName);
-
-    if (fs.existsSync(logFilePath)) {
-      fs.unlinkSync(logFilePath);
-      console.log(`[api-http] Cleared HTTP log for ${toolName}`);
-    }
-  } catch (error) {
-    console.log(`[api-http] Failed to clear HTTP log: ${error}`);
   }
 }
 
