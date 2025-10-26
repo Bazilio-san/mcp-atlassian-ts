@@ -10,16 +10,21 @@ import { ToolWithHandler } from '../../../../types';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 
 /**
- * Create tool definition for updating a JIRA issue with dynamic fieldIdEpicLin
+ * Create tool definition for updating a JIRA issue with dynamic parameters
+ * @param fieldIdEpicLink - Epic link custom field ID
+ * @param priorityNamesArray - Optional array of valid priority names for enum constraint
  */
-export function jira_update_issue (fieldIdEpicLin?: string): ToolWithHandler {
-  const epicLinkInfo = fieldIdEpicLin
-    ? `To unlink an issue from an Epic, set custom field "${fieldIdEpicLin}" to null`
+export async function createJiraUpdateIssueTool (
+  fieldIdEpicLink?: string,
+  priorityNamesArray?: string[],
+): Promise<ToolWithHandler> {
+  const epicLinkInfo = fieldIdEpicLink
+    ? `To unlink an issue from an Epic, set custom field "${fieldIdEpicLink}" to null`
     : '';
 
-  return {
+  const result: ToolWithHandler = {
     name: 'jira_update_issue',
-    description: `Update a JIRA issue fields: 
+    description: `Update a JIRA issue fields:
 - summary
 - description
 - assignee
@@ -49,9 +54,9 @@ ${epicLinkInfo}`,
           type: 'string', // VVQ вынести и запараметризировать в зависимости от версии
           description: 'New assignee account ID or email',
         },
-        priority: { // VVA
+        priority: {
           type: 'string',
-          description: 'New priority name or ID',
+          description: 'New priority name',
         },
         labels: {
           type: 'array',
@@ -61,7 +66,7 @@ ${epicLinkInfo}`,
         },
         customFields: {
           type: 'object',
-          description: `Custom field values as key-value pairs (fieldId as key). 
+          description: `Custom field values as key-value pairs (fieldId as key).
 The response of the 'jira_get_project' tool will contain information about filling in the available custom fields`,
         },
       },
@@ -77,6 +82,14 @@ The response of the 'jira_get_project' tool will contain information about filli
     },
     handler: updateIssueHandler,
   };
+
+  // Add priority enum constraint if priority names are provided
+  if (priorityNamesArray?.length) {
+    // @ts-ignore
+    result.inputSchema.properties.priority.enum = priorityNamesArray;
+  }
+
+  return result;
 }
 
 /**

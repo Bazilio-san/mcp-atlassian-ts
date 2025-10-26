@@ -16,7 +16,7 @@ import type { ToolContext } from '../../types/tool-context';
 import { jira_get_issue } from './tools/core/jira_get_issue.js';
 import { jira_search_issues } from './tools/core/jira_search_issues.js';
 import { createJiraCreateIssueTool } from './tools/core/jira_create_issue.js';
-import { jira_update_issue } from './tools/core/jira_update_issue.js';
+import { createJiraUpdateIssueTool } from './tools/core/jira_update_issue.js';
 import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
 import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
 import { jira_link_to_epic } from './tools/core/jira_link_to_epic.js';
@@ -181,13 +181,15 @@ export class JiraToolsManager {
     const priorityNamesArray = await getPriorityNamesArray(httpClientToUse, this.context.config);
 
     const jira_create_issue = await createJiraCreateIssueTool(priorityNamesArray);
+    const jira_update_issue = await createJiraUpdateIssueTool(fieldIdEpicLink, priorityNamesArray);
+
     // Register all tools with their handlers
     const toolInstances = [
       // Core tools
       jira_get_issue,
       jira_search_issues,
       jira_create_issue, // Create fresh instance with current priorities
-      jira_update_issue(fieldIdEpicLink), // Create jira_update_issue with dynamic fieldIdEpicLink
+      jira_update_issue, // Create fresh instance with current priorities and epic link
       jira_delete_issue,
       jira_batch_create_issues,
       jira_link_to_epic,

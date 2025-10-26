@@ -89,13 +89,11 @@ use 'jira_get_epics_for_project' tool to clarify epic key`,
         },
         originalEstimate: {
           type: 'string',
-          description: `Optional. Original time estimate ${inJiraDuration};
-Convert natural language inputs into this format`,
+          description: `Optional. Original time estimate ${inJiraDuration}`,
         },
         remainingEstimate: {
           type: 'string',
-          description: `Optional. Remaining time estimate ${inJiraDuration};
-Convert natural language inputs into this format`,
+          description: `Optional. Remaining time estimate ${inJiraDuration}`,
         },
         customFields: {
           type: 'object',
