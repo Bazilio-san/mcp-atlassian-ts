@@ -15,7 +15,7 @@ rateLimit:
   windowMs: RATE_LIMIT_WINDOW_MS
   maxRequests: RATE_LIMIT_MAX_REQUESTS
 
-cache: # VVA испоьзуется ли?
+cache: # VVA is this used?
   ttlSeconds: CACHE_TTL_SECONDS
   maxItems: CACHE_MAX_ITEMS
 

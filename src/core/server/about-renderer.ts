@@ -333,7 +333,7 @@ export class AboutPageRenderer {
           '<td><code>' + tool.name + '</code></td>' +
           '<td>' + (tool.annotations?.title || tool.description) + '</td>' +
           '<td>' +
-            '<a class="detail-link" id="tools-toggle-' + index + '" onclick="toggleDetails(\\\'tools\\\', ' + index + ')">подробнее</a>' +
+            '<a class="detail-link" id="tools-toggle-' + index + '" onclick="toggleDetails(\\\'tools\\\', ' + index + ')">details</a>' +
           '</td>' +
         '</tr>' +
         '<tr id="tools-detail-' + index + '" class="detail-row" style="display: none;">' +
@@ -355,7 +355,7 @@ export class AboutPageRenderer {
           '<td>' + resource.description + '</td>' +
           '<td><code>' + resource.mimeType + '</code></td>' +
           '<td>' +
-            '<a class="detail-link" id="resources-toggle-' + index + '" onclick="toggleDetails(\\\'resources\\\', ' + index + ')">подробнее</a>' +
+            '<a class="detail-link" id="resources-toggle-' + index + '" onclick="toggleDetails(\\\'resources\\\', ' + index + ')">details</a>' +
           '</td>' +
         '</tr>' +
         '<tr id="resources-detail-' + index + '" class="detail-row" style="display: none;">' +
@@ -374,7 +374,7 @@ export class AboutPageRenderer {
         '<tr>' +
           '<td><code>' + prompt.name + '</code></td>' +
           '<td>' +
-            '<a class="detail-link" id="prompts-toggle-' + index + '" onclick="toggleDetails(\\\'prompts\\\', ' + index + ')">подробнее</a>' +
+            '<a class="detail-link" id="prompts-toggle-' + index + '" onclick="toggleDetails(\\\'prompts\\\', ' + index + ')">details</a>' +
           '</td>' +
         '</tr>' +
         '<tr id="prompts-detail-' + index + '" class="detail-row" style="display: none;">' +
@@ -397,7 +397,7 @@ export class AboutPageRenderer {
       if (detailRow.style.display === 'none') {
         // Show the detail row with loading state
         detailRow.style.display = 'table-row';
-        toggleLink.textContent = 'скрыть';
+        toggleLink.textContent = 'hide';
         loadingSpinner.style.display = 'block';
         jsonContent.style.display = 'none';
         
@@ -443,7 +443,7 @@ export class AboutPageRenderer {
       } else {
         // Hide the detail row
         detailRow.style.display = 'none';
-        toggleLink.textContent = 'подробнее';
+        toggleLink.textContent = 'details';
       }
     }
 

@@ -1,8 +1,8 @@
-// Функции транслитерации для поиска по проектам
-// Адаптировано из multi-bot проекта
+// Transliteration functions for project search
+// Adapted from multi-bot project
 
 /**
- * Транслитерация русского текста в латиницу
+ * Transliteration of Russian text to Latin
  */
 export const transliterate = (text: string): string => {
   // noinspection NonAsciiCharacters
@@ -51,7 +51,7 @@ export const transliterate = (text: string): string => {
 };
 
 /**
- * Обратная транслитерация - из латиницы в кириллицу
+ * Reverse transliteration - from Latin to Cyrillic
  */
 export const transliterateRU = (text: string): string => {
   // noinspection NonAsciiCharacters
@@ -90,7 +90,7 @@ export const transliterateRU = (text: string): string => {
 
   let result = text.toLowerCase();
 
-  // Обрабатываем многобуквенные комбинации в порядке убывания длины
+  // Process multi-character combinations in descending order of length
   const multiChar = ['shch', 'kh', 'ts', 'ch', 'sh', 'yo', 'zh', 'yu', 'ya'];
   for (const combo of multiChar) {
     if (deTranslitMap[combo]) {
@@ -98,11 +98,11 @@ export const transliterateRU = (text: string): string => {
     }
   }
 
-  // Обрабатываем однобуквенные замены
+  // Process single-character replacements
   return result
     .split('')
     .map(char => {
-      // Проверяем, не была ли буква уже заменена многобуквенной комбинацией
+      // Check if the character was already replaced by a multi-character combination
       const cyrillic = /[а-я]/i.test(char);
       if (cyrillic) {
         return char;
@@ -113,27 +113,27 @@ export const transliterateRU = (text: string): string => {
 };
 
 /**
- * Обратная транслитерация - из латиницы в кириллицу (вариативная)
- * Возвращает все возможные варианты с учётом неоднозначных соответствий.
+ * Reverse transliteration - from Latin to Cyrillic (variant)
+ * Returns all possible variants considering ambiguous matches.
  *
- * Пример:
+ * Example:
  *   enToRuVariants("aitech") -> ["аитех", "айтех", "аитеч", "айтек", ...]
  */
 export const enToRuVariants = (text: string, maxResults: number = 20): string[] => {
   const s = text.toLowerCase();
 
-  // Приоритетные многобуквенные латинские кластеры
+  // Priority multi-character Latin clusters
   const clusters = [
-    'shch', 'sch', // щ (часто sch/shch)
+    'shch', 'sch', // щ (often sch/shch)
     'yo', 'yu', 'ya',
     'kh', 'ts', 'ch', 'sh',
   ];
 
-  // Соответствия латинских последовательностей множеству русских вариантов
+  // Mappings of Latin sequences to sets of Russian variants
   const map: Record<string, string[]> = {
-    // Многобуквенные
+    // Multi-character
     shch: ['щ'],
-    sch: ['щ', 'шч'], // иногда передаётся как шч
+    sch: ['щ', 'шч'], // sometimes passed as шч
     kh: ['х'],
     ts: ['ц'],
     ch: ['ч'],
@@ -142,16 +142,16 @@ export const enToRuVariants = (text: string, maxResults: number = 20): string[] 
     yu: ['ю', 'йу', 'иу'],
     ya: ['я', 'йа', 'иа'],
 
-    // Однобуквенные (с вариантами)
+    // Single-character (with variants)
     a: ['а'],
     b: ['б'],
     v: ['в'],
     g: ['г'],
     d: ['д'],
-    e: ['е', 'э'], // неоднозначность e/э
+    e: ['е', 'э'], // ambiguity e/э
     z: ['з'],
-    i: ['и', 'ай', 'й'], // иногда "i" может звучать как "ай" в брендах
-    y: ['й', 'ы', 'и'], // y неоднозначна
+    i: ['и', 'ай', 'й'], // sometimes "i" can sound like "ай" in brands
+    y: ['й', 'ы', 'и'], // y is ambiguous
     k: ['к'],
     l: ['л'],
     m: ['м'],
@@ -161,20 +161,20 @@ export const enToRuVariants = (text: string, maxResults: number = 20): string[] 
     r: ['р'],
     s: ['с'],
     t: ['т'],
-    u: ['у', 'ю'], // иногда как "ю" (в заимств.)
+    u: ['у', 'ю'], // sometimes as "ю" (in borrowings)
     f: ['ф'],
-    h: ['х'], // одиночная h как "х"
-    c: ['к', 'с'], // context-free вариант
+    h: ['х'], // single h as "х"
+    c: ['к', 'с'], // context-free variant
     j: ['дж', 'ж', 'й'], // jira -> джира/жира
     q: ['к'],
     w: ['в', 'у'],
-    x: ['кс', 'з'], // "x" часто "кс", иногда звучит как "з" в заимств.
+    x: ['кс', 'з'], // "x" often "кс", sometimes sounds like "з" in borrowings
     ' ': [' '],
     '-': ['-'],
     '_': ['_'],
   };
 
-  // ДП по позициям с разветвлением по вариантам
+  // Dynamic programming by positions with branching by variants
   const results: string[] = [];
 
   const backtrack = (idx: number, acc: string) => {

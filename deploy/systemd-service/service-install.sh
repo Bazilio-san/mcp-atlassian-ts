@@ -20,20 +20,20 @@ service_exists() {
 
 if service_exists "$SERVICE"
 then
-  echo -e "$c**** Сервис $g$SERVICE$c уже установлен ****$c0"
+  echo -e "$c**** Service $g$SERVICE$c already installed ****$c0"
 else
-  echo -e "$c**** Установка сервиса $g$SERVICE$c ****$c0"
+  echo -e "$c**** Installing service $g$SERVICE$c ****$c0"
 
   cp ./service.service /etc/systemd/system/$SERVICE.service
-  # Обновить конфигурацию служб
+  # Update service configuration
   systemctl daemon-reload
-  # Включить и запустить службу
+  # Enable and start service
   systemctl enable --now $SERVICE
 
-  echo -e "$c**** Сервис $g$SERVICE$c установлен ****$c0"
+  echo -e "$c**** Service $g$SERVICE$c installed ****$c0"
   echo ""
-  echo -e "${m}Просмотр статуса лога: ${y}systemctl -l status $SERVICE$c0"
+  echo -e "${m}View log status: ${y}systemctl -l status $SERVICE$c0"
   echo ""
-  echo -e "${m}Просмотр лога: ${y}journalctl -o cat -xefu $SERVICE$c0"
+  echo -e "${m}View log: ${y}journalctl -o cat -xefu $SERVICE$c0"
   echo ""
 fi

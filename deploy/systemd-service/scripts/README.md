@@ -1,31 +1,31 @@
-# Утилиты для управления службами systemd
+# Utilities for managing systemd services
 
-Эти утилиты предоставляют удобный способ управления службами systemd с использованием алиасов и автодополнением.
+These utilities provide a convenient way to manage systemd services using aliases and auto-completion.
 
-## Установка
+## Installation
 
 ```shell
 cd <path to project>/deploy/systemd-service/scripts/
 sudo ./utility_installer.sh
 ```
 
-## Использование
+## Usage
 
-### Перезапуск службы
+### Restarting service
 ```bash
-restart jira-bot  # Перезапустит службу jira-bot
-restart jb        # То же самое, используя алиас
+restart jira-bot  # Restarts jira-bot service
+restart jb        # Same using alias
 ```
 
-### Просмотр логов службы
+### Viewing service logs
 ```bash
-logs jira-bot    # Просмотр логов службы jira-bot
-logs jb          # То же самое, используя алиас
+logs jira-bot    # View jira-bot service logs
+logs jb          # Same using alias
 ```
 
-## Настройка алиасов
+## Configuring aliases
 
-Алиасы настраиваются в файле `/etc/restart-config.json`. Вы можете отредактировать этот файл, чтобы добавить новые алиасы.
+Aliases are configured in the `/etc/restart-config.json` file. You can edit this file to add new aliases.
 
 ```json
 {

@@ -19,7 +19,7 @@ service_exists() {
     fi
 }
 
-echo -e "$c**** Перестановка сервиса $g$SERVICE$c ****$c0"
+echo -e "$c**** Reinstalling service $g$SERVICE$c ****$c0"
 
 if service_exists "$SERVICE"
 then
@@ -29,16 +29,16 @@ then
   PID=$(lsof -i tcp:$WS_PORT | grep $WS_PORT | awk '{print $2}' | head -1)
   if [ ! -z "$PID" ]; then kill $PID; fi
   systemctl daemon-reload
-  echo -e "$c**** Сервис удален ****$c0"
+  echo -e "$c**** Service removed ****$c0"
 fi
 
 cp ./service.service /etc/systemd/system/$SERVICE.service
-# Обновить конфигурацию служб
+# Update service configuration
 systemctl daemon-reload
-# Включить и запустить службу
+# Enable and start service
 systemctl enable --now $SERVICE
 
-echo -e "$c**** Сервис $g$SERVICE$c установлен ****$c0"
+echo -e "$c**** Service $g$SERVICE$c installed ****$c0"
 systemctl status $SERVICE
 journalctl -o cat -xefu $SERVICE
 

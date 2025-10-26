@@ -43,22 +43,22 @@ export interface IADFDocument {
 }
 
 export interface IJiraTimeTracking {
-  /** Исходная оценка, как строка (например, "1w 2d", "3h", "45m") */
+  /** Original estimate as string (e.g., "1w 2d", "3h", "45m") */
   originalEstimate?: string;
 
-  /** Оставшаяся оценка, как строка */
+  /** Remaining estimate as string */
   remainingEstimate?: string;
 
-  /** Потраченное время, как строка */
+  /** Time spent as string */
   timeSpent?: string;
 
-  /** Исходная оценка в секундах */
+  /** Original estimate in seconds */
   originalEstimateSeconds?: number;
 
-  /** Оставшаяся оценка в секундах */
+  /** Remaining estimate in seconds */
   remainingEstimateSeconds?: number;
 
-  /** Потраченное время в секундах */
+  /** Time spent in seconds */
   timeSpentSeconds?: number;
 }
 
@@ -181,7 +181,7 @@ export interface IJiraComment {
   author: IJiraUser;
   updateAuthor: IJiraUser;
   body: string | IADFDocument; // Can be string or ADF
-  renderedBody?: string, // HTML-представление текста комментария
+  renderedBody?: string, // HTML representation of comment text
   created: string;
   updated: string;
   visibility?: {

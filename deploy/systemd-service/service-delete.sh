@@ -18,15 +18,15 @@ service_exists() {
 
 if service_exists "$SERVICE"
 then
-  echo -e "$c**** Удаление сервиса $g$SERVICE$c слушающего порт $g$WS_PORT$c ****$c0"
+  echo -e "$c**** Removing service $g$SERVICE$c listening on port $g$WS_PORT$c ****$c0"
   systemctl stop $SERVICE
   systemctl disable --now $SERVICE
   rm /etc/systemd/system/$SERVICE.service
   PID=$(lsof -i tcp:$WS_PORT | grep $WS_PORT | awk '{print $2}' | head -1)
   if [ ! -z "$PID" ]; then kill $PID; fi
   systemctl daemon-reload
-  echo -e "$c**** Сервис удален ****$c0"
+  echo -e "$c**** Service removed ****$c0"
 else
-  echo -e "$c**** Сервис $g$SERVICE$c не найден ****$c0"
+  echo -e "$c**** Service $g$SERVICE$c not found ****$c0"
 fi
 

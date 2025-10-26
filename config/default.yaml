@@ -54,7 +54,7 @@ rateLimit:
 # --------------------------------------------------
 # CACHING
 # --------------------------------------------------
-cache: # VVA испоьзуется ли?
+cache: # VVA is this used?
   # Cache TTL in seconds (default: 300 = 5 minutes). ENV: CACHE_TTL_SECONDS
   # Reduces API calls by caching responses
   ttlSeconds: 300

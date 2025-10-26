@@ -1,82 +1,82 @@
 #!/bin/bash
 
-# Скрипт для установки утилит restart и logs и всех их компонентов
+# Script to install restart and logs utilities and all their components
 
-# Проверка прав суперпользователя
+# Check for superuser privileges
 if [ "$(id -u)" -ne 0 ]; then
-    echo "Ошибка: этот скрипт должен быть запущен с правами суперпользователя (sudo)"
+    echo "Error: this script must be run with superuser privileges (sudo)"
     exit 1
 fi
 
-# Получение директории скрипта
+# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
 
-# Определение путей установки
+# Define installation paths
 RESTART_SCRIPT="/usr/local/bin/restart"
 LOGS_SCRIPT="/usr/local/bin/logs"
 RESTART_COMPLETION_SCRIPT="/etc/bash_completion.d/restart"
 LOGS_COMPLETION_SCRIPT="/etc/bash_completion.d/logs"
 CONFIG_FILE="/etc/restart-config.json"
 
-echo "Начинаем установку утилит restart и logs..."
+echo "Starting installation of restart and logs utilities..."
 
-# Установка зависимостей
-echo "Установка зависимостей..."
+# Install dependencies
+echo "Installing dependencies..."
 apt-get update > /dev/null
 apt-get install -y jq > /dev/null 2>&1 || {
-    echo "Ошибка: не удалось установить jq. Проверьте подключение к интернету и доступ к репозиториям."
+    echo "Error: failed to install jq. Check internet connection and repository access."
     exit 1
 }
 
-# Проверка наличия файлов для установки
+# Check for presence of installation files
 for file in "restart_service_with_alias.sh" "restart_completion.sh" "logs_service_with_alias.sh" "logs_completion.sh" "service_aliases.json"; do
     if [ ! -f "$file" ]; then
-        echo "Ошибка: файл $file не найден в текущей директории"
+        echo "Error: file $file not found in current directory"
         exit 1
     fi
 done
 
-# Копирование файлов
-echo "Копирование файлов..."
+# Copy files
+echo "Copying files..."
 cp "restart_service_with_alias.sh" "$RESTART_SCRIPT"
 cp "logs_service_with_alias.sh" "$LOGS_SCRIPT"
 cp "restart_completion.sh" "$RESTART_COMPLETION_SCRIPT"
 cp "logs_completion.sh" "$LOGS_COMPLETION_SCRIPT"
 cp "service_aliases.json" "$CONFIG_FILE"
 
-# Настройка прав доступа
-echo "Настройка прав доступа..."
+# Set file permissions
+echo "Setting file permissions..."
 chmod 755 "$RESTART_SCRIPT"
 chmod 755 "$LOGS_SCRIPT"
 chmod 644 "$RESTART_COMPLETION_SCRIPT"
 chmod 644 "$LOGS_COMPLETION_SCRIPT"
 chmod 644 "$CONFIG_FILE"
 
-# Перезагрузка bash_completion
-echo "Активация автодополнения..."
+# Reload bash_completion
+echo "Activating auto-completion..."
 if [ -f /etc/bash_completion ]; then
     source /etc/bash_completion
 fi
 
-echo "Проверка установки..."
+echo "Verifying installation..."
 if [ -f "$RESTART_SCRIPT" ] && [ -f "$LOGS_SCRIPT" ] && [ -f "$RESTART_COMPLETION_SCRIPT" ] && [ -f "$LOGS_COMPLETION_SCRIPT" ] && [ -f "$CONFIG_FILE" ]; then
-    echo "✓ Проверка файлов успешна"
+    echo "✓ File verification successful"
 else
-    echo "✗ Проверка файлов неуспешна"
+    echo "✗ File verification failed"
     exit 1
 fi
 
-echo "Утилиты restart и logs успешно установлены!"
+echo "Utilities restart and logs successfully installed!"
 echo ""
-echo "Использование:"
-echo "  restart <сервис или алиас> - перезапустить службу systemd"
-echo "  logs <сервис или алиас> - просмотреть логи службы systemd"
+echo "Usage:"
+echo "  restart <service or alias> - restart systemd service"
+echo "  logs <service or alias> - view systemd service logs"
 echo ""
-echo "Автодополнение будет доступно в новых сессиях терминала"
-echo "Для активации в текущей сессии выполните: source /etc/bash_completion.d/restart и source /etc/bash_completion.d/logs"
+echo "Auto-completion will be available in new terminal sessions"
+echo "To activate in current session run: source /etc/bash_completion.d/restart and source /etc/bash_completion.d/logs"
 echo ""
-echo "Конфигурация алиасов находится в $CONFIG_FILE"
-echo "Вы можете добавить свои алиасы, отредактировав этот файл"
+echo "Alias configuration is located in $CONFIG_FILE"
+echo "You can add your own aliases by editing this file"
 
 exit 0

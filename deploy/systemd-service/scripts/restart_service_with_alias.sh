@@ -1,20 +1,20 @@
 #!/bin/bash
 
-# Чтение конфигурации из файла
+# Read configuration from file
 CONFIG_FILE="/etc/restart-config.json"
 
-# Проверка наличия конфигурационного файла
+# Check for configuration file presence
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Ошибка: Файл конфигурации $CONFIG_FILE не найден"
+    echo "Error: Configuration file $CONFIG_FILE not found"
     exit 1
 fi
 
-# Чтение алиасов из конфигурации
+# Read aliases from configuration
 declare -A service_aliases
 
 if ! jq -e '.service_aliases' "$CONFIG_FILE" > /dev/null 2>&1; then
-    echo "Ошибка: Некорректный формат конфигурационного файла $CONFIG_FILE"
-    echo "Пожалуйста, проверьте синтаксис JSON"
+    echo "Error: Incorrect format of configuration file $CONFIG_FILE"
+    echo "Please check JSON syntax"
     exit 1
 fi
 
@@ -22,30 +22,30 @@ while read -r alias service; do
     service_aliases["$alias"]="$service"
 done < <(jq -r '.service_aliases | to_entries[] | "\(.key) \(.value)"' "$CONFIG_FILE")
 
-# Проверяем, был ли передан аргумент
+# Check if argument was passed
 if [ $# -ne 1 ]; then
-    echo "Использование: restart <сервис или алиас>"
+    echo "Usage: restart <service or alias>"
     exit 1
 fi
 
 SERVICE="$1"
 
-# Если введенное значение - алиас, заменяем его полным именем сервиса
+# If entered value is an alias, replace it with full service name
 if [[ -n "${service_aliases[$SERVICE]}" ]]; then
     ORIGINAL_SERVICE="$SERVICE"
     SERVICE="${service_aliases[$SERVICE]}"
-    echo "Используется алиас: $ORIGINAL_SERVICE -> $SERVICE"
+    echo "Using alias: $ORIGINAL_SERVICE -> $SERVICE"
 fi
 
-# Проверяем существование сервиса
+# Check service existence
 if ! systemctl list-units --type=service | grep -q "$SERVICE.service"; then
-    echo "Ошибка: Сервис $SERVICE не найден"
+    echo "Error: Service $SERVICE not found"
     exit 1
 fi
 
-# Выполняем перезапуск
-echo "Перезапуск сервиса $SERVICE..."
+# Perform restart
+echo "Restarting service $SERVICE..."
 systemctl restart "$SERVICE"
 
-# Вывод статуса после перезапуска
+# Output status after restart
 systemctl status "$SERVICE" --no-pager
