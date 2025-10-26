@@ -129,13 +129,56 @@ export class JiraToolsManager {
   /**
    * Build the tools list
    * Made public to allow dynamic regeneration on each request
+   * @param customHeaders - Optional custom HTTP headers for authentication
    */
-  public async buildToolsList (): Promise<void> {
+  public async buildToolsList (customHeaders?: Record<string, string>): Promise<void> {
     const fieldIdEpicLink: string = this.context.config.fieldId!.epicLink;
     // Clear existing tools
     this.tools.clear();
     this.toolsArray = [];
-    const priorityNamesArray = await getPriorityNamesArray(this.context.httpClient, this.context.config);
+
+    // Determine which HTTP client to use based on custom headers
+    let httpClientToUse = this.context.httpClient;
+
+    if (customHeaders && Object.keys(customHeaders).length > 0) {
+      // Extract JIRA-specific headers from custom headers
+      const jiraHeaders: Record<string, string> = {};
+      Object.keys(customHeaders).forEach(key => {
+        if (key.startsWith('x-jira-')) {
+          const value = customHeaders[key];
+          if (value) {
+            jiraHeaders[key] = value;
+          }
+        }
+      });
+
+      // If we have JIRA-specific headers, create authentication manager from headers
+      // Otherwise, use system auth with additional headers
+      if (Object.keys(jiraHeaders).length > 0) {
+        // Use header-based authentication
+        const authManager = createAuthenticationManagerFromHeaders(jiraHeaders, this.context.config.url);
+        httpClientToUse = authManager.getHttpClient();
+        this.logger.debug(`Building tools list with header-based authentication: headers: ${Object.keys(jiraHeaders)}`);
+      } else {
+        // Use system authentication with additional headers
+        const authManager = createAuthenticationManager(this.context.config.auth, this.context.config.url);
+        httpClientToUse = authManager.getHttpClient();
+
+        // Add custom headers via interceptor
+        httpClientToUse.interceptors.request.use(
+          config => {
+            if (config.headers) {
+              Object.assign(config.headers, customHeaders);
+            }
+            return config;
+          },
+          error => Promise.reject(error),
+        );
+        this.logger.debug('Building tools list with system authentication and additional headers');
+      }
+    }
+
+    const priorityNamesArray = await getPriorityNamesArray(httpClientToUse, this.context.config);
 
     const jira_create_issue = await createJiraCreateIssueTool(priorityNamesArray);
     // Register all tools with their handlers

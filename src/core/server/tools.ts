@@ -167,11 +167,12 @@ export class ToolRegistry {
   /**
    * List all available tools
    * Dynamically rebuilds tools list to ensure context-dependent tools are current
+   * @param customHeaders - Optional custom HTTP headers for authentication
    */
-  async listTools (): Promise<Tool[]> {
+  async listTools (customHeaders?: Record<string, string>): Promise<Tool[]> {
     // Rebuild JIRA tools if available (for dynamic priority updates)
     if (this.jiraTools) {
-      await this.jiraTools.buildToolsList();
+      await this.jiraTools.buildToolsList(customHeaders);
 
       // Re-register updated JIRA tools
       const jiraTools = this.jiraTools.getAvailableTools();

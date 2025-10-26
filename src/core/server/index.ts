@@ -171,10 +171,10 @@ export class McpAtlassianServer {
   }
 
   /**
-   * Handle tools list requests
+   * Handle tools list requests with optional context for custom authentication
    */
-  private async handleToolsList (): Promise<{ tools: any[] }> {
-    const tools = await this.toolRegistry.listTools();
+  private async handleToolsList (context?: ExecutionContext): Promise<{ tools: any[] }> {
+    const tools = await this.toolRegistry.listTools(context?.authHeaders);
     logger.info(`Tools listed: count: ${tools.length}`);
     return { tools };
   }
@@ -281,7 +281,7 @@ export class McpAtlassianServer {
         };
 
       case 'tools/list':
-        return this.handleToolsList();
+        return this.handleToolsList(context);
 
       case 'tools/call':
         const { name, arguments: args } = params;
