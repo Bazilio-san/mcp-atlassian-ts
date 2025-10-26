@@ -282,6 +282,7 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     // Create the issue
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-post
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post
     const response = await httpClient.post(`${config.restPath}/issue`, issueInput);
     const createdIssue = response.data;
 

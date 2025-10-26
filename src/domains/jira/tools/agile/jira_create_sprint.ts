@@ -89,6 +89,7 @@ async function createSprintHandler (args: any, context: ToolContext): Promise<an
     // Create sprint via API
     // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-createSprint
     // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-post
+    // https://developer.atlassian.com/cloud/jira/software/rest/api-group-sprint/#api-rest-agile-1-0-sprint-post
     const response = await httpClient.post('/rest/agile/1.0/sprint', sprintData);
 
     if (!response.data) {

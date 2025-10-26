@@ -56,6 +56,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
       try {
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-get
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-users/#api-rest-api-3-user-get
         const response = await httpClient.get(`${config.restPath}/user`, {
           params: { accountId: login },
         });
@@ -65,6 +66,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
         try {
           // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
           // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-get
+          // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-users/#api-rest-api-3-user-get
           const response = await httpClient.get(`${config.restPath}/user`, {
             params: { username: login },
           });
@@ -73,6 +75,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
           // Last resort - try user search with query
           // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-findUsers
           // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-search-get
+          // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-user-search/#api-rest-api-3-user-search-get
           const searchResponse = await httpClient.get(`${config.restPath}/user/search`, {
             params: { username: login, maxResults: 1 },
           });

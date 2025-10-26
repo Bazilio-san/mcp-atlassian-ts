@@ -95,6 +95,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
       try {
         // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-project-versions/#api-rest-api-3-version-post
         const response = await httpClient.post(`${config.restPath}/version`, version);
         results.push(response.data);
         logger.debug(`Successfully created version: name: ${name} | id: ${response.data.id}`);

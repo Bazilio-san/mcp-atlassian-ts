@@ -78,6 +78,7 @@ async function createVersionHandler (args: any, context: ToolContext): Promise<a
     // Create the version
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#version-createVersion
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-version-post
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-project-versions/#api-rest-api-3-version-post
     const response = await httpClient.post(`${config.restPath}/version`, versionData);
     const version = response.data;
 

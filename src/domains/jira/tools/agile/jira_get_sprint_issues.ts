@@ -98,6 +98,7 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
 
     // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-getIssuesForSprint
     // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-sprintid-issue-get
+    // https://developer.atlassian.com/cloud/jira/software/rest/api-group-sprint/#api-rest-agile-1-0-sprint-sprintid-issue-get
     const response = await httpClient.get(`/rest/agile/1.0/sprint/${sprintId}/issue`, { params });
 
     if (!response.data) {

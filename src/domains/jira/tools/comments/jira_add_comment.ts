@@ -61,6 +61,7 @@ async function addCommentHandler (args: any, context: ToolContext): Promise<any>
     // Make API call to add comment
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-addComment
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-post
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-comments/#api-rest-api-3-issue-issueidorkey-comment-post
     const response = await httpClient.post(`${config.restPath}/issue/${issueIdOrKey}/comment`, commentInput);
 
     const comment = response.data;

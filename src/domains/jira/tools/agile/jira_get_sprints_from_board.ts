@@ -79,6 +79,7 @@ async function getSprintsFromBoardHandler (args: any, context: ToolContext): Pro
     const sprintsResult = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/board-getAllSprints
       // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-board/#api-agile-1-0-board-boardid-sprint-get
+      // https://developer.atlassian.com/cloud/jira/software/rest/api-group-board/#api-rest-agile-1-0-board-boardid-sprint-get
       const response = await httpClient.get(`/rest/agile/1.0/board/${boardId}/sprint`, { params });
 
       if (!response.data) {

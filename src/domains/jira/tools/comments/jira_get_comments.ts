@@ -83,6 +83,7 @@ async function getCommentsHandler (args: any, context: ToolContext): Promise<any
     // Make API call to get comments
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getComments
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-get
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-comments/#api-rest-api-3-issue-issueidorkey-comment-get
     const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}/comment?${params.toString()}`);
 
     const commentsData = response.data;

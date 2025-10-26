@@ -47,6 +47,7 @@ async function getLinkTypesHandler (_args: any, context: ToolContext): Promise<a
     const linkTypes = await cache.getOrSet(cacheKey, async () => {
       // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLinkType-getIssueLinkTypes
       // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-link-types/#api-rest-api-2-issuelinktype-get
+      // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-link-types/#api-rest-api-3-issuelinktype-get
       const response = await httpClient.get(`${config.restPath}/issueLinkType`);
       return response.data.issueLinkTypes || [];
     }, 600); // Cache for 10 minutes

@@ -77,6 +77,7 @@ async function updateCommentHandler (args: any, context: ToolContext): Promise<a
     // Make API call to update comment
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-updateComment
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-id-put
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-comments/#api-rest-api-3-issue-issueidorkey-comment-id-put
     const response = await httpClient.put(url, commentInput);
 
     const comment = response.data;

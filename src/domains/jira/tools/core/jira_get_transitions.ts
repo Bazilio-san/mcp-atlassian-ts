@@ -49,6 +49,7 @@ async function getTransitionsHandler (args: any, context: ToolContext): Promise<
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getTransitions
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-transitions-get
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-transitions-get
     const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}/transitions`);
     const transitions = response.data.transitions;
 

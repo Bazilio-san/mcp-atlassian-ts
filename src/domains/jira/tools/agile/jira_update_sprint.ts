@@ -125,6 +125,7 @@ async function updateSprintHandler (args: any, context: ToolContext): Promise<an
     // Update sprint via API
     // https://docs.atlassian.com/jira-software/REST/8.13.0/#agile/1.0/sprint-updateSprint
     // https://developer.atlassian.com/server/jira/platform/rest/v11001/api-group-sprint/#api-agile-1-0-sprint-sprintid-put
+    // https://developer.atlassian.com/cloud/jira/software/rest/api-group-sprint/#api-rest-agile-1-0-sprint-sprintid-put
     const response = await httpClient.put(`/rest/agile/1.0/sprint/${sprintId}`, sprintData);
 
     if (!response.data) {

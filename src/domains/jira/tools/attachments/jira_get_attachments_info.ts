@@ -49,6 +49,9 @@ async function downloadAttachmentsHandler (args: any, context: ToolContext): Pro
 
     // Generate cache key
 
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-get
     const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}`, {
       params: { expand: 'attachment' },
     });

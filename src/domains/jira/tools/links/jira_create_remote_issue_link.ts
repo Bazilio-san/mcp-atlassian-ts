@@ -77,6 +77,7 @@ async function createRemoteIssueLinkHandler (args: any, context: ToolContext): P
     // Create the remote link
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-createOrUpdateRemoteIssueLink
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-remote-links/#api-rest-api-2-issue-issueidorkey-remotelink-post
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-remote-links/#api-rest-api-3-issue-issueidorkey-remotelink-post
     const response = await httpClient.post(`${config.restPath}/issue/${issueIdOrKey}/remotelink`, {
       object: linkData,
     });

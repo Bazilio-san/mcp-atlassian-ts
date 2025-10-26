@@ -59,6 +59,7 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
 
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getWorklog
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-worklogs/#api-rest-api-2-issue-issueidorkey-worklog-get
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-worklogs/#api-rest-api-3-issue-issueidorkey-worklog-get
     const response = await httpClient.get(`${config.restPath}/issue/${issueIdOrKey}/worklog`, {
       params: { startAt, maxResults },
     });

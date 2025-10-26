@@ -96,6 +96,9 @@ async function batchGetChangelogsHandler (args: any, context: ToolContext): Prom
     const fn = async (issueKey: string): Promise<JiraIssueWithChangelog | JiraIssueWithError> => {
       try {
         logger.debug(`Direct changelog endpoint not supported for ${issueKey}, trying fallback`);
+        // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
+        // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-get
         const { data } = await httpClient.get(`${config.restPath}/issue/${issueKey}?expand=changelog`) || {};
         const { changelog } = data || {};
         const { startAt, maxResults, total, histories = [] } = changelog || {};

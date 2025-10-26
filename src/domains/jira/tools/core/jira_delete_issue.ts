@@ -54,9 +54,9 @@ async function deleteIssueHandler (args: any, context: ToolContext): Promise<any
     // Build query parameters
     const params = deleteSubtasks ? { deleteSubtasks: 'true' } : {};
 
-    // Make API call
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-deleteIssue
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-delete
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-delete
     await httpClient.delete(`${config.restPath}/issue/${issueIdOrKey}`, { params });
 
     const message = `Issue ${/^\d+$/.test(issueIdOrKey) ? 'id' : 'key'} ${issueIdOrKey}${withSubtasks} successfully deleted`;

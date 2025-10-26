@@ -75,11 +75,13 @@ async function createIssueLinkHandler (args: any, context: ToolContext): Promise
     // Create the link
     // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issueLink-linkIssues
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-links/#api-rest-api-2-issuelink-post
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-links/#api-rest-api-3-issuelink-post
     await httpClient.post(`${config.restPath}/issueLink`, linkData);
 
     // Getting the newly created link from the task data
-    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#user-getUser
-    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-myself-get
+    // https://docs.atlassian.com/software/jira/docs/api/REST/8.13.20/#issue-getIssue
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-rest-api-2-issue-issueidorkey-get
+    // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-get
     const response = await httpClient.get(`${config.restPath}/issue/${inwardIssue}`);
 
     let newLink: any;
