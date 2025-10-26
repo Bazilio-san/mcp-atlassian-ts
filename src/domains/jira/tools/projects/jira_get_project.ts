@@ -40,10 +40,10 @@ customFieldsMetadata?: {fieldId, name, schema}
         type: 'string',
         description: 'The project key or ID',
       },
-      includeCustomFieldsMetadata: {
-        type: 'boolean',
-        description: 'If true, the response will include the customFieldsMetadata array - information about available custom fields, their types, and filling rules',
-      },
+      // includeCustomFieldsMetadata: {
+      //   type: 'boolean',
+      //   description: 'If true, the response will include the customFieldsMetadata array - information about available custom fields, their types, and filling rules',
+      // },
       expand: { // VVA помочь LLM с этим работать
         type: 'array',
         items: { type: 'string' },
@@ -133,7 +133,9 @@ ${diff}`;
 async function getProjectHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
     const { httpClient, cache, logger, config } = context;
-    const { projectIdOrKey, includeCustomFieldsMetadata, expand, properties } = args;
+    const { projectIdOrKey, expand, properties } = args;
+
+    const includeCustomFieldsMetadata = true;
 
     logger.info(`Fetching JIRA project '${projectIdOrKey}' details | expand: ${expand} | properties: ${properties}`);
 
@@ -262,7 +264,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         labels: projectLabels,
         priorityNames,
         // lead: jiraUserObj(p.lead),
-        customFieldsMetadata, // VVT
+        customFieldsMetadata,
         customFieldsFillingMemo,
       };
     })();

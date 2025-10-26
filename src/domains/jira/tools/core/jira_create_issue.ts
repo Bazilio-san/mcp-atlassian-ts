@@ -25,15 +25,11 @@ Workflow:
 1) Collect or receive: projectIdOrKey, issueType, summary.
 2) If project is not specified, ask the user for clarification.
 3) Use the 'jira_project_finder' tool to obtain the exact project key.
-4) With this project key, USE 'jira_get_project' tool to list available: 
-   - issue types
-   - priorities
-   - labels.
-5) For bug reports, encourage user to provide detailed reproduction steps in the description.
-6) If assignee or reporter are not specified - leave blank. If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
-7) Display all collected parameters for confirmation before creation.
-8) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic’s issue key and pass it as epicKey.
-9) Upon user confirmation, call jira_create_issue with the final parameters.
+4) With project key, USE 'jira_get_project' tool to list available issue types, priorities, labels, custom fields
+5) If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
+6) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic’s issue key (epicKey).
+7) IMPORTANT! DISPLAY ALL COLLECTED PARAMETERS FOR USER CONFIRMATION BEFORE CREATION.
+8) Upon user confirmation, call 'jira_create_issue' with the final parameters.
 
 Non-interactive mode:
 If called by another agent (without user input), skip clarification and confirmation steps. Use available data only.`,
@@ -101,9 +97,10 @@ Convert natural language inputs into this format`,
           description: `Optional. Remaining time estimate ${inJiraDuration};
 Convert natural language inputs into this format`,
         },
-        customFields: { // VVQ из сведений о проекте брать схему и правила заполнения кастомных полей
+        customFields: {
           type: 'object',
-          description: 'Custom field values (field ID as key)',
+          description: `Custom field values as key-value pairs (fieldId as key). 
+The response of the 'jira_get_project' tool will contain information about filling in the available custom fields`,
           additionalProperties: true,
         },
       },

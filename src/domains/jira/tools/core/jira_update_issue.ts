@@ -27,8 +27,7 @@ export function jira_update_issue (fieldIdEpicLin?: string): ToolWithHandler {
 - labels
 - customFields
 
-To update custom fields pass object to customFields parameter E.g.:
-{ "customfield_<nnnnnn>": <_customfield_value_>, ... }
+To get information about the available priority, labels, customFields, and the rules for filling them, first call the 'jira_get_project' tool
 
 ${epicLinkInfo}`,
     inputSchema: {
@@ -60,10 +59,10 @@ ${epicLinkInfo}`,
           description: 'Labels to set (replaces existing). e.g.: ["bug", "urgent"]',
           default: [],
         },
-        customFields: {  // VVQ из сведений о проекте брать схему и правила заполнения кастомных полей
+        customFields: {
           type: 'object',
-          description: 'Custom field values as key-value pairs',
-          default: {},
+          description: `Custom field values as key-value pairs (fieldId as key). 
+The response of the 'jira_get_project' tool will contain information about filling in the available custom fields`,
         },
       },
       required: ['issueIdOrKey'],
