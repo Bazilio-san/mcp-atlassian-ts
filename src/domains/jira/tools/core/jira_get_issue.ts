@@ -67,9 +67,9 @@ export interface JiraIssueLinkItem {
 }
 
 export interface JiraTimeTracking {
-  originalEstimate: string | undefined; // Исходная оценка, как строка (например, "1w 2d", "3h", "45m")
-  remainingEstimate: string | undefined; //Оставшаяся оценка, как строка
-  timeSpent: string | undefined; // Потраченное время, как строка
+  originalEstimate: string | undefined; // Original estimate as string (e.g., "1w 2d", "3h", "45m")
+  remainingEstimate: string | undefined; // Remaining estimate as string
+  timeSpent: string | undefined; // Time spent as string
 }
 
 export interface JiraIssue {
@@ -131,13 +131,13 @@ Issue ID is a numerical identifier (e.g. 123).
 Issue key is formatted as <project key>-<id> (e.g. ISSUE-123).
 An example issue key is ISSUE-1.`,
       },
-      expand: { // VVQ а формализовать?
+      expand: { // VVQ formalize?
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand. e.g.: ["changelog", "transitions"]',
         default: [],
       },
-      fields: { // VVQ а формализовать?
+      fields: { // VVQ formalize?
         type: 'array',
         items: { type: 'string' },
         description: 'Specific fields to return. e.g.: ["summary", "status", "assignee"]',

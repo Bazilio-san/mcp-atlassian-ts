@@ -35,12 +35,12 @@ export const jira_search_issues: ToolWithHandler = {
         description: 'Maximum number of results to return',
         default: 50,
       },
-      fields: { // VVQ а формализовать?
+      fields: { // VVQ formalize?
         type: 'array',
         items: { type: 'string' },
         description: 'Specific fields to return. e.g.: ["summary", "status", "assignee"]',
       },
-      expand: { // VVQ а формализовать?
+      expand: { // VVQ formalize?
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand. e.g.: ["changelog", "transitions"]',

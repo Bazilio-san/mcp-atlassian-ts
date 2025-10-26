@@ -74,41 +74,41 @@ export const parseAndNormalizeTimeSpent = (input: any, what?: string): { normali
     throw new ValidationError(`Invalid input${forWhat}: empty string`);
   }
 
-  // регулярка: ищем по первым вхождениям w, d, h, m — с дробной частью возможно
+  // regex: search for first occurrences of w, d, h, m — fractional part possible
   const regex = /(\d+(?:[.,]\d+)?)(\s*)([wdhm])/gi;
   const found: { [key: string]: number } = {};
   let match;
   while ((match = regex.exec(orig)) !== null) {
     const rawNum = match[1]!.replace(',', '.');
     const unit: string = match[3]!.toLowerCase();
-    // если сразу нашли эту единицу ранее — игнорируем повтор
+    // if this unit was already found earlier — ignore duplicate
     if (!(unit in found)) {
       found[unit] = parseFloat(rawNum);
     }
   }
 
-  // если ничего не найдено — ошибка
+  // if nothing found — error
   if (Object.keys(found).length === 0) {
     throw new ValidationError(`Invalid format${forWhat}: '${input
     }'. No valid time units found. Valid format: NN<unit> where unit is w | d | h | m`);
   }
 
-  // Теперь переводим дробную части в меньшие единицы:
-  // порядок: w → d → h → m
-  // Допустим: 1w = 5d (по Jira), 1d = 8h, 1h = 60m, 1m = 60s (хотя минуты → секунды отдельный шаг)
-  // Поскольку точных правил (сколько рабочих дней/часов) могут быть разные, примем:
+  // Now convert fractional parts to smaller units:
+  // order: w → d → h → m
+  // Assuming: 1w = 5d (per Jira), 1d = 8h, 1h = 60m, 1m = 60s (although minutes → seconds is a separate step)
+  // Since exact rules (how many working days/hours) may vary, we'll use:
   const DAYS_PER_WEEK = 5;
   const HOURS_PER_DAY = 8;
   const MINUTES_PER_HOUR = 60;
   const SECONDS_PER_MINUTE = 60;
 
-  // Берём только первое вхождение каждого unit (нашли выше)
+  // Take only the first occurrence of each unit (found above)
   let weeks = found.w || 0;
   let days = found.d || 0;
   let hours = found.h || 0;
   let minutes = found.m || 0;
 
-  // переносим дробную части вниз
+  // carry fractional parts down
   // weeks → days
   if (weeks % 1 !== 0) {
     const intW = Math.floor(weeks);
@@ -130,10 +130,10 @@ export const parseAndNormalizeTimeSpent = (input: any, what?: string): { normali
     hours = intH;
     minutes += fracH * MINUTES_PER_HOUR;
   }
-  // minutes: тут округляем до целого
+  // minutes: round to integer
   minutes = Math.round(minutes);
 
-  // теперь возмож, что minutes >= MINUTES_PER_HOUR → перенос в hours
+  // now it's possible that minutes >= MINUTES_PER_HOUR → carry to hours
   if (minutes >= MINUTES_PER_HOUR) {
     const extraH = Math.floor(minutes / MINUTES_PER_HOUR);
     hours += extraH;
@@ -152,7 +152,7 @@ export const parseAndNormalizeTimeSpent = (input: any, what?: string): { normali
     days = days % DAYS_PER_WEEK;
   }
 
-  // строим строку нормализованную
+  // build normalized string
   const parts = [];
   if (weeks) {
     parts.push(weeks + 'w');
@@ -166,13 +166,13 @@ export const parseAndNormalizeTimeSpent = (input: any, what?: string): { normali
   if (minutes) {
     parts.push(minutes + 'm');
   }
-  // если всё ноль — добавить «0m»
+  // if everything is zero — add "0m"
   if (parts.length === 0) {
     parts.push('0m');
   }
   const normalized = parts.join(' ');
 
-  // считаем секунды
+  // calculate seconds
   let seconds = 0;
   seconds += weeks * DAYS_PER_WEEK * HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
   seconds += days * HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE;

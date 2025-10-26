@@ -51,7 +51,7 @@ ${epicLinkInfo}`,
           description: 'Updated description in markdown format',
         },
         assignee: {
-          type: 'string', // VVQ вынести и запараметризировать в зависимости от версии
+          type: 'string', // VVQ extract and parameterize depending on version
           description: 'New assignee account ID or email',
         },
         priority: {

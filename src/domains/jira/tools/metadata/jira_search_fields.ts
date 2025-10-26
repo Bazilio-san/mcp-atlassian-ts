@@ -42,7 +42,7 @@ async function searchFieldsHandler (args: any, context: ToolContext): Promise<an
   return withErrorHandling(async () => {
     const { query } = args;
     const { httpClient, cache, logger, config } = context;
-// VVA должен возвращать инфу по наполнению
+// VVA should return filling information
     logger.info(`Searching JIRA fields: query: ${query}`);
 
     // Generate cache key

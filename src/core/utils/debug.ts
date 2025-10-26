@@ -85,7 +85,7 @@ export function Debug (debugPattern: string, options?: boolean | IDebugOptions):
 
 
 /**
- * Логирует ответ от llm до деанонимизации
+ * Logs response from llm before de-anonymization
  */
 export const debugJiraTool = Debug('jira-tools', {
   noTime: false,
@@ -95,7 +95,7 @@ export const debugJiraTool = Debug('jira-tools', {
 });
 
 /**
- * Логирует ответ от llm до деанонимизации
+ * Logs response from llm before de-anonymization
  */
 export const debugJiraToolFile = Debug('jira-tools-file', {
   noTime: false,

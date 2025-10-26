@@ -3,7 +3,7 @@
  */
 
 /**
- * Format time duration in Russian
+ * Format time duration
  */
 function formatTimeDuration (seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -11,15 +11,15 @@ function formatTimeDuration (seconds: number): string {
 
   if (minutes > 0) {
     return remainingSeconds > 0
-      ? `${minutes} мин ${remainingSeconds} сек`
-      : `${minutes} мин`;
+      ? `${minutes} min ${remainingSeconds} sec`
+      : `${minutes} min`;
   } else {
-    return `${seconds} сек`;
+    return `${seconds} sec`;
   }
 }
 
 /**
- * Format next available time in Russian
+ * Format next available time
  */
 function formatNextAvailableTime (milliseconds: number): string {
   const nextTime = new Date(Date.now() + milliseconds);

@@ -1,4 +1,4 @@
-// In-memory поиск с использованием string similarity
+// In-memory search using string similarity
 
 import { phraseSimilarity } from '../../../../../core/utils/string-similarity.js';
 import { getProjectsCache, type IProjectCacheEntry } from './projects-cache.js';
@@ -7,14 +7,14 @@ import { TKeyName } from '../../../../../types';
 
 
 interface TKeyNameScore extends TKeyName {
-  score?: number;  // Схожесть строк (1.0 = идеальное совпадение)
+  score?: number;  // String similarity (1.0 = perfect match)
 }
 
 const exactSearch = (normalizedQuery: string, cache: { [key: string]: IProjectCacheEntry }): TKeyNameScore[] => {
   const matches: TKeyNameScore[] = [];
 
   for (const entry of Object.values(cache)) {
-    // Проверяем точное совпадение среди всех вариантов
+    // Check for exact match among all variants
     const hasExactMatch = entry.variants.some(variant =>
       variant.toLowerCase() === normalizedQuery,
     );
@@ -23,7 +23,7 @@ const exactSearch = (normalizedQuery: string, cache: { [key: string]: IProjectCa
       matches.push({
         key: entry.project.key,
         name: entry.project.name,
-        score: 1.0, // Точное совпадение
+        score: 1.0, // Exact match
       });
     }
   }
@@ -33,7 +33,7 @@ const exactSearch = (normalizedQuery: string, cache: { [key: string]: IProjectCa
 
 
 /**
- * Вычисление максимальной схожести запроса с вариациями проекта
+ * Calculate maximum similarity of query with project variations
  */
 const calculateSimilarities = (query: string, variants: string[]): number => {
   const similarities = variants.map(variant =>
@@ -70,12 +70,12 @@ export const searchProjects = async (
     return matches;
   }
 
-  // Ищем по близости строк для всех проектов
+  // Search by string proximity for all projects
   const results: Array<{ key: string; name: string; score: number }> = [];
 
   for (const entry of Object.values(cache)) {
     const maxSimilarity = calculateSimilarities(normalizedQuery, entry.variants);
-    if (maxSimilarity > 0.33) { // Порог схожести
+    if (maxSimilarity > 0.33) { // Similarity threshold
       results.push({
         key: entry.project.key,
         name: entry.project.name,
@@ -84,7 +84,7 @@ export const searchProjects = async (
     }
   }
 
-  // Сортируем по score (убывание) и ограничиваем количество
+  // Sort by score (descending) and limit quantity
   return results
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);

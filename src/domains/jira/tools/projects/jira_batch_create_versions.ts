@@ -29,30 +29,30 @@ export const jira_batch_create_versions: ToolWithHandler = {
               type: 'string',
               description: 'Name of the version to create',
             },
-            projectId: { // VVA не задействовано
+            projectId: { // VVA not used
               type: 'number',
               description: 'Project ID where the version will be created',
             },
-            description: { // VVA не задействовано
+            description: { // VVA not used
               type: 'string',
               description: 'Optional description for the version',
             },
-            releaseDate: { // VVA не задействовано
+            releaseDate: { // VVA not used
               type: 'string',
               description: 'Optional release date in YYYY-MM-DD format',
               format: 'date',
             },
-            startDate: { // VVA не задействовано
+            startDate: { // VVA not used
               type: 'string',
               description: 'Optional start date in YYYY-MM-DD format',
               format: 'date',
             },
-            archived: { // VVA не задействовано
+            archived: { // VVA not used
               type: 'boolean',
               description: 'Whether the version should be archived',
               default: false,
             },
-            released: { // VVA не задействовано
+            released: { // VVA not used
               type: 'boolean',
               description: 'Whether the version should be marked as released',
               default: false,

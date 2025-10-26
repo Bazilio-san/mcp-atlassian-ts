@@ -1,11 +1,11 @@
 // similarity.ts
-// Метрика похожести коротких слов/фраз с поддержкой опечаток,
-// слитного/раздельного написания и штрафом за перестановку слов.
+// Similarity metric for short words/phrases with support for typos,
+// merged/separate writing and penalty for word permutation.
 
 type Cache<T> = Map<string, T>;
 
-const WORD_RE = /[\p{L}\p{N}_]+/gu; // буквы/цифры/подчёркивание
-const COMBINING_MARKS = /\p{M}/gu; // диакритики (удаляем после NFKD)
+const WORD_RE = /[\p{L}\p{N}_]+/gu; // letters/digits/underscore
+const COMBINING_MARKS = /\p{M}/gu; // diacritics (remove after NFKD)
 
 function stripAccents (s: string): string {
   return s.normalize('NFKD').replace(COMBINING_MARKS, '');
@@ -54,11 +54,11 @@ function osaDistance (a: string, b: string): number {
       const bj = b.charCodeAt(j - 1);
       const cost = ai === bj ? 0 : 1;
       let best = Math.min(
-        dp[i - 1]![j]! + 1, // удаление
-        dp[i]![j - 1]! + 1, // вставка
-        dp[i - 1]![j - 1]! + cost, // замена
+        dp[i - 1]![j]! + 1, // deletion
+        dp[i]![j - 1]! + 1, // insertion
+        dp[i - 1]![j - 1]! + cost, // replacement
       );
-      // транспозиция соседних символов
+      // transposition of adjacent characters
       if (
         i > 1 && j > 1
         && a.charCodeAt(i - 1) === b.charCodeAt(j - 2)
@@ -96,7 +96,7 @@ function charSimilarity (a: string, b: string): number {
   return sim;
 }
 
-// ---- Выравнивание токенов с учётом порядка (взвешенный LCS) ----
+// ---- Token alignment considering order (weighted LCS) ----
 
 function tokenSimilarity (tokensA: string[], tokensB: string[]): number {
   const n = tokensA.length;
@@ -108,7 +108,7 @@ function tokenSimilarity (tokensA: string[], tokensB: string[]): number {
     return 0;
   }
 
-  // предсчёт попарных похожестей токенов
+  // precompute pairwise token similarities
   const sim: number[][] = Array.from({ length: n }, (_, i) =>
     Array.from({ length: m }, (__, j) => charSimilarity(tokensA[i]!, tokensB[j]!)),
   );
@@ -124,19 +124,19 @@ function tokenSimilarity (tokensA: string[], tokensB: string[]): number {
     }
   }
   const best = dp[n]![m]!;
-  return best / Math.max(n, m); // нормализация: наказываем пропуски/перестановки
+  return best / Math.max(n, m); // normalization: penalize omissions/permutations
 }
 
-// ---- Комбинированная метрика ----
+// ---- Combined metric ----
 
 export function phraseSimilarity (a: string, b: string): number {
   const { tokens: ta, compact: ca } = normalize(a);
   const { tokens: tb, compact: cb } = normalize(b);
 
-  const simChar = charSimilarity(ca, cb); // слитное сравнение (ловит опечатки и AITECH~AI TECH)
-  const simTok = tokenSimilarity(ta, tb); // порядок важен (штрафует TECH AI)
+  const simChar = charSimilarity(ca, cb); // merged comparison (catches typos and AITECH~AI TECH)
+  const simTok = tokenSimilarity(ta, tb); // order matters (penalizes TECH AI)
 
-  // взвешенная комбинация + "страховка" от псевдосовпадений токенов
+  // weighted combination + "insurance" against pseudo-matches of tokens
   const combo = 0.6 * simChar + 0.4 * simTok;
   return Math.max(combo, simChar * 0.9);
 }
@@ -145,11 +145,11 @@ export function isClose (a: string, b: string, threshold = 0.72): boolean {
   return phraseSimilarity(a, b) >= threshold;
 }
 
-// ---- Пример локального запуска ----
+// ---- Example of local run ----
 // npx ts-node similarity.ts
 if (typeof require !== 'undefined' && require.main === module) {
   const tests: Array<[string, string]> = [
-    ['задача', 'подзадача'],
+    ['task', 'subtask'],
 
     ['aitex', 'AITECH'],
     ['aitex', 'AI TECH'],

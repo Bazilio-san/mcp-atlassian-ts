@@ -32,7 +32,7 @@ To get the transitions available for an issue, use 'jira_get_transitions' tool`,
         type: 'string', // markdown
         description: 'Optional comment to add with the transition. In markdown format',
       },
-      fields: { // VVQ а формализовать?
+      fields: { // VVQ formalize?
         type: 'object',
         description: 'Field values required for the transition',
         additionalProperties: true,

@@ -142,7 +142,7 @@ async function getSprintIssuesHandler (args: any, context: ToolContext): Promise
             key: f.project?.key,
             name: f.project?.name,
           },
-          // Доп. поле спринтовой метрики (если есть)
+          // Additional sprint metric field (if available)
           storyPoints: f[config.fieldId!.storyPoints],
           created: convertToIsoUtc(f.created),
           updated: convertToIsoUtc(f.updated),

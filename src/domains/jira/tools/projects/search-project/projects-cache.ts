@@ -6,7 +6,7 @@ import { transliterate, transliterateRU, enToRuVariants } from '../../../../../c
 
 const logger = createLogger('JIRA_PROJECTS');
 
-// Новая оптимизированная структура кеша
+// New optimized cache structure
 interface IProjectCacheEntry {
   project: TKeyName;
   variants: string[];
@@ -28,7 +28,7 @@ const projectsCache: {
 
 const PROJECTS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// Получить все проекты (пространства) Jira (с кешированием)
+// Get all Jira projects (spaces) (with caching)
 export const getProjectsCache = async (httpClient: AxiosInstance, restPath: string): Promise<IProjectCache> => {
   const now = Date.now();
   // Return cached if not expired
@@ -56,35 +56,35 @@ export const getProjectsCache = async (httpClient: AxiosInstance, restPath: stri
       });
       const projects = res.data;
 
-      // Создаем новую структуру кеша с вариантами
+      // Create new cache structure with variants
       const cacheEntries: { [key: string]: IProjectCacheEntry } = {};
 
       if (Array.isArray(projects)) {
         projects.forEach(({ key, name, description = '' }: IJiraProject) => {
           const project: TKeyName = { key, name };
-          // Создаем все варианты для поиска
+          // Create all variants for search
           const keyLC = key.toLowerCase();
           const nameLC = name.toLowerCase();
           const keyRuVariants = enToRuVariants(keyLC);
           const nameRuVariants = enToRuVariants(nameLC, 5);
 
           const variants = [
-            // Оригинальные
+            // Original
             key, name,
             // Lowercase
             keyLC, nameLC,
-            // Транслитерация
+            // Transliteration
             transliterate(key), transliterate(name),
             transliterateRU(keyLC), transliterateRU(nameLC),
-            // Все русские варианты
+            // All Russian variants
             ...keyRuVariants,
             ...nameRuVariants,
             description,
-          ].filter(Boolean); // убираем пустые
+          ].filter(Boolean); // remove empty
 
           cacheEntries[key] = {
             project,
-            variants: [...new Set(variants)], // убираем дубликаты
+            variants: [...new Set(variants)], // remove duplicates
           };
         });
       }

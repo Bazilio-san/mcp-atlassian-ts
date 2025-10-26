@@ -21,7 +21,7 @@ For each project returns: key, name, description, projectTypeKey`,
   inputSchema: {
     type: 'object',
     properties: {
-      expand: { // VVA помочь LLM с этим работать
+      expand: { // VVA help LLM work with this
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand (e.g. ["description", "lead", "issueTypes"])',

@@ -44,13 +44,13 @@ customFieldsMetadata?: {fieldId, name, schema}
       //   type: 'boolean',
       //   description: 'If true, the response will include the customFieldsMetadata array - information about available custom fields, their types, and filling rules',
       // },
-      expand: { // VVA помочь LLM с этим работать
+      expand: { // VVA help LLM work with this
         type: 'array',
         items: { type: 'string' },
         description: 'Additional fields to expand (e.g. ["description", "issueTypes", "lead", "issueTypeHierarchy" ])',
         default: [],
       },
-      properties: { // VVA помочь LLM с этим работать
+      properties: { // VVA help LLM work with this
         type: 'array',
         items: { type: 'string' },
         description: 'Project properties to include in the response',
