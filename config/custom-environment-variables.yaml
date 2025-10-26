@@ -57,6 +57,6 @@ confluence:
       redirectUri: CONFLUENCE_OAUTH_REDIRECT_URI
 
 subst:
-  httpHeader: SUBST_HTTP_HEADER # VVQ
-
+  httpHeader: SUBST_HTTP_HEADER
+  loginIfNoHeader: SUBST_LOGIN_IF_NO_HEADER
 

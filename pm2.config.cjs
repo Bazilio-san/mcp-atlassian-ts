@@ -13,7 +13,7 @@ module.exports = {
     namespace: PM2_NAMESPACE || undefined,
     instances: 1,
     // exec_interpreter: '/root/.nvm/versions/node/v22.17.1/bin/node',
-    exec_mode: 'fork', // Исправление подключения ESM
+    exec_mode: 'fork', // Fix for ESM module loading
     autorestart: true,
     // restart_delay: 5000,
     exp_backoff_restart_delay: 100,

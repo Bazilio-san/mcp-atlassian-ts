@@ -178,7 +178,8 @@ confluence:
 subst:
   # HTTP header for user substitution
   httpHeader: x-on-behalf-of-user
-  # loginIfNoHeader:
+  # Optional login as this user if no header is provided. Used for caching priorities
+  loginIfNoHeader: null
   # User mapping configuration
   jira:
     jsmith: bobama

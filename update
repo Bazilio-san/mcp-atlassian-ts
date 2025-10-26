@@ -53,21 +53,21 @@ send_build_notification() {
 
 IFS='' read -r -d '' help <<'EOF'
 ================================================================================
-    Обновление и пересборка проекта
+    Project update and rebuild
 
-    Запуск:
-        ./update [Параметры]
+    Usage:
+        ./update [Options]
 
-    Параметры:
+    Options:
 
     -b|--branch
-        Имя ветки GIT. По умолчанию - main
+        GIT branch name. Default - main
     -l|--log
-        Переходить в режим отображения логов после завершения
+        Switch to log display mode after completion
     -?|--help
-        Отображение справки
+        Display help
 
-    Пример: ./update -b production -l
+    Example: ./update -b production -l
 ================================================================================
 EOF
 
@@ -98,9 +98,9 @@ for i in "$@" ; do
 done
 
 
-# Ветка по умолчанию
+# Default branch
 branch="main"
-# парсим конфиг, если он есть
+# Parse config if exists
 configFile="./deploy/config.yml"
 if [ -f "$configFile" ]; then
   eval $(parse_yaml $configFile)
@@ -109,9 +109,9 @@ fi
 if [[ -n $expectedBranch ]]; then
   expected_branch=$expectedBranch
 else
-  # Ветка по умолчанию
+  # Default branch
   branch="main"
-  # парсим конфиг, если он есть
+  # Parse config if exists
   configFile="./deploy/config.yml"
   if [ -f "$configFile" ]; then
     eval $(parse_yaml $configFile)
@@ -122,11 +122,11 @@ fi
 SERVICE_NAME=`cat package.json | grep name | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'`
 SERVICE_NAME_ALT=`cat .env | grep SERVICE_NAME | head -1 | awk -F= '{ print $2 }'`
 SERVICE_NAME="${SERVICE_NAME_ALT:-$SERVICE_NAME}"
-# Трим возможные пробелы и CR/LF
+# Trim possible spaces and CR/LF
 SERVICE_NAME=$(echo "$SERVICE_NAME" | tr -d '\r' | xargs)
 
 SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
-# Трим возможные пробелы и CR/LF
+# Trim possible spaces and CR/LF
 SERVICE_INSTANCE=$(echo "$SERVICE_INSTANCE" | tr -d '\r' | xargs)
 
 if [ -z "$SERVICE_INSTANCE" ]
@@ -138,7 +138,7 @@ else
   echo "================SERVICE_INSTANCE===============|${SERVICE_INSTANCE}|=========================================="
 fi
 
-# На всякий случай трим итоговое имя сервиса (убираем CR/LF и внешние пробелы)
+# Just in case, trim final service name (remove CR/LF and external spaces)
 SERVICE=$(echo "$SERVICE" | tr -d '\r' | xargs)
 
 service_exists() {
@@ -148,11 +148,11 @@ service_exists() {
 
 # ... existing code ...
 if service_exists "$SERVICE"
-echo_g "**** Перезапуск сервиса ${SERVICE} ****"
+echo_g "**** Restarting service ${SERVICE} ****"
 # ... existing code ...
 then
   systemctl restart "$SERVICE"
-  echo_g "**** Сервис $g$SERVICE$c перезапущен ****"
+  echo_g "**** Service $g$SERVICE$c restarted ****"
   if [[ -n "$showLog" ]]; then
     journalctl -o cat -xefu "$SERVICE"
   fi
@@ -218,12 +218,12 @@ rm -rf ./dist
 npm run build
 echo_y "typescript build done"
 
-echo "**** Перезапуск сервиса ${SERVICE} ****"
+echo "**** Restarting service ${SERVICE} ****"
 
 if service_exists "$SERVICE"
 then
   systemctl restart $SERVICE
-  echo_g "**** Сервис $g$SERVICE$c перезапущен ****"
+  echo_g "**** Service $g$SERVICE$c restarted ****"
   if [[ -n "$showLog" ]]; then
     journalctl -o cat -xefu $SERVICE
   fi
