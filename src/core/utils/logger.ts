@@ -148,9 +148,21 @@ function setComponentColor (component: string, color: any) {
 /**
  * Format log message with component-specific coloring
  */
-function formatLogMessage (component: string, message: string): string {
-  const color = CUSTOM_COLORS[component] || chalk.bgYellowBright.black;
-  const coloredComponent = color(`[${component}]`);
+function formatLogMessage (component: any, message: string): string {
+  // Handle nested components (array or object with component property)
+  let componentName: string;
+  if (Array.isArray(component)) {
+    componentName = component.join('][');
+  } else if (typeof component === 'object' && component.component) {
+    componentName = component.component;
+  } else {
+    componentName = String(component);
+  }
+
+  // Try to find color for the base component or first component in array
+  const baseComponent = Array.isArray(component) ? component[0] : componentName;
+  const color = CUSTOM_COLORS[baseComponent] || chalk.bgYellowBright.black;
+  const coloredComponent = color(`[${componentName}]`);
   return `${coloredComponent} ${message}`;
 }
 
@@ -209,6 +221,14 @@ export function createLogger (component: string, color?: any) {
       componentLogger.fatal(maskSensitiveData(logData), ...args);
     },
     child: (bindings: Record<string, any>) => {
+      // If adding a component, create nested component structure
+      if (bindings.component) {
+        const parentComponent = componentLogger.bindings()?.component || component;
+        const nestedComponent = Array.isArray(parentComponent)
+          ? [...parentComponent, bindings.component]
+          : [parentComponent, bindings.component];
+        return componentLogger.child(maskSensitiveData({ component: nestedComponent }));
+      }
       return componentLogger.child(maskSensitiveData(bindings));
     },
   };
@@ -223,14 +243,13 @@ export function createRequestLogger () {
 
     const start = Date.now();
 
-    requestLogger.info(`${chalk.green('→')} ${req.method} ${req.url} | IP: ${req.ip} | UA: ${req.get('User-Agent')}`);
-
+    requestLogger.info(`-> ${req.method} ${req.url} | IP: ${req.ip} | UA: ${req.get('User-Agent')}`);
     // Log response
     const originalSend = res.send;
     res.send = function (body: any) {
       const duration = Date.now() - start;
       const statusCode = res.statusCode >= 400 ? chalk.red(`[${res.statusCode}]`) : chalk.green(`[${res.statusCode}]`);
-      requestLogger.info(`${chalk.yellow('←')} ${req.method} ${req.url} ${statusCode} / ${duration} ms | ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0} b`);
+      requestLogger.info(`<- ${req.method} ${req.url} ${statusCode} / ${duration} ms | ${(Buffer.isBuffer(body) ? body?.length : JSON.stringify(body)?.length) || 0} b`);
       return originalSend.call(this, body);
     };
 

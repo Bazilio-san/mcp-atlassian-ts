@@ -313,10 +313,12 @@ export class JiraToolsManager {
         );
         this.logger.debug('Using system authentication with additional headers for JIRA');
       }
+      const toolLogger = this.logger.child({ component: toolName });
 
       // Create context with custom HTTP client
       contextToUse = {
         ...this.context,
+        logger: toolLogger,
         httpClient: customHttpClient,
       };
     }

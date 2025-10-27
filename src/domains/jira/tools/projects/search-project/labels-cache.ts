@@ -61,7 +61,10 @@ export async function getProjectLabels (
   projectId: string,
   context: ToolContext,
 ): Promise<ProjectLabelsResult> {
-  const { cache, logger, config } = context;
+  const { cache, logger: parentLogger, config } = context;
+
+  // Create child logger
+  const logger = (parentLogger as any).child({ component: 'getProjectLabels' });
 
   // Check memory cache first
   const memoryCacheKey = `labels_${projectKey}`;
