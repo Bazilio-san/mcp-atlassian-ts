@@ -160,7 +160,7 @@ async function fetchLabelsFromGadgetApi (
   projectId: string,
   logger: any,
 ): Promise<string[]> {
-  logger.debug(`Fetching labels from gadget API: projectId: ${projectId}`);
+  const gadgetLogger = logger.child({ component: 'fetchLabelsFromGadgetApi' });
 
   const response = await httpClient.get(`/rest/gadget/1.0/labels/gadget/project-${projectId}/labels`);
 
@@ -185,7 +185,7 @@ async function fetchLabelsFromGadgetApi (
   // Remove duplicates and sort
   const uniqueLabels = [...new Set(allLabels)].sort();
 
-  logger.debug(`Gadget API labels extracted: projectId ${projectId} | totalGroups: ${data.groups.length} | totalLabels: ${allLabels.length} | uniqueLabels: ${uniqueLabels.length}`);
+  gadgetLogger.debug(`Gadget API labels extracted: projectId ${projectId} | totalGroups: ${data.groups.length} | totalLabels: ${allLabels.length} | uniqueLabels: ${uniqueLabels.length}`);
 
   return uniqueLabels;
 }
@@ -199,7 +199,7 @@ async function fetchLabelsFromIssueSearch (
   logger: any,
   restPath: string,
 ): Promise<string[]> {
-  logger.debug(`Fetching labels from issue search: projectKey: ${projectKey}`);
+  const searchLogger = logger.child({ component: 'fetchLabelsFromIssueSearch' });
 
   const searchPayload = {
     jql: `project = ${projectKey} AND labels IS NOT EMPTY ORDER BY updated DESC`,
@@ -211,7 +211,7 @@ async function fetchLabelsFromIssueSearch (
   const data = response.data as SearchApiResponse;
 
   if (!data.issues || !Array.isArray(data.issues)) {
-    logger.warn(`Invalid search API response format: data: ${data}`);
+    searchLogger.warn(`Invalid search API response format: data: ${data}`);
     throw new Error('Invalid search API response format');
   }
 
@@ -228,7 +228,7 @@ async function fetchLabelsFromIssueSearch (
 
   const uniqueLabels = [...allLabels].sort();
 
-  logger.debug(`Issue search labels extracted: projectKey | totalIssues: ${data.issues.length} | totalLabels: ${uniqueLabels.length}`);
+  searchLogger.debug(`Issue search labels extracted: projectKey | totalIssues: ${data.issues.length} | totalLabels: ${uniqueLabels.length}`);
 
   return uniqueLabels;
 }
