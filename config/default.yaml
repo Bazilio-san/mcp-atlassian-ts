@@ -112,7 +112,7 @@ jira:
     # Include ALL to enable all tools, or specify a list of tool names
     include: ALL
     # Exclude specific tools (optional)
-    exclude: []
+    exclude: [ 'health_check', 'cache_stats', 'cache_clear' ]
 
     # Example of selective inclusion:
     # include:
@@ -157,7 +157,7 @@ confluence:
     # Include ALL to enable all tools, or specify a list of tool names
     include: ALL
     # Exclude specific tools (optional)
-    exclude: []
+    exclude: [ ]
 
     # Example of selective inclusion:
     # include:

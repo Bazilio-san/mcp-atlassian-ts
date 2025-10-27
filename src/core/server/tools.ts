@@ -469,13 +469,26 @@ export class ServiceToolRegistry extends ToolRegistry {
 
       // Count tools by service
       const jiraCount = this.serviceMode === 'jira' && this.jiraTools
-        ? this.jiraTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
+        ? this.jiraTools.getAvailableTools().filter((t) => {
+          const b = isToolEnabled(t.name);
+          if (!b) {
+            skippedCount++;
+          }
+          return b;
+        }).length
         : 0;
       const confluenceCount = this.serviceMode === 'confluence' && this.confluenceTools
-        ? this.confluenceTools.getAvailableTools().filter(t => isToolEnabled(t.name)).length
+        ? this.confluenceTools.getAvailableTools().filter((t) => {
+          const b = isToolEnabled(t.name);
+          if (!b) {
+            skippedCount++;
+          }
+          return b;
+        }).length
         : 0;
 
-      logger.info(`Service-specific tools initialized: serviceMode: ${this.serviceMode} | total: ${this.toolsMap.size} | registered: ${registeredCount} | skipped: ${skippedCount} | jira: ${jiraCount} | confluence: ${confluenceCount}`);
+      logger.info(`Service-specific tools initialized: serviceMode: ${this.serviceMode
+      } | total: ${this.toolsMap.size} | registered: ${registeredCount} | skipped: ${skippedCount} | jira: ${jiraCount} | confluence: ${confluenceCount}`);
     } catch (error) {
       logger.error('Failed to initialize service-specific tools', eh(error));
       throw new ToolExecutionError('system', 'Failed to initialize service-specific tools');
