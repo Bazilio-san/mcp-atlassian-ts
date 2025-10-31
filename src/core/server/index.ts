@@ -29,6 +29,7 @@ import { appConfig, getSafeAppConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
+import { checkPortAvailability } from '../utils/port-check.js';
 import { ServiceModeJC } from '../../types/config';
 import chalk from 'chalk';
 
@@ -351,6 +352,9 @@ export class McpAtlassianServer {
    */
   async startHttp (): Promise<void> {
     try {
+      // Check port availability first
+      await checkPortAvailability(this.serverConfig.port);
+
       this.app = express();
 
       // Security middleware
@@ -642,14 +646,26 @@ export class McpAtlassianServer {
         }
       });
 
-      // Start HTTP server
+      // Start HTTP server with proper error handling
       const port = this.serverConfig.port;
-      this.app.listen(port, '0.0.0.0', () => {
+      const server = this.app.listen(port, '0.0.0.0', () => {
         logger.info(`MCP server started with HTTP transport on port ${port}`);
         logger.info(`About page: http://localhost:${port}/`);
         logger.info(`Health check: http://localhost:${port}/health`);
         logger.info(`SSE endpoint: http://localhost:${port}/sse`);
         logger.info(`MCP endpoint: http://localhost:${port}/mcp`);
+      });
+
+      // Handle port conflicts and other server errors
+      server.on('error', (error: any) => {
+        if (error.code === 'EADDRINUSE') {
+          logger.error(`Port ${port} is already in use. Please choose a different port or stop the process using this port.`);
+          logger.error('To use a different port, set SERVER_PORT environment variable to another value (e.g., SERVER_PORT=3001)');
+          process.exit(1);
+        } else {
+          logger.error('Failed to start HTTP server', error);
+          process.exit(1);
+        }
       });
 
       // Handle graceful shutdown

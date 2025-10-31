@@ -238,7 +238,15 @@ function setupProcessHandlers () {
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
-    logger.fatal(`Unhandled promise rejection: reason: ${ehs(reason)} | promise: ${String(promise)}`, eh(reason));
+    const errorReason = reason instanceof Error ? reason : new Error(String(reason));
+    logger.fatal(`Unhandled promise rejection: reason: ${ehs(errorReason)} | promise: ${String(promise)}`, errorReason);
+
+    // Check for common port-related errors
+    if (errorReason instanceof Error && errorReason.message.includes('EADDRINUSE')) {
+      logger.error('Port conflict detected: The server port is already in use.');
+      logger.error('Please use a different port or stop the process using this port.');
+    }
+
     process.exit(1);
   });
 

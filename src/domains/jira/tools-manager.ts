@@ -274,8 +274,11 @@ export class JiraToolsManager {
       throw new ToolExecutionError(toolName, `Unknown JIRA tool: ${toolName}`);
     }
 
+    // Always scope logger to the tool being executed to preserve component hierarchy
+    const toolLogger = this.logger.child({ component: toolName });
+
     // Apply custom headers if provided
-    let contextToUse = this.context;
+    let contextToUse = { ...this.context, logger: toolLogger } as ToolContext;
     if (customHeaders && Object.keys(customHeaders).length > 0) {
       // Extract JIRA-specific headers from custom headers
       const jiraHeaders: Record<string, string> = {};
@@ -313,9 +316,8 @@ export class JiraToolsManager {
         );
         this.logger.debug('Using system authentication with additional headers for JIRA');
       }
-      const toolLogger = this.logger.child({ component: toolName });
 
-      // Create context with custom HTTP client
+      // Create context with custom HTTP client and tool-scoped logger
       contextToUse = {
         ...this.context,
         logger: toolLogger,
