@@ -4,15 +4,15 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import { createLogger } from '../../../core/utils/logger.js';
 import { getCache } from '../../../core/cache.js';
 import type { JCConfig } from '../../../types/index.js';
 import { eh } from '../../../core/errors.js';
 import { ensureHeader } from '../../../core/auth.js';
 import { appConfig } from '../../../bootstrap/init-config.js';
 import chalk from 'chalk';
+import { logger as lgr } from '../../../core/utils/logger.js';
 
-const logger = createLogger('priority-service', chalk.bgBlue);
+const logger = lgr.getSubLogger({ name: chalk.bgBlue('priority-service') });
 
 export interface JiraPriority {
   id: string;

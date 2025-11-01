@@ -6,7 +6,6 @@ import { ConfluenceToolsManager } from '../../domains/confluence/tools-manager.j
 import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
 import { getCache } from '../cache.js';
 import { eh, ehs, McpAtlassianError, ToolExecutionError, ValidationError } from '../errors.js';
-import { createLogger } from '../utils/logger.js';
 import { isToolEnabledByConfig } from '../../bootstrap/init-config.js';
 import { setCurrentToolName } from '../utils/http-logger.js';
 
@@ -14,6 +13,7 @@ import type { JCConfig } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceMode } from '../../types/config';
 import chalk from 'chalk';
+import { logger as lgr } from '../utils/logger.js';
 
 /**
  * Check if a specific tool is enabled
@@ -26,7 +26,7 @@ export function isToolEnabled (toolName: string): boolean {
 
 // Import tool implementations
 
-const logger = createLogger('tools', chalk.bgMagenta);
+const logger = lgr.getSubLogger({ name: chalk.bgMagenta('tools') });
 
 /**
  * Central registry for all MCP tools

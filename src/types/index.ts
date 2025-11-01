@@ -67,7 +67,7 @@ export interface McpError {
 }
 
 // Logging types
-export interface LogContext {
+export interface LogContext { // VVR
   requestId?: string;
   userId?: string;
   method?: string;

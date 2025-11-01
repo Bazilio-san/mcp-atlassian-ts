@@ -4,9 +4,23 @@
  * JIRA API Emulator
  * Simple JIRA REST API emulator
  */
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 import express from 'express';
 import chalk from 'chalk';
+import { isMainModule } from '../utils.js';
+import {
+  TEST_ISSUE_KEY,
+  TEST_JIRA_PROJECT,
+  TEST_ISSUE_TYPE_NAME,
+  TEST_SECOND_ISSUE_KEY,
+  TEST_USERNAME,
+  TEST_EPIC_ISSUE_KEY,
+  JIRA_EPIC_LINK_FIELD_ID,
+  TEST_ISSUE_LINK_TYPE,
+} from '../constants.js';
 
 // Test data
 const MOCK_USER = {
@@ -27,7 +41,7 @@ const MOCK_USER = {
 
 const MOCK_PROJECT = {
   id: '10000',
-  key: 'TEST',
+  key: TEST_JIRA_PROJECT,
   name: 'Test Project',
   description: 'A test project for MCP server validation',
   projectTypeKey: 'software',
@@ -285,7 +299,7 @@ function initializeTestData () {
     name: 'Backend',
     description: 'Backend components',
     lead: MOCK_USER,
-    project: 'TEST',
+    project: TEST_JIRA_PROJECT,
     projectId: 10000,
   };
   components.set('10000', component1);
@@ -297,7 +311,7 @@ function initializeTestData () {
     type: 'scrum',
     location: {
       projectId: 10000,
-      projectKey: 'TEST',
+      projectKey: TEST_JIRA_PROJECT,
       projectName: 'Test Project',
       projectTypeKey: 'software',
     },
@@ -593,7 +607,7 @@ export class JiraEmulator {
         projects: [
           {
             id: '10000',
-            key: 'TEST',
+            key: TEST_JIRA_PROJECT,
             name: 'Test Project',
             issuetypes: MOCK_ISSUE_TYPES.map(type => ({
               ...type,
@@ -776,7 +790,7 @@ export class JiraEmulator {
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-projects/#api-rest-api-2-project-projectidorkey-get
     this.app.get('/rest/api/2/project/:projectIdOrKey', (req, res) => {
       const { projectIdOrKey } = req.params;
-      if (projectIdOrKey === 'TEST' || projectIdOrKey === '10000') {
+      if (projectIdOrKey === TEST_JIRA_PROJECT) {
         res.json(MOCK_PROJECT);
       } else {
         res.status(404).json({
@@ -789,7 +803,7 @@ export class JiraEmulator {
     // Get project statuses
     this.app.get('/rest/api/2/project/:projectIdOrKey/statuses', (req, res) => {
       const { projectIdOrKey } = req.params;
-      if (projectIdOrKey === 'TEST' || projectIdOrKey === '10000') {
+      if (projectIdOrKey === TEST_JIRA_PROJECT) {
         res.json([
           {
             name: 'Task',
@@ -815,7 +829,7 @@ export class JiraEmulator {
     // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-project-versions/#api-rest-api-2-project-projectidorkey-versions-get
     this.app.get('/rest/api/2/project/:projectIdOrKey/versions', (req, res) => {
       const { projectIdOrKey } = req.params;
-      if (projectIdOrKey === 'TEST' || projectIdOrKey === '10000') {
+      if (projectIdOrKey === TEST_JIRA_PROJECT) {
         res.json(Array.from(versions.values()));
       } else {
         res.status(404).json({
@@ -828,7 +842,7 @@ export class JiraEmulator {
     // Get project components
     this.app.get('/rest/api/2/project/:projectIdOrKey/components', (req, res) => {
       const { projectIdOrKey } = req.params;
-      if (projectIdOrKey === 'TEST' || projectIdOrKey === '10000') {
+      if (projectIdOrKey === TEST_JIRA_PROJECT) {
         res.json(Array.from(components.values()));
       } else {
         res.status(404).json({
@@ -1698,7 +1712,7 @@ export class JiraEmulator {
     // Get project workflow scheme
     this.app.get('/rest/api/2/project/:projectKey/workflowscheme', (req, res) => {
       const { projectKey } = req.params;
-      if (projectKey === 'TEST' || projectKey === '10000') {
+      if (projectKey === TEST_JIRA_PROJECT) {
         res.json({
           id: '10000',
           name: 'Default Workflow Scheme',
@@ -2003,7 +2017,7 @@ export class JiraEmulator {
 }
 
 // If run directly, start emulator
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('jira-emulator.js')) {
+if (isMainModule(import.meta.url)) {
   async function runStandaloneEmulator () {
     console.log('🚀 Starting JIRA Emulator...');
 

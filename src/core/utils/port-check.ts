@@ -2,11 +2,11 @@
  * Port availability checking utilities
  */
 
-import { createLogger } from './logger.js';
 import chalk from 'chalk';
 import { createServer } from 'net';
+import { logger as lgr } from './logger.js';
 
-const logger = createLogger('port-check', chalk.cyan);
+const logger = lgr.getSubLogger({ name: chalk.cyan('port-check') });
 
 /**
  * Check if a port is available

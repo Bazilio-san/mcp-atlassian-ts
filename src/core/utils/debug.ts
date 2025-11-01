@@ -103,3 +103,13 @@ export const debugJiraToolFile = Debug('jira-tools-file', {
   prefixColor: chalk.red as unknown as string,
   messageColor: chalk.blueBright as unknown as string,
 });
+
+/**
+ * Logs response from llm before de-anonymization
+ */
+export const debugHeaders2API = Debug('headers-to-api', {
+  noTime: false,
+  noPrefix: false,
+  prefixColor: chalk.red as unknown as string,
+  messageColor: chalk.blueBright as unknown as string,
+});

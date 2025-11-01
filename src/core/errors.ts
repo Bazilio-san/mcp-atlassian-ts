@@ -2,13 +2,13 @@
  * Centralized error handling system for the MCP Atlassian server
  */
 
-import { createLogger } from './utils/logger.js';
 import { formatHttpRateLimitError } from './utils/rate-limit.js';
 
 import type { McpError } from '../types';
 import chalk from 'chalk';
+import { logger as lgr } from './utils/logger.js';
 
-const logger = createLogger('errors', chalk.red);
+const logger = lgr.getSubLogger({ name: chalk.red('errors') });
 
 /**
  * Base error class for all MCP Atlassian errors
@@ -240,6 +240,12 @@ export const ehs = (err: any): string => {
   return err instanceof Error ? err.message : String(err);
 };
 
+export const addErrorMessage = (err: any, msg: string) => {
+  if (err instanceof Error) {
+    err.message = `${msg}. ${err.message}`;
+  }
+};
+
 /**
  * Wrap function calls with error handling
  */
@@ -249,13 +255,8 @@ export async function withErrorHandling<T> (
 ): Promise<T> {
   try {
     return await operation();
-  } catch (error) {
-    // Log the error with context
-    logger.error(
-      'Operation failed',
-      eh(error),
-      context,
-    );
+  } catch (error: Error | any) {
+    logger.error('ERROR', error);
 
     // Re-throw if it's already a custom error
     if (error instanceof McpAtlassianError) {

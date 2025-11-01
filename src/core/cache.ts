@@ -6,13 +6,13 @@
 
 import NodeCache from 'node-cache';
 
-import { createLogger } from './utils/logger.js';
 import { ServiceModeJC } from '../types/config';
-import { eh } from './errors.js';
+import { addErrorMessage, eh } from './errors.js';
 import chalk from 'chalk';
+import { logger as lgr } from './utils/logger.js';
 
 
-const logger = createLogger('cache', chalk.green);
+const logger = lgr.getSubLogger({ name: chalk.green('cache') });
 
 /**
  * Enhanced cache manager with TTL support and statistics
@@ -215,8 +215,7 @@ export class CacheManager {
     try {
       value = await factory();
     } catch (error) {
-      // Factory function error - rethrow as is (don't wrap in CacheError)
-      logger.error(`Factory function error in getOrSet: key: ${key}`, eh(error));
+      addErrorMessage(error, `Factory function error in getOrSet: key: ${key}`);
       throw error;
     }
 

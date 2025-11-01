@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { appConfig } from '../../bootstrap/init-config.js';
-import { createLogger } from '../utils/logger.js';
+import { logger as lgr } from '../utils/logger.js';
 import { ServiceModeJC } from '../../types/config';
-import { eh } from '../errors.js';
-import chalk from 'chalk';
 
-const logger = createLogger('auth-manager', chalk.magenta);
+const logger = lgr.getSubLogger({ name: 'auth-manager' });
+
 
 export interface AuthContext {
   mode: 'system' | 'headers';
@@ -44,12 +43,13 @@ export class AuthenticationManager {
         const authContext = this.createAuthContext(providedToken, req.headers);
 
         // Attach auth context to request
-        (req as any).authContext = authContext;
+        // @ts-ignore
+        (req as any).authContext = authContext.header.ggg; // VVA
 
         logger.info(`[Auth] ${authContext.mode} mode for ${req.method} ${req.path}`);
         next();
       } catch (error) {
-        logger.error('[Auth] Authentication failed:', eh(error));
+        logger.error('[Auth] Authentication failed:', error); // VVA ERROR
 
         res.status(401).json({
           jsonrpc: '2.0',

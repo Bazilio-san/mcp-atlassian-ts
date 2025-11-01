@@ -12,11 +12,11 @@ import { createAuthenticationManager, validateAuthConfig } from './core/auth.js'
 import { initializeCache } from './core/cache.js';
 import { eh, ehs, ServerError } from './core/errors.js';
 import { createServiceServer } from './core/server/factory.js';
-import { createLogger } from './core/utils/logger.js';
 import { ServiceModeJC } from './types/config';
 import chalk from 'chalk';
+import { logger as lgr } from './core/utils/logger.js';
 
-const logger = createLogger('main', chalk.bgYellow);
+const logger = lgr.getSubLogger({ name: chalk.bgYellow('main') });
 
 /**
  * Get available service modes
@@ -132,21 +132,20 @@ function buildAuthConfig (
 async function main (cliServiceMode?: ServiceModeJC) {
   try {
     // Determine service mode (CLI args override config)
-    const serviceMode = cliServiceMode || appConfig.server.serviceMode;
+    let { serviceMode } = appConfig.server;
+    if (cliServiceMode) {
+      // Override service mode
+      serviceMode = cliServiceMode;
+      (appConfig.server as any).serviceMode = serviceMode;
+    }
+    // Configuration is already loaded and validated in init-config.ts
+    const { server: { transportType, port }, jira, confluence, cache, productName, version } = appConfig;
 
     if (!serviceMode) {
       throw new ServerError('Service mode is required. Set MCP_SERVICE_MODE environment variable or use --service flag');
     }
 
-    logger.info(`Starting ${appConfig.productName} Server v${appConfig.version}: serviceMode: ${serviceMode}`);
-
-    // Configuration is already loaded and validated in init-config.ts
-    const { server: { transportType, port }, jira, confluence, cache } = appConfig;
-
-    // Override service mode in config for the server
-    (appConfig.server as any).serviceMode = serviceMode;
-
-    logger.info(`Configuration loaded ${JSON.stringify({ transportType, serviceMode, jira }, null, 2)} `);
+    logger.info(`Starting ${productName} Server v${version}: serviceMode: ${serviceMode} / ${serviceMode}.url = ${(appConfig as any)[serviceMode].url}`);
 
     // Initialize cache
     initializeCache(cache);

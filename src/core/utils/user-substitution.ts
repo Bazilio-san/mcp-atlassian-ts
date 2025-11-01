@@ -2,11 +2,11 @@
  * User substitution utilities
  */
 
-import { createLogger } from './logger.js';
 import { ISubstitutionConfig, ServiceModeJC } from '../../types/config';
 import chalk from 'chalk';
+import { logger as lgr } from './logger.js';
 
-const logger = createLogger('user-substitution', chalk.cyan);
+const logger = lgr.getSubLogger({ name: chalk.cyan('user-substitution') });
 
 /**
  * Apply user substitution to HTTP headers based on configuration

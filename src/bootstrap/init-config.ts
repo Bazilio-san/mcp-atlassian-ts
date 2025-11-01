@@ -7,12 +7,9 @@ export const config: IConfig = configModule.util.toObject();
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { createLogger } from '../core/utils/logger.js';
 import { getBaseUrl } from '../core/utils/tools.js';
-import chalk from 'chalk';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const logger = createLogger('config', chalk.gray);
 
 // Read package.json for metadata (from project root)
 // Handle both development (src/) and production (dist/src/) scenarios
@@ -40,8 +37,7 @@ export const configInfo = () => {
   });
 
   const [, configDir = ''] = /^(.+?)([^\\/]+)$/.exec(configSrc[0]!.name) || [];
-  console.log('configDir', configDir);
-  console.log(configSrc.map((v) => v.name.replace(configDir, '')));
+  console.log('configDir', configDir, configSrc.map((v) => v.name.replace(configDir, '')).join(' -> '));
 };
 
 
@@ -196,7 +192,7 @@ export function isToolEnabledByConfig (toolName: string): boolean {
 
   // Check if tool is explicitly excluded
   if (toolsConfig.exclude.includes(toolName)) {
-    logger.debug(`Tool ${toolName} is explicitly excluded`);
+    console.log(`Tool ${toolName} is explicitly excluded`);
     return false;
   }
 
@@ -208,7 +204,7 @@ export function isToolEnabledByConfig (toolName: string): boolean {
   // If include is a list, tool must be in it
   const isIncluded = toolsConfig.include.includes(toolName);
   if (!isIncluded) {
-    logger.debug(`Tool ${toolName} is not in include list`);
+    console.log(`Tool ${toolName} is not in include list`);
   }
 
   return isIncluded;

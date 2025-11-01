@@ -20,7 +20,6 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import type { ServerConfig, JCConfig } from '../../types/index.js';
-import { createLogger, createRequestLogger } from '../utils/logger.js';
 import { createJsonRpcErrorResponse, eh, ehs, McpAtlassianError, ServerError } from '../errors.js';
 import { getCache } from '../cache.js';
 import { ToolRegistry } from './tools.js';
@@ -32,8 +31,9 @@ import { substituteUserInHeaders } from '../utils/user-substitution.js';
 import { checkPortAvailability } from '../utils/port-check.js';
 import { ServiceModeJC } from '../../types/config';
 import chalk from 'chalk';
+import { createRequestLogger, logger as lgr } from '../utils/logger.js';
 
-const logger = createLogger('server', chalk.yellow);
+const logger = lgr.getSubLogger({ name: chalk.yellow('server') });
 
 // Types for refactored MCP handlers
 interface ExecutionContext {

@@ -5,15 +5,15 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosRequestHeaders, AxiosRequestConfig } from 'axios';
 
 import { AuthenticationError, eh, ehs } from './errors.js';
-import { createLogger, getDebug } from './utils/logger.js';
 import { logHttpTransaction, getCurrentToolName, setCurrentToolName } from './utils/http-logger.js';
 import { appConfig } from '../bootstrap/init-config.js';
 
 import type { AuthConfig, HttpClientConfig } from '../types';
 import chalk from 'chalk';
+import { logger as lgr } from './utils/logger.js';
+import { debugHeaders2API } from './utils/debug.js';
 
-const logger = createLogger('auth', chalk.magenta);
-const debugHeadersToAPI = getDebug('headers-to-api');
+const logger = lgr.getSubLogger({ name: chalk.magenta('auth') });
 
 /**
  * Authentication manager for different auth methods
@@ -45,7 +45,7 @@ export class AuthenticationManager {
     client.interceptors.request.use(
       (requestConfig) => {
         const configWithAuth = this.addAuthenticationHeaders(requestConfig);
-        if (debugHeadersToAPI.enabled) {
+        if (debugHeaders2API.enabled) {
           const logName = chalk.blue('[headers-to-api]');
           const rq = chalk.blueBright(`  ${(requestConfig.method || '').toUpperCase()} ${requestConfig.url}`);
           const headers = `${chalk.blueBright(Object.entries(configWithAuth.headers).map(([k, v]) => `  ${k}: ${v}`).join('\n'))}\n`;

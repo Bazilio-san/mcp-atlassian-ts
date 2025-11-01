@@ -37,10 +37,6 @@ logger:
   # Log level: debug, info, warn, error. ENV: LOG_LEVEL
   level: info
 
-  # Pretty-print logs (true/false). ENV: LOG_PRETTY
-  # Set to true for readable logs in development
-  pretty: true
-
 # --------------------------------------------------
 # RATE LIMITING
 # --------------------------------------------------

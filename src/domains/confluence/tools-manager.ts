@@ -5,7 +5,6 @@
 
 import { createAuthenticationManager, createAuthenticationManagerFromHeaders } from '../../core/auth.js';
 import { getCache } from '../../core/cache.js';
-import { createLogger } from '../../core/utils/logger.js';
 import { ToolExecutionError, withErrorHandling } from '../../core/errors.js';
 
 import type { JCConfig, ToolWithHandler } from '../../types/index.js';
@@ -32,6 +31,7 @@ import { confluence_get_page_children } from './tools/hierarchy/confluence_get_p
 import { confluence_get_page_history } from './tools/history/confluence_get_page_history.js';
 import { confluence_search_user } from './tools/users/confluence_search_user.js';
 import chalk from 'chalk';
+import { logger as lgr } from '../../core/utils/logger.js';
 
 /**
  * Modular Confluence Tools Manager
@@ -40,7 +40,7 @@ export class ConfluenceToolsManager {
   private context: ConfluenceToolContext;
   private tools: Map<string, ToolWithHandler | ConfluenceToolWithHandler>;
   private toolsArray: Tool[];
-  private logger = createLogger('confluence-tools', chalk.bgGreenBright);
+  private logger = lgr.getSubLogger({ name: chalk.bgGreenBright('confluence-tools') });
 
   constructor (config: JCConfig) {
     // Validate configuration
@@ -55,7 +55,6 @@ export class ConfluenceToolsManager {
     const authManager = createAuthenticationManager(config.auth, config.url);
     const httpClient = authManager.getHttpClient();
     const cache = getCache();
-    const logger = createLogger('confluence-tools', chalk.bgGreenBright);
 
     // Create tool context
     this.context = {
@@ -66,7 +65,7 @@ export class ConfluenceToolsManager {
         keys: () => cache.keys(),
       },
       config,
-      logger,
+      logger: this.logger,
       invalidatePageCache: this.invalidatePageCache.bind(this),
       customHeaders: undefined,
     };

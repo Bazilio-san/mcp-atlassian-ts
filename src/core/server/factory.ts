@@ -2,14 +2,14 @@
  * Server factory for creating service-specific MCP servers
  */
 
+import chalk from 'chalk';
 import type { IConfig } from '../../types/config';
 import { McpAtlassianServer } from './index.js';
 import { JiraServer } from './jira-server.js';
 import { ConfluenceServer } from './confluence-server.js';
-import { createLogger } from '../utils/logger.js';
-import chalk from 'chalk';
+import { logger as lgr } from '../utils/logger.js';
 
-const logger = createLogger('server-factory', chalk.yellow);
+const logger = lgr.getSubLogger({ name: chalk.yellow('server-factory') });
 
 /**
  * Service mode type

@@ -6,12 +6,12 @@ import type { IConfig } from '../../types/config';
 import { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
-import { createLogger } from '../utils/logger.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 import { eh } from '../errors.js';
 import chalk from 'chalk';
+import { logger as lgr } from '../utils/logger.js';
 
-const logger = createLogger('confluence-server', chalk.greenBright);
+const logger = lgr.getSubLogger({ name: chalk.greenBright('confluence-server') });
 
 /**
  * Confluence-only MCP server

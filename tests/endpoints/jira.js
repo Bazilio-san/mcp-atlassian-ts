@@ -7,6 +7,7 @@
  */
 
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 import fetch from 'node-fetch';
@@ -19,6 +20,7 @@ import SharedJiraTestCases from './jira-test-cases.js';
 import { TEST_ISSUE_KEY, TEST_JIRA_PROJECT, TEST_ISSUE_TYPE_NAME, TEST_SECOND_ISSUE_KEY } from '../constants.js';
 import { isObj } from './core/utils.js';
 import { appConfig } from '../../dist/src/bootstrap/init-config.js';
+import { isMainModule } from '../utils.js';
 
 // Test IDs that require admin rights
 const ENDPOINTS_WITH_ADMIN_RIGHTS = [
@@ -254,7 +256,7 @@ class JiraDirectApiExecutor {
     // Filter out admin tests if --no-admin flag is set
     if (this.noAdmin) {
       filteredTestCases = filteredTestCases.filter(test =>
-        !ENDPOINTS_WITH_ADMIN_RIGHTS.includes(test.fullId)
+        !ENDPOINTS_WITH_ADMIN_RIGHTS.includes(test.fullId),
       );
     }
 
@@ -831,7 +833,7 @@ class JiraDirectApiExecutor {
           response.status,
           data,
           finalHeaders,
-          body
+          body,
         );
       }
 
@@ -1055,14 +1057,9 @@ async function main () {
   }
 }
 
-// Run if executed directly
-const isMainModule = process.argv[1] && (
-  import.meta.url === `file://${process.argv[1]}` ||
-  import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`
-);
 
-if (isMainModule) {
-  main();
+if (isMainModule(import.meta.url)) {
+  main().then(() => 0);
 }
 
 export default JiraDirectApiExecutor;

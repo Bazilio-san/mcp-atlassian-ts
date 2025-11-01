@@ -15,6 +15,7 @@ import fss from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import { ConfluenceMcpTestCases, getJsonFromResult } from './confluence-test-cases.js';
+import { isMainModule } from '../utils.js';
 
 const TEST_MCP_SERVER_URL = process.env.TEST_MCP_SERVER_URL || 'http://localhost:3000';
 const CONFLUENCE_URL = process.env.CONFLUENCE_URL || 'http://localhost:8090';
@@ -691,14 +692,8 @@ async function main () {
   }
 }
 
-// Run if executed directly
-const isMainModule = process.argv[1] && (
-  import.meta.url === `file://${process.argv[1]}` ||
-  import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`
-);
-
-if (isMainModule) {
-  main();
+if (isMainModule(import.meta.url)) {
+  main().then(() => 0);
 }
 
 export { McpHttpClient, ConfluenceMcpHttpTester };

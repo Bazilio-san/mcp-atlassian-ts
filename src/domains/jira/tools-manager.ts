@@ -5,7 +5,6 @@
 
 import { createAuthenticationManager, createAuthenticationManagerFromHeaders } from '../../core/auth.js';
 import { getCache } from '../../core/cache.js';
-import { createLogger } from '../../core/utils/logger.js';
 import { ToolExecutionError } from '../../core/errors.js';
 
 import { IADFDocument, JCConfig, ToolWithHandler } from '../../types/index.js';
@@ -73,6 +72,7 @@ import { jira_batch_get_changelogs } from './tools/bulk/jira_batch_get_changelog
 import { md2Adf } from './shared/utils.js';
 import { getPriorityNamesArray } from './shared/priority-service.js';
 import chalk from 'chalk';
+import { logger as lgr } from '../../core/utils/logger.js';
 
 /**
  * Modular JIRA Tools Manager
@@ -81,7 +81,7 @@ export class JiraToolsManager {
   private context: ToolContext;
   private tools: Map<string, ToolWithHandler>;
   private toolsArray: Tool[];
-  private logger = createLogger('jira-tools', chalk.bgBlueBright);
+  private logger = lgr.getSubLogger({ name: chalk.bgBlueBright('jira-tools') });
 
   constructor (config: JCConfig) {
     // Validate configuration
@@ -275,7 +275,7 @@ export class JiraToolsManager {
     }
 
     // Always scope logger to the tool being executed to preserve component hierarchy
-    const toolLogger = this.logger.child({ component: toolName });
+    const toolLogger = this.logger.getSubLogger({ name: toolName });
 
     // Apply custom headers if provided
     let contextToUse = { ...this.context, logger: toolLogger } as ToolContext;
