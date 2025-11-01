@@ -4,11 +4,11 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { isObject } from '../../../../core/utils/tools.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for getting a JIRA user profile

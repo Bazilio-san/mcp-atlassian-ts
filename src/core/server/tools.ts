@@ -5,7 +5,7 @@
 import { ConfluenceToolsManager } from '../../domains/confluence/tools-manager.js';
 import { JiraToolsManager } from '../../domains/jira/tools-manager.js';
 import { getCache } from '../cache.js';
-import { eh, ehs, McpAtlassianError, ToolExecutionError, ValidationError } from '../errors.js';
+import { toError, toStr, ToolExecutionError } from '../errors/errors.js';
 import { isToolEnabledByConfig } from '../../bootstrap/init-config.js';
 import { setCurrentToolName } from '../utils/http-logger.js';
 
@@ -14,6 +14,8 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceMode } from '../../types/config';
 import chalk from 'chalk';
 import { logger as lgr } from '../utils/logger.js';
+import { McpAtlassianError } from '../errors/McpAtlassianError.js';
+import { ValidationError } from '../errors/ValidationError.js';
 
 /**
  * Check if a specific tool is enabled
@@ -108,7 +110,7 @@ export class ToolRegistry {
 
       logger.info(`Tools initialized: total: ${this.toolsMap.size} | jira: registered: ${jiraToolsCount}, skipped: ${jiraSkippedCount} | confluence: registered: ${confluenceToolsCount}, skipped: ${confluenceSkippedCount}`);
     } catch (error) {
-      logger.error('Failed to initialize tools', eh(error));
+      logger.error('Failed to initialize tools', toError(error));
       throw new ToolExecutionError('system', 'Failed to initialize tools');
     }
   }
@@ -221,7 +223,7 @@ export class ToolRegistry {
         return await this.executeUtilityTool(name, args);
       }
     } catch (error) {
-      logger.error(`Tool execution failed: ${name}`, eh(error));
+      logger.error(`Tool execution failed: ${name}`, toError(error));
 
       if (error instanceof ValidationError || error instanceof ToolExecutionError) {
         throw error;
@@ -232,7 +234,7 @@ export class ToolRegistry {
         throw new ToolExecutionError(name, error.message, error.details);
       }
 
-      throw new ToolExecutionError(name, ehs(error));
+      throw new ToolExecutionError(name, toStr(error));
     } finally {
       // Clear tool name from context
       setCurrentToolName('unknown');
@@ -327,7 +329,7 @@ export class ToolRegistry {
       } catch (error) {
         health.services.jira = {
           status: 'error',
-          error: ehs(error),
+          error: toStr(error),
         };
         health.status = 'degraded';
       }
@@ -340,7 +342,7 @@ export class ToolRegistry {
       } catch (error) {
         health.services.confluence = {
           status: 'error',
-          error: ehs(error),
+          error: toStr(error),
         };
         health.status = 'degraded';
       }
@@ -490,7 +492,7 @@ export class ServiceToolRegistry extends ToolRegistry {
       logger.info(`Service-specific tools initialized: serviceMode: ${this.serviceMode
       } | total: ${this.toolsMap.size} | registered: ${registeredCount} | skipped: ${skippedCount} | jira: ${jiraCount} | confluence: ${confluenceCount}`);
     } catch (error) {
-      logger.error('Failed to initialize service-specific tools', eh(error));
+      logger.error('Failed to initialize service-specific tools', toError(error));
       throw new ToolExecutionError('system', 'Failed to initialize service-specific tools');
     }
   }
@@ -513,7 +515,7 @@ export class ServiceToolRegistry extends ToolRegistry {
       } catch (error) {
         health.services.jira = {
           status: 'error',
-          error: ehs(error),
+          error: toStr(error),
         };
         health.status = 'degraded';
       }
@@ -526,7 +528,7 @@ export class ServiceToolRegistry extends ToolRegistry {
       } catch (error) {
         health.services.confluence = {
           status: 'error',
-          error: ehs(error),
+          error: toStr(error),
         };
         health.status = 'degraded';
       }

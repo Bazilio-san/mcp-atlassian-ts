@@ -4,10 +4,11 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
+import { NotFoundError } from '../../../../core/errors/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc, normalizeToArray } from '../../../../core/utils/tools.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for getting board issues

@@ -2,9 +2,9 @@
  * Confluence delete page tool implementation
  */
 
-import { withErrorHandling } from '../../../../core/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ToolWithHandler } from '../../../../types/index.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_delete_page: ToolWithHandler = {
   name: 'confluence_delete_page',

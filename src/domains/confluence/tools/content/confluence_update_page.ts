@@ -2,9 +2,10 @@
  * Confluence update page tool implementation
  */
 
-import { ehs, withErrorHandling } from '../../../../core/errors.js';
+import { toStr } from '../../../../core/errors/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ToolWithHandler } from '../../../../types/index.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_update_page: ToolWithHandler = {
   name: 'confluence_update_page',
@@ -116,7 +117,7 @@ Examples: "Updated API documentation", "Fixed typos", "Added new section"`,
               name: labelName,
             });
           } catch (error) {
-            context.logger.warn(`Failed to add label ${labelName} to pageId: ${pageId} | error: ${ehs(error)}`);
+            context.logger.warn(`Failed to add label ${labelName} to pageId: ${pageId} | error: ${toStr(error)}`);
           }
         }
       }

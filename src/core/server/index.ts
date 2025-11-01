@@ -20,7 +20,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import type { ServerConfig, JCConfig } from '../../types/index.js';
-import { createJsonRpcErrorResponse, eh, ehs, McpAtlassianError, ServerError } from '../errors.js';
+import { createJsonRpcErrorResponse, toError, toStr, ServerError } from '../errors/errors.js';
 import { getCache } from '../cache.js';
 import { ToolRegistry } from './tools.js';
 import { AuthenticationManager } from '../auth/auth-manager.js';
@@ -32,6 +32,7 @@ import { checkPortAvailability } from '../utils/port-check.js';
 import { ServiceModeJC } from '../../types/config';
 import chalk from 'chalk';
 import { createRequestLogger, logger as lgr } from '../utils/logger.js';
+import { McpAtlassianError } from '../errors/McpAtlassianError.js';
 
 const logger = lgr.getSubLogger({ name: chalk.yellow('server') });
 
@@ -132,7 +133,7 @@ export class McpAtlassianServer {
           content: resourceContent,
         });
       } catch (err) {
-        logger.warn(`Failed to read resource content for ${resource.uri}: error: ${ehs(err)}`);
+        logger.warn(`Failed to read resource content for ${resource.uri}: error: ${toStr(err)}`);
         resourcesWithContent.push({
           ...resource,
           content: { error: 'Failed to load resource content' },
@@ -209,13 +210,13 @@ export class McpAtlassianServer {
         throw new ServerError(rateLimitMessage);
       }
 
-      logger.error(`Tool execution failed: ${name}`, eh(err));
+      logger.error(`Tool execution failed: ${name}`, toError(err));
 
       if (err instanceof McpAtlassianError) {
         throw err;
       }
 
-      throw new ServerError(`Tool execution failed: ${ehs(err)}`);
+      throw new ServerError(`Tool execution failed: ${toStr(err)}`);
     }
   }
 
@@ -322,8 +323,8 @@ export class McpAtlassianServer {
       await this.toolRegistry.initializeTools();
       logger.info('Tools registered successfully');
     } catch (error) {
-      logger.error('Failed to register tools', eh(error));
-      logger.error('Failed to register tools', eh(error));
+      logger.error('Failed to register tools', toError(error));
+      logger.error('Failed to register tools', toError(error));
       throw new ServerError('Failed to register tools');
     }
   }
@@ -342,7 +343,7 @@ export class McpAtlassianServer {
       // Handle graceful shutdown
       this.setupGracefulShutdown();
     } catch (error) {
-      logger.error('Failed to start server with STDIO transport', eh(error));
+      logger.error('Failed to start server with STDIO transport', toError(error));
       throw new ServerError('Failed to start STDIO server');
     }
   }
@@ -427,7 +428,7 @@ export class McpAtlassianServer {
           const html = this.aboutPageRenderer!.renderFullPage();
           res.type('html').send(html);
         } catch (error) {
-          logger.error('Failed to render about page', eh(error));
+          logger.error('Failed to render about page', toError(error));
           res.status(500).send('Error rendering about page');
         }
       });
@@ -502,7 +503,7 @@ export class McpAtlassianServer {
           logger.info('SSE connection established successfully');
           return;
         } catch (error) {
-          logger.error('SSE connection failed', eh(error));
+          logger.error('SSE connection failed', toError(error));
           return res.status(500).json(createJsonRpcErrorResponse(
             new ServerError('Failed to establish SSE connection'),
           ));
@@ -591,7 +592,7 @@ export class McpAtlassianServer {
             result,
           });
         } catch (error) {
-          logger.error('MCP request failed', eh(error));
+          logger.error('MCP request failed', toError(error));
 
           // Extract detailed error information for MCP response
           let errorResponse;
@@ -611,7 +612,7 @@ export class McpAtlassianServer {
             // Standard error handling for non-MCP errors
             errorResponse = {
               code: -1,
-              message: ehs(error),
+              message: toStr(error),
             };
           }
 
@@ -671,7 +672,7 @@ export class McpAtlassianServer {
       // Handle graceful shutdown
       this.setupGracefulShutdown();
     } catch (error) {
-      logger.error('Failed to start server with HTTP transport', eh(error));
+      logger.error('Failed to start server with HTTP transport', toError(error));
       throw new ServerError('Failed to start HTTP server');
     }
   }
@@ -697,7 +698,7 @@ export class McpAtlassianServer {
         logger.info('Graceful shutdown completed');
         process.exit(0);
       } catch (error) {
-        logger.error('Error during graceful shutdown', eh(error));
+        logger.error('Error during graceful shutdown', toError(error));
         process.exit(1);
       }
     };

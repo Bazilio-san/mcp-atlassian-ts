@@ -4,12 +4,14 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling, NotFoundError, ValidationError } from '../../../../core/errors.js';
+import { NotFoundError } from '../../../../core/errors/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 import { STATE_ENUM } from '../../../../core/constants.js';
+import { ValidationError } from '../../../../core/errors/ValidationError.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for getting sprints from board

@@ -1,6 +1,6 @@
-import { withErrorHandling } from '../../../../core/errors.js';
 import { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../../../types/confluence.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_add_comment: ConfluenceToolWithHandler = {
   name: 'confluence_add_comment',

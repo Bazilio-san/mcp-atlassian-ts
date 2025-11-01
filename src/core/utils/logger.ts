@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 // noinspection JSUnusedGlobalSymbols
 
+import { red, reset } from 'af-color';
 import { appConfig } from '../../bootstrap/init-config.js';
 import { getAFLogger } from 'af-logger-ts';
 import chalk from 'chalk';
@@ -10,12 +11,12 @@ const { level } = appConfig.logger;
 const { logger, fileLogger, exitOnError } = getAFLogger({
   level,
   maxSize: '500m',
-  name: '',
+  name: '\x1b[1P',
   filePrefix: appConfig.name,
   minLogSize: 0,
   minErrorLogSize: 0,
   prettyLogTemplate: '[{{hh}}:{{MM}}:{{ss}}]: {{logLevelName}} [{{name}}] ',
-  prettyErrorTemplate: `{{errorName}} ${chalk.red}{{errorMessage}}${chalk.reset}\n{{errorStack}}`,
+  prettyErrorTemplate: `${red}{{errorMessage}}${reset}\n{{errorStack}}`,
   maskValuesRegEx: [
     // API tokens and keys
     /token['":\s]+['"]\w+['"]/gi,
@@ -56,7 +57,7 @@ export function createRequestLogger () {
   };
 }
 
-export const toError = (err: any): Error => {
+const toError = (err: any): Error => {
   return err instanceof Error ? err : new Error(String(err));
 };
 

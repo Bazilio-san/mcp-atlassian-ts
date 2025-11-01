@@ -6,7 +6,7 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling, ValidationError, ehs } from '../../../../core/errors.js';
+import { toStr } from '../../../../core/errors/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult, getJsonFromResult } from '../../../../core/utils/formatToolResult.js';
 import { jira_get_project } from '../projects/jira_get_project.js';
@@ -15,6 +15,8 @@ import { stringOrADF2markdown } from '../../shared/utils.js';
 import { inJiraDuration } from '../../../../core/constants.js';
 import { trim } from '../../../../core/utils/text.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
+import { ValidationError } from '../../../../core/errors/ValidationError.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export async function createJiraCreateIssueTool (priorityNamesArray?: string[]): Promise<ToolWithHandler> {
   const result: ToolWithHandler = {
@@ -141,7 +143,7 @@ async function validateProjectAndIssueType (
   } catch (error) {
     return {
       error: 'VALIDATION_ERROR',
-      message: `Failed to validate project '${projectIdOrKey}'. ERROR: ${ehs(error)}`,
+      message: `Failed to validate project '${projectIdOrKey}'. ERROR: ${toStr(error)}`,
     };
   }
   const json = getJsonFromResult(projectResult);

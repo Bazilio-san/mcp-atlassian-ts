@@ -2,10 +2,10 @@
  * Confluence search tool implementation
  */
 
-import { withErrorHandling } from '../../../../core/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ToolWithHandler } from '../../../../types/index.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_search: ToolWithHandler = {
   name: 'confluence_search',

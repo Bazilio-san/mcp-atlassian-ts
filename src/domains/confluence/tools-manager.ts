@@ -5,7 +5,7 @@
 
 import { createAuthenticationManager, createAuthenticationManagerFromHeaders } from '../../core/auth.js';
 import { getCache } from '../../core/cache.js';
-import { ToolExecutionError, withErrorHandling } from '../../core/errors.js';
+import { ToolExecutionError } from '../../core/errors/errors.js';
 
 import type { JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { ConfluenceToolWithHandler } from '../../types/confluence.js';
@@ -32,6 +32,7 @@ import { confluence_get_page_history } from './tools/history/confluence_get_page
 import { confluence_search_user } from './tools/users/confluence_search_user.js';
 import chalk from 'chalk';
 import { logger as lgr } from '../../core/utils/logger.js';
+import { withErrorHandling } from '../../core/errors/withErrorHandling.js';
 
 /**
  * Modular Confluence Tools Manager

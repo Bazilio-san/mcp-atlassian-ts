@@ -10,7 +10,7 @@ import { pathToFileURL } from 'url';
 import { appConfig, hasStringValue } from './bootstrap/init-config.js';
 import { createAuthenticationManager, validateAuthConfig } from './core/auth.js';
 import { initializeCache } from './core/cache.js';
-import { eh, ehs, ServerError } from './core/errors.js';
+import { toError, toStr, ServerError } from './core/errors/errors.js';
 import { createServiceServer } from './core/server/factory.js';
 import { ServiceModeJC } from './types/config';
 import chalk from 'chalk';
@@ -147,6 +147,11 @@ async function main (cliServiceMode?: ServiceModeJC) {
 
     logger.info(`Starting ${productName} Server v${version}: serviceMode: ${serviceMode} / ${serviceMode}.url = ${(appConfig as any)[serviceMode].url}`);
 
+    const err = new Error('ddddddddddddddddddddddddd');
+    logger.error(err);
+    logger.error('Error', toError(err));
+    logger.info(`Starting ${productName} Server v${version}: serviceMode: ${serviceMode} / ${serviceMode}.url = ${(appConfig as any)[serviceMode].url}`);
+
     // Initialize cache
     initializeCache(cache);
     logger.info(`Cache initialized: ${JSON.stringify(cache)}`);
@@ -220,7 +225,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
       });
     }
   } catch (error) {
-    logger.fatal('Failed to start MCP Atlassian Server', eh(error));
+    logger.fatal('Failed to start MCP Atlassian Server', toError(error));
     process.exit(1);
   }
 }
@@ -238,7 +243,7 @@ function setupProcessHandlers () {
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
     const errorReason = reason instanceof Error ? reason : new Error(String(reason));
-    logger.fatal(`Unhandled promise rejection: reason: ${ehs(errorReason)} | promise: ${String(promise)}`, errorReason);
+    logger.fatal(`Unhandled promise rejection: reason: ${toStr(errorReason)} | promise: ${String(promise)}`, errorReason);
 
     // Check for common port-related errors
     if (errorReason instanceof Error && errorReason.message.includes('EADDRINUSE')) {
@@ -315,7 +320,7 @@ if (currentFileUrl === mainFileUrl) {
       process.exit(1);
     });
   } catch (error) {
-    console.error('Error parsing arguments:', ehs(error));
+    console.error('Error parsing arguments:', toStr(error));
     displayHelp();
     process.exit(1);
   }

@@ -2,59 +2,9 @@
  * Centralized error handling system for the MCP Atlassian server
  */
 
-import { formatHttpRateLimitError } from './utils/rate-limit.js';
-
-import type { McpError } from '../types';
-import chalk from 'chalk';
-import { logger as lgr } from './utils/logger.js';
-
-const logger = lgr.getSubLogger({ name: chalk.red('errors') });
-
-/**
- * Base error class for all MCP Atlassian errors
- */
-export class McpAtlassianError extends Error implements McpError {
-  public readonly code: string;
-  public readonly details?: Record<string, unknown>;
-  public readonly statusCode: number;
-
-  constructor (
-    code: string,
-    message: string,
-    details?: Record<string, unknown>,
-    statusCode: number = 500,
-  ) {
-    super(message);
-    this.name = this.constructor.name;
-    this.code = code;
-    if (details !== undefined) {
-      this.details = details;
-    }
-    this.statusCode = statusCode;
-
-    // Maintain proper stack trace for V8 engines
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-
-  toJSON (): McpError {
-    const result: McpError = {
-      code: this.code,
-      message: this.message,
-    };
-
-    if (this.details !== undefined) {
-      result.details = this.details;
-    }
-
-    if (this.stack !== undefined) {
-      result.stack = this.stack;
-    }
-
-    return result;
-  }
-}
+import { formatHttpRateLimitError } from '../utils/rate-limit.js';
+import { McpAtlassianError } from './McpAtlassianError.js';
+import { ValidationError } from './ValidationError.js';
 
 /**
  * Authentication-related errors
@@ -98,15 +48,6 @@ export class NetworkError extends McpAtlassianError {
 export class RateLimitError extends McpAtlassianError {
   constructor (message: string = 'Rate limit exceeded', details?: Record<string, unknown>) {
     super('RATE_LIMIT_ERROR', message, details, 429);
-  }
-}
-
-/**
- * Validation-related errors
- */
-export class ValidationError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('VALIDATION_ERROR', message, details, 400);
   }
 }
 
@@ -232,11 +173,11 @@ export function handleAxiosError (error: any): never {
   }
 }
 
-export const eh = (err: any): Error => {
+export const toError = (err: any): Error => {
   return err instanceof Error ? err : new Error(String(err));
 };
 
-export const ehs = (err: any): string => {
+export const toStr = (err: any): string => {
   return err instanceof Error ? err.message : String(err);
 };
 
@@ -246,40 +187,3 @@ export const addErrorMessage = (err: any, msg: string) => {
   }
 };
 
-/**
- * Wrap function calls with error handling
- */
-export async function withErrorHandling<T> (
-  operation: () => Promise<T>,
-  context?: Record<string, unknown>,
-): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: Error | any) {
-    logger.error('ERROR', error);
-
-    // Re-throw if it's already a custom error
-    if (error instanceof McpAtlassianError) {
-      throw error;
-    }
-
-    // Handle Axios errors
-    if (error && typeof error === 'object' && 'response' in error) {
-      handleAxiosError(error);
-    }
-
-    // Convert unknown errors
-    const message = ehs(error);
-    throw new ServerError(message, {
-      context,
-      originalError:
-        error instanceof Error
-          ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          }
-          : error,
-    });
-  }
-}

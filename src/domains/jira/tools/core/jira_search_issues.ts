@@ -4,12 +4,12 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling } from '../../../../core/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 const LIMIT_OF_ISSUES = 100; // The tool does not return more than the specified number of tasks
 /**

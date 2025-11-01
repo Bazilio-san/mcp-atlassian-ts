@@ -6,7 +6,7 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { ehs, withErrorHandling } from '../../../../core/errors.js';
+import { toStr } from '../../../../core/errors/errors.js';
 import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
@@ -14,6 +14,7 @@ import { getProjectLabels } from './search-project/labels-cache.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
 import { stringOrADF2markdown } from '../../shared/utils.js';
+import { withErrorHandling } from "../../../../core/errors/withErrorHandling.js";
 
 /**
  * Tool definition for jira_get_project
@@ -226,7 +227,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
     try {
       priorityNames = await getPriorityNamesArray(httpClient, config);
     } catch (error) {
-      logger.warn(`Failed to retrieve priority names: error: ${ehs(error)}`);
+      logger.warn(`Failed to retrieve priority names: error: ${toStr(error)}`);
     }
 
     // Get project labels using cache system
@@ -236,7 +237,7 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
         const labelsResult = await getProjectLabels(httpClient, project.key, String(project.id), context);
         projectLabels = labelsResult.labels;
       } catch (error) {
-        logger.warn(`Failed to retrieve labels for project key: ${project.key} | error: ${ehs(error)}`);
+        logger.warn(`Failed to retrieve labels for project key: ${project.key} | error: ${toStr(error)}`);
       }
     }
 

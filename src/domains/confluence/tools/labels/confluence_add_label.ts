@@ -2,9 +2,9 @@
  * Add label to Confluence page tool
  */
 
-import { withErrorHandling } from '../../../../core/errors.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export interface ConfluenceToolWithHandler extends Tool {
   handler: (args: any, context: ConfluenceToolContext) => Promise<any>;

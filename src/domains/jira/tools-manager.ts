@@ -5,7 +5,7 @@
 
 import { createAuthenticationManager, createAuthenticationManagerFromHeaders } from '../../core/auth.js';
 import { getCache } from '../../core/cache.js';
-import { ToolExecutionError } from '../../core/errors.js';
+import { ToolExecutionError } from '../../core/errors/errors.js';
 
 import { IADFDocument, JCConfig, ToolWithHandler } from '../../types/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';

@@ -2,10 +2,10 @@
  * Get child pages of a Confluence page
  */
 
-import { withErrorHandling } from '../../../../core/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../shared/types.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_get_page_children: ConfluenceToolWithHandler = {
   name: 'confluence_get_page_children',

@@ -1220,6 +1220,11 @@ adf-to-md@^1.2.1:
   dependencies:
     eslint-config-nodebb "0.1.1"
 
+af-color@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/af-color/-/af-color-0.0.8.tgz#c3a9810f54fe58af60471cde7ff15855085dd006"
+  integrity sha512-FdVZeSA6c1UkM7FjhkKtS+t5pC6uJUwt7F96M/JTCPHuHxUvcZ2yYlqfhFWv+QHhau3gSg0J8FUsw3U0BDqTzw==
+
 af-logger-ts@^0.0.16:
   version "0.0.16"
   resolved "https://registry.yarnpkg.com/af-logger-ts/-/af-logger-ts-0.0.16.tgz#848e68f263aac8d8d0d11eba41c8a6b57f47df99"

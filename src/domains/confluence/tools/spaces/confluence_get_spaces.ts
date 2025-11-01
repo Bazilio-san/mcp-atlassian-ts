@@ -1,7 +1,7 @@
-import { withErrorHandling } from '../../../../core/errors.js';
 import { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ConfluenceToolWithHandler } from '../../../../types/confluence.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_get_spaces: ConfluenceToolWithHandler = {
   name: 'confluence_get_spaces',

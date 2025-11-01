@@ -4,12 +4,12 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling } from '../../../../core/errors.js';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 import { inRFC3339 } from '../../../../core/constants.js';
 import { trim } from '../../../../core/utils/text.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for creating a sprint

@@ -1,6 +1,6 @@
 import { trim } from '../../../../core/utils/text.js';
-import { ValidationError } from '../../../../core/errors.js';
 import { validateDate } from '../../../../core/utils/tools.js';
+import { ValidationError } from '../../../../core/errors/ValidationError.js';
 
 export const getVersionData = (args: any): any => {
   let { name, description } = args;

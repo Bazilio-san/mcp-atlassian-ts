@@ -6,7 +6,7 @@
 import type { AxiosInstance } from 'axios';
 import { getCache } from '../../../core/cache.js';
 import type { JCConfig } from '../../../types/index.js';
-import { eh } from '../../../core/errors.js';
+import { toError } from '../../../core/errors/errors.js';
 import { ensureHeader } from '../../../core/auth.js';
 import { appConfig } from '../../../bootstrap/init-config.js';
 import chalk from 'chalk';
@@ -51,7 +51,7 @@ export async function getCachedPriorityObjects (httpClient: AxiosInstance, confi
       3600, // Cache for 1 hour
     );
   } catch (error) {
-    logger.error('Failed to fetch priorities from JIRA', eh(error));
+    logger.error('Failed to fetch priorities from JIRA', toError(error));
   }
   return cachedPriorities || [];
 }

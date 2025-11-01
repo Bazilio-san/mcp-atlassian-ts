@@ -2,9 +2,10 @@
  * Confluence create page tool implementation
  */
 
-import { ehs, withErrorHandling } from '../../../../core/errors.js';
+import { toStr } from '../../../../core/errors/errors.js';
 import type { ConfluenceToolContext } from '../../shared/tool-context.js';
 import type { ToolWithHandler } from '../../../../types/index.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 export const confluence_create_page: ToolWithHandler = {
   name: 'confluence_create_page',
@@ -100,7 +101,7 @@ Examples: ["core-documentation", "api"]`,
               name: labelName,
             });
           } catch (err: Error | any) {
-            context.logger.warn(`Failed to add label ${labelName} to the pageId ${createdPage.id} | error: ${ehs(err)}`);
+            context.logger.warn(`Failed to add label ${labelName} to the pageId ${createdPage.id} | error: ${toStr(err)}`);
           }
         }
       }

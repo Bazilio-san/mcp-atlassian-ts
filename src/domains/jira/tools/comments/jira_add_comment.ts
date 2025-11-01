@@ -4,11 +4,11 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling } from '../../../../core/errors.js';
 import { IJiraComment, ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc } from '../../../../core/utils/tools.js';
 import { getVisibility, jiraUserObj, stringOrADF2markdown } from '../../shared/utils.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for adding a comment to a JIRA issue

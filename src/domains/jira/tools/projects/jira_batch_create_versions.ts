@@ -4,11 +4,12 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { eh, withErrorHandling } from '../../../../core/errors.js';
+import { toError } from '../../../../core/errors/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { stringOrADF2markdown } from '../../shared/utils.js';
 import { getVersionData } from './_validate-version-params.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for jira_batch_create_versions
@@ -100,7 +101,7 @@ async function batchCreateVersionsHandler (args: any, context: ToolContext): Pro
         results.push(response.data);
         logger.debug(`Successfully created version: name: ${name} | id: ${response.data.id}`);
       } catch (err) {
-        const error = eh(err);
+        const error = toError(err);
         logger.warn(`Failed to create version: version: ${name} | error: ${error.message}`);
         results.push({ error: error.message, version: name });
       }

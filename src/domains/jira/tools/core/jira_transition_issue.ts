@@ -4,11 +4,11 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling } from '../../../../core/errors.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { isNonEmptyObject, isObject } from '../../../../core/utils/tools.js';
 import { trim } from '../../../../core/utils/text.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for transitioning a JIRA issue to a new status

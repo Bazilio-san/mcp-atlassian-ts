@@ -2,7 +2,8 @@ import type { ToolContext } from '../../../../types/tool-context';
 import { ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { searchProjects } from './search-project/text-search.js';
-import { withErrorHandling } from '../../../../core/errors.js';
+
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 const removeScore = ({ name, key }: any) => ({ name, key });
 

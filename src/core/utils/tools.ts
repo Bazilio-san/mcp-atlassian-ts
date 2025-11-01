@@ -1,4 +1,4 @@
-import { ValidationError } from '../errors.js';
+import { ValidationError } from '../errors/ValidationError.js';
 
 export const rn = (x: number, digits: number = 2) => {
   const p = 10 ** digits;

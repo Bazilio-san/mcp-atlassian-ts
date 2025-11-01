@@ -10,7 +10,7 @@ import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
-import { eh } from '../errors.js';
+import { toError } from '../errors/errors.js';
 import chalk from 'chalk';
 import { logger as lgr } from '../utils/logger.js';
 
@@ -94,7 +94,7 @@ export class JiraServer extends McpAtlassianServer {
       await this.toolRegistry.initializeTools();
       logger.info('JIRA tools registered successfully');
     } catch (error) {
-      logger.error('Failed to register JIRA tools', eh(error));
+      logger.error('Failed to register JIRA tools', toError(error));
       throw new Error('Failed to register JIRA tools');
     }
   }

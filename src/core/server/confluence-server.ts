@@ -7,7 +7,7 @@ import { ServerConfig, JCConfig } from '../../types/index.js';
 import { McpAtlassianServer } from './index.js';
 import { ServiceToolRegistry } from './tools.js';
 import { hasStringValue, appConfig } from '../../bootstrap/init-config.js';
-import { eh } from '../errors.js';
+import { toError } from '../errors/errors.js';
 import chalk from 'chalk';
 import { logger as lgr } from '../utils/logger.js';
 
@@ -85,7 +85,7 @@ export class ConfluenceServer extends McpAtlassianServer {
       await this.toolRegistry.initializeTools();
       logger.info('Confluence tools registered successfully');
     } catch (err) {
-      logger.error('Failed to register Confluence tools', eh(err));
+      logger.error('Failed to register Confluence tools', toError(err));
       throw new Error('Failed to register Confluence tools');
     }
   }

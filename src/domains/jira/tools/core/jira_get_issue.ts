@@ -4,12 +4,13 @@
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
-import { withErrorHandling, NotFoundError } from '../../../../core/errors.js';
+import { NotFoundError } from '../../../../core/errors/errors.js';
 import { IJiraIssue, ToolWithHandler } from '../../../../types';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { convertToIsoUtc, isObject } from '../../../../core/utils/tools.js';
 import { normalizeToArray } from '../../../../core/utils/tools.js';
 import { stringOrADF2markdown } from '../../shared/utils.js';
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 // Data shape returned in jiraIssue (constructed below based on fetched JIRA issue)
 export interface JiraIssueStatus {
