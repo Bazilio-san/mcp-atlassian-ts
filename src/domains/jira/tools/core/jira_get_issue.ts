@@ -130,22 +130,21 @@ and when available:
 Issue ID or key can be used to uniquely identify an existing issue.
 Issue ID is a numerical identifier (e.g. 123).
 Issue key is formatted as <project key>-<id> (e.g. ISSUE-123).
-An example issue key is ISSUE-1.`,
+An example issue key is ISSUE-1`,
       },
       expand: { // VVQ formalize?
         type: 'array',
         items: { type: 'string' },
         description: `Additional fields to expand. e.g.: ["changelog", "transitions"]
-        renderedFields Returns field values rendered in HTML format.
-names Returns the display name of each field.
-schema Returns the schema describing a field type.
-transitions Returns all possible transitions for the issue.
-editmeta Returns information about how each field can be edited.
-changelog Returns a list of recent updates to an issue, sorted by date, starting from the most recent.
-versionedRepresentations Returns a JSON array for each version of a field's value, with the highest number representing the most recent version. Note: When included in the request, the fields parameter is ignored
-        
-        
-        `,
+Available values:
+- \`renderedFields\` Returns field values rendered in HTML format.
+- \`names\` Returns the display name of each field.
+- \`schema\` Returns the schema describing a field type.
+- \`transitions\` Returns all possible transitions for the issue.
+- \`editmeta\` Returns information about how each field can be edited.
+- \`changelog\` Returns a list of recent updates to an issue, sorted by date, starting from the most recent.
+- \`versionedRepresentations\` Returns a JSON array for each version of a field's value, with the highest number representing the most recent version. Note: When included in the request, the fields parameter is ignored
+`,
         default: [],
       },
       fields: { // VVQ formalize?

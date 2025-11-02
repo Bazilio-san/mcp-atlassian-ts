@@ -229,20 +229,26 @@ async function main (cliServiceMode?: ServiceModeJC) {
  * Setup process event handlers
  */
 function setupProcessHandlers () {
+
+  const toError = (err: any): Error => {
+    return err instanceof Error ? err : new Error(String(err));
+  };
+
   // Handle uncaught exceptions
-  process.on('uncaughtException', error => {
-    logger.fatal('Uncaught exception', error);
+  process.on('uncaughtException', (error) => {
+    logger.fatal(chalk.bgRgb(200, 0, 0).whiteBright.bold(' UNCAUGHT EXCEPTION '), error);
     process.exit(1);
   });
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
     const errorReason = reason instanceof Error ? reason : new Error(String(reason));
-    logger.fatal(`Unhandled promise rejection: reason: ${toStr(errorReason)} | promise: ${String(promise)}`, errorReason);
+    logger.fatal(chalk.bgRgb(200, 0, 0).whiteBright.bold(' UNHANDLED PROMISE REJECTION ')
+      + `: reason: ${toStr(errorReason)} | promise: ${String(promise)}`, errorReason);
 
     // Check for common port-related errors
     if (errorReason instanceof Error && errorReason.message.includes('EADDRINUSE')) {
-      logger.error('Port conflict detected: The server port is already in use.');
+      logger.error('Port conflict detected: The server port already in use.');
       logger.error('Please use a different port or stop the process using this port.');
     }
 

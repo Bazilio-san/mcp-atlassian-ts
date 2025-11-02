@@ -21,7 +21,7 @@ export const jira_link_to_epic: ToolWithHandler = {
         type: 'string',
         description: 'Issue ID or key to link to epic',
       },
-      epicKey: {  // VVQ specify where to get
+      epicKey: {
         type: 'string',
         description: 'Epic issue key',
       },

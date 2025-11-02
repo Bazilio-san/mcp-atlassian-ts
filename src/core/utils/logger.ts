@@ -56,16 +56,3 @@ export function createRequestLogger () {
     next();
   };
 }
-
-const toError = (err: any): Error => {
-  return err instanceof Error ? err : new Error(String(err));
-};
-
-process.on('uncaughtException', (error) => {
-  logger.fatal('uncaughtException', error); // VVQ VVA
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  logger.fatal(`uncaughtException: ${promise ? String(promise) : ''}`, toError(reason)); // VVQ VVA
-});

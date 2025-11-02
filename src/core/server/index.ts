@@ -28,7 +28,6 @@ import { appConfig, getSafeAppConfig } from '../../bootstrap/init-config.js';
 import { createAboutPageRenderer, AboutPageRenderer } from './about-renderer.js';
 import { formatRateLimitError, isRateLimitError } from '../utils/rate-limit.js';
 import { substituteUserInHeaders } from '../utils/user-substitution.js';
-import { checkPortAvailability } from '../utils/port-check.js';
 import { ServiceModeJC } from '../../types/config';
 import chalk from 'chalk';
 import { createRequestLogger, logger as lgr } from '../utils/logger.js';
@@ -352,8 +351,6 @@ export class McpAtlassianServer {
   async startHttp (): Promise<void> {
     try {
       // Check port availability first
-      await checkPortAvailability(this.serverConfig.port);
-
       this.app = express();
 
       // Security middleware
@@ -583,7 +580,6 @@ export class McpAtlassianServer {
           };
 
           result = await this.handleHttpMcpRequest(method, params, context);
-
           return res.json({
             jsonrpc: '2.0',
             id,
@@ -660,8 +656,9 @@ export class McpAtlassianServer {
       // Handle port conflicts and other server errors
       server.on('error', (error: any) => {
         if (error.code === 'EADDRINUSE') {
-          logger.error(`Port ${port} is already in use. Please choose a different port or stop the process using this port.`);
-          logger.error('To use a different port, set SERVER_PORT environment variable to another value (e.g., SERVER_PORT=3001)');
+          const msg = `${chalk.bgYellowBright(`Port ${port} is already in use`)}. Please choose a different port or stop the process using this port.
+To use a different port, set SERVER_PORT environment variable to another value (e.g., SERVER_PORT=${port + 1})`;
+          logger.error(msg);
           process.exit(1);
         } else {
           logger.error('Failed to start HTTP server', error);
@@ -734,6 +731,3 @@ export class McpAtlassianServer {
     };
   }
 }
-
-// Re-export factory function for convenience
-export { createServiceServer } from './factory.js';
