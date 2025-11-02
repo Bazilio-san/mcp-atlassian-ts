@@ -20,7 +20,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import type { ServerConfig, JCConfig } from '../../types/index.js';
-import { createJsonRpcErrorResponse, toError, toStr, ServerError } from '../errors/errors.js';
+import { createJsonRpcErrorResponse, toError, toStr, ServerError, ToolExecutionError } from '../errors/errors.js';
 import { getCache } from '../cache.js';
 import { ToolRegistry } from './tools.js';
 import { AuthenticationManager } from '../auth/auth-manager.js';
@@ -199,7 +199,7 @@ export class McpAtlassianServer {
 
       logger.info(`Tool '${name}' executed successfully`);
       return result;
-    } catch (err) {
+    } catch (err: Error | any) {
       // Handle rate limit errors
       if (isRateLimitError(err)) {
         const rateLimitMessage = formatRateLimitError(
@@ -210,13 +210,11 @@ export class McpAtlassianServer {
         throw new ServerError(rateLimitMessage);
       }
 
-      logger.error(`Tool execution failed: ${name}`, toError(err));
-
-      if (err instanceof McpAtlassianError) {
+      if (err instanceof McpAtlassianError || err instanceof ToolExecutionError) {
         throw err;
       }
 
-      throw new ServerError(`Tool execution failed: ${toStr(err)}`);
+      throw new ServerError(`Tool execution failed: ${toStr(err)}`, undefined, err.printed);
     }
   }
 
@@ -591,9 +589,11 @@ export class McpAtlassianServer {
             id,
             result,
           });
-        } catch (error) {
-          logger.error('MCP request failed', toError(error));
-
+        } catch (error: Error | any) {
+          if (!error.printed) {
+            logger.error('MCP request failed', toError(error));
+            error.printed = true;
+          }
           // Extract detailed error information for MCP response
           let errorResponse;
           if (error instanceof McpAtlassianError) {

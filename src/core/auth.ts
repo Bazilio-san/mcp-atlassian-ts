@@ -172,13 +172,18 @@ export class AuthenticationManager {
     } catch (err: Error | any) {
       const status = err?.response?.status;
       const code = err?.code;
-      const errorMessage = toStr(err);
+      let errorMessage = toStr(err);
+      errorMessage = errorMessage === 'Error' ? '' : ` / ${errorMessage}`;
       if (status === 401 || status === 403) {
         logger.error(`Authentication test failed ${status}: ${errorMessage}`);
-      } else if (code === 'ENOTFOUND' || code === 'ECONNREFUSED' || code === 'ETIMEDOUT') {
-        logger.error(`Connection error while testing auth: ${code}: ${errorMessage}`);
+      } else if (code === 'ENOTFOUND') {
+        logger.error(`Connection error while testing auth: ENOTFOUND (DNS Name Not Found)${errorMessage}`);
+      } else if (code === 'ECONNREFUSED') {
+        logger.error(`Connection error while testing auth: ECONNREFUSED (Connection rejected by the target host/port. service not running, wrong port, firewall)${errorMessage}`);
+      } else if (code === 'ETIMEDOUT') {
+        logger.error(`Connection error while testing auth: ETIMEDOUT${errorMessage}`);
       } else {
-        logger.error(`Authentication test failed: ${errorMessage}`);
+        logger.error(`Authentication test failed${errorMessage}`);
       }
       return false;
     }

@@ -15,7 +15,8 @@ export async function withErrorHandling<T> (
   try {
     return await operation();
   } catch (error: Error | any) {
-    logger.error('ERROR', error);
+    logger.error('withErrorHandling:', error);
+    error.printed = true;
 
     // Re-throw if it's already a custom error
     if (error instanceof McpAtlassianError) {
@@ -29,7 +30,7 @@ export async function withErrorHandling<T> (
 
     // Convert unknown errors
     const message = toStr(error);
-    throw new ServerError(message, {
+    const details = {
       context,
       originalError:
         error instanceof Error
@@ -39,6 +40,7 @@ export async function withErrorHandling<T> (
             stack: error.stack,
           }
           : error,
-    });
+    };
+    throw new ServerError(message, details, true);
   }
 }

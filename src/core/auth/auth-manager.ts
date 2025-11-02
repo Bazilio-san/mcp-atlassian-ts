@@ -43,13 +43,12 @@ export class AuthenticationManager {
         const authContext = this.createAuthContext(providedToken, req.headers);
 
         // Attach auth context to request
-        // @ts-ignore
-        (req as any).authContext = authContext.header.ggg; // VVA
+        (req as any).authContext = authContext;
 
-        logger.info(`[Auth] ${authContext.mode} mode for ${req.method} ${req.path}`);
+        logger.info(`${authContext.mode} mode for ${req.method} ${req.path}`);
         next();
       } catch (error) {
-        logger.error('[Auth] Authentication failed:', error); // VVA ERROR
+        logger.error('Authentication failed:', error); // VVA ERROR
 
         res.status(401).json({
           jsonrpc: '2.0',

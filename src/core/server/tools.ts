@@ -222,8 +222,8 @@ export class ToolRegistry {
         // Execute utility tools
         return await this.executeUtilityTool(name, args);
       }
-    } catch (error) {
-      logger.error(`Tool execution failed: ${name}`, toError(error));
+    } catch (error: Error | any) {
+      logger.error(`Tool execution failed: ${name}: ${toStr(error)}`);
 
       if (error instanceof ValidationError || error instanceof ToolExecutionError) {
         throw error;
@@ -231,10 +231,10 @@ export class ToolRegistry {
 
       // Preserve detailed error information from underlying API errors
       if (error instanceof McpAtlassianError) {
-        throw new ToolExecutionError(name, error.message, error.details);
+        throw new ToolExecutionError(name, error.message, error.details, error.printed);
       }
 
-      throw new ToolExecutionError(name, toStr(error));
+      throw new ToolExecutionError(name, toStr(error), undefined, error.printed);
     } finally {
       // Clear tool name from context
       setCurrentToolName('unknown');

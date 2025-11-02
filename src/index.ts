@@ -10,7 +10,7 @@ import { pathToFileURL } from 'url';
 import { appConfig, hasStringValue } from './bootstrap/init-config.js';
 import { createAuthenticationManager, validateAuthConfig } from './core/auth.js';
 import { initializeCache } from './core/cache.js';
-import { toError, toStr, ServerError } from './core/errors/errors.js';
+import { toError, toStr } from './core/errors/errors.js';
 import { createServiceServer } from './core/server/factory.js';
 import { ServiceModeJC } from './types/config';
 import chalk from 'chalk';
@@ -108,7 +108,7 @@ function buildAuthConfig (
   } | undefined,
 ): any {
   if (!auth) {
-    throw new ServerError('Authentication configuration is missing');
+    throw new Error('Authentication configuration is missing');
   }
   const {
     pat: token,
@@ -122,7 +122,7 @@ function buildAuthConfig (
   } else if (hasStringValue(username) && hasStringValue(password)) {
     return { type: 'basic', username, password };
   } else {
-    throw new ServerError('No valid authentication method configured');
+    throw new Error('No valid authentication method configured');
   }
 }
 
@@ -142,14 +142,9 @@ async function main (cliServiceMode?: ServiceModeJC) {
     const { server: { transportType, port }, jira, confluence, cache, productName, version } = appConfig;
 
     if (!serviceMode) {
-      throw new ServerError('Service mode is required. Set MCP_SERVICE_MODE environment variable or use --service flag');
+      throw new Error('Service mode is required. Set MCP_SERVICE_MODE environment variable or use --service flag');
     }
 
-    logger.info(`Starting ${productName} Server v${version}: serviceMode: ${serviceMode} / ${serviceMode}.url = ${(appConfig as any)[serviceMode].url}`);
-
-    const err = new Error('ddddddddddddddddddddddddd');
-    logger.error(err);
-    logger.error('Error', toError(err));
     logger.info(`Starting ${productName} Server v${version}: serviceMode: ${serviceMode} / ${serviceMode}.url = ${(appConfig as any)[serviceMode].url}`);
 
     // Initialize cache
@@ -159,7 +154,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
     // Test service-specific connectivity
     if (serviceMode === 'jira') {
       if (!jira?.url || jira.url === '***') {
-        throw new ServerError('JIRA URL is required but not configured');
+        throw new Error('JIRA URL is required but not configured');
       }
       const authConfig = buildAuthConfig(jira.auth || {});
       validateAuthConfig(authConfig);
@@ -167,19 +162,19 @@ async function main (cliServiceMode?: ServiceModeJC) {
       const v = jira.apiVersion;
       const isConnected = await authManager.testAuthentication(`${jira.url}/rest/api/${v}/${v === 2 ? 'serverInfo' : 'myself'}`);
       if (!isConnected) {
-        throw new ServerError('Failed to authenticate with JIRA');
+        throw new Error('Failed to authenticate with JIRA');
       }
       logger.info('JIRA authentication successful');
     } else if (serviceMode === 'confluence') {
       if (!confluence?.url || confluence.url === '***') {
-        throw new ServerError('Confluence URL is required but not configured');
+        throw new Error('Confluence URL is required but not configured');
       }
       const authConfig = buildAuthConfig(confluence.auth || {});
       validateAuthConfig(authConfig);
       const authManager = createAuthenticationManager(authConfig, confluence.url);
       const isConnected = await authManager.testAuthentication(`${confluence.url}/rest/api/user/current`);
       if (!isConnected) {
-        throw new ServerError('Failed to authenticate with Confluence');
+        throw new Error('Failed to authenticate with Confluence');
       }
       logger.info('Confluence authentication successful');
     }
@@ -204,7 +199,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
         break;
 
       default:
-        throw new ServerError(`Unsupported transport type: ${transportType}`);
+        throw new Error(`Unsupported transport type: ${transportType}`);
     }
 
     logger.info(`MCP Atlassian Server started successfully: serviceMode: ${serviceMode}`);

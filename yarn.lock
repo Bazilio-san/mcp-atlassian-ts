@@ -1225,10 +1225,10 @@ af-color@^0.0.8:
   resolved "https://registry.yarnpkg.com/af-color/-/af-color-0.0.8.tgz#c3a9810f54fe58af60471cde7ff15855085dd006"
   integrity sha512-FdVZeSA6c1UkM7FjhkKtS+t5pC6uJUwt7F96M/JTCPHuHxUvcZ2yYlqfhFWv+QHhau3gSg0J8FUsw3U0BDqTzw==
 
-af-logger-ts@^0.0.16:
-  version "0.0.16"
-  resolved "https://registry.yarnpkg.com/af-logger-ts/-/af-logger-ts-0.0.16.tgz#848e68f263aac8d8d0d11eba41c8a6b57f47df99"
-  integrity sha512-Cj64k/X7pPR2yTznr3hi5V8xhWFqui+f6xIskwWarudSBLtwGRWKVtFF+FPp3kZ9pW3wBtrF4qNNueFJMGOlQw==
+af-logger-ts@^0.0.18:
+  version "0.0.18"
+  resolved "https://registry.yarnpkg.com/af-logger-ts/-/af-logger-ts-0.0.18.tgz#e5cc45c55c08f01c0c80fd2bdaac3285fa1f66fa"
+  integrity sha512-gQYwnJAVkln9sG0pj1agknQyUZBBUvrqV6GGsQ6j0aTrzWTuDjAoHmKPLovXqe/Z+kYrpFQDye7KMj0sL1uR0Q==
   dependencies:
     app-root-path "^3.1.0"
     cli-color "^2.0.4"

@@ -10,8 +10,8 @@ import { ValidationError } from './ValidationError.js';
  * Authentication-related errors
  */
 export class AuthenticationError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('AUTHENTICATION_ERROR', message, details, 401);
+  constructor (message: string, details?: Record<string, unknown>, printed?: boolean) {
+    super('AUTHENTICATION_ERROR', message, details, 401, printed);
   }
 }
 
@@ -19,8 +19,8 @@ export class AuthenticationError extends McpAtlassianError {
  * Authorization-related errors
  */
 export class AuthorizationError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('AUTHORIZATION_ERROR', message, details, 403);
+  constructor (message: string, details?: Record<string, unknown>, printed?: boolean) {
+    super('AUTHORIZATION_ERROR', message, details, 403, printed);
   }
 }
 
@@ -28,8 +28,8 @@ export class AuthorizationError extends McpAtlassianError {
  * API-related errors
  */
 export class ApiError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>, statusCode: number = 400) {
-    super('API_ERROR', message, details, statusCode);
+  constructor (message: string, details?: Record<string, unknown>, statusCode: number = 400, printed?: boolean) {
+    super('API_ERROR', message, details, statusCode, printed);
   }
 }
 
@@ -37,8 +37,8 @@ export class ApiError extends McpAtlassianError {
  * Network-related errors
  */
 export class NetworkError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('NETWORK_ERROR', message, details, 503);
+  constructor (message: string, details?: Record<string, unknown>, printed?: boolean) {
+    super('NETWORK_ERROR', message, details, 503, printed);
   }
 }
 
@@ -46,8 +46,8 @@ export class NetworkError extends McpAtlassianError {
  * Rate limiting errors
  */
 export class RateLimitError extends McpAtlassianError {
-  constructor (message: string = 'Rate limit exceeded', details?: Record<string, unknown>) {
-    super('RATE_LIMIT_ERROR', message, details, 429);
+  constructor (message: string = 'Rate limit exceeded', details?: Record<string, unknown>, printed?: boolean) {
+    super('RATE_LIMIT_ERROR', message, details, 429, printed);
   }
 }
 
@@ -55,12 +55,13 @@ export class RateLimitError extends McpAtlassianError {
  * Resource not found errors
  */
 export class NotFoundError extends McpAtlassianError {
-  constructor (resource: string, identifier: string, details?: Record<string, unknown>) {
+  constructor (resource: string, identifier: string, details?: Record<string, unknown>, printed?: boolean) {
     super(
       'NOT_FOUND_ERROR',
       `${resource} with identifier '${identifier}' not found`,
       { resource, identifier, ...details },
       404,
+      printed,
     );
   }
 }
@@ -69,12 +70,13 @@ export class NotFoundError extends McpAtlassianError {
  * Tool execution errors
  */
 export class ToolExecutionError extends McpAtlassianError {
-  constructor (toolName: string, message: string, details?: Record<string, unknown>) {
+  constructor (toolName: string, message: string, details?: Record<string, unknown>, printed?: boolean) {
     super(
       'TOOL_EXECUTION_ERROR',
       `Failed to execute tool '${toolName}': ${message}`,
       { toolName, ...details },
       400,
+      printed,
     );
   }
 }
@@ -83,8 +85,8 @@ export class ToolExecutionError extends McpAtlassianError {
  * Server-related errors
  */
 export class ServerError extends McpAtlassianError {
-  constructor (message: string, details?: Record<string, unknown>) {
-    super('SERVER_ERROR', message, details, 500);
+  constructor (message: string, details?: Record<string, unknown>, printed?: boolean) {
+    super('SERVER_ERROR', message, details, 500, printed);
   }
 }
 

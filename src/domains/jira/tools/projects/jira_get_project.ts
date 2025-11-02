@@ -11,10 +11,10 @@ import { generateCacheKey } from '../../../../core/cache.js';
 import { formatToolResult } from '../../../../core/utils/formatToolResult.js';
 import { ToolWithHandler } from '../../../../types';
 import { getProjectLabels } from './search-project/labels-cache.js';
-import { normalizeToArray } from '../../../../core/utils/tools.js';
+import { isNonEmptyObject, normalizeToArray } from '../../../../core/utils/tools.js';
 import { getPriorityNamesArray } from '../../shared/priority-service.js';
 import { stringOrADF2markdown } from '../../shared/utils.js';
-import { withErrorHandling } from "../../../../core/errors/withErrorHandling.js";
+import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
 /**
  * Tool definition for jira_get_project
@@ -187,9 +187,13 @@ async function getProjectHandler (args: any, context: ToolContext): Promise<any>
 
         const fieldsMap: any = {};
         apiData.projects[0].issuetypes.forEach((issuetype: any) => {
-          Object.values(issuetype.fields).forEach((f: any) => {
-            fieldsMap[f.fieldId as string] = f;
-          });
+          if (isNonEmptyObject(issuetype)) {
+            Object.values(issuetype.fields).forEach((f: any) => {
+              if (typeof f.fieldId === 'string') {
+                fieldsMap[f.fieldId] = f;
+              }
+            });
+          }
         });
         const filteredFields = Object.values(fieldsMap).filter((f: any) => f.fieldId.startsWith('customfield_'));
         const clearedFields: ICustomFieldMeta[] = filteredFields.map((f: any) => {

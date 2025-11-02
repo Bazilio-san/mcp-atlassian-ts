@@ -1,7 +1,7 @@
 {
   "name": "mcp-atlassian-ts",
   "productName": "MCP Atlassian TS",
-  "version": "1.0.135",
+  "version": "1.0.136",
   "description": "Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture",
   "main": "dist/src/index.js",
   "type": "module",
@@ -54,7 +54,7 @@
     "@modelcontextprotocol/sdk": "^1.13.3",
     "adf-to-md": "^1.2.1",
     "af-color": "^0.0.8",
-    "af-logger-ts": "^0.0.16",
+    "af-logger-ts": "^0.0.18",
     "axios": "^1.6.7",
     "chalk": "^5.6.2",
     "config": "^4.1.1",
