@@ -1,9 +1,16 @@
 #!/bin/bash
 
+# Default branch
+branch="main"
+useNodeVersion="22.17.1"
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-nvm use 22.17.1
+################################################################################
+# Get the absolute path of the script and change to project directory
+ABS_SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+WD="$(dirname "$ABS_SCRIPT_PATH")"
+
+# Change to the project directory FIRST
+cd "$WD"
 
 c='\033[0;35m'
 y='\033[0;33m'
@@ -14,6 +21,21 @@ lg="\033[0;32m";
 echo_g() { /bin/echo -e "$g$1$w"; }
 echo_lg()    { if [ "$2" = "" ]; then /bin/echo -e "$lg$1$w"; else /bin/echo -en "$lg$1$w"; fi  }
 echo_y() { /bin/echo -e "$y$1$w"; };
+
+echo_g "========================================"
+echo_g "Working directory: ${y}${WD}${g}"
+echo_g "========================================"
+
+# Check for .envrc and use it, otherwise use nvm with useNodeVersion
+if [ -f ".envrc" ]; then
+  echo_g "Loading .envrc..."
+  source .envrc
+else
+  echo_g "Using Node.js version: ${useNodeVersion}"
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  nvm use ${useNodeVersion}
+fi
 
 parse_yaml() {
   local prefix=$2
@@ -34,21 +56,52 @@ parse_yaml() {
 # Function to send build notification to multiple email addresses
 send_build_notification() {
   local emails=$1
-  local subject="Build Notification: $SERVICE"
-  local message="The build for $SERVICE has been completed successfully."
+  local status=$2
+  local build_log=$3
 
-  # Split email addresses by comma
-  IFS=',' read -ra EMAIL_ARRAY <<< "$emails"
+  if [[ -z "$emails" ]]; then
+    return
+  fi
 
-  for email in "${EMAIL_ARRAY[@]}"; do
-    # Trim whitespace
-    email=$(echo "$email" | xargs)
-    if [ -n "$email" ]; then
-      echo_g "Sending build notification to: $email"
-      # Use mail command to send email
-      echo "$message" | mail -s "$subject" "$email"
+  local emailLogFile="${WD}/update__${SERVICE}__email.log"
+
+  # Create HTML wrapper
+  cat << EOF > "$emailLogFile"
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${status} Update ${SERVICE} (on ${HOSTNAME})</title>
+</head>
+<body>
+<pre>
+EOF
+
+  # Add build log content (remove ANSI color codes)
+  printf "%b\n" "$build_log" | sed -r 's/\x1B\[(;?[0-9]{1,3})+[mGK]//g' >> "$emailLogFile"
+
+  # Close HTML
+  cat << EOF >> "$emailLogFile"
+
+</pre></body></html>
+EOF
+
+  # Split comma-separated email addresses and send to each one
+  IFS=',' read -ra EMAIL_ADDRESSES <<< "$emails"
+  for email_address in "${EMAIL_ADDRESSES[@]}"; do
+    # Trim whitespace from email address
+    email_address=$(echo "$email_address" | xargs)
+    if [ -n "$email_address" ]; then
+      echo_g "Sending update notification to: $email_address"
+      # Send email with HTML content type using redirect
+      mail -s "$(echo -e "${status} Update: $SERVICE (on ${HOSTNAME})\nContent-Type: text/html")" "$email_address" < "$emailLogFile"
     fi
   done
+
+  # Clean up temporary email file
+  sleep 1
+  rm -f "$emailLogFile"
 }
 
 IFS='' read -r -d '' help <<'EOF'
@@ -61,7 +114,7 @@ IFS='' read -r -d '' help <<'EOF'
     Options:
 
     -b|--branch
-        GIT branch name. Default - main
+        GIT branch name. Default - master
     -l|--log
         Switch to log display mode after completion
     -?|--help
@@ -98,24 +151,43 @@ for i in "$@" ; do
 done
 
 
-# Default branch
-branch="main"
+################################################################################
+# Create deploy folder if it doesn't exist
+[ -d deploy ] || mkdir deploy
+
 # Parse config if exists
 configFile="./deploy/config.yml"
 if [ -f "$configFile" ]; then
   eval $(parse_yaml $configFile)
 fi
 
+# Trim whitespace from variables
+branch=`echo $branch`;
+nodeVersion=`echo $nodeVersion`;
+email=`echo $email`;
+
+# Set default branch if not specified
+if [ -z "$branch" ]; then
+  branch="master"
+fi
+
+# Compare current config with file and re-save if different
+compare1=$(echo `cat $configFile 2>/dev/null` | tr -d ' ')
+compare2="branch:${branch}nodeVersion:${nodeVersion}email:${email}"
+
+if ! [[ "$compare1" = "$compare2" ]]; then
+  echo_lg "Creating/updating the config file: $configFile"
+  # Save config
+  echo "branch: $branch" > $configFile
+  echo "nodeVersion: $nodeVersion" >> $configFile
+  echo "email: $email" >> $configFile
+fi
+
+################################################################################
+
 if [[ -n $expectedBranch ]]; then
   expected_branch=$expectedBranch
 else
-  # Default branch
-  branch="main"
-  # Parse config if exists
-  configFile="./deploy/config.yml"
-  if [ -f "$configFile" ]; then
-    eval $(parse_yaml $configFile)
-  fi
   expected_branch=$branch
 fi
 
@@ -131,11 +203,9 @@ SERVICE_INSTANCE=$(echo "$SERVICE_INSTANCE" | tr -d '\r' | xargs)
 
 if [ -z "$SERVICE_INSTANCE" ]
 then
-  echo "========================================================================="
   SERVICE="${SERVICE_NAME}"
 else
   SERVICE="${SERVICE_NAME}--${SERVICE_INSTANCE}"
-  echo "================SERVICE_INSTANCE===============|${SERVICE_INSTANCE}|=========================================="
 fi
 
 # Just in case, trim final service name (remove CR/LF and external spaces)
@@ -146,38 +216,15 @@ service_exists() {
   systemctl show --no-page "${n}.service" >/dev/null 2>&1
 }
 
-# ... existing code ...
-if service_exists "$SERVICE"
-echo_g "**** Restarting service ${SERVICE} ****"
-# ... existing code ...
-then
-  systemctl restart "$SERVICE"
-  echo_g "**** Service $g$SERVICE$c restarted ****"
-  if [[ -n "$showLog" ]]; then
-    journalctl -o cat -xefu "$SERVICE"
-  fi
-else
-  echo_g "========== RESTART PM2 SERVICE =========="
-  pm2 restart "$SERVICE"
-  if [[ -n "$showLog" ]]; then
-    pm2 logs "$SERVICE" --lines=1000
-  fi
-fi
-SERVICE_INSTANCE=`cat .env | grep SERVICE_INSTANCE | head -1 | awk -F= '{ print $2 }'`
-SERVICE_INSTANCE=$(echo "$SERVICE_INSTANCE" | xargs)
-
-if [ -z "$SERVICE_INSTANCE" ]
-then
-  echo "========================================================================="
-  SERVICE="${SERVICE_NAME}"
-else
-  SERVICE="${SERVICE_NAME}--${SERVICE_INSTANCE}"
-  echo "================SERVICE_INSTANCE===============|${SERVICE_INSTANCE}|=========================================="
-fi
-
 echo_g "========================================"
 echo_g "**** RENEW ${y}${SERVICE}${g} ****"
 echo_g "========================================"
+
+# Initialize build log
+BUILD_LOG="Update started at $(date '+%Y-%m-%d %H:%M:%S')\n"
+BUILD_LOG+="Service: ${SERVICE}\n"
+BUILD_LOG+="Working directory: ${WD}\n"
+BUILD_LOG+="========================================\n\n"
 
 repo_info() {
   local currentHash=$(git rev-parse --short HEAD)
@@ -188,6 +235,12 @@ repo_info() {
   echo_g "Last commit: ${ly}${currentHash}${g}, date: ${lm}${currentCommitDate}"
   echo_g "message: ${lm}${currentCommitMessage}"
   echo_g "----------------------------------------"
+
+  # Add to build log
+  BUILD_LOG+="Current branch: ${currBranch}\n"
+  BUILD_LOG+="Last commit: ${currentHash}, date: ${currentCommitDate}\n"
+  BUILD_LOG+="Message: ${currentCommitMessage}\n"
+  BUILD_LOG+="----------------------------------------\n"
 }
 
 currentBranch=$(git rev-parse --abbrev-ref HEAD)
@@ -203,43 +256,54 @@ if [ "$currentBranch" != "$expected_branch" ]; then
 fi
 
 echo_g "=============== git pull ==============="
+BUILD_LOG+="Git pull from branch: ${expected_branch}\n"
 
 git pull origin $expected_branch 2>/dev/null
 
 repo_info
 
 echo_g "====== CLEAN INSTALL DEPENDENCIES ======"
+BUILD_LOG+="Clean install dependencies\n"
 
 rm -rf node_modules/
 yarn install --frozen-lockfile
+BUILD_LOG+="Dependencies installed\n"
 
 echo_g "========== TYPESCRIPT BUILD =========="
+BUILD_LOG+="TypeScript build started\n"
 rm -rf ./dist
 npm run build
 echo_y "typescript build done"
+BUILD_LOG+="TypeScript build completed\n"
 
 echo "**** Restarting service ${SERVICE} ****"
+BUILD_LOG+="Restarting service: ${SERVICE}\n"
 
 if service_exists "$SERVICE"
 then
-  systemctl restart $SERVICE
+  systemctl restart "$SERVICE"
   echo_g "**** Service $g$SERVICE$c restarted ****"
+  BUILD_LOG+="Service restarted via systemctl\n"
   if [[ -n "$showLog" ]]; then
-    journalctl -o cat -xefu $SERVICE
+    journalctl -o cat -xefu "$SERVICE"
   fi
 else
   echo_g "========== RESTART PM2 SERVICE =========="
-  pm2 restart ${SERVICE}
+  pm2 restart "$SERVICE"
+  BUILD_LOG+="Service restarted via PM2\n"
   if [[ -n "$showLog" ]]; then
-    pm2 logs ${SERVICE} --lines=1000
+    pm2 logs "$SERVICE" --lines=1000
   fi
 fi
 
+# Add completion info to build log
+BUILD_LOG+="========================================\n"
+BUILD_LOG+="Update completed successfully at $(date '+%Y-%m-%d %H:%M:%S')\n"
+
 # Send build notification if email is configured
 if [ -n "$email" ]; then
-  # echo_g "========== SENDING BUILD NOTIFICATION =========="
-  # send_build_notification "$email"
-  :  # no-op command
+  echo_g "================= SENDING EMAIL ================"
+  send_build_notification "$email" "SUCCESS" "${BUILD_LOG}"
 fi
 
 exit 0
