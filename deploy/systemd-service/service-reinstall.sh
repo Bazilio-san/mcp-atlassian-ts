@@ -27,7 +27,7 @@ then
   systemctl disable --now $SERVICE
   rm /etc/systemd/system/$SERVICE.service
   PID=$(lsof -i tcp:$WS_PORT | grep $WS_PORT | awk '{print $2}' | head -1)
-  if [ ! -z "$PID" ]; then kill $PID; fi
+  if [ ! -z "$PID" ]; then kill -9 $PID; fi
   systemctl daemon-reload
   echo -e "$c**** Service removed ****$c0"
 fi

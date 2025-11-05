@@ -50,48 +50,56 @@ export const transliterate = (text: string): string => {
     .join('');
 };
 
+// noinspection NonAsciiCharacters
+const deTranslitMap: Record<string, string> = {
+  a: 'а',
+  b: 'б',
+  v: 'в',
+  g: 'г',
+  d: 'д',
+  e: 'е',
+  yo: 'ё',
+  zh: 'ж',
+  z: 'з',
+  i: 'и',
+  y: 'й',
+  k: 'к',
+  l: 'л',
+  m: 'м',
+  n: 'н',
+  o: 'о',
+  p: 'п',
+  r: 'р',
+  s: 'с',
+  t: 'т',
+  u: 'у',
+  f: 'ф',
+  kh: 'х',
+  ts: 'ц',
+  ch: 'ч',
+  sh: 'ш',
+  shch: 'щ',
+  yu: 'ю',
+  ya: 'я',
+  ' ': ' ',
+};
+
+
+// Автоматическое вычисление многобуквенных комбинаций (длина > 1),
+// отсортированных по убыванию длины для корректной замены
+const multiChar: string[] = Object.keys(deTranslitMap)
+  .filter(k => k.length > 1)
+  .sort((a, b) => b.length - a.length);
+
 /**
  * Reverse transliteration - from Latin to Cyrillic
  */
 export const transliterateRU = (text: string): string => {
   // noinspection NonAsciiCharacters
-  const deTranslitMap: Record<string, string> = {
-    a: 'а',
-    b: 'б',
-    v: 'в',
-    g: 'г',
-    d: 'д',
-    e: 'е',
-    yo: 'ё',
-    zh: 'ж',
-    z: 'з',
-    i: 'и',
-    y: 'й',
-    k: 'к',
-    l: 'л',
-    m: 'м',
-    n: 'н',
-    o: 'о',
-    p: 'п',
-    r: 'р',
-    s: 'с',
-    t: 'т',
-    u: 'у',
-    f: 'ф',
-    kh: 'х',
-    ts: 'ц',
-    ch: 'ч',
-    sh: 'ш',
-    shch: 'щ',
-    yu: 'ю',
-    ya: 'я',
-    ' ': ' ',
-  };
 
   let result = text.toLowerCase();
 
   // Process multi-character combinations in descending order of length
-  const multiChar = ['shch', 'kh', 'ts', 'ch', 'sh', 'yo', 'zh', 'yu', 'ya'];
   for (const combo of multiChar) {
     if (deTranslitMap[combo]) {
       result = result.replace(new RegExp(combo, 'g'), deTranslitMap[combo]);
@@ -121,13 +129,6 @@ export const transliterateRU = (text: string): string => {
  */
 export const enToRuVariants = (text: string, maxResults: number = 20): string[] => {
   const s = text.toLowerCase();
-
-  // Priority multi-character Latin clusters
-  const clusters = [
-    'shch', 'sch', // щ (often sch/shch)
-    'yo', 'yu', 'ya',
-    'kh', 'ts', 'ch', 'sh',
-  ];
 
   // Mappings of Latin sequences to sets of Russian variants
   const map: Record<string, string[]> = {
@@ -187,7 +188,7 @@ export const enToRuVariants = (text: string, maxResults: number = 20): string[] 
     }
 
     // Пробуем многобуквенные кластеры (самые длинные сначала)
-    for (const cluster of clusters.sort((a, b) => b.length - a.length)) {
+    for (const cluster of multiChar) {
       if (s.startsWith(cluster, idx)) {
         const variants = map[cluster];
         if (variants) {

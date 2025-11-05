@@ -276,7 +276,7 @@ export class McpAtlassianServer {
           },
           serverInfo: {
             name: 'mcp-atlassian-ts',
-            version: appConfig.version || '1.0.0',
+            version: appConfig.version,
           },
         };
 

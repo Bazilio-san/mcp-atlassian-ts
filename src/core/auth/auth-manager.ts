@@ -68,14 +68,14 @@ export class AuthenticationManager {
   private createAuthContext (providedToken: string | undefined, headers: any): AuthContext {
     if (this.isValidServerToken(providedToken)) {
       // System mode: use configuration credentials
-      logger.debug('[Auth] Using system authentication mode');
+      logger.debug('Using system authentication mode');
       return {
         mode: 'system',
         headers: this.getSystemAuthHeaders(),
       };
     } else {
       // Header mode: use request headers
-      logger.debug('[Auth] Using header-based authentication mode');
+      logger.debug('Using header-based authentication mode');
       return {
         mode: 'headers',
         headers: this.extractAuthHeaders(headers),

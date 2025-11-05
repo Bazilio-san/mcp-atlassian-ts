@@ -28,7 +28,7 @@ server:
 # Response format configuration. ENV: TOOL_ANSWER_AS
 # - structuredContent - default - the response in result.structuredContent returns JSON
 # - text - in the response, serialized JSON is returned in result.content[0].text
-toolAnswerAs: structuredContent
+toolAnswerAs: text
 
 # --------------------------------------------------
 # LOGGING CONFIGURATION
