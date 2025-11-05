@@ -230,7 +230,7 @@ async function main (cliServiceMode?: ServiceModeJC) {
  */
 function setupProcessHandlers () {
 
-  const toError = (err: any): Error => {
+  const _toError = (err: any): Error => {
     return err instanceof Error ? err : new Error(String(err));
   };
 

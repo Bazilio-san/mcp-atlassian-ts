@@ -14,7 +14,7 @@ import type { ToolContext } from '../../types/tool-context';
 // Import tool modules - Core tools
 import { jira_get_issue } from './tools/core/jira_get_issue.js';
 import { jira_search_issues } from './tools/core/jira_search_issues.js';
-import { createJiraCreateIssueTool } from './tools/core/jira_create_issue.js';
+import { createJiraCreateIssueTool, modifyToolForUserLookup } from './tools/core/jira_create_issue.js';
 import { createJiraUpdateIssueTool } from './tools/core/jira_update_issue.js';
 import { jira_delete_issue } from './tools/core/jira_delete_issue.js';
 import { jira_batch_create_issues } from './tools/core/jira_batch_create_issues.js';
@@ -182,6 +182,7 @@ export class JiraToolsManager {
     const priorityNamesArray = await getPriorityNamesArray(httpClientToUse, this.context.config);
 
     const jira_create_issue = await createJiraCreateIssueTool(priorityNamesArray);
+    modifyToolForUserLookup(jira_create_issue, this.context);
     const jira_update_issue = await createJiraUpdateIssueTool(fieldIdEpicLink, priorityNamesArray);
 
     // Register all tools with their handlers

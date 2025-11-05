@@ -103,6 +103,13 @@ jira:
     # Story Points custom field ID: JIRA_STORY_POINTS_FIELD_ID
     storyPoints: customfield_10024
 
+  # User lookup service configuration (optional)
+  userLookup:
+    # Enable fuzzy user search via microservice. ENV: JIRA_USER_LOOKUP_ENABLED
+    enabled: false
+    # Microservice URL for user lookup. ENV: JIRA_USER_LOOKUP_SERVICE_URL
+    serviceUrl: ""
+
   # Tool configuration
   usedInstruments:
     # Include ALL to enable all tools, or specify a list of tool names

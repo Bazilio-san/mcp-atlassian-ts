@@ -55,7 +55,11 @@ export interface JCConfig {
     epicLink: string;
     epicName: string;
     storyPoints: string;
-  }
+  };
+  userLookup?: {
+    enabled: boolean;
+    serviceUrl: string;
+  };
 }
 
 // Error types

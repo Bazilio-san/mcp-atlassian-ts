@@ -1,8 +1,9 @@
 // noinspection UnnecessaryLocalVariableJS
 
 /**
- * JIRA tool module: Create Issue
+ * JIRA tool module: Create Issue with pluggable user resolution
  * Creates a new JIRA issue with specified fields
+ * Supports fuzzy user search when microservice is configured
  */
 
 import type { ToolContext } from '../../../../types/tool-context';
@@ -18,12 +19,50 @@ import { getPriorityNamesArray } from '../../shared/priority-service.js';
 import { ValidationError } from '../../../../core/errors/ValidationError.js';
 import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js';
 
+/**
+ * Проверяет включен ли user lookup
+ */
+function isUserLookupEnabled (context: ToolContext): boolean {
+  return !!(context.config.userLookup?.enabled && context.config.userLookup.serviceUrl);
+}
+
+/**
+ * Модифицирует tool в зависимости от конфигурации user lookup
+ */
+export function modifyToolForUserLookup (tool: ToolWithHandler, context: ToolContext): void {
+  if (isUserLookupEnabled(context)) {
+    tool.description = `Create a new issue (task, bug, story, etc.) in JIRA with advanced user lookup.
+
+# WORKFLOW
+
+Always follow these steps when creating a task:
+
+1) Collect or receive: projectIdOrKey, issueType, summary.
+2) If project is not specified, ask the user for clarification.
+3) Use the 'jira_project_finder' tool to obtain the exact project key.
+4) With project key, USE 'jira_get_project' tool to list available issue types, priorities, labels, custom fields.
+5) For assignee/reporter fields, you can use fuzzy search - specify names, emails, or partial matches. The system will automatically resolve them to exact JIRA usernames.
+6) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic's issue key (epicKey).
+7) IMPORTANT! DISPLAY ALL COLLECTED PARAMETERS FOR USER CONFIRMATION BEFORE CREATION.
+8) Upon user confirmation, call 'jira_create_issue' with the final parameters.
+
+Non-interactive mode:
+If called by another agent (without user input), skip clarification and confirmation steps. Use available data only.`;
+
+    // Обновляем описания полей assignee и reporter
+    // @ts-ignore
+    tool.inputSchema.properties.assignee.description = 'Optional. User to assign the issue to. Supports fuzzy search: exact username (vpupkun), display name ("Василий Пупкин"), or email (vpupkun@company.com)';
+    // @ts-ignore
+    tool.inputSchema.properties.reporter.description = 'Optional. Issue reporter. Supports fuzzy search: exact username (joe_smith), display name ("Joe Smith"), or email (joe.smith@company.com)';
+  }
+}
+
 export async function createJiraCreateIssueTool (priorityNamesArray?: string[]): Promise<ToolWithHandler> {
   const result: ToolWithHandler = {
     name: 'jira_create_issue',
     description: `Create a new issue (task, bug, story, etc.) in JIRA.
 
-# WORKFLOW 
+# WORKFLOW
 
 Always follow these steps when creating a task:
 
@@ -32,7 +71,7 @@ Always follow these steps when creating a task:
 3) Use the 'jira_project_finder' tool to obtain the exact project key.
 4) With project key, USE 'jira_get_project' tool to list available issue types, priorities, labels, custom fields.
 5) If a fuzzy search tool for users exists, use it to obtain user login; clarify at most 3 times.
-6) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic’s issue key (epicKey).
+6) If issue is under an Epic, use 'jira_get_epics_for_project' to pick epic's issue key (epicKey).
 7) IMPORTANT! DISPLAY ALL COLLECTED PARAMETERS FOR USER CONFIRMATION BEFORE CREATION.
 8) Upon user confirmation, call 'jira_create_issue' with the final parameters.
 
@@ -84,7 +123,7 @@ The response of the 'jira_get_project' tool will contain available labels`,
         epicKey: {
           type: 'string',
           description: `Epic issue key to link this issue
-If user ask to link new issue to epik, after clarifying the project key, 
+If user ask to link new issue to epik, after clarifying the project key,
 use 'jira_get_epics_for_project' tool to clarify epic key`,
         },
         components: {
@@ -103,7 +142,7 @@ use 'jira_get_epics_for_project' tool to clarify epic key`,
         },
         customFields: {
           type: 'object',
-          description: `Custom field values as key-value pairs (fieldId as key). 
+          description: `Custom field values as key-value pairs (fieldId as key).
 The response of the 'jira_get_project' tool will contain information about filling in the available custom fields`,
           additionalProperties: true,
         },
@@ -125,6 +164,7 @@ The response of the 'jira_get_project' tool will contain information about filli
     // @ts-ignore
     result.inputSchema.properties.priority.enum = priorityNamesArray;
   }
+
   return result;
 }
 
@@ -183,6 +223,131 @@ async function validateProjectAndIssueType (
 }
 
 /**
+ * Простой поиск пользователей через микросервис
+ */
+
+async function resolveUsersSimple (
+  assignee: string | undefined,
+  reporter: string | undefined,
+  context: ToolContext,
+): Promise<{ assignee?: string; reporter?: string; warnings?: string[] }> {
+  const { config, httpClient, logger } = context;
+
+  // Если микросервис не настроен - используем прямое назначение
+  if (!isUserLookupEnabled(context)) {
+    const result: { assignee?: string; reporter?: string; warnings: string[] } = { warnings: [] };
+    if (assignee !== undefined) {result.assignee = assignee;}
+    if (reporter !== undefined) {result.reporter = reporter;}
+    return result;
+  }
+
+  const warnings: string[] = [];
+  const usersToResolve = [];
+
+  if (assignee) {
+    usersToResolve.push({ field: 'assignee', value: assignee });
+  }
+  if (reporter) {
+    usersToResolve.push({ field: 'reporter', value: reporter });
+  }
+
+  if (usersToResolve.length === 0) {
+    const result: { assignee?: string; reporter?: string; warnings: string[] } = { warnings };
+    if (assignee !== undefined) {result.assignee = assignee;}
+    if (reporter !== undefined) {result.reporter = reporter;}
+    return result;
+  }
+
+  // Делаем один запрос к микросервису для всех пользователей
+  const resolvedUsers: Record<string, string> = {};
+
+  for (const user of usersToResolve) {
+    try {
+      logger.debug(`Resolving ${user.field}: "${user.value}"`);
+
+      const response = await httpClient.post(
+        config.userLookup!.serviceUrl,
+        {
+          query: user.value,
+          limit: 15,
+        },
+        {
+          timeout: 5000,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+
+      const employees = response.data || [];
+
+      if (employees.length === 0) {
+        throw new ValidationError(`Сотрудник "${user.value}" не найден в системе`);
+      }
+
+      // Исключаем уволенных
+      const activeEmployees = employees.filter((emp: any) => !emp.is_fired);
+
+      if (activeEmployees.length === 0) {
+        throw new ValidationError(`Найденные сотрудники по запросу "${user.value}" уволены`);
+      }
+
+      // Ищем точное совпадение (similarity = 2)
+      const exactMatches = activeEmployees.filter((emp: any) => emp.similarity === 2);
+      if (exactMatches.length === 1) {
+        const emp = exactMatches[0];
+        resolvedUsers[user.field] = emp.username;
+        if (emp.username !== user.value) {
+          warnings.push(`${user.field} "${user.value}" разрешен как "${emp.username}" (${emp.person_full_name})`);
+        }
+        continue;
+      }
+
+      // Ищем практически точные совпадения (similarity = 1)
+      const goodMatches = activeEmployees.filter((emp: any) => emp.similarity >= 1);
+
+      if (goodMatches.length === 1) {
+        const emp = goodMatches[0];
+        resolvedUsers[user.field] = emp.username;
+        if (emp.username !== user.value) {
+          warnings.push(`${user.field} "${user.value}" разрешен как "${emp.username}" (${emp.person_full_name})`);
+        }
+        continue;
+      }
+
+      // Множественные результаты - ошибка выбора
+      const candidates = goodMatches.length > 0 ? goodMatches : activeEmployees.slice(0, 5);
+
+      throw new ValidationError(
+        `Найдено несколько сотрудников для "${user.value}". Выберите точный вариант:`,
+        {
+          candidates: candidates.map((emp: any) => ({
+            username: emp.username,
+            displayName: emp.person_full_name,
+            email: emp.email,
+            department: emp.department_name,
+            position: emp.position_name,
+            score: emp.similarity,
+            suggestion: `Используйте "${emp.username}" для точного указания`,
+          })),
+        },
+      );
+
+    } catch (error) {
+      logger.error(`User lookup failed for ${user.field} "${user.value}": ${error}`);
+      throw error instanceof ValidationError
+        ? error
+        : new ValidationError(`Сервис поиска пользователей недоступен: ${error}`);
+    }
+  }
+
+  const result: { assignee?: string; reporter?: string; warnings: string[] } = { warnings };
+  const finalAssignee = resolvedUsers.assignee || assignee;
+  const finalReporter = resolvedUsers.reporter || reporter;
+  if (finalAssignee !== undefined) {result.assignee = finalAssignee;}
+  if (finalReporter !== undefined) {result.reporter = finalReporter;}
+  return result;
+}
+
+/**
  * Handler function for creating a JIRA issue
  */
 async function createIssueHandler (args: any, context: ToolContext): Promise<any> {
@@ -228,6 +393,27 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
       return formatToolResult(json);
     }
 
+    // Разрешение пользователей
+    let resolvedUsers: { assignee?: string; reporter?: string; warnings?: string[] };
+    try {
+      resolvedUsers = await resolveUsersSimple(assignee, reporter, context);
+    } catch (error) {
+      if (error instanceof ValidationError && error.data?.candidates) {
+        // Специальная обработка неоднозначности
+        const json = {
+          success: false,
+          operation: 'create_issue',
+          error: 'USER_RESOLUTION_AMBIGUOUS',
+          message: error.message,
+          data: {
+            availableUsers: error.data.candidates,
+          },
+        };
+        return formatToolResult(json);
+      }
+      throw error; // Прочие ошибки пробрасываем дальше
+    }
+
     // Normalize labels and components
     const normalizedLabels = normalizeToArray(labels);
     const normalizedComponents = normalizeToArray(components);
@@ -246,11 +432,11 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     if (description) {
       issueInput.fields.description = mdToADF(description);
     }
-    if (assignee) {
-      issueInput.fields.assignee = { name: assignee };
+    if (resolvedUsers.assignee) {
+      issueInput.fields.assignee = { name: resolvedUsers.assignee };
     }
-    if (reporter) {
-      issueInput.fields.reporter = { name: reporter };
+    if (resolvedUsers.reporter) {
+      issueInput.fields.reporter = { name: resolvedUsers.reporter };
     }
     if (priority) {
       const priorityNamesArray = await getPriorityNamesArray(httpClient, config);
@@ -293,13 +479,20 @@ async function createIssueHandler (args: any, context: ToolContext): Promise<any
     const createdIssue = response.data;
 
     const i = `project${/^\d+$/.test(projectIdOrKey) ? 'Id' : 'Key'}`;
-    const message = `Issue ${createdIssue.key} created successfully in the ${i} ${projectIdOrKey}`;
+    let message = `Issue ${createdIssue.key} created successfully in the ${i} ${projectIdOrKey}`;
+
+    // Добавляем предупреждения о разрешении пользователей
+    if (resolvedUsers.warnings?.length) {
+      message += '\n\nПользователи разрешены:\n' + resolvedUsers.warnings.join('\n');
+    }
+
     logger.info(message);
 
     const json = {
       success: true,
       operation: 'create_issue',
       message,
+      userResolutionWarnings: resolvedUsers.warnings,
       newIssue: {
         id: createdIssue.id,
         key: createdIssue.key,

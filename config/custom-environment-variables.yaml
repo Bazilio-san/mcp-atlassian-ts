@@ -42,6 +42,10 @@ jira:
     epicLink: JIRA_EPIC_LINK_FIELD_ID
     epicName: JIRA_EPIC_NAME_FIELD_ID
 
+  userLookup:
+    enabled: JIRA_USER_LOOKUP_ENABLED
+    serviceUrl: JIRA_USER_LOOKUP_SERVICE_URL
+
 confluence:
   url: CONFLUENCE_URL
   auth:

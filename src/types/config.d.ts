@@ -52,6 +52,12 @@ export interface IToolsConfig {
   exclude: string[];
 }
 
+// User resolution configuration
+export interface IUserLookupConfig {
+  enabled: boolean;
+  serviceUrl: string;
+}
+
 // JIRA configuration
 export interface IJiraConfig {
   url: string;
@@ -69,6 +75,7 @@ export interface IJiraConfig {
     storyPoints: string;
   },
   usedInstruments?: IToolsConfig;
+  userLookup?: IUserLookupConfig; // НОВОЕ ПОЛЕ
 }
 
 // Confluence configuration
