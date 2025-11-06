@@ -6,6 +6,7 @@ import { IADFDocument, IJiraUser } from '../../../types';
 import adfToMdConverter from 'adf-to-md';
 // @ts-ignore
 import mdToAdfConverter from 'md-to-adf';
+import { ToolContext } from '../../../types/tool-context.js';
 
 export const md2Adf = (md: string): IADFDocument => {
   try {
@@ -81,4 +82,11 @@ export const getVisibility = (what: string) => {
     required: ['type', 'value'],
   };
   return visibility;
+};
+
+/**
+ * Checks if user lookup is enabled
+ */
+export const isUserLookupEnabled = (context: ToolContext): boolean => {
+  return !!(context.config.userLookup?.enabled && context.config.userLookup.serviceUrl);
 };

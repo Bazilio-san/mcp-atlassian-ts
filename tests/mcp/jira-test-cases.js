@@ -236,6 +236,7 @@ export class JiraMcpTestCases {
           issueType: TEST_ISSUE_TYPE_NAME,
           summary: 'MCP HTTP Test Issue',
           description: '# Test issue\n\nCreated via **MCP HTTP** tester',
+          // assignee: 'Иванов',
         },
         description: 'Create new issue',
       },

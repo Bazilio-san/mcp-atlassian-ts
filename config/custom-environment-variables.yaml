@@ -45,6 +45,7 @@ jira:
   userLookup:
     enabled: JIRA_USER_LOOKUP_ENABLED
     serviceUrl: JIRA_USER_LOOKUP_SERVICE_URL
+    timeoutMs: JIRA_USER_LOOKUP_TIMEOUT_MS
 
 confluence:
   url: CONFLUENCE_URL

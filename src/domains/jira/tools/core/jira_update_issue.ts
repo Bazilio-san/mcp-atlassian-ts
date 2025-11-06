@@ -15,12 +15,27 @@ import { withErrorHandling } from '../../../../core/errors/withErrorHandling.js'
  * @param priorityNamesArray - Optional array of valid priority names for enum constraint
  */
 export async function createJiraUpdateIssueTool (
+  context: ToolContext,
   fieldIdEpicLink?: string,
   priorityNamesArray?: string[],
 ): Promise<ToolWithHandler> {
+  const isUserLookupEnabledB = !!(context.config.userLookup?.enabled && context.config.userLookup.serviceUrl);
+
   const epicLinkInfo = fieldIdEpicLink
     ? `To unlink an issue from an Epic, set custom field "${fieldIdEpicLink}" to null`
     : '';
+
+
+  const assigneeDescription = isUserLookupEnabledB
+    ? 'Optional. User to assign the issue to. Supports fuzzy search: exact username (vpupkun), display name ("Василий Пупкин"), or email (vpupkun@company.com)'
+    : 'Optional. The Jira username/login of the person to assign the issue to. E.g.: vpupkun';
+  'New assignee account ID or email'
+  const reporterDescription = isUserLookupEnabledB
+    ? 'Optional. Issue reporter. Supports fuzzy search: exact username (joe_smith), display name ("Joe Smith"), or email (joe.smith@company.com)'
+    : 'Optional. The Jira username/login of the issue reporter. E.g.: joe_smith';
+
+
+
 
   const result: ToolWithHandler = {
     name: 'jira_update_issue',
@@ -120,7 +135,7 @@ async function updateIssueHandler (args: any, context: ToolContext): Promise<any
       fields.description = mdToADF(description); // VVT
     }
     if (assignee) {
-      fields.assignee = { accountId: assignee };
+      fields.assignee = { name: assignee };  // VVA
     }
     if (priority) {
       fields.priority = { name: priority };

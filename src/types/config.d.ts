@@ -56,6 +56,7 @@ export interface IToolsConfig {
 export interface IUserLookupConfig {
   enabled: boolean;
   serviceUrl: string;
+  timeoutMs?: number;
 }
 
 // JIRA configuration

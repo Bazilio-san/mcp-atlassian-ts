@@ -42,7 +42,7 @@ export const jira_get_user_profile: ToolWithHandler = {
  */
 async function getUserProfileHandler (args: any, context: ToolContext): Promise<any> {
   return withErrorHandling(async () => {
-    const { login } = args;
+    const { login } = args; // VVA
     const { httpClient, cache, logger, config } = context;
 
     logger.info(`Fetching JIRA user profile: login: ${login}`);
@@ -58,7 +58,7 @@ async function getUserProfileHandler (args: any, context: ToolContext): Promise<
         // https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-users/#api-rest-api-2-user-get
         // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-users/#api-rest-api-3-user-get
         const response = await httpClient.get(`${config.restPath}/user`, {
-          params: { accountId: login },
+          params: { accountId: login }, // VVA проверить, ест ли что-то кроме accountId
         });
         return response.data;
       } catch {

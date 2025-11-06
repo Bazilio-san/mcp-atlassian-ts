@@ -109,7 +109,7 @@ async function batchCreateIssuesHandler (args: any, context: ToolContext): Promi
         issuetype: { name: issue.issueType },
         summary: trim(issue.summary).substring(0, 400),
         description: mdToADF(issue.description),
-        assignee: issue.assignee ? { accountId: issue.assignee } : undefined,
+        assignee: issue.assignee ? { name: issue.assignee } : undefined, // VVQ VVT
         priority: issue.priority ? { name: issue.priority } : undefined,
         labels: issue.labels || [],
         components: issue.components?.map((c: string) => ({ name: c })) || [],

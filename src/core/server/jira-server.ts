@@ -36,6 +36,7 @@ export class JiraServer extends McpAtlassianServer {
         apiVersion,
         restPath,
         fieldId,
+        userLookup,
       },
       cache,
       logger: { level: logLevel },
@@ -66,6 +67,7 @@ export class JiraServer extends McpAtlassianServer {
       auth = { ...oauth2, type: 'oauth2' };
     }
 
+
     const jiraConfig: JCConfig = {
       url,
       origin,
@@ -75,6 +77,9 @@ export class JiraServer extends McpAtlassianServer {
       fieldId,
     };
 
+    if (userLookup) {
+      jiraConfig.userLookup = userLookup;
+    }
     // Initialize parent with service mode configuration
     super(serverConfig, jiraConfig, 'jira');
 

@@ -80,6 +80,7 @@ async function getWorklogHandler (args: any, context: ToolContext): Promise<any>
       operation: 'get_worklog',
       message,
       worklogs: worklogs.map((w: any) => {
+        // VVA что есть кроме accountId?
         const { accountId, displayName, emailAddress } = w.author || {};
         const author = accountId || displayName || emailAddress ? { accountId, displayName, emailAddress } : undefined;
         return {

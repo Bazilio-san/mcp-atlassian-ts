@@ -59,6 +59,7 @@ export interface JCConfig {
   userLookup?: {
     enabled: boolean;
     serviceUrl: string;
+    timeoutMs?: number;
   };
 }
 
@@ -68,16 +69,6 @@ export interface McpError {
   message: string;
   details?: Record<string, unknown>;
   stack?: string;
-}
-
-// Logging types
-export interface LogContext { // VVR
-  requestId?: string;
-  userId?: string;
-  method?: string;
-  url?: string;
-
-  [key: string]: unknown;
 }
 
 // HTTP Client types

@@ -1,0 +1,37 @@
+---
+server:
+  token: <token>
+
+jira:
+  url: https://jira.company.com
+
+  auth:
+    basic:
+      username: <username>
+      password: <password>
+  fieldId:
+    epicLink: <customfield_11201>
+    epicName: <customfield_11202>
+    storyPoints: <customfield_10043>
+  usedInstruments:
+    # Include ALL to enable all tools, or specify a list of tool names
+    include: ALL
+    # Exclude specific tools (optional)
+    exclude: [ 'health_check', 'cache_stats', 'cache_clear' ]
+
+  userLookup:
+    # Enable fuzzy user search via microservice. ENV: JIRA_USER_LOOKUP_ENABLED
+    enabled: false
+    # Microservice URL for user lookup. ENV: JIRA_USER_LOOKUP_SERVICE_URL
+    serviceUrl: "http://host:PORT/api/search/employee"
+    # Request timeout in milliseconds. ENV: JIRA_USER_LOOKUP_TIMEOUT_MS
+    timeoutMs: 3000
+
+confluence:
+  url: https://wiki.company.com
+  auth:
+    basic:
+      username: <username>
+      password: <password>
+
+
