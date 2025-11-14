@@ -1,5 +1,5 @@
 require('dotenv').config({ path: './.env', debug: true });
-const { name } = require('./package.json');
+const { name } = require('../package.json');
 
 const { SERVICE_NAME, SERVICE_INSTANCE, PM2_NAMESPACE } = process.env;
 const suffix = SERVICE_INSTANCE ? `--${SERVICE_INSTANCE}` : '';
