@@ -13,6 +13,7 @@ Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensiv
 - **🧪 Testing**: Comprehensive test suite with JIRA emulator and API endpoint coverage
 - **📦 Docker Ready**: Containerized deployment with configuration management
 
+
 ## 📦 Quick Start
 
 ### Installation
