@@ -22,6 +22,7 @@ cd mcp-atlassian-ts
 npm install
 ```
 
+
 ### Configuration
 ```bash
 cp .env.example .env
