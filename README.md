@@ -2,6 +2,7 @@
 
 Modern TypeScript MCP server for Atlassian JIRA and Confluence with comprehensive features and robust architecture.
 
+
 ## 🚀 Features
 
 - **🔧 51 MCP Tools**: Complete coverage of JIRA (34 tools) and Confluence (17 tools) operations
