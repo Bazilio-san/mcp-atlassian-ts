@@ -1,10 +1,11 @@
 // noinspection UnnecessaryLocalVariableJS
+
 const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 const os = require('os');
 
-const version = '2025.11.14-0318';
+const version = '2025.11.22-1800';
 console.log(`Update script version: ${version}`);
 
 // Имя этой папки
@@ -70,12 +71,12 @@ const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0].re
 const ytdl = timestamp.slice(2, 14); // YYMMDDHHMMSS format
 const runTimeLogFile = path.join(VON, `deploy__${scriptDirName}__processing__${ytdl}.log`);
 const lastDeployLogFile = path.join(VON, `deploy__${scriptDirName}__last_deploy.log`);
-fs.writeFileSync(runTimeLogFile, '');
+const cumulativeLogFile = path.join(VON, `deploy__${scriptDirName}__cumulative.log`);
 
 const clearColors = (text) => text.replace(/\x1B\[[0-9;]*[mGKH]/g, '');
 const clearHtmlColors = (text) => text.replace(/<\/?(red|y|g|r|status)>/g, '');
 
-const log = (msg, isTitle) => {
+const logIt = (msg, isTitle) => {
   if (isTitle) {
     const lng = 60 - (msg.length + 2);
     const left = Math.floor(lng / 2);
@@ -90,15 +91,58 @@ const log = (msg, isTitle) => {
 
 const logError = (msg) => {
   console.error(color.r(msg));
-  logBuffer += `<red>[ERROR] ${msg}</red>\n`;
+  const msg2 = `[ERROR] ${msg}`;
+  logBuffer += `<red>${msg2}</red>\n`;
+  fs.appendFileSync(cumulativeLogFile, `${msg2}\n`);
+};
+
+const nowPretty = () => new Date().toISOString().replace('T', ' ').substring(0, 19) + 'Z';
+
+/**
+ * Truncate cumulative log file if it exceeds 2MB, keeping last 10KB
+ */
+const truncateCumulativeLogIfNeeded = () => {
+  const logFile = path.join(VON, `deploy__${scriptDirName}__cumulative.log`);
+  const maxFileSize = 2 * 1024 * 1024; // 2MB
+  const keepSize = 10 * 1024; // 10KB
+
+  try {
+    if (fs.existsSync(logFile)) {
+      const stats = fs.statSync(logFile);
+      if (stats.size > maxFileSize) {
+        // Read last 10KB
+        const fd = fs.openSync(logFile, 'r');
+        const buffer = Buffer.alloc(keepSize);
+
+        // Position to last 10KB
+        fs.readSync(fd, buffer, 0, keepSize, stats.size - keepSize);
+        fs.closeSync(fd);
+
+        // Write back only the last 10KB
+        const tailContent = buffer.toString('utf8').replace(/^[\r\n]*/, ''); // Remove leading newlines
+        fs.writeFileSync(logFile, tailContent);
+
+        log(`Cumulative log truncated to ${Math.round(tailContent.length / 1024)}KB`);
+      }
+    }
+  } catch (error) {
+    logError(`Failed to truncate cumulative log: ${error.message}`);
+  }
+};
+
+const logTryUpdate = (updateReason = '') => {
+  truncateCumulativeLogIfNeeded();
+  updateReason = updateReason ? `Update reason: ${updateReason}` : '';
+  const message = updateReason || nowPretty();
+  fs.appendFileSync(cumulativeLogFile, `${message}\n`);
 };
 
 /**
  * Execute command in NVM environment
  */
-function execCommand_ (command, options = {}, noSetupScript = false) {
+function execCommand (command, options = {}, withSetupScript = false) {
   // If we have NVM setup, wrap the command
-  const fullCommand = (setupScript && !noSetupScript) ? `${setupScript} && ${command}` : command;
+  const fullCommand = (setupScript && withSetupScript) ? `${setupScript} && ${command}` : command;
   try {
     const result = execSync(fullCommand, {
       encoding: 'utf8',
@@ -115,12 +159,8 @@ function execCommand_ (command, options = {}, noSetupScript = false) {
   }
 }
 
-function execCommand (command, options = {}) {
-  return execCommand_(command, options, true);
-}
-
 function execWithNODE (command, options = {}) {
-  return execCommand_(command, options, false);
+  return execCommand(command, options, true);
 }
 
 /**
@@ -228,13 +268,6 @@ function parseSimpleYAML (content) {
   }
 
   return config;
-}
-
-/**
- * Convert simple object to YAML string
- */
-function formatSimpleYAML (obj) {
-  return Object.entries(obj).reduce((acc, [k, v]) => `${acc}${k}: ${v}\n`, '');
 }
 
 /**
@@ -387,7 +420,7 @@ ${colorizeHTML(clearColors(body))}
   for (let i = 0; i < emailArray.length; i++) {
     const emailAddress = emailArray[i];
     try {
-      log(`Sending update notification to: ${emailAddress}`);
+      logIt(`Sending update notification to: ${emailAddress}`);
       const subject = `${status} Update: ${serviceName} (on ${hostname})`;
 
       // Подаем тело письма через stdin, задаем Content-Type
@@ -408,31 +441,45 @@ ${colorizeHTML(clearColors(body))}
 
 const printCurrenBranch = () => {
   const i = getRepoInfo();
-  log(`Current branch: ${colorG.lg(i.branch)}
+  logIt(`Current branch: ${colorG.lg(i.branch)}
 Last commit: ${colorG.lg(i.headHash)}, date: ${colorG.lg(i.headDdate)}    
 Commit message: ${colorG.lg(i.headCommitMessage)}`);
   return i;
 };
 
-const nowPretty = () => new Date().toISOString().replace('T', ' ').substring(0, 19);
-
-const logTryUpdate = () => {
-  const logFile = path.join(VON, `deploy__${scriptDirName}__cumulative.log`);
-  fs.appendFileSync(logFile, `${nowPretty()}\n`);
-};
+let scriptsDirName = fs.existsSync(path.join(CWD, '_sh/npm/yarn-ci.sh')) ? '_sh' : 'scripts';
 
 const reinstallDependencies = () => {
-  log('CLEAN INSTALL DEPENDENCIES', true);
+  logIt('CLEAN INSTALL DEPENDENCIES', true);
 
   execCommand('rm -rf node_modules/');
   execWithNODE('yarn install --frozen-lockfile');
-  log('Dependencies installed');
+  logIt('Dependencies installed');
+
+  // Patch node modules if patch file exists
+  const patchFile = path.join(scriptsDirName, 'patch_node_modules.js');
+  if (fs.existsSync(patchFile)) {
+    logIt('PATCH NODE MODULES', true);
+    execWithNODE(`node --no-node-snapshot ${patchFile}`);
+    logIt('Node modules patched');
+  }
 };
 
 const compile = () => {
-  log('TYPESCRIPT BUILD', true);
+  logIt('TYPESCRIPT BUILD', true);
   execWithNODE('yarn cb', { silent: true });
-  log('TypeScript build completed');
+  logIt('TypeScript build completed');
+};
+
+const buildQuasar = () => {
+  if (!fs.existsSync(path.join(CWD, 'quasar.config.js'))) {
+    return;
+  }
+  logIt('BUILD QUASAR', true);
+  execWithNODE(`node ./${scriptsDirName}/quasar-prepare-color-vars.mjs`);
+  const result = execWithNODE('yarn quasar build');
+  logIt(result);
+  logIt('Quasar build completed');
 };
 
 const restartService = (serviceName, args) => {
@@ -442,18 +489,20 @@ const restartService = (serviceName, args) => {
   } else if (pm2ServiceExists(serviceName)) {
     srvc = 'pm2';
   } else {
-    log(`Service ${serviceName} not found in systemctl or PM2`);
+    logIt(`Service ${serviceName} not found in systemctl or PM2`);
     return;
   }
-  log(`Restarting service ${serviceName} via ${srvc}`, true);
+  logIt(`Restarting service ${serviceName} via ${srvc}`, true);
   execCommand(`${srvc} restart "${serviceName}"`);
-  log(`Service restarted`);
+  logIt(`Service restarted`);
 };
 
 /**
  * Main update function
  */
 async function main () {
+  logTryUpdate();
+  fs.writeFileSync(runTimeLogFile, '');
   const args = parseArgs();
 
   if (args.help) {
@@ -464,9 +513,9 @@ async function main () {
   // Get service information
   const serviceName = getServiceName();
 
-  log(`<status>Update <y>${colorG.y(serviceName)}</y> ${nowPretty()}`);
+  logIt(`<status>Update <y>${colorG.y(serviceName)}</y> ${nowPretty()}`);
 
-  log(`Working directory: ${colorG.y(CWD)}`);
+  logIt(`Working directory: ${colorG.y(CWD)}`);
   // Load configuration
   const config = loadConfig();
 
@@ -478,28 +527,31 @@ async function main () {
     from = ' deploy/config.yaml';
   }
 
-  log(`Using Node.js version: ${nodeVersion || DEFAULT_NODE_VERSION}${from}`);
+  logIt(`Using Node.js version: ${nodeVersion || DEFAULT_NODE_VERSION}${from}`);
 
   // Override branch if specified in arguments
   const expectedBranch = args.expectedBranch || config.branch;
-
+  let updateDeployedLogFile = false;
   try {
     // 1) Если есть локальные изменения — откатить
     const hasChanges = execCommand('git status --porcelain').trim().length > 0;
     if (hasChanges) {
-      log(`Found uncommited changes. Reset to HEAD...`);
+      logIt(`Found uncommited changes. Reset to HEAD...`);
       execCommand('git reset --hard HEAD');
       execCommand(`git clean -fd`);
     }
 
     let needUpdate = false;
+    let updateReason = args.force ? 'force' : '';
     const repoInfo = getRepoInfo();
     let { branch, headHash, upstreamHash } = repoInfo;
 
     // 2) Если ветка не та — жестко переключиться на голову удаленной expectedBranch
     const expectedUpstream = `origin/${expectedBranch}`;
     if (branch !== expectedBranch) {
-      log(`Switch to branch ${expectedBranch}...`);
+      needUpdate = true;
+      updateReason += `${updateReason ? '. ' : ''}branch !== expectedBranch (${branch} != ${expectedBranch})`;
+      logIt(`Switch to branch ${expectedBranch}...`);
       execCommand(`git fetch origin ${expectedBranch} --prune`);
       execCommand(`git checkout -B ${expectedBranch} ${expectedUpstream}`);
       execCommand(`git reset --hard ${expectedUpstream}`);
@@ -511,35 +563,37 @@ async function main () {
       if (branch !== expectedBranch) {
         throw new Error(`Failed to switch to branch ${expectedBranch}`);
       }
-      needUpdate = true;
     }
 
     if (headHash !== upstreamHash) {
       // 3) Ветка та же, но надо подтянуть изменения
+      needUpdate = true;
+      updateReason += `${updateReason ? '. ' : ''}headHash !== upstreamHash (${headHash} != ${upstreamHash})`;
       printCurrenBranch();
-      log(`FOUND CHANGES. UPDATE branch ${expectedBranch}...`);
+      logIt(`FOUND CHANGES. UPDATE branch ${expectedBranch}...`);
       execCommand(`git fetch origin ${expectedBranch} --prune`);
       execCommand(`git checkout -B ${expectedBranch} ${expectedUpstream}`);
       execCommand(`git reset --hard ${expectedUpstream}`);
       execCommand(`git clean -fd`);
-      needUpdate = true;
       printCurrenBranch();
     }
+
     if (needUpdate || args.force) {
+      updateDeployedLogFile = true;
+      logTryUpdate(updateReason);
       reinstallDependencies();
       compile();
+      buildQuasar();
       restartService(serviceName, args);
 
       // Add completion info to build log
-      log(`Update completed successfully at ${new Date().toISOString().replace('T', ' ').substring(0, 19)}`);
+      logIt(`Update completed successfully at ${new Date().toISOString().replace('T', ' ').substring(0, 19)}`);
       // Send build notification if email is configured
       if (config.email) {
         await sendBuildNotification(config.email, 'SUCCESS', logBuffer, serviceName);
       } else {
-        log('EMAIL not found');
+        logIt('EMAIL not found');
       }
-    } else {
-      logTryUpdate();
     }
   } catch (err) {
     const message = String(err.message).includes(err.stderr)
@@ -550,8 +604,10 @@ async function main () {
       await sendBuildNotification(config.email, 'FAIL', logBuffer, serviceName);
     }
   } finally {
-    log('#FINISH#');
-    fs.copyFileSync(runTimeLogFile, lastDeployLogFile);
+    logIt('#FINISH#');
+    if (updateDeployedLogFile) {
+      fs.copyFileSync(runTimeLogFile, lastDeployLogFile);
+    }
     execCommand(`rm -rf "${runTimeLogFile}"`);
   }
 }

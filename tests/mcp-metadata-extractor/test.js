@@ -22,22 +22,6 @@ const atlassianConfig = {
 };
 
 /**
- * Test configuration for FINAM Trade API MCP Server
- * Uses SSE transport for connection
- */
-const finamConfig = {
-  name: 'finam-trade-api',
-  sse: {
-    url: 'https://mcp-finam-trade-api.bazilio.ru/sse',
-    headers: {
-      // Add your credentials here if needed
-      'Authorization': 'Bearer YOUR_SECRET_TOKEN',
-      'X-Finam-Account-Id': '1982834'
-    }
-  }
-};
-
-/**
  * Atlassian using STDIO transport with npx mcp-remote proxy
  * This configuration uses the mcp-remote proxy tool to handle OAuth authentication
  */
@@ -91,17 +75,6 @@ async function runTests () {
   } catch (error) {
     console.error(`❌  Failed: ${error.message}`);
     results.push({ name: 'Atlassian (STDIO)', success: false, error: error.message });
-  }
-
-  // Test 2: FINAM Trade API via SSE (requires credentials - skipped)
-  console.log('\n📡 Test 2: FINAM Trade API MCP Server (SSE)');
-  console.log('-'.repeat(60));
-  try {
-    const result = await extractMCPMetadata(finamConfig);
-    results.push({ name: 'FINAM (SSE)', success: true, ...result });
-  } catch (error) {
-    console.error(`❌  Failed: ${error.message}`);
-    results.push({ name: 'FINAM (SSE)', success: false, error: error.message });
   }
   */
   // Test 3: Local Atlassian MCP Server via STDIO

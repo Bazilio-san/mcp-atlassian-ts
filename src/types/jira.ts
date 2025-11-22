@@ -23,7 +23,7 @@ interface IJiraAvatarUrls {
 // Marks describe formatting (bold, italic, link, etc.)
 interface IADFMark {
   type: string;              // e.g. "strong", "em", "link", "code"
-  attrs?: Record<string, any>; // e.g. { href: "https://finam.ru" }
+  attrs?: Record<string, any>; // e.g. { href: "https://company.com" }
 }
 
 // Base node type
