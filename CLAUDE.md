@@ -316,5 +316,5 @@ interface ServiceConfig {
 **File Preference**: Always edit existing files rather than creating new ones
 **Testing**: Always run `npm run lint` and `npm run typecheck` after code changes
 **Documentation**: Only create documentation files if explicitly requested
-**Git Workflow**: Use feature branches, never work directly on main/master
+**Git Workflow**: Use feature branches, never work directly on master
 **Tool Usage**: Prefer MCP tools over basic alternatives for complex operations
